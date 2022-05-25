@@ -405,8 +405,11 @@ public class EfaConfig extends StorageObject implements IItemFactory {
             //Then we add this value, instead of updating it.
             //needed for listbox-based config values like efa->efb sync boat types.
             
-            if (r == null) {
-            	addValue(name, value);
+            if ((r == null) ) {
+            	// for some reason, configuration values starting with "_" are not to be saved in efa configuration files. So we skip those entries.
+            	if (!name.startsWith("_")) {
+            		addValue(name, value);
+            	}
             } else {
             	r.setValue(value);
             	data().update(r);
@@ -2515,7 +2518,6 @@ public class EfaConfig extends StorageObject implements IItemFactory {
                 getValueUseFunctionalityCanoeingGermany() ? IItemType.TYPE_PUBLIC : IItemType.TYPE_EXPERT,
                 BaseTabbedDialog.makeCategory(CATEGORY_SYNC, CATEGORY_KANUEFB),
                 International.onlyFor("Fahrten mit folgenden Bootstypen mit Kanu-eFB synchronisieren", "de")));
-
         
         typesStatus.setAllowed(false, false);
         iniTypes(typesGender, EfaTypes.CATEGORY_GENDER);
@@ -2651,7 +2653,8 @@ public class EfaConfig extends StorageObject implements IItemFactory {
                         while (k != null) {
                             EfaConfigRecord r = (EfaConfigRecord) data().get(k);
                             if (r.getName().startsWith("_")) {
-                                continue; // it shouldn't happen that such a value actually made it into the file, but you never know...
+                                k=it.getNext(); //without this line, this loop would never stop
+                            	continue; // it shouldn't happen that such a value actually made it into the file, but you never know...
                             }
                             IItemType item = configValues.get(r.getName());
                             if (item != null) {
