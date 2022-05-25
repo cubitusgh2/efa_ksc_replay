@@ -11,28 +11,65 @@
 package de.nmichael.efa.data.sync;
 
 // @i18n complete
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.net.CookieHandler;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
+import java.net.CookieStore;
+import java.net.HttpCookie;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import org.xml.sax.*;
-import de.nmichael.efa.data.*;
-import de.nmichael.efa.data.storage.*;
-import de.nmichael.efa.util.*;
-import de.nmichael.efa.*;
-import de.nmichael.efa.core.config.AdminRecord;
-import de.nmichael.efa.core.config.EfaTypes;
-import de.nmichael.efa.data.types.DataTypeDate;
-import de.nmichael.efa.data.types.DataTypeList;
-import de.nmichael.efa.gui.EfaConfigDialog;
-import de.nmichael.efa.gui.ProgressDialog;
-import de.nmichael.efa.gui.BaseTabbedDialog;
-import de.nmichael.efa.gui.dataedit.ProjectEditDialog;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.swing.JDialog;
+
+import org.xml.sax.InputSource;
+import org.xml.sax.XMLReader;
+
+import de.nmichael.efa.Daten;
+import de.nmichael.efa.core.config.AdminRecord;
+import de.nmichael.efa.core.config.EfaTypes;
+import de.nmichael.efa.data.BoatRecord;
+import de.nmichael.efa.data.Boats;
+import de.nmichael.efa.data.DestinationRecord;
+import de.nmichael.efa.data.Destinations;
+import de.nmichael.efa.data.Logbook;
+import de.nmichael.efa.data.LogbookRecord;
+import de.nmichael.efa.data.PersonRecord;
+import de.nmichael.efa.data.Persons;
+import de.nmichael.efa.data.ProjectRecord;
+import de.nmichael.efa.data.SessionGroupRecord;
+import de.nmichael.efa.data.Waters;
+import de.nmichael.efa.data.WatersRecord;
+import de.nmichael.efa.data.storage.DataKey;
+import de.nmichael.efa.data.storage.DataKeyIterator;
+import de.nmichael.efa.data.storage.IDataAccess;
+import de.nmichael.efa.data.types.DataTypeDate;
+import de.nmichael.efa.data.types.DataTypeList;
+import de.nmichael.efa.gui.BaseTabbedDialog;
+import de.nmichael.efa.gui.EfaConfigDialog;
+import de.nmichael.efa.gui.ProgressDialog;
+import de.nmichael.efa.gui.dataedit.ProjectEditDialog;
+import de.nmichael.efa.util.Dialog;
+import de.nmichael.efa.util.EfaUtil;
+import de.nmichael.efa.util.International;
+import de.nmichael.efa.util.LogString;
+import de.nmichael.efa.util.Logger;
+import de.nmichael.efa.util.ProgressTask;
 
 
 public class KanuEfbSyncTask extends ProgressTask {
@@ -51,8 +88,6 @@ public class KanuEfbSyncTask extends ProgressTask {
     private boolean loggedIn = false;
     private boolean successfulCompleted = false;
     private int countSyncUsers = 0;
-    private int countSyncBoats = 0;
-    private int countSyncWaters = 0;
     private int countSyncTrips = 0;
     private int countWarnings = 0;
     private int countErrors = 0;
@@ -157,6 +192,8 @@ public class KanuEfbSyncTask extends ProgressTask {
             }
         }
 
+        in=tidyXML(in);
+        
         KanuEfbXmlResponse response = null;
         try {
             XMLReader parser = EfaUtil.getXMLReader();
@@ -178,6 +215,50 @@ public class KanuEfbSyncTask extends ProgressTask {
         return response;
     }
 
+    /**
+     * On EFB training sites, sometimes debug mode is active. This enriches the XML response stream
+     * with some annoying HTML entities at the beginning, describing the response output.
+     * As this is not conform to any standards, EFB synchronisation fails when debug mode is active on the EFB training site.
+     * 
+     * This code simply ignores everything within the XML response stream which is located before the opening xml or ?xml tags.
+     *  
+     * @param in InputStream containing the XML response
+     * @return  InputStream with the pure XML response.
+     */
+    private BufferedInputStream tidyXML(BufferedInputStream in) {
+    	
+        StringBuilder sb= new StringBuilder(250);
+    	try {
+	    	in.reset();
+	    	
+	    	BufferedReader buf = new BufferedReader(new InputStreamReader(in));
+	        String s;
+	  
+	        boolean inXML=false;
+	        while ((s = buf.readLine()) != null) {
+	        	if (s.trim().toLowerCase().startsWith("<xml")||s.trim().toLowerCase().startsWith("<?xml")) {
+	        		inXML=true;
+	        	}
+	        	else {
+	        		inXML=inXML;
+	        	}
+	        	if (inXML) {
+	        		sb.append(s);
+	        	}
+	        }
+	        in.reset();
+    	} catch(Exception e) {
+            Logger.log(e);
+            if (Logger.isTraceOn(Logger.TT_SYNC)) {
+                logInfo(Logger.DEBUG, Logger.MSG_SYNC_SYNCDEBUG, "Exception:" + e.toString());
+            }
+            return in;
+        }
+
+        return new BufferedInputStream(new ByteArrayInputStream(sb.toString().getBytes(StandardCharsets.UTF_8)));
+        
+    }
+    
     private boolean login() {
         try {
             loggedIn = false;
@@ -203,12 +284,12 @@ public class KanuEfbSyncTask extends ProgressTask {
             }
             String projectName = EfaUtil.escapeHtmlGetString(Daten.project.getProjectName());
             String clubName = EfaUtil.escapeHtmlGetString(Daten.project.getClubName());
-	    out.write("username=" + username +  
-                      "&password=" + password +
-                      (projectId != null ? "&project=" + projectId.toString() : "") +
-                      (projectName != null && projectName.length() > 0 ? "&projectname=" + projectName : "") +
-                      (clubName != null && clubName.length() > 0 ? "&clubname=" + clubName : "") 
-                    );
+            String loginText="username=" + username +  
+                    "&password=" + password +
+                    (projectId != null ? "&project=" + projectId.toString() : "") +
+                    (projectName != null && projectName.length() > 0 ? "&projectname=" + projectName : "") +
+                    (clubName != null && clubName.length() > 0 ? "&clubname=" + clubName : "");
+            out.write(loginText);
             out.flush();
             out.close();
 
@@ -359,147 +440,7 @@ public class KanuEfbSyncTask extends ProgressTask {
         }
         return true;
     }
-
-    private boolean syncBoats() {
-        try {
-            logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Synchronisiere Boote ...");
-            StringBuilder request = new StringBuilder();
-            buildRequestHeader(request, "SyncBoats");
-            Boats boats = Daten.project.getBoats(false);
-            DataKeyIterator it = boats.data().getStaticIterator();
-            DataKey k = it.getFirst();
-            int reqCnt = 0;
-            Hashtable<String,UUID> efaIds = new Hashtable<String,UUID>();
-            while (k != null) {
-                BoatRecord r = (BoatRecord)boats.data().get(k);
-                if (r != null && r.isValidAt(thisSync) && Daten.efaConfig.isCanoeBoatType(r) &&
-                    (r.getLastModified() > lastSync || r.getEfbId() == null || r.getEfbId().length() == 0)) {
-                    if (Logger.isTraceOn(Logger.TT_SYNC)) {
-                        logInfo(Logger.DEBUG, Logger.MSG_SYNC_SYNCINFO, "  erstelle Synchronisierungs-Anfrage für Boot: " + r.getQualifiedName());
-                    }
-                    request.append("<boat><name>"+r.getQualifiedName()+"</name></boat>\n");
-                    efaIds.put(r.getQualifiedName(), r.getId());
-                    reqCnt++;
-                }
-                k = it.getNext();
-            }
-            buildRequestFooter(request);
-
-            logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Sende Synchronisierungs-Anfrage für " + reqCnt + " Boote ...");
-            KanuEfbXmlResponse response = sendRequest(request.toString(), true);
-            if (response != null && response.isResponseOk("SyncBoats")) {
-                logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Synchronisierungs-Antwort erhalten für " + response.getNumberOfRecords() + " Boote ...");
-                for (int i=0; i<response.getNumberOfRecords(); i++) {
-                    Hashtable<String,String> fields = response.getFields(i);
-                    boolean ok = false;
-                    String boatName = fields.get("label");
-                    String efbId = fields.get("id");
-                    if (boatName != null) {
-                        boatName = boatName.trim();
-                        UUID efaId = efaIds.get(boatName);
-                        if (efaId != null && efbId != null) {
-                            BoatRecord b = boats.getBoat(efaId, thisSync);
-                            efbId = efbId.trim();
-                            if (b != null) {
-                                if (!efbId.equals(b.getEfbId())) {
-                                    b.setEfbId(efbId);
-                                    boats.data().update(b);
-                                    countSyncBoats++;
-                                }
-                                ok = true;
-                            }
-                        }
-                    }
-                    if (ok) {
-                        if (Logger.isTraceOn(Logger.TT_SYNC)) {
-                            logInfo(Logger.DEBUG, Logger.MSG_SYNC_SYNCINFO, "  Synchronisierungs-Antwort für Boot: "+boatName+" (EfbId="+efbId+")");
-                        }
-                    } else {
-                        logInfo(Logger.WARNING, Logger.MSG_SYNC_WARNINCORRECTRESPONSE, "Ungültige Synchronisierungs-Antwort für Boot: "+boatName);
-                    }
-                }
-                logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, countSyncBoats + " neue Boote synchronisiert.");
-            } else {
-                logInfo(Logger.ERROR, Logger.MSG_SYNC_ERRORINVALIDRESPONSE, "Ungültige Synchronisierungs-Antwort.");
-                return false;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-        return true;
-    }
-
-    private boolean syncWaters() {
-        try {
-            logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Synchronisiere Gewässer ...");
-            StringBuilder request = new StringBuilder();
-            buildRequestHeader(request, "SyncWaters");
-            Waters waters = Daten.project.getWaters(false);
-            DataKeyIterator it = waters.data().getStaticIterator();
-            DataKey k = it.getFirst();
-            int reqCnt = 0;
-            Hashtable<String,UUID> efaIds = new Hashtable<String,UUID>();
-            while (k != null) {
-                WatersRecord r = (WatersRecord)waters.data().get(k);
-                if (r != null && r.isValidAt(thisSync) &&
-                    (r.getLastModified() > lastSync || r.getEfbId() == null || r.getEfbId().length() == 0)) {
-                    if (Logger.isTraceOn(Logger.TT_SYNC)) {
-                        logInfo(Logger.DEBUG, Logger.MSG_SYNC_SYNCINFO, "  erstelle Synchronisierungs-Anfrage für Gewässer: " + r.getQualifiedName());
-                    }
-                    request.append("<water><name>"+r.getQualifiedName()+"</name></water>\n");
-                    efaIds.put(r.getQualifiedName(), r.getId());
-                    reqCnt++;
-                }
-                k = it.getNext();
-            }
-            buildRequestFooter(request);
-
-            logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Sende Synchronisierungs-Anfrage für " + reqCnt + " Gewässer ...");
-            KanuEfbXmlResponse response = sendRequest(request.toString(), true);
-            if (response != null && response.isResponseOk("SyncWaters")) {
-                logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Synchronisierungs-Antwort erhalten für " + response.getNumberOfRecords() + " Gewässer ...");
-                for (int i=0; i<response.getNumberOfRecords(); i++) {
-                    Hashtable<String,String> fields = response.getFields(i);
-                    boolean ok = false;
-                    String watersName = fields.get("label");
-                    String efbId = fields.get("id");
-                    if (watersName != null) {
-                        watersName = watersName.trim();
-                        UUID efaId = efaIds.get(watersName);
-                        if (efaId != null && efbId != null) {
-                            WatersRecord w = waters.getWaters(efaId);
-                            efbId = efbId.trim();
-                            if (w != null) {
-                                if (!efbId.equals(w.getEfbId())) {
-                                    w.setEfbId(efbId);
-                                    waters.data().update(w);
-                                    countSyncWaters++;
-                                }
-                                ok = true;
-                            }
-                        }
-                    }
-                    if (ok) {
-                        if (Logger.isTraceOn(Logger.TT_SYNC)) {
-                            logInfo(Logger.DEBUG, Logger.MSG_SYNC_SYNCINFO, "  Synchronisierungs-Antwort für Gewässer: "+watersName+" (EfbId="+efbId+")");
-                        }
-                    } else {
-                        logInfo(Logger.WARNING, Logger.MSG_SYNC_WARNINCORRECTRESPONSE, "Ungültige Synchronisierungs-Antwort für Gewässer: "+watersName);
-                    }
-                }
-                logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, countSyncWaters + " neue Gewässer synchronisiert.");
-            } else {
-                logInfo(Logger.ERROR, Logger.MSG_SYNC_ERRORINVALIDRESPONSE, "Ungültige Synchronisierungs-Antwort.");
-                return false;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-        return true;
-    }
-
+ 
     private int countNumberOfPersonsWithEfbIds() {
         int count = 0;
         try {
@@ -536,11 +477,16 @@ public class KanuEfbSyncTask extends ProgressTask {
             Hashtable<String,LogbookRecord> efaEntryIds = new Hashtable<String,LogbookRecord>();
             while (k != null) {
                 LogbookRecord r = (LogbookRecord)logbook.data().get(k);
-                if (r != null &&
-                    (r.getLastModified() > r.getSyncTime() || r.getSyncTime() <= 0) &&
-                     r.isRowingOrCanoeingSession() && 
-                     Daten.efaConfig.isCanoeBoatType(r.getBoatRecord(r.getValidAtTimestamp())) ) {
-                    for (int i=0; i<=LogbookRecord.CREW_MAX; i++) {
+             
+                // only brand new or updated record shall be sent to EFB.
+                // we cannot compare r.getLastModified to r.getSyncTime() as r.LastModified gets updated when the SyncTime attribute is set.
+                // so we compare against lastsync instead, which contains the timestamp AFTER the last successful synchronization.                
+                
+                if (r != null && (r.getLastModified() > lastSync || r.getSyncTime() <= 0) &&
+                    r.isRowingOrCanoeingSession() && 
+                    Daten.efaConfig.isCanoeBoatType(r.getBoatRecord(r.getValidAtTimestamp())) ) {
+
+                	for (int i=0; i<=LogbookRecord.CREW_MAX; i++) {
                         UUID pId = r.getCrewId(i);
                         if (pId != null) {
                             PersonRecord p = persons.getPerson(pId, thisSync);
@@ -751,14 +697,6 @@ public class KanuEfbSyncTask extends ProgressTask {
                 break;
             }
             setCurrentWorkDone(++i);
-            if (!syncBoats()) {
-                break;
-            }
-            setCurrentWorkDone(++i);
-            if (!syncWaters()) {
-                break;
-            }
-            setCurrentWorkDone(++i);
             if (!syncTrips()) {
                 break;
             }
@@ -767,9 +705,15 @@ public class KanuEfbSyncTask extends ProgressTask {
         }
         syncDone();
         setCurrentWorkDone(++i);
+        
         if (i == getAbsoluteWork()) {
-            Daten.project.setClubKanuEfbLastSync(thisSync);
-            StringBuilder msg = new StringBuilder();
+        
+        	// We need to store the timestamp AFTER the last successful synchronization to "lastSync"
+        	// so that we can compare the record's lastModified timestamp against it in syncTrips().
+        	
+        	Daten.project.setClubKanuEfbLastSync(System.currentTimeMillis());
+            
+        	StringBuilder msg = new StringBuilder();
             if (countErrors == 0) {
                 if (countWarnings == 0) {
                     msg.append("Synchronisierung mit Kanu-eFB erfolgreich beendet.");
@@ -779,10 +723,9 @@ public class KanuEfbSyncTask extends ProgressTask {
             } else {
                 msg.append("Synchronisierung mit Kanu-eFB mit Fehlern beendet.");
             }
+            logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Endzeit der Synchronisierung: " +  EfaUtil.getTimeStamp(thisSync) + " (" + thisSync + ")");
             msg.append(" [");
             msg.append(countSyncUsers  + " Personen, ");
-            msg.append(countSyncBoats  + " Boote, ");
-            msg.append(countSyncWaters + " Gewässer, ");
             msg.append(countSyncTrips  + " Fahrten synchronisiert] [");
             msg.append(countWarnings   + " Warnungen, ");
             msg.append(countErrors     + " Fehler");
@@ -797,7 +740,7 @@ public class KanuEfbSyncTask extends ProgressTask {
     }
 
     public int getAbsoluteWork() {
-        return 6;
+        return 4; //login, sync persons, sync trips, logout.
     }
 
     public String getSuccessfullyDoneMessage() {
@@ -805,8 +748,6 @@ public class KanuEfbSyncTask extends ProgressTask {
             return LogString.operationSuccessfullyCompleted(International.getString("Synchronisation")) +
                    "\n"   + countSyncTrips + " Fahrten synchronisiert." +
                    "\n"   + countSyncUsers + " Personen synchronisiert." +
-                   "\n"   + countSyncBoats + " Boote synchronisiert." +
-                   "\n"   + countSyncWaters + " Gewässer synchronisiert." +
                    "\n\n" + countWarnings + " Warnungen" +
                    "\n"   + countErrors + " Fehler";
         } else {
