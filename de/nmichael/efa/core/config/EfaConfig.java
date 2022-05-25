@@ -404,6 +404,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
             //There may be a setting which is not yet present in efaconfigrecord.
             //Then we add this value, instead of updating it.
             //needed for listbox-based config values like efa->efb sync boat types.
+            
             if (r == null) {
             	addValue(name, value);
             } else {
@@ -2514,10 +2515,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
                 getValueUseFunctionalityCanoeingGermany() ? IItemType.TYPE_PUBLIC : IItemType.TYPE_EXPERT,
                 BaseTabbedDialog.makeCategory(CATEGORY_SYNC, CATEGORY_KANUEFB),
                 International.onlyFor("Fahrten mit folgenden Bootstypen mit Kanu-eFB synchronisieren", "de")));
-        String myValue = getValue("KanuEfbBoatTypes");
-        if (myValue != null && myValue.length() > 0) {
-            kanuEfb_boatTypes.parseValue(myValue);
-        }
+
         
         typesStatus.setAllowed(false, false);
         iniTypes(typesGender, EfaTypes.CATEGORY_GENDER);
