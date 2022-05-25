@@ -400,8 +400,17 @@ public class EfaConfig extends StorageObject implements IItemFactory {
     public boolean updateValue(String name, String value) {
         try {
             EfaConfigRecord r = (EfaConfigRecord)data().get(EfaConfigRecord.getKey(name));
-            r.setValue(value);
-            data().update(r);
+            
+            //There may be a setting which is not yet present in efaconfigrecord.
+            //Then we add this value, instead of updating it.
+            //needed for listbox-based config values like efa->efb sync boat types.
+            if (r == null) {
+            	addValue(name, value);
+            } else {
+            	r.setValue(value);
+            	data().update(r);
+            }
+            
             return true;
         } catch(Exception e) {
             return false;
@@ -2500,7 +2509,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
                 IItemType.TYPE_EXPERT,BaseTabbedDialog.makeCategory(CATEGORY_TYPES,CATEGORY_TYPES_STAT),
                 International.getString("Status")));
         
-        addParameter(kanuEfb_boatTypes = new ItemTypeMultiSelectList<String>("KanuEfbBoatTypes", getCanoeBoatTypes(),
+        addParameter(kanuEfb_boatTypes = new ItemTypeMultiSelectList<String>("KanuEfbBoatTypes", getCanoeBoatTypes(getValue("KanuEfbBoatTypes")),
                 Daten.efaTypes.makeBoatTypeArray(EfaTypes.ARRAY_STRINGLIST_VALUES), Daten.efaTypes.makeBoatTypeArray(EfaTypes.ARRAY_STRINGLIST_DISPLAY),
                 getValueUseFunctionalityCanoeingGermany() ? IItemType.TYPE_PUBLIC : IItemType.TYPE_EXPERT,
                 BaseTabbedDialog.makeCategory(CATEGORY_SYNC, CATEGORY_KANUEFB),
@@ -2582,12 +2591,20 @@ public class EfaConfig extends StorageObject implements IItemFactory {
         return null;
     }
     
-    public DataTypeList<String> getCanoeBoatTypes() {
+    public DataTypeList<String> getCanoeBoatTypes(String myValue) {
         EfaTypes t = getMyEfaTypes();
         if (t == null) {
             return new DataTypeList<String>(new String[0]); // happens during startup
         }
-        return new DataTypeList<String>(t.getDefaultCanoeBoatTypes());
+        
+        //if a comma separated value list is provided, parse it and return it.
+        //otherwise, use the defaultCanoeBoatTypes.
+        if (myValue != null && myValue.length() > 0) {
+            return new DataTypeList<String>().parseList(myValue, IDataAccess.DATA_STRING);
+        } else {
+        	return new DataTypeList<String>(t.getDefaultCanoeBoatTypes());
+        }	
+
     }
     
     public boolean isCanoeBoatType(BoatRecord r) {
