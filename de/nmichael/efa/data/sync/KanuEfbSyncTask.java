@@ -229,8 +229,7 @@ public class KanuEfbSyncTask extends ProgressTask {
     	
         StringBuilder sb= new StringBuilder(250);
     	try {
-	    	in.reset();
-	    	
+    		in.mark(DEBUG_MARK_SIZE); //memorize current position in stream
 	    	BufferedReader buf = new BufferedReader(new InputStreamReader(in));
 	        String s;
 	  
@@ -240,13 +239,13 @@ public class KanuEfbSyncTask extends ProgressTask {
 	        		inXML=true;
 	        	}
 	        	else {
-	        		inXML=inXML;
+	        		inXML=inXML; // just for debug purposes
 	        	}
 	        	if (inXML) {
 	        		sb.append(s);
 	        	}
 	        }
-	        in.reset();
+	        in.reset(); // and reset reading position to memorized position.
     	} catch(Exception e) {
             Logger.log(e);
             if (Logger.isTraceOn(Logger.TT_SYNC)) {
@@ -474,6 +473,8 @@ public class KanuEfbSyncTask extends ProgressTask {
             DataKeyIterator it = logbook.data().getStaticIterator();
             DataKey k = it.getFirst();
             int reqCnt = 0;
+            int unFinishedTripCnt=0;
+            
             Hashtable<String,LogbookRecord> efaEntryIds = new Hashtable<String,LogbookRecord>();
             while (k != null) {
                 LogbookRecord r = (LogbookRecord)logbook.data().get(k);
@@ -485,7 +486,20 @@ public class KanuEfbSyncTask extends ProgressTask {
                 if (r != null && (r.getLastModified() > lastSync || r.getSyncTime() <= 0) &&
                     r.isRowingOrCanoeingSession() && 
                     Daten.efaConfig.isCanoeBoatType(r.getBoatRecord(r.getValidAtTimestamp())) ) {
-
+                    
+                	if (r.getStartTime()!= null && r.getEndTime()==null) {
+                    	// wenn ein Enddatum gesetzt ist, und eine Anfangsuhrzeit, dann muss eine Enduhrzeit gesetzt sein. Sonst klappt 
+                        // Sonst klappt die Synchronisation der Fahrt nicht.
+                		
+                		if (Logger.isTraceOn(Logger.TT_SYNC)) {
+                            logInfo(Logger.DEBUG, Logger.MSG_SYNC_SYNCINFO, "  Fahrt hat Start-Uhrzeit, aber keine End-Uhrzeit und kann nicht synchronisiert werden." + r.getQualifiedName());
+                        }
+                        // zum nächsten Datensatz springen und dort weitermachen.
+                		unFinishedTripCnt++;
+                		k = it.getNext();                        
+                        continue;
+                	}
+                	
                 	for (int i=0; i<=LogbookRecord.CREW_MAX; i++) {
                         UUID pId = r.getCrewId(i);
                         if (pId != null) {
@@ -609,7 +623,8 @@ public class KanuEfbSyncTask extends ProgressTask {
             }
             buildRequestFooter(request);
 
-            logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Sende Synchronisierungs-Anfrage für " + reqCnt + " Fahrten ...");
+            logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, unFinishedTripCnt + " Fahrten sind mit Start- aber ohne Enduhrzeit und werden daher nicht synchronisiert.");
+            logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Sende Synchronisierungs-Anfrage für " + reqCnt + " beendete Fahrten ...");
             KanuEfbXmlResponse response = sendRequest(request.toString(), true);
             if (response != null && response.isResponseOk("SyncTrips")) {
                 logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Synchronisierungs-Antwort erhalten für " + response.getNumberOfRecords() + " Fahrten ...");
@@ -644,7 +659,7 @@ public class KanuEfbSyncTask extends ProgressTask {
                         logInfo(Logger.WARNING, Logger.MSG_SYNC_WARNINCORRECTRESPONSE, "Fehler beim Synchronisieren von Fahrt: "+tripId+" (Code "+result+" - "+resultText+")");
                     }
                 }
-                logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, countSyncTrips + " Fahrten synchronisiert.");
+                logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, countSyncTrips + "/"+ reqCnt +  " Fahrten synchronisiert.");
             } else {
                 logInfo(Logger.ERROR, Logger.MSG_SYNC_ERRORINVALIDRESPONSE, "Ungültige Synchronisierungs-Antwort.");
                 return false;
