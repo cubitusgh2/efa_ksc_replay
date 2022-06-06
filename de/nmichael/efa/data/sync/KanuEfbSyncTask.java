@@ -1,4 +1,3 @@
-
 /**
  * Title:        efa - elektronisches Fahrtenbuch für Ruderer
  * Copyright:    Copyright (c) 2001-2011 by Nicolas Michael
@@ -67,6 +66,19 @@
  *   In früheren Versionen von EFA wurde dieser Parameter nicht gespeichert. Das Setzen ist aber erforderlich,
  *   um neue Kanutypen wie z.B. das aufsteigende SUP zu unterstützen.
  *   
+ *  - kanuEfb_tidyXML - EXPORT Konfigurationsparameter Default false
+ *    
+ *    Das EFB-Schulungssystem wird immer mal wieder in einen Debugmodus gesetzt.
+ *    Wann das passiert, darauf hat der Nutzer des EFB-Schulungs-System keinen Einfluss. 
+ *    Wenn der Debugmodus im EFB aktiv ist, dann funktioniert die Synchronisation der Fahrten aus EFA 
+ *    nicht und bricht ab. Dies stört bei der Entwicklung oder auch beim Test der Synchronisation von 
+ *    Vereinen auf dem Schulungssystem erheblich.
+ *    
+ *    Grund für den Abbruch: In diesem Debugmodus schickt das EFB bei der Antwort auf syncTrips() vor dem 
+ *    eigentlichen XML-Datenstrom weitere Texte, die die Verarbeitung durch EFA stören. 
+ *    Daher wurde tidyXML in getResponse eingebaut; die Bereinigung findet nur dann statt, 
+ *    wenn der Konfigurationsparameter für tidyXML TRUE ist.
+ *           
  * - syncTrips 
  *   - Gibt beim Start die drei Konfigurationsparameter aus.
  *   - Gibt zum Abschluss eine Statistik aus, wieviele Fahrten den einzelnen Bedingungen für eine Synchronisation  
@@ -93,16 +105,9 @@
  *      Es gibt auch (noch) keinen Audit-Modus, in dem man die im EFB gespeicherten Fahrten abrufen
  *      und gegen die im EFA gespeicherten Fahrten abgleichen könnte.
  *      
- *  - tidyXML()
- *    Das EFB-Schulungssystem wird immer mal wieder in einen Debugmodus gesetzt.
- *    Wann das passiert, darauf hat der Nutzer des EFB-Schulungs-System keinen Einfluss. 
- *    Wenn der Debugmodus aktiv ist, dann funktioniert die Synchronisation der Fahrten nicht und bricht ab.
- *    
- *    In diesem Debugmodus schickt das EFB bei der Antwort auf syncTrips() vor dem eigentlichen XML-Datenstrom
- *    weitere Texte, die die Verarbeitung durch EFA stören. Daher wurde tidyXML in getResponse eingebaut.
- *        
- *    In einem produktiven System sollte dies sicherlich durch einen Konfigurationsparameter gesteuert werden,
- *    dies ist aber noch nicht passiert.
+ *  - isCanoeBoatType(BoatRecord) 
+ *    wurde aus efaConfig in die EFB-Synchronisation verschoben, um aus efaConfig eine Abhängigkeit
+ *    zu BoatRecord zu vermeiden.
  *      
  *  Allgemeine Fragen und Antworten:
  *  a) Muss man im EFB eine Bootsliste pflegen, oder im EFA die Kanu-EFB-ID für das Boot eintragen?
@@ -320,7 +325,12 @@ public class KanuEfbSyncTask extends ProgressTask {
             }
         }
 
-        in=tidyXML(in);
+        // Auf Schulungssystemen, wo im EFB der Debugmodus aktiv ist, 
+        // liefert die Response weitere (nicht verarbeitbare) Daten vor dem eigentlichen XML-Datenstrom.
+        // Abhängig von der Konfiguration bereinigen wir diese Daten.
+        if (Daten.efaConfig.getValueKanuEfb_TidyXML()) {
+        	in=tidyXML(in);
+        }
         
         KanuEfbXmlResponse response = null;
         try {
@@ -339,7 +349,7 @@ public class KanuEfbSyncTask extends ProgressTask {
         if (Logger.isTraceOn(Logger.TT_SYNC) && response != null) {
             response.printAll();
         }
-        response.printAll();
+        
         return response;
     }
 
@@ -667,7 +677,7 @@ public class KanuEfbSyncTask extends ProgressTask {
                 	isTooEarlyTrip = r.getDate().isBefore(Daten.efaConfig.getValueKanuEfb_SyncTripsAfterDate());
                 	
                 	// We only support EFB synchronization for special boat types, which are set in efaConfig 
-                	isNonSupportedCanoeBoatType = !Daten.efaConfig.isCanoeBoatType(r.getBoatRecord(r.getValidAtTimestamp()));
+                	isNonSupportedCanoeBoatType = !isCanoeBoatType(r.getBoatRecord(r.getValidAtTimestamp()));
                 	
 
                 	
@@ -882,6 +892,7 @@ public class KanuEfbSyncTask extends ProgressTask {
                 logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, countSyncTrips + "/"+ requestCnt +  " Datensätze synchronisiert.");
             } else {
                 logInfo(Logger.ERROR, Logger.MSG_SYNC_ERRORINVALIDRESPONSE, "Ungültige Synchronisierungs-Antwort.");
+                logInfo(Logger.ERROR, Logger.MSG_SYNC_ERRORINVALIDRESPONSE, "Auf EFB-Schulungssystemen kann ggfs. die Konfigurationsoption 'XML-Antworten auf EFB-Schulungssystemen bereinigen' weiterhelfen.");
                 return false;
             }
         } catch (Exception e) {
@@ -891,6 +902,18 @@ public class KanuEfbSyncTask extends ProgressTask {
         return true;
     }
 
+    
+    public boolean isCanoeBoatType(BoatRecord r) {
+        Object[] types = Daten.efaConfig.getValueKanuEfb_CanoeBoatTypes();
+        for (int i=0; r != null && i<r.getNumberOfVariants(); i++) {
+            for (int j=0; types != null && j<types.length; j++) {
+                if (types[j] != null && types[j].toString().equals(r.getTypeType(i))) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }    
     
     private boolean syncDone() {
         try {
