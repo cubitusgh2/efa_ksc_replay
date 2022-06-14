@@ -629,6 +629,7 @@ public class KanuEfbSyncTask extends ProgressTask {
             long updatedTripCnt=0;
             long syncTripCnt=0;
             long personWithoutEFBIDTripCnt=0;
+            long emptyBoatRecordTripCnt=0;
             
             boolean isRowingOrCanoeingSession =false;
             boolean isAlreadySyncedTrip=false;
@@ -636,6 +637,8 @@ public class KanuEfbSyncTask extends ProgressTask {
             boolean isTooEarlyTrip=false;
             boolean isUpdatedTrip=false;
             boolean isNonSupportedCanoeBoatType=false;
+            boolean isEmptyBoatRecordTrip=false;
+            		
             
             Hashtable<String,LogbookRecord> efaEntryIds = new Hashtable<String,LogbookRecord>();
             while (k != null) {
@@ -643,7 +646,7 @@ public class KanuEfbSyncTask extends ProgressTask {
                 
                 // Determine record state and some statistics
                 if (r!= null) {
-                	
+                	isAlreadySyncedTrip=false;
                 	// we can only sync trips which took place on a boat, not on a ergometer or a motor boat.
                 	isRowingOrCanoeingSession=r.isRowingOrCanoeingSession();
                 	
@@ -676,14 +679,17 @@ public class KanuEfbSyncTask extends ProgressTask {
                 	 */
                 	isTooEarlyTrip = r.getDate().isBefore(Daten.efaConfig.getValueKanuEfb_SyncTripsAfterDate());
                 	
+                	isEmptyBoatRecordTrip = r.getBoatRecord(r.getValidAtTimestamp()) == null;
+                	
                 	// We only support EFB synchronization for special boat types, which are set in efaConfig 
-                	isNonSupportedCanoeBoatType = !isCanoeBoatType(r.getBoatRecord(r.getValidAtTimestamp()));
+                	isNonSupportedCanoeBoatType = !isCanoeBoatType(r.getBoatRecord(r.getValidAtTimestamp())) && !isEmptyBoatRecordTrip;
                 	
 
                 	
                 	// let's get some statistics...
                 	nonCanoeingTripCnt = isRowingOrCanoeingSession ? nonCanoeingTripCnt : nonCanoeingTripCnt+1;
                 	alreadySyncedTripCnt = isAlreadySyncedTrip ? alreadySyncedTripCnt+1 : alreadySyncedTripCnt;
+                	
                 	if (!isAlreadySyncedTrip) {
 
                 		unfinishedTripCnt = isUnfinishedTrip ? unfinishedTripCnt+1 : unfinishedTripCnt;
@@ -691,23 +697,33 @@ public class KanuEfbSyncTask extends ProgressTask {
 
                 			tooEarlyTripCnt = isTooEarlyTrip ? tooEarlyTripCnt+1 : tooEarlyTripCnt;
                 			if (!isTooEarlyTrip) {
+                				//only one of these values can be true
                 				nonSupportedBoatTypeTripCnt = isNonSupportedCanoeBoatType ? nonSupportedBoatTypeTripCnt+1 : nonSupportedBoatTypeTripCnt;
+                				emptyBoatRecordTripCnt = isEmptyBoatRecordTrip ? emptyBoatRecordTripCnt+1 : emptyBoatRecordTripCnt;
+                				
+                				if (isEmptyBoatRecordTrip) {
+                                    logInfo(Logger.WARNING, Logger.MSG_SYNC_SYNCINFO, "  Fahrt " +  r.getQualifiedName()+ " - Bootstyp nicht gesetzt/Boot unbekannt: " + r.getBoatAsName());
+                				}
                 			}
                 		}
                 	}
                 }
                 
                 
-                if (r != null && (!isAlreadySyncedTrip) && isRowingOrCanoeingSession && !isNonSupportedCanoeBoatType && !isUnfinishedTrip && !isTooEarlyTrip) {
+                if (r != null && (!isAlreadySyncedTrip) && isRowingOrCanoeingSession && !isNonSupportedCanoeBoatType && !isUnfinishedTrip && !isTooEarlyTrip && !isEmptyBoatRecordTrip) {
                 	//we want to check if the current trip leads to at least one request. 
                 	//if not, the trip is ignored due to the fact that none of the crew members has an EfbID.
                 	long oldRequestCnt=requestCnt; 
                 	boolean isTripWithAtLeastOneCrewMemberWithEFBID=false;
+                	boolean isTripWithIdentifiedCrewMember=false;
+                	String unidentifiedCrewMembers="";
                 	
+                	//Steuermann zuzüglich bis zu 24 Crewmitglieder auf eine EFB-ID prüfen.
                 	for (int i=0; i<=LogbookRecord.CREW_MAX; i++) {
                         UUID pId = r.getCrewId(i);
+
                         if (pId != null) {
-                        	
+                        	isTripWithIdentifiedCrewMember=true;
                         	PersonRecord p = persons.getPerson(pId, thisSync);
                             if (p != null && p.getEfbId() != null && p.getEfbId().length() > 0 &&
                                 r.getDate() != null) {
@@ -715,6 +731,7 @@ public class KanuEfbSyncTask extends ProgressTask {
                                     logInfo(Logger.DEBUG, Logger.MSG_SYNC_SYNCINFO, "  erstelle Synchronisierungs-Anfrage für Fahrt: " + r.getQualifiedName()+
                                             "; Person: "+p.getQualifiedName());
                                 }
+                                
                                 isTripWithAtLeastOneCrewMemberWithEFBID=true;
                                 
                                 BoatRecord b = (r.getBoatId() != null ? boats.getBoat(r.getBoatId(), thisSync) : null);
@@ -818,15 +835,21 @@ public class KanuEfbSyncTask extends ProgressTask {
                                 
                             }
                         }
+                        else if (pId==null) {
+                        	unidentifiedCrewMembers = (unidentifiedCrewMembers+ " "+ r.getCrewAsName(i)).trim();
+                        }
                     } // end of for each Crew Member
                 	
-                	// if the number of requests has not changed, none of the crew members has an EFB ID, so the trip is ignored...
-                	personWithoutEFBIDTripCnt = (oldRequestCnt==requestCnt) ? personWithoutEFBIDTripCnt+1 : personWithoutEFBIDTripCnt;
+                	
+                  	// if the number of requests has not changed, none of the crew members has an EFB ID, so the trip is ignored...
+                   	personWithoutEFBIDTripCnt = (oldRequestCnt==requestCnt) ? personWithoutEFBIDTripCnt+1 : personWithoutEFBIDTripCnt;
                 	
                 	if (isTripWithAtLeastOneCrewMemberWithEFBID && isUpdatedTrip) {
                 		updatedTripCnt++;
                     } else if (isTripWithAtLeastOneCrewMemberWithEFBID && !isUpdatedTrip) {
                     	syncTripCnt++;
+                    } else if (!isTripWithIdentifiedCrewMember){
+                        logInfo(Logger.WARNING, Logger.MSG_SYNC_SYNCINFO, "  Fahrt " +  r.getQualifiedName()+ " - Keines der Crewmitglieder in der Personenliste: "+ unidentifiedCrewMembers);
                     }
                 	
                 } else {
@@ -849,6 +872,7 @@ public class KanuEfbSyncTask extends ProgressTask {
             logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Fahrten zu ignorieren (nicht beendet): "+unfinishedTripCnt);
             logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Fahrten zu ignorieren (Motorboot/Ergo): "+nonCanoeingTripCnt);
             logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Fahrten zu ignorieren (kein unterstützter Bootstyp): "+nonSupportedBoatTypeTripCnt);
+            logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Fahrten zu ignorieren (leerer Bootstyp (unbekanntes Boot?)): "+emptyBoatRecordTripCnt); 
             logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Fahrten zu ignorieren (keines der Crew-Mitglieder hat Kanu-EFB-ID): "+personWithoutEFBIDTripCnt);
             logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "-----------");
             
