@@ -1687,14 +1687,15 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
                 try {
                     item = getSelectedListItem(list);
                     // it is possible that item is null when no item is selected in list.
-                    if (item==null) {
-                    	name=null;
-                    } else {
+                    if (item!=null) {
+                    	
 	                    if (list != personsAvailableList) {
 	                        name = item.text;
 	                    } else {
 	                        name = item.person.getQualifiedName();
 	                    }
+                    } else {
+                    	name=null;
                     }
                 } catch (Exception e) {
                 }
