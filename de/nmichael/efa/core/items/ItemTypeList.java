@@ -22,6 +22,9 @@ import de.nmichael.efa.gui.util.*;
 import java.awt.image.BufferedImage;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+
+import com.sun.mail.imap.protocol.Item;
+
 import javax.swing.border.EmptyBorder;
 
 public class ItemTypeList extends ItemType implements ActionListener, DocumentListener, KeyListener {
@@ -38,7 +41,10 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     int iconWidth = 0;
     int iconHeight = 0;
     private static final String LIST_SECTION_STRING = "---------- ";
+    //private static final String STR_DESTINATION_DELIMITER=     	"\u2192"; //
+    private static final String STR_DESTINATION_DELIMITER=     	"     -> ";
     private boolean showFilterField = false;
+    private boolean showPrettyList=false;
     
     class ListDataCellRenderer extends DefaultListCellRenderer {
         public Component getListCellRendererComponent(JList list, Object value,
@@ -87,10 +93,66 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
                 } catch(Exception eignore) {
                 }
             }
+           
+            if (showPrettyList) {
+            ItemTypeListData item = (ItemTypeListData)value;
+            
+            if (item.text.startsWith(LIST_SECTION_STRING)) {
+            	if (!iss) { setBackground(new Color(240,240,240)); }
+            	setHorizontalAlignment(JLabel.CENTER);
+          	
+            } else { // not a separator
+         
+ 	
+            	String theText=item.text;
+            	boolean cutText=false;
+            	
+            	if (theText.contains(STR_DESTINATION_DELIMITER)) {
+            		String[] itemParts= theText.split(STR_DESTINATION_DELIMITER);
+            		String firstPart="";
+            		String secondPart="";
+            		if (itemParts.length>1) {
+            			for (int i=0; i<itemParts.length-1; i++) {
+            				firstPart=firstPart.concat(itemParts[i]);
+            			}
+            			firstPart=firstPart.trim();
+            			secondPart=itemParts[itemParts.length-1].trim();
+            			
+            		} else {
+            			//itemparts=0 oder 1
+            			firstPart=item.text;
+            			secondPart="";
+            		}
+            		
+            		theText=firstPart.concat(" ").concat(secondPart);
+                    int stringWidth = label.getFontMetrics(label.getFont()).stringWidth(theText);
+                    while (list.getWidth()>0 &&(stringWidth>list.getWidth()-60) && (theText.length()>0)) {
+                    	theText=theText.substring(0, theText.length()-2);
+                    	secondPart=secondPart.substring(0,secondPart.length()-2);
+                    	stringWidth = label.getFontMetrics(label.getFont()).stringWidth(theText);
+                    	cutText=true;
+                    }
+ 
+                    if (cutText) {secondPart+="...";}
+            		
+            		this.setText("<html><table border=0 cellpadding=0 cellspacing=0 width="+(list.getWidth()-20)+"><tr><td align=left>"+firstPart+"</td><td align=right><font color=#999999>"+secondPart+"</font></td></tr></table></html>");
+            		setHorizontalAlignment(JLabel.LEFT);
+	            	this.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5)); 
+	            	
+            	} else {
+	            	setHorizontalAlignment(JLabel.LEFT);
+	            	this.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5)); 
+	            	setHorizontalTextPosition(10);
+            	}
+            }
+            }
+            
             return this;
         }
     }
 
+
+    
     class ItemTypeListData {
         String text;
         Object object;
@@ -120,12 +182,13 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     }
 
     public ItemTypeList(String name,
-            int type, String category, String description, boolean showFilterField) {
+            int type, String category, String description, boolean showFilterField, boolean showPrettyList) {
         this.name = name;
         this.type = type;
         this.category = category;
         this.description = description;
         this.showFilterField = showFilterField;
+        this.showPrettyList= showPrettyList;
         data = new DefaultListModel<ItemTypeListData>();
     }
     
@@ -140,7 +203,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     }
 
     public IItemType copyOf() {
-        return new ItemTypeList(name, type, category, description, this.showFilterField);
+        return new ItemTypeList(name, type, category, description, this.showFilterField, this.showPrettyList);
     }
 
     public void addItem(String text, Object object, boolean separator, char separatorHotkey) {
@@ -183,12 +246,36 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         }
     }
 
+    /* returns the number of items in the list.
+     * not all may be visible. If you want to get the size of the filtered list,
+     * use @see filteredSize() instead.
+     */
     public int size() {
         if (data == null) {
             return 0;
+        } else {
+        	return data.size();
         }
-        return data.size();
+        	
     }
+    
+    // returns the size of the list when the filter text field is applied.
+    public int filteredSize() {
+    	ListModel theList = null;
+    	
+        if (showFilterField==true) {
+        	theList = list.getModel();
+        } else {
+        	theList = data;
+        }
+        
+        if (theList==null) {
+        	return 0;
+        } else {
+        	return theList.getSize();
+        }
+    }
+    
 
     public String getItemText(int idx) {
         if (idx >= 0 && idx < data.size()) {
@@ -197,6 +284,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         return null;
     }
 
+    
     public Object getItemObject(int idx) {
         if (idx >= 0 && idx < data.size()) {
             return data.get(idx).object;
@@ -339,6 +427,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 	        filterPanel.add(myFilterLabel, BorderLayout.WEST);
 	        filterPanel.add(filterTextField, BorderLayout.CENTER);
 	        panelDescriptionAndFilter.add(filterPanel, BorderLayout.SOUTH);
+	        this.field=filterTextField; // by this, when the boat status list receives focus, and the filter text field is visible, the filter text field gets the focus.
         }
 
         mypanel.add(panelDescriptionAndFilter, BorderLayout.NORTH);

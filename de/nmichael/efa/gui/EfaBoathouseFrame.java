@@ -477,10 +477,10 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         toggleAvailableBoatsToPersons.setVisible(Daten.efaConfig.getValueEfaDirekt_listAllowToggleBoatsPersons());
 
         // Boat Lists
-        boatsAvailableList = new ItemTypeBoatstatusList("BOATSAVAILABLELIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("verfügbare Boote"), this, Daten.efaConfig.getValueEfaBoathouseFilterTextfieldStandardLists());
-        personsAvailableList = new ItemTypeBoatstatusList("PERSONSAVAILABLELIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("Personen"), this,Daten.efaConfig.getValueEfaBoathouseFilterTextfieldStandardLists());
-        boatsOnTheWaterList = new ItemTypeBoatstatusList("BOATSONTHEWATERLIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("Boote auf Fahrt"), this,Daten.efaConfig.getValueEfaBoathouseFilterTextfieldStandardLists());
-        boatsNotAvailableList = new ItemTypeBoatstatusList("BOATSNOTAVAILABLELIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("nicht verfügbare Boote"), this,Daten.efaConfig.getValueEfaBoathouseFilterTextfieldBoatsNotAvailableList());
+        boatsAvailableList = new ItemTypeBoatstatusList("BOATSAVAILABLELIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("verfügbare Boote"), this, Daten.efaConfig.getValueEfaBoathouseFilterTextfieldStandardLists(), Daten.efaConfig.getValueEfaBoathouseBetterListLook());
+        personsAvailableList = new ItemTypeBoatstatusList("PERSONSAVAILABLELIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("Personen"), this,Daten.efaConfig.getValueEfaBoathouseFilterTextfieldStandardLists(), Daten.efaConfig.getValueEfaBoathouseBetterListLook());
+        boatsOnTheWaterList = new ItemTypeBoatstatusList("BOATSONTHEWATERLIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("Boote auf Fahrt"), this,Daten.efaConfig.getValueEfaBoathouseFilterTextfieldStandardLists(), Daten.efaConfig.getValueEfaBoathouseBetterListLook());
+        boatsNotAvailableList = new ItemTypeBoatstatusList("BOATSNOTAVAILABLELIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("nicht verfügbare Boote"), this,Daten.efaConfig.getValueEfaBoathouseFilterTextfieldBoatsNotAvailableList(), Daten.efaConfig.getValueEfaBoathouseBetterListLook());
         boatsAvailableList.setFieldSize(200, 400);
         personsAvailableList.setFieldSize(200, 400);
         boatsOnTheWaterList.setFieldSize(200, 300);
@@ -1457,11 +1457,21 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             } else if (boatsNotAvailableList.isFocusOwner()) {
                 boatsNotAvailableList.setSelectedIndex(0);
             } else {
-                if (toggleAvailableBoatsToBoats.isSelected()) {
-                    boatsAvailableList.requestFocus();
+
+            	if (toggleAvailableBoatsToBoats.isSelected()) {
+            		//requesting a focus automatically brings the containing jframe to front 
+            		//(or, on windows, sets the corresponding entry in the task bar to a highlight mode
+            		//we only do want this if efa is already the front window. 
+            		//otherwise (like, a web browser in front), we do not request focus and do not
+            		//push efaBoathouseFrame to the front.
+                	if (this.isFocused()) {
+                		boatsAvailableList.requestFocus();
+                	}
                     boatsAvailableList.setSelectedIndex(0);
                 } else {
-                    personsAvailableList.requestFocus();
+                	if (this.isFocused()) {
+                		personsAvailableList.requestFocus();
+                	}
                     personsAvailableList.setSelectedIndex(0);
                 }
 
@@ -1685,22 +1695,31 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             while (item == null) {
                 try {
                     item = getSelectedListItem(list);
-                    if (list != personsAvailableList) {
-                        name = item.text;
+                    // it is possible that item is null due to the fact that no item is selected in list.
+                    if (item==null) {
+                    	name=null;
                     } else {
-                        name = item.person.getQualifiedName();
+	                    if (list != personsAvailableList) {
+	                        name = item.text;
+	                    } else {
+	                        name = item.person.getQualifiedName();
+	                    }
                     }
                 } catch (Exception e) {
                 }
+               
                 if (name == null || name.startsWith("---")) {
-                    item = null;
+                	//name is not set. So we try to select a single item 
+                	//in the list heading forward direction or backward direction
+                	//from the current selected index, we want to find an item
+                	item = null;
                     try {
                         int i = list.getSelectedIndex() + direction;
                         if (i < 0) {
                             i = 1; // i<0 kann nur erreicht werden, wenn vorher i=0 und direction=-1; dann darf nicht auf i=0 gesprungen werden, da wir dort herkommen, sondern auf i=1
                             direction = 1;
                         }
-                        if (i >= list.size()) {
+                        if (i >= list.filteredSize()) {
                             return;
                         }
                         list.setSelectedIndex(i);
