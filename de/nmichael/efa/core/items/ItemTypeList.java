@@ -43,8 +43,13 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     private static final String LIST_SECTION_STRING = "---------- ";
     //private static final String STR_DESTINATION_DELIMITER=     	"\u2192"; //
     private static final String STR_DESTINATION_DELIMITER=     	"     -> ";
+    //Spacings for pretty rendering
+    private static final int SPACING_BOATNAME_DESTINATION = 60; //60 pixels
+    private static final int SPACING_SCROLLBAR = 20;
+    
     private boolean showFilterField = false;
     private boolean showPrettyList=false;
+    
     
     class ListDataCellRenderer extends DefaultListCellRenderer {
         public Component getListCellRendererComponent(JList list, Object value,
@@ -102,12 +107,20 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
             	setHorizontalAlignment(JLabel.CENTER);
           	
             } else { // not a separator
-         
- 	
             	String theText=item.text;
             	boolean cutText=false;
-            	
+
             	if (theText.contains(STR_DESTINATION_DELIMITER)) {
+            		//an item with a destination delimiter is a current session.
+            		//for better readability, we then split the boat name and the destination
+            		//boat name is left-aligned, destination is right-aligned in a html table
+            		//(programming this in pure swing would be exhausting).
+            		
+            		//furthermore, the destination string is cut off on the right side,
+            		//if boat name including destination is wider than the list width.
+            		//so on a current session, boat name is displayed in full, and 
+            		//most part of the destination. The shorter the boat name, the more of 
+            		//the destination can be shown.
             		String[] itemParts= theText.split(STR_DESTINATION_DELIMITER);
             		String firstPart="";
             		String secondPart="";
@@ -124,9 +137,17 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
             			secondPart="";
             		}
             		
+            		int listWidth=list.getWidth();
+            		int maxStringWidth =listWidth-SPACING_BOATNAME_DESTINATION;
+            		if (iconWidth >0 ) {
+            			maxStringWidth= listWidth-SPACING_BOATNAME_DESTINATION-(iconWidth);
+            		}
+            		
             		theText=firstPart.concat(" ").concat(secondPart);
                     int stringWidth = label.getFontMetrics(label.getFont()).stringWidth(theText);
-                    while (list.getWidth()>0 &&(stringWidth>list.getWidth()-60) && (theText.length()>0)) {
+                    
+                    //listWidth can be zero directly after start of efaBoatHouse, so we stop under this condition.
+                    while (listWidth>0 &&(stringWidth>maxStringWidth) && (theText.length()>1)) {
                     	theText=theText.substring(0, theText.length()-2);
                     	secondPart=secondPart.substring(0,secondPart.length()-2);
                     	stringWidth = label.getFontMetrics(label.getFont()).stringWidth(theText);
@@ -135,21 +156,21 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
  
                     if (cutText) {secondPart+="...";}
             		
-            		this.setText("<html><table border=0 cellpadding=0 cellspacing=0 width="+(list.getWidth()-20)+"><tr><td align=left>"+firstPart+"</td><td align=right><font color=#999999>"+secondPart+"</font></td></tr></table></html>");
+            		this.setText("<html><table border=0 cellpadding=0 cellspacing=0 width="+(list.getWidth()-SPACING_SCROLLBAR-(iconWidth))+"><tr><td align=left>"+firstPart+"</td><td align=right><font color=#888888>"+secondPart+"</font></td></tr></table></html>");
             		setHorizontalAlignment(JLabel.LEFT);
 	            	this.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5)); 
-	            	
+	          
             	} else {
 	            	setHorizontalAlignment(JLabel.LEFT);
 	            	this.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5)); 
 	            	setHorizontalTextPosition(10);
             	}
             }
-            }
-            
-            return this;
         }
+        
+        return this;
     }
+}
 
 
     
@@ -190,6 +211,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         this.showFilterField = showFilterField;
         this.showPrettyList= showPrettyList;
         data = new DefaultListModel<ItemTypeListData>();
+       
     }
     
     public ItemTypeList(String name,

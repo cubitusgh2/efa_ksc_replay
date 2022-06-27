@@ -853,7 +853,6 @@ public class EfaConfig extends StorageObject implements IItemFactory {
             addParameter(efaBoathouseBetterListLook= new ItemTypeBoolean("efaBoathouseBetterListLook", false, 
             		IItemType.TYPE_EXPERT,BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),
             		International.getString("Hübschere Darstellung der Bootshaus-Listen")));
-           
             
             addParameter(efaDirekt_sortByAnzahl = new ItemTypeBoolean("BoatListSortBySeats", true,
                     IItemType.TYPE_EXPERT,BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),
@@ -1883,6 +1882,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
     public boolean getValueEfaBoathouseBetterListLook() {
     	return efaBoathouseBetterListLook.getValue();
     }
+
     public boolean getValueEfaDirekt_showUhr() {
         return efaDirekt_showUhr.getValue();
     }
