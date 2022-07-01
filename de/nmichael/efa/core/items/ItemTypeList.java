@@ -22,6 +22,9 @@ import de.nmichael.efa.gui.util.*;
 import java.awt.image.BufferedImage;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+
+import com.sun.mail.imap.protocol.Item;
+
 import javax.swing.border.EmptyBorder;
 
 public class ItemTypeList extends ItemType implements ActionListener, DocumentListener, KeyListener {
@@ -37,8 +40,15 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     String incrementalSearch = "";
     int iconWidth = 0;
     int iconHeight = 0;
-    private static final String LIST_SECTION_STRING = "---------- ";
+    private static final String LIST_SECTION_STRING = "----------";
+    private static final String STR_DESTINATION_DELIMITER=     	"     -> ";
+    //Spacings for pretty rendering
+    private static final int SPACING_BOATNAME_DESTINATION = 60; //60 pixels
+    private static final int SPACING_SCROLLBAR = 20;
+    
     private boolean showFilterField = false;
+    private boolean showPrettyList=false;
+    
     
     class ListDataCellRenderer extends DefaultListCellRenderer {
         public Component getListCellRendererComponent(JList list, Object value,
@@ -87,10 +97,83 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
                 } catch(Exception eignore) {
                 }
             }
-            return this;
-        }
+           
+            if (showPrettyList) {
+	            ItemTypeListData item = (ItemTypeListData)value;
+	         
+//	            if (item.text.startsWith(LIST_SECTION_STRING)) {
+	            if (item.separator) {
+	            	if (!iss) { setBackground(new Color(240,240,240)); }
+	            	setHorizontalAlignment(JLabel.CENTER);
+	            	this.setText(item.text.replaceAll(LIST_SECTION_STRING, ""));
+	          	
+	            } else { // not a separator
+	            	
+	            	String theText=item.text;
+	            	boolean cutText=false;
+	
+	            	if (theText.contains(STR_DESTINATION_DELIMITER)) {
+	            		//an item with a destination delimiter is a current session.
+	            		//for better readability, we then split the boat name and the destination
+	            		//boat name is left-aligned, destination is right-aligned in a html table
+	            		//(programming this in pure swing would be exhausting).
+	            		
+	            		//furthermore, the destination string is cut off on the right side,
+	            		//if boat name including destination is wider than the list width.
+	            		//so on a current session, boat name is displayed in full, and 
+	            		//most part of the destination. The shorter the boat name, the more of 
+	            		//the destination can be shown.
+	            		String[] itemParts= theText.split(STR_DESTINATION_DELIMITER);
+	            		String firstPart="";
+	            		String secondPart="";
+	            		if (itemParts.length>1) {
+	            			for (int i=0; i<itemParts.length-1; i++) {
+	            				firstPart=firstPart.concat(itemParts[i]);
+	            			}
+	            			firstPart=firstPart.trim();
+	            			secondPart=itemParts[itemParts.length-1].trim();
+	            			
+	            		} else {
+	            			//itemparts=0 oder 1
+	            			firstPart=item.text;
+	            			secondPart="";
+	            		}
+	            		
+	            		int listWidth=list.getWidth();
+	            		int firstPartLength=label.getFontMetrics(label.getFont()).stringWidth(firstPart);
+	            		int maxStringWidth =listWidth-SPACING_BOATNAME_DESTINATION-firstPartLength;
+	            		if (iconWidth >0 ) {
+	            			maxStringWidth= listWidth-SPACING_BOATNAME_DESTINATION-(iconWidth)-firstPartLength;
+	            		}
+	            		
+	                    int stringWidth = label.getFontMetrics(label.getFont()).stringWidth(secondPart);
+	                    
+	                    //listWidth can be zero directly after start of efaBoatHouse, so we stop under this condition.
+	                    while (listWidth>0 &&(stringWidth>maxStringWidth) && (secondPart.length()>0)) {
+	                    	secondPart=secondPart.substring(0,secondPart.length()-1).trim();
+	                    	stringWidth = label.getFontMetrics(label.getFont()).stringWidth(secondPart);
+	                    	cutText=true;
+	                    }
+	 
+	                    if (cutText &&secondPart.length()>0) {secondPart+="&hellip;";}
+	            		
+	            		this.setText("<html><table border=0 cellpadding=0 cellspacing=0 width="+(list.getWidth()-SPACING_SCROLLBAR-(iconWidth))+"><tr><td align=left>"+firstPart+"</td><td align=right><font color=#888888>"+secondPart+"</font></td></tr></table></html>");
+	            		setHorizontalAlignment(JLabel.LEFT);
+		            	this.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5)); 
+		          
+	            	} else {
+		            	setHorizontalAlignment(JLabel.LEFT);
+		            	this.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5)); 
+	            	}
+	            }
+	        }
+        
+        return this;
     }
+}
 
+
+    
     class ItemTypeListData {
         String text;
         Object object;
@@ -120,13 +203,15 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     }
 
     public ItemTypeList(String name,
-            int type, String category, String description, boolean showFilterField) {
+            int type, String category, String description, boolean showFilterField, boolean showPrettyList) {
         this.name = name;
         this.type = type;
         this.category = category;
         this.description = description;
         this.showFilterField = showFilterField;
+        this.showPrettyList= showPrettyList;
         data = new DefaultListModel<ItemTypeListData>();
+       
     }
     
     public ItemTypeList(String name,
@@ -140,7 +225,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     }
 
     public IItemType copyOf() {
-        return new ItemTypeList(name, type, category, description, this.showFilterField);
+        return new ItemTypeList(name, type, category, description, this.showFilterField, this.showPrettyList);
     }
 
     public void addItem(String text, Object object, boolean separator, char separatorHotkey) {
@@ -183,12 +268,36 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         }
     }
 
+    /* returns the number of items in the list.
+     * not all may be visible. If you want to get the size of the filtered list,
+     * use @see filteredSize() instead.
+     */
     public int size() {
         if (data == null) {
             return 0;
+        } else {
+        	return data.size();
         }
-        return data.size();
+        	
     }
+    
+    // returns the size of the list when the filter text field is applied.
+    public int filteredSize() {
+    	ListModel theList = null;
+    	
+        if (showFilterField==true) {
+        	theList = list.getModel();
+        } else {
+        	theList = data;
+        }
+        
+        if (theList==null) {
+        	return 0;
+        } else {
+        	return theList.getSize();
+        }
+    }
+    
 
     public String getItemText(int idx) {
         if (idx >= 0 && idx < data.size()) {
@@ -197,6 +306,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         return null;
     }
 
+    
     public Object getItemObject(int idx) {
         if (idx >= 0 && idx < data.size()) {
             return data.get(idx).object;
@@ -339,6 +449,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 	        filterPanel.add(myFilterLabel, BorderLayout.WEST);
 	        filterPanel.add(filterTextField, BorderLayout.CENTER);
 	        panelDescriptionAndFilter.add(filterPanel, BorderLayout.SOUTH);
+	        this.field=filterTextField; // by this, when the boat status list receives focus, and the filter text field is visible, the filter text field gets the focus.
         }
 
         mypanel.add(panelDescriptionAndFilter, BorderLayout.NORTH);
@@ -494,7 +605,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
             }
 
             Rectangle rect = list.getVisibleRect();
-            if (search.startsWith("---")) {
+            if (search.startsWith(LIST_SECTION_STRING)) {
                 list.setToolTipText(null);
             } else {
                 list.setToolTipText((search.length() > 0 ? search : null));
@@ -607,13 +718,13 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 	        	
 	        	for (int i=0; i< data.getSize();i++) {
 	        		ItemTypeListData item = data.getElementAt(i);
-		            if (item.toString().toLowerCase().contains(s.toLowerCase())||item.toString().startsWith(LIST_SECTION_STRING)){
+		            if (item.separator || item.toString().toLowerCase().contains(s.toLowerCase())){
 		                theModel.addElement(item);
 		            }
 	        	}
 	        	
 	        	// we have a problem if there are section strings at the end of the list
-	        	// remove all entrys from the bottom which start with LIST_SECTION_STRING
+	        	// remove all entries from the bottom which start with LIST_SECTION_STRING
 	
 	        	for (int i= theModel.getSize()-1; i>=0;i--) {
 	        		if (theModel.getElementAt(i).toString().startsWith(LIST_SECTION_STRING)){

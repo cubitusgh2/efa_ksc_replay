@@ -477,10 +477,10 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         toggleAvailableBoatsToPersons.setVisible(Daten.efaConfig.getValueEfaDirekt_listAllowToggleBoatsPersons());
 
         // Boat Lists
-        boatsAvailableList = new ItemTypeBoatstatusList("BOATSAVAILABLELIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("verfügbare Boote"), this, Daten.efaConfig.getValueEfaBoathouseFilterTextfieldStandardLists());
-        personsAvailableList = new ItemTypeBoatstatusList("PERSONSAVAILABLELIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("Personen"), this,Daten.efaConfig.getValueEfaBoathouseFilterTextfieldStandardLists());
-        boatsOnTheWaterList = new ItemTypeBoatstatusList("BOATSONTHEWATERLIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("Boote auf Fahrt"), this,Daten.efaConfig.getValueEfaBoathouseFilterTextfieldStandardLists());
-        boatsNotAvailableList = new ItemTypeBoatstatusList("BOATSNOTAVAILABLELIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("nicht verfügbare Boote"), this,Daten.efaConfig.getValueEfaBoathouseFilterTextfieldBoatsNotAvailableList());
+        boatsAvailableList = new ItemTypeBoatstatusList("BOATSAVAILABLELIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("verfügbare Boote"), this, Daten.efaConfig.getValueEfaBoathouseFilterTextfieldStandardLists(), Daten.efaConfig.getValueEfaBoathouseBetterListLook());
+        personsAvailableList = new ItemTypeBoatstatusList("PERSONSAVAILABLELIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("Personen"), this,Daten.efaConfig.getValueEfaBoathouseFilterTextfieldStandardLists(), Daten.efaConfig.getValueEfaBoathouseBetterListLook());
+        boatsOnTheWaterList = new ItemTypeBoatstatusList("BOATSONTHEWATERLIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("Boote auf Fahrt"), this,Daten.efaConfig.getValueEfaBoathouseFilterTextfieldStandardLists(), Daten.efaConfig.getValueEfaBoathouseBetterListLook());
+        boatsNotAvailableList = new ItemTypeBoatstatusList("BOATSNOTAVAILABLELIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("nicht verfügbare Boote"), this,Daten.efaConfig.getValueEfaBoathouseFilterTextfieldBoatsNotAvailableList(), Daten.efaConfig.getValueEfaBoathouseBetterListLook());
         boatsAvailableList.setFieldSize(200, 400);
         personsAvailableList.setFieldSize(200, 400);
         boatsOnTheWaterList.setFieldSize(200, 300);

@@ -28,6 +28,7 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
     public static final int SEATS_OTHER = 99;
     public static final String TYPE_OTHER = "";
     public static final String RIGGER_OTHER = "";
+    private static final String STR_DESTINATION_DELIMITER=     	"     -> ";
 
     EfaBoathouseFrame efaBoathouseFrame;
 
@@ -40,8 +41,8 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
 
     public ItemTypeBoatstatusList(String name,
             int type, String category, String description,
-            EfaBoathouseFrame efaBoathouseFrame, boolean showFilterField) {
-        super(name, type, category, description, showFilterField);
+            EfaBoathouseFrame efaBoathouseFrame, boolean showFilterField, boolean showPrettyList) {
+        super(name, type, category, description, showFilterField, showPrettyList);
         this.efaBoathouseFrame = efaBoathouseFrame;
     }
     
@@ -209,7 +210,8 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
                     if (lr != null) {
                         String dest = lr.getDestinationAndVariantName();
                         if (dest != null && dest.length() > 0) {
-                            bs.name += "     -> " + dest;
+                            bs.name += STR_DESTINATION_DELIMITER + dest;              	
+                    
                         }
                     }
                 }
