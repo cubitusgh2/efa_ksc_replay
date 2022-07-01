@@ -13,6 +13,7 @@ package de.nmichael.efa.gui;
 import de.nmichael.efa.Daten;
 import de.nmichael.efa.core.config.AdminRecord;
 import de.nmichael.efa.core.items.*;
+import de.nmichael.efa.data.StatisticsRecord;
 import de.nmichael.efa.data.storage.*;
 import de.nmichael.efa.data.types.*;
 import de.nmichael.efa.util.*;
@@ -36,6 +37,8 @@ public class DataExportDialog extends BaseDialog {
     private JRadioButton fileTypeCsv;
     private ItemTypeStringList encoding;
     private ItemTypeFile file;
+    private ItemTypeString fileTypeCsvSeparator;
+    private ItemTypeString fileTypeCsvQuotes;
 
     private StorageObject persistence;
     private AdminRecord admin;
@@ -180,19 +183,35 @@ public class DataExportDialog extends BaseDialog {
                 fileTypeChanged();
             }
         });
+        
+        fileTypeCsvSeparator=new ItemTypeString(StatisticsRecord.OUTPUTCSVSEPARATOR, "|",
+                IItemType.TYPE_PUBLIC, "",
+                International.getString("Feldtrenner") + " (CSV)");
+        fileTypeCsvSeparator.setEnabled(false);//Not enabled by default, as XML export is standard
+        fileTypeCsvSeparator.setMinCharacters(1);
+        fileTypeCsvQuotes = new ItemTypeString(StatisticsRecord.OUTPUTCSVQUOTES, "\"",
+                IItemType.TYPE_PUBLIC, "",
+                International.getString("Texttrenner") + " (CSV)");
+        fileTypeCsvQuotes.setEnabled(false);//Not enabled by default, as XML export is standard
+        fileTypeCsvQuotes.setMinCharacters(1);
+        
         filePanel.add(fileTypeLabel, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE,
                 new Insets(10, 0, 0, 0), 0, 0));
         filePanel.add(fileTypeXml, new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE,
                 new Insets(10, 0, 0, 0), 0, 0));
         filePanel.add(fileTypeCsv, new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE,
                 new Insets(0, 0, 0, 0), 0, 0));
+
+        fileTypeCsvSeparator.displayOnGui(this, filePanel, 4);
+        fileTypeCsvQuotes.displayOnGui(this, filePanel, 5);
+        
         encoding = new ItemTypeStringList("ENCODING", Daten.ENCODING_UTF,
                 new String[] { Daten.ENCODING_UTF, Daten.ENCODING_ISO },
                 new String[] { Daten.ENCODING_UTF, Daten.ENCODING_ISO },
                 IItemType.TYPE_PUBLIC, "",
                 International.getStringWithMnemonic("Zeichensatz")
                 );
-        encoding.displayOnGui(this, filePanel, 2);
+        encoding.displayOnGui(this, filePanel, 6);
         
         String dir = Daten.efaConfig.getLastExportDirectory();
         if (dir == null || dir.length() == 0 || !(new File(dir)).isDirectory()) {
@@ -209,13 +228,14 @@ public class DataExportDialog extends BaseDialog {
                     International.getString("Export in Datei"));
         file.setNotNull(true);
         file.setPadding(0, 0, 0, 10);
-        file.displayOnGui(this, filePanel, 3);
+        file.displayOnGui(this, filePanel, 7);
         mainPanel.add(filePanel, BorderLayout.SOUTH);
 
         closeButton.setIcon(getIcon(BaseDialog.IMAGE_RUN));
         closeButton.setIconTextGap(10);
     }
 
+    
     public void keyAction(ActionEvent evt) {
         _keyAction(evt);
     }
@@ -236,6 +256,8 @@ public class DataExportDialog extends BaseDialog {
                 }
             }
         }
+        fileTypeCsvSeparator.setEnabled(!xml);
+        fileTypeCsvQuotes.setEnabled(!xml);
 
     }
 
@@ -268,6 +290,19 @@ public class DataExportDialog extends BaseDialog {
             return;
         }
         
+        if (format == DataExport.Format.csv ) {
+        	if (!fileTypeCsvQuotes.isValidInput()) {
+        		Dialog.error(fileTypeCsvQuotes.getInvalidErrorText());
+        		fileTypeCsvQuotes.requestFocus();
+        		return;
+        	}
+           	if (!fileTypeCsvSeparator.isValidInput()) {
+        		Dialog.error(fileTypeCsvQuotes.getInvalidErrorText());
+        		fileTypeCsvSeparator.requestFocus();
+        		return;
+           	}
+        }
+        
         Daten.efaConfig.setLastExportDirectory(EfaUtil.getPathOfFile(fname));
 
         if ((new File(fname).exists())) {
@@ -286,7 +321,7 @@ public class DataExportDialog extends BaseDialog {
             selection = filteredData;
         }
         DataExport export = new DataExport(persistence, validAt, selection,
-                fieldNames, format, encoding.getValue(), fname, DataExport.EXPORT_TYPE_TEXT);
+                fieldNames, format, encoding.getValue(), fname, DataExport.EXPORT_TYPE_TEXT, fileTypeCsvSeparator.getValue(), fileTypeCsvQuotes.getValue());
         int cnt = export.runExport();
         if (cnt >= 0) {
             Dialog.infoDialog(International.getMessage("{count} Datensätze erfolgreich exportiert.", cnt));

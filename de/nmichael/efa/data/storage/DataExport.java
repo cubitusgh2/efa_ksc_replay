@@ -37,9 +37,11 @@ public class DataExport {
     private String exportType;
     private boolean versionized;
     private String lastError;
+    private String csvDelimiter;
+    private String csvQuote;
 
     public DataExport(StorageObject storageObject, long validAt, Vector<DataRecord> selection,
-            String[] fields, Format format, String encoding, String filename, String exportType) {
+            String[] fields, Format format, String encoding, String filename, String exportType, String csvDelim, String csvQuote) {
         this.storageObject = storageObject;
         this.validAt = validAt;
         this.selection = selection;
@@ -50,6 +52,8 @@ public class DataExport {
         this.exportType = exportType;
         this.versionized = storageObject.data().getMetaData().isVersionized();
         this.exportAllLatest = versionized && selection == null && validAt < 0;
+        this.csvDelimiter = csvDelim;
+        this.csvQuote = csvQuote;
     }
 
     public int runExport() {
@@ -62,7 +66,7 @@ public class DataExport {
             }
             if (format == Format.csv) {
                 for (int i=0; i<fields.length; i++) {
-                    fw.write( (i > 0 ? "|" : "") + fields[i]);
+                    fw.write( (i > 0 ? csvDelimiter : "") + fields[i]);
                 }
                 fw.write("\n");
             }
@@ -123,13 +127,23 @@ public class DataExport {
                 }
                 for (int i = 0; i < fields.length; i++) {
                     String value = r.getAsText(fields[i]);
+                    Boolean isTextField= getIsTextField(r, fields[i]);
+                    
                     if (format == Format.xml) {
                         if (value != null && value.length() > 0) {
                             fw.write("<" + fields[i] + ">" + EfaUtil.escapeXml(value) + "</" + fields[i] + ">");
                         }
                     }
                     if (format == Format.csv) {
-                        fw.write((i > 0 ? "|" : "") + (value != null ? EfaUtil.replace(value, "|", "", true) : ""));
+                    	if (isTextField) {
+                    		//if (and only if) we export a string type field, include quotes, als long as the value is not empty 
+                            fw.write((i > 0 ? csvDelimiter : "") + 
+                            		(value != null ? csvQuote : "") + 
+                            		(value != null ? EfaUtil.replace(value, csvDelimiter, "", true) : "") +
+                            		(value != null ? csvQuote : ""));                    		
+                    	} else {
+                            fw.write((i > 0 ? csvDelimiter : "") + (value != null ? EfaUtil.replace(value, csvDelimiter, "", true) : ""));                    		
+                    	}
                     }
                 }
                 if (format == Format.xml) {
@@ -147,6 +161,22 @@ public class DataExport {
         }
     }
 
+/*
+ * Checks if a field is a textfield in the datarecord.
+ * textfields need quotes when exported to CSV.
+ */
+    private Boolean getIsTextField(DataRecord r, String fieldName) {
+		int fieldType=r.getFieldType(fieldName);
+		
+		for (int i=0; i<IDataAccess.STRINGBASED_DATATYPES.length; i++) {
+			if (IDataAccess.STRINGBASED_DATATYPES[i]==fieldType) {
+				return true;
+			}
+		}
+		
+		return false;
+    }
+    
     public String getLastError() {
         return lastError;
     }
