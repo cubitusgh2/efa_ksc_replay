@@ -1680,27 +1680,38 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         }
         try {
             String name = null;
+            Boolean isSeparator = false;
 
             ItemTypeBoatstatusList.BoatListItem item = null;
             while (item == null) {
                 try {
                     item = getSelectedListItem(list);
-                    if (list != personsAvailableList) {
-                        name = item.text;
+                    // it is possible that item is null due to the fact that no item is selected in list.
+                    if (item==null) {
+                    	name=null;
                     } else {
-                        name = item.person.getQualifiedName();
+	                    if (list != personsAvailableList) {
+	                        name = item.text;
+	                    } else {
+	                        name = item.person.getQualifiedName();
+	                    }
+	                    isSeparator=list.getSelectedItemIsSeparator();
                     }
                 } catch (Exception e) {
                 }
-                if (name == null || name.startsWith("---")) {
-                    item = null;
+               
+                if (name == null || isSeparator ) {
+                	//name is not set. So we try to select a single item 
+                	//in the list heading forward direction or backward direction
+                	//from the current selected index, we want to find an item
+                	item = null;
                     try {
                         int i = list.getSelectedIndex() + direction;
                         if (i < 0) {
                             i = 1; // i<0 kann nur erreicht werden, wenn vorher i=0 und direction=-1; dann darf nicht auf i=0 gesprungen werden, da wir dort herkommen, sondern auf i=1
                             direction = 1;
                         }
-                        if (i >= list.size()) {
+                        if (i >= list.filteredSize()) {
                             return;
                         }
                         list.setSelectedIndex(i);
