@@ -40,11 +40,12 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     String incrementalSearch = "";
     int iconWidth = 0;
     int iconHeight = 0;
-    private static final String LIST_SECTION_STRING = "----------";
+    protected static final String LIST_SECTION_STRING = "------";
     private static final String STR_DESTINATION_DELIMITER=     	"     -> ";
     //Spacings for pretty rendering
     private static final int SPACING_BOATNAME_DESTINATION = 60; //60 pixels
-    private static final int SPACING_SCROLLBAR = 20;
+	private static final int SPACING_SCROLLBAR = 28;
+	private static final int HORZ_SINGLE_BORDER=5;
     
     private boolean showFilterField = false;
     private boolean showPrettyList=false;
@@ -52,8 +53,8 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     
     class ListDataCellRenderer extends DefaultListCellRenderer {
         public Component getListCellRendererComponent(JList list, Object value,
-                int index, boolean iss, boolean chf) {
-            super.getListCellRendererComponent(list, value, index, iss, chf);
+                int index, boolean isSelected, boolean chf) {
+            super.getListCellRendererComponent(list, value, index, isSelected, chf);
 
             if (iconWidth > 0 && iconHeight > 0) {
                 try {
@@ -101,17 +102,18 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
             if (showPrettyList) {
 	            ItemTypeListData item = (ItemTypeListData)value;
 	         
-//	            if (item.text.startsWith(LIST_SECTION_STRING)) {
 	            if (item.separator) {
-	            	if (!iss) { setBackground(new Color(240,240,240)); }
+	                if (!isSelected) { setBackground(new Color(240,240,240)); }
 	            	setHorizontalAlignment(JLabel.CENTER);
-	            	this.setText(item.text.replaceAll(LIST_SECTION_STRING, ""));
+	            
+	            	this.setBorder(BorderFactory.createEmptyBorder(2, HORZ_SINGLE_BORDER, 2, HORZ_SINGLE_BORDER)); 
+	            	//this.setText(item.text.replaceAll(LIST_SECTION_STRING, ""));
 	          	
 	            } else { // not a separator
 	            	
 	            	String theText=item.text;
 	            	boolean cutText=false;
-	
+	            	
 	            	if (theText.contains(STR_DESTINATION_DELIMITER)) {
 	            		//an item with a destination delimiter is a current session.
 	            		//for better readability, we then split the boat name and the destination
@@ -139,7 +141,8 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 	            			secondPart="";
 	            		}
 	            		
-	            		int listWidth=list.getWidth();
+	            		int listWidth=list.getParent().getWidth()-2*HORZ_SINGLE_BORDER-2;
+	            		
 	            		int firstPartLength=label.getFontMetrics(label.getFont()).stringWidth(firstPart);
 	            		int maxStringWidth =listWidth-SPACING_BOATNAME_DESTINATION-firstPartLength;
 	            		if (iconWidth >0 ) {
@@ -156,14 +159,16 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 	                    }
 	 
 	                    if (cutText &&secondPart.length()>0) {secondPart+="&hellip;";}
-	            		
-	            		this.setText("<html><table border=0 cellpadding=0 cellspacing=0 width="+(list.getWidth()-SPACING_SCROLLBAR-(iconWidth))+"><tr><td align=left>"+firstPart+"</td><td align=right><font color=#888888>"+secondPart+"</font></td></tr></table></html>");
+	                    
+	            		this.setText("<html><table border=0 cellpadding=0 cellspacing=0 width='"+(listWidth)+ "'>"
+	            				+ "<tr><td align=left>"+firstPart+"</td><td align=right><font color=#888888>"+secondPart+"</font></td></tr>"
+	            						+ "</table></html>");
 	            		setHorizontalAlignment(JLabel.LEFT);
-		            	this.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5)); 
+		            	this.setBorder(BorderFactory.createEmptyBorder(2, HORZ_SINGLE_BORDER, 2, HORZ_SINGLE_BORDER)); 
 		          
 	            	} else {
 		            	setHorizontalAlignment(JLabel.LEFT);
-		            	this.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5)); 
+		            	this.setBorder(BorderFactory.createEmptyBorder(2, HORZ_SINGLE_BORDER, 2, HORZ_SINGLE_BORDER)); 
 	            	}
 	            }
 	        }
@@ -358,8 +363,11 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 	        filterTextField.setMargin(new Insets(0,2,0,0));
         }
         popup = new JPopupMenu();
-        scrollPane = new JScrollPane();
+        //Vertical scrollbar shall be shown always, because better ListCellRendering does not work optically well when
+        //scrollbar is shown only when needed
+        scrollPane = new JScrollPane(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         this.field = scrollPane;
+
         mypanel = new JPanel();
         mypanel.setLayout(new BorderLayout());
 
@@ -554,7 +562,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 
                 if (incrementalSearch == null || incrementalSearch.length() == 0) {
                     // if we haven't searched for anything before, jump to the start of this section
-                    while (start > 0 && !((String) theData.get(start).text).startsWith(LIST_SECTION_STRING)) {
+                    while (start > 0 && !(theData.get(start).separator)) {
                         start--;
                     }
                 }
@@ -631,6 +639,18 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         } catch (Exception e) {
             return null;
         }
+    }
+    
+    public boolean getSelectedItemIsSeparator() {
+        try {
+            if (list == null || list.isSelectionEmpty()) {
+                return false;
+            }
+            ItemTypeListData item = (ItemTypeListData)list.getSelectedValue();
+            return item.separator;
+        } catch (Exception e) {
+            return false;
+        }    	
     }
 
     public String getSelectedText() {
@@ -727,7 +747,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 	        	// remove all entries from the bottom which start with LIST_SECTION_STRING
 	
 	        	for (int i= theModel.getSize()-1; i>=0;i--) {
-	        		if (theModel.getElementAt(i).toString().startsWith(LIST_SECTION_STRING)){
+	        		if (theModel.getElementAt(i).separator){
 	        			theModel.removeElementAt(i);
 	        		}
 	        		else {
