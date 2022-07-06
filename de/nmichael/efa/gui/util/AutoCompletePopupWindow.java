@@ -105,7 +105,7 @@ public class AutoCompletePopupWindow extends JWindow {
         this.pack();
     }
 
-    private int setListData(AutoCompleteList list) {
+    private int setListData(AutoCompleteList list, String filterText) {
         list.update();
         String[] data = autoCompleteLists.get(list);
         Long scn = autoCompleteSCN.get(list);
@@ -114,10 +114,27 @@ public class AutoCompletePopupWindow extends JWindow {
             autoCompleteLists.put(list, data);
             autoCompleteSCN.put(list, new Long(list.getSCN()));
         }
-        this.list.setListData(data);
+        setListDataAndFilter(list, data, filterText);
+        //this.list.setListData(data);
         return data.length;
     }
 
+    private void setListDataAndFilter(AutoCompleteList theList, String[] data, String filterText) {
+    	Vector <String> filterData= new Vector();
+    	if (!filterText.isEmpty()) {
+    		String searchFor=filterText.toLowerCase();
+    		for (int i=0;i<data.length; i++) {
+        		if (data[i].toLowerCase().contains(searchFor)){
+        			filterData.add(data[i]);
+        		}
+        	}
+        	this.list.setListData(filterData.toArray());	
+    	} else {
+    		this.list.setListData(data);
+    	}
+    	
+    }
+    
     private void showAtTextField(JTextField field) {
         if (showingAt == field) {
             // Unter Windows bewirkt toFront(), daß der ursprüngliche Frame den Fokus verliert, daher muß unter Windows darauf verzichtet werden
@@ -204,7 +221,16 @@ public class AutoCompletePopupWindow extends JWindow {
                 window = new AutoCompletePopupWindow(Dialog.frameCurrent());
             }
             window.callback = callback;
-            if (window.setListData(list) == 0) {
+            int position=field.getSelectionStart();
+            
+            String searchElement="";
+            if (position>0) {
+            	searchElement=eintrag.substring(0, position);
+            } else {
+            	searchElement=eintrag;
+            }
+            
+            if (window.setListData(list,searchElement) == 0) {
                 return;
             }
             window.showAtTextField(field);

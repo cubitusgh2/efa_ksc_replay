@@ -32,7 +32,8 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
         up,
         delete,
         enter,
-        escape
+        escape,
+        down
     }
 
     protected boolean showButton;
@@ -269,7 +270,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
         String base = null;
 
         Mode mode = Mode.none; // 0
-        if (e == null || (EfaUtil.isRealChar(e) && e.getKeyCode() != KeyEvent.VK_ENTER) || e.getKeyCode() == KeyEvent.VK_DOWN) {
+        if (e == null || (EfaUtil.isRealChar(e) && e.getKeyCode() != KeyEvent.VK_ENTER) | e.getKeyCode() == KeyEvent.VK_DOWN) {
             mode = Mode.normal; // 1
         } else if (e.getKeyCode() == KeyEvent.VK_UP) {
             mode = Mode.up; // 2
@@ -279,6 +280,8 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
             mode = Mode.enter; // 4
         } else if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
             mode = Mode.escape; // 5
+        } else if (e.getKeyCode()==KeyEvent.VK_DOWN){
+        	mode = Mode.down;
         }
 
         //System.out.println("autoComplete("+e+") on "+getName()+" with text '"+field.getText()+"' in mode "+mode);
@@ -289,7 +292,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
         boolean matching = false;
 
         if (mode == Mode.normal
-                || ((mode == Mode.enter || mode == Mode.escape || mode == Mode.none) && field.getText().length() > 0)) {
+                || ((mode == Mode.enter || mode == Mode.escape ||  mode == Mode.none) && field.getText().length() > 0)) {
 
             // remove leading spaces
             String spc = field.getText();
@@ -343,7 +346,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
                 matching = true;
             }
             if (withPopup && popupComplete && e != null && mode != Mode.none) {
-                AutoCompletePopupWindow.showAndSelect(field, list, (complete != null ? complete : ""), null);
+                AutoCompletePopupWindow.showAndSelect(field, list, (complete != null ? complete : field.getText()), null);
             }
         }
 
@@ -373,13 +376,16 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
             }
         }
         
-        if (mode == Mode.delete) {
+        
+       if (mode == Mode.delete) {
             if ((complete = list.getFirst(field.getText().toLowerCase().trim())) != null
                     && (complete.equals(field.getText()))) {
                 matching = true;
             }
+            if (withPopup && popupComplete && e != null && mode != Mode.none) {
+                AutoCompletePopupWindow.showAndSelect(field, list, (complete != null ? complete : field.getText()), null);
+            }
         }
-
         // make sure to accept value as known which have a known base part (everything before ignoreEverythingAfter)
         String ignoredString = null;
         int ignorePos = -1;
