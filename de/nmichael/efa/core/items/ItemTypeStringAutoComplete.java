@@ -18,6 +18,7 @@ import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.KeyEvent;
+import java.util.Collections;
 import java.util.Vector;
 
 import javax.swing.JButton;
@@ -25,7 +26,6 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 import de.nmichael.efa.Daten;
-import de.nmichael.efa.core.config.EfaConfig;
 import de.nmichael.efa.data.LogbookRecord;
 import de.nmichael.efa.gui.SimpleOptionInputDialog;
 import de.nmichael.efa.gui.util.AutoCompleteList;
@@ -553,6 +553,27 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
             int radius = (name.length() < 6 ? name.length() / 2 : 3);
             neighbours = list.getNeighbours(name, radius, (isCheckPermutations ? 6 : 0));
         }
+        
+        if (Daten.efaConfig.getValuePopupContainsMode()) {
+        	//if the autocomplete list shall support full text search, so should the spell checking
+        	//it is a quite common mistake that the user enters some characters into the field,
+        	//selects an item and presses TAB (which leads to a focusLost event, and the selected item is not activated)
+        	//so all elements *containing* the entered value should be added.
+        	
+        	if (list.getExact(name)==null) {
+        		//no exact match --> possibly misspelled	
+	        	
+	        	if (neighbours==null) {
+	        		neighbours=new Vector<String>();
+	        	}
+	        	list.setFilterText(name);
+	        	neighbours.addAll(list.getDataVisibleFiltered());
+	        	neighbours.remove(name);
+	        	Collections.sort(neighbours);
+	        	list.setFilterText(null);
+        	}
+        }
+        
         if (neighbours != null && neighbours.size() > 0) {
             ItemTypeList item = new ItemTypeList("NAME", IItemType.TYPE_PUBLIC, "",
                     LogString.itemIsUnknown(name, International.getString("Name")) + "\n" +
@@ -625,14 +646,13 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
         }
 
         if (e == null || mode == Mode.enter || mode == Mode.escape) {
-            System.out.println("trimming");            
         	field.setText(field.getText().trim());
         }
         boolean matching = false;
 
         String searchFor=field.getText().toLowerCase();
         String complete="";
-        String base="";
+
         if (mode == Mode.normal || ((mode == Mode.enter || mode == Mode.escape || mode == Mode.none))) {
 
 
@@ -640,7 +660,6 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
             if (e != null && e.getKeyCode() == KeyEvent.VK_DOWN) {
                 complete = list.getNext(searchFor);
                 if (complete == null) {
-                    System.out.println("Down getnext fand nix, ruft getFirst auf"+complete);
                     complete = list.getFirst(searchFor);
                 }
                 
@@ -660,7 +679,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
 
             }
 
-            if (e != null && (mode != Mode.normal && e.getKeyCode() == KeyEvent.VK_ENTER)) { // nur bei wirklichen Eingaben
+            if (e != null && (mode != Mode.normal && (e.getKeyCode() == KeyEvent.VK_ENTER))) { // nur bei wirklichen Eingaben
               	complete = AutoCompletePopupWindow.getWindow().getSelectedEintrag();
             	field.setText(complete);
                 matching = true;

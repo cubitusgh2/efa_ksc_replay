@@ -117,6 +117,10 @@ public class AutoCompleteList {
         return dataVisible;
     }
 
+    public Vector<String> getDataVisibleFiltered(){
+    	return dataVisibleFiltered;
+    }
+    
     public void setDataVisible(Vector<String> dataVisible) {
         this.dataVisible = dataVisible;
         updateVisibleFilteredList();
