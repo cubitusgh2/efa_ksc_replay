@@ -1,3 +1,4 @@
+
 /**
  * Title:        efa - elektronisches Fahrtenbuch für Ruderer
  * Copyright:    Copyright (c) 2001-2011 by Nicolas Michael
@@ -105,7 +106,7 @@ public class AutoCompletePopupWindow extends JWindow {
         this.pack();
     }
 
-    private int setListData(AutoCompleteList list, String filterText) {
+    private int setListData(AutoCompleteList list) {
         list.update();
         String[] data = autoCompleteLists.get(list);
         Long scn = autoCompleteSCN.get(list);
@@ -114,27 +115,10 @@ public class AutoCompletePopupWindow extends JWindow {
             autoCompleteLists.put(list, data);
             autoCompleteSCN.put(list, new Long(list.getSCN()));
         }
-        setListDataAndFilter(list, data, filterText);
-        //this.list.setListData(data);
+        this.list.setListData(list.getData());
         return data.length;
     }
 
-    private void setListDataAndFilter(AutoCompleteList theList, String[] data, String filterText) {
-    	Vector <String> filterData= new Vector();
-    	if (!filterText.isEmpty()) {
-    		String searchFor=filterText.toLowerCase();
-    		for (int i=0;i<data.length; i++) {
-        		if (data[i].toLowerCase().contains(searchFor)){
-        			filterData.add(data[i]);
-        		}
-        	}
-        	this.list.setListData(filterData.toArray());	
-    	} else {
-    		this.list.setListData(data);
-    	}
-    	
-    }
-    
     private void showAtTextField(JTextField field) {
         if (showingAt == field) {
             // Unter Windows bewirkt toFront(), daß der ursprüngliche Frame den Fokus verliert, daher muß unter Windows darauf verzichtet werden
@@ -184,6 +168,15 @@ public class AutoCompletePopupWindow extends JWindow {
         } catch (Exception e) {
         }
     }
+   
+    /*
+     * Returns the currently selected entry in the popup window.
+     * Needed for filtered autocomplete lists.
+     */
+    
+    public  String getSelectedEintrag() {
+    	return (String)list.getSelectedValue();
+    }
 
     private void listEntrySelected(MouseEvent e) {
         if (showingAt != null) {
@@ -221,16 +214,7 @@ public class AutoCompletePopupWindow extends JWindow {
                 window = new AutoCompletePopupWindow(Dialog.frameCurrent());
             }
             window.callback = callback;
-            int position=field.getSelectionStart();
-            
-            String searchElement="";
-            if (position>0) {
-            	searchElement=eintrag.substring(0, position);
-            } else {
-            	searchElement=eintrag;
-            }
-            
-            if (window.setListData(list,searchElement) == 0) {
+            if (window.setListData(list) == 0) {
                 return;
             }
             window.showAtTextField(field);
