@@ -144,8 +144,16 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
         ((JTextField)field).addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(KeyEvent e) { autoComplete(e); }
         });
+
+        ((JTextField)field).addKeyListener(new java.awt.event.KeyAdapter() {
+        	//needed for dialogs where some button is the default button and reacts to ENTER.
+        	//and if the autocomplete list is defined as filtered list.
+        	public void keyPressed(KeyEvent e) { 
+            	if ((e!=null) && e.getKeyCode()==KeyEvent.VK_ENTER && Daten.efaConfig.getValuePopupContainsMode()) {autoComplete(e);}}
+        });        
     }
 
+    
     public int displayOnGui(Window dlg, JPanel panel, int x, int y) {
         int plusy = super.displayOnGui(dlg, panel, x, y);
         if (button != null) {
@@ -673,7 +681,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
                 }                	
             }
 
-            if (e != null && (mode != Mode.normal && (e.getKeyCode() == KeyEvent.VK_ENTER))) { // nur bei wirklichen Eingaben
+            if (e != null && (mode != Mode.normal && (e.getKeyCode() == KeyEvent.VK_ENTER) && AutoCompletePopupWindow.isShowingAt(field))) { // nur bei wirklichen Eingaben
               	complete = AutoCompletePopupWindow.getWindow().getSelectedEintrag();
             	field.setText(complete);
                 matching = true;
@@ -702,6 +710,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
         
        if (mode == Mode.delete) {
             if (withPopup && popupComplete && e != null && mode != Mode.none) {
+            	complete = list.getFirst(field.getText());
                 AutoCompletePopupWindow.showAndSelect(field, list, (complete != null ? complete : field.getText()), null);
             }
         }

@@ -55,6 +55,8 @@ public class SimpleInputDialog extends BaseDialog {
     	if (Daten.efaConfig.getValuePopupContainsMode()==false) {
     		//ENTER Key handling needed for AutoCompleteLists which use filtered lists instead of autocomplete lists
     		KEYACTION_ENTER = addKeyAction("ENTER");
+    	}else {
+    		this.getRootPane().setDefaultButton(closeButton);
     	}
 
         // create GUI items
