@@ -10,19 +10,21 @@
 
 package de.nmichael.efa.gui;
 
-import de.nmichael.efa.*;
-import de.nmichael.efa.util.*;
+import java.awt.Frame;
+import java.awt.GridBagLayout;
+import java.awt.Window;
+import java.awt.event.ActionEvent;
+import java.util.Vector;
+
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+
+import de.nmichael.efa.core.items.IItemType;
+import de.nmichael.efa.core.items.ItemTypeLabel;
+import de.nmichael.efa.core.items.ItemTypeString;
 import de.nmichael.efa.util.Dialog;
-import de.nmichael.efa.core.items.*;
-import de.nmichael.efa.data.storage.*;
-import de.nmichael.efa.data.types.*;
-import de.nmichael.efa.gui.BaseDialog;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.border.*;
-import java.util.*;
-import javax.swing.event.ChangeEvent;
+import de.nmichael.efa.util.EfaUtil;
+import de.nmichael.efa.util.International;
 
 // @i18n complete
 public class SimpleInputDialog extends BaseDialog {
@@ -40,24 +42,12 @@ public class SimpleInputDialog extends BaseDialog {
         this.items = items;
     }
 
-    public void _keyAction(ActionEvent evt) {
-    	if (evt.getActionCommand().equals(KEYACTION_ENTER)) {
-            closeButton_actionPerformed(evt);
-        }
-        super._keyAction(evt);
-    }
-
     public void keyAction(ActionEvent evt) {
         _keyAction(evt);
     }
 
     protected void iniDialog() throws Exception {
-    	if (Daten.efaConfig.getValuePopupContainsMode()==false) {
-    		//ENTER Key handling needed for AutoCompleteLists which use filtered lists instead of autocomplete lists
-    		KEYACTION_ENTER = addKeyAction("ENTER");
-    	}else {
-    		this.getRootPane().setDefaultButton(closeButton);
-    	}
+   		this.getRootPane().setDefaultButton(closeButton);
 
         // create GUI items
         mainPanel.setLayout(new GridBagLayout());
