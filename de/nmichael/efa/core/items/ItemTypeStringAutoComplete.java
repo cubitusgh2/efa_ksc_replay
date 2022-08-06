@@ -1,4 +1,3 @@
-
 /**
  * Title:        efa - elektronisches Fahrtenbuch für Ruderer
  * Copyright:    Copyright (c) 2001-2011 by Nicolas Michael
@@ -553,7 +552,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
             int radius = (name.length() < 6 ? name.length() / 2 : 3);
             neighbours = list.getNeighbours(name, radius, (isCheckPermutations ? 6 : 0));
         }
-        
+ 
         if (Daten.efaConfig.getValuePopupContainsMode()) {
         	//if the autocomplete list shall support full text search, so should the spell checking
         	//it is a quite common mistake that the user enters some characters into the field,
@@ -573,7 +572,6 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
 	        	list.setFilterText(null);
         	}
         }
-        
         if (neighbours != null && neighbours.size() > 0) {
             ItemTypeList item = new ItemTypeList("NAME", IItemType.TYPE_PUBLIC, "",
                     LogString.itemIsUnknown(name, International.getString("Name")) + "\n" +
@@ -672,11 +670,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
             } else {
                 if ((e != null) && e.getKeyCode() != KeyEvent.VK_DOWN) {
                     complete = list.getFirst(searchFor); // Taste gedrückt --> OK, Wortanfang genügt
-                }
-                if (list.getAlias(searchFor) != null) {
-                    complete = list.getAlias(searchFor);
-                }
-
+                }                	
             }
 
             if (e != null && (mode != Mode.normal && (e.getKeyCode() == KeyEvent.VK_ENTER))) { // nur bei wirklichen Eingaben
@@ -716,7 +710,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
        
             
         // in case of versionized data, make sure it also valid
-        boolean valid = false;
+        boolean valid = true;
         if (matching && validAtDateItem != null) {
             long t = LogbookRecord.getValidAtTimestamp(validAtDateItem.getDate(),
                     (validAtTimeItem != null ? validAtTimeItem.getTime() : null));

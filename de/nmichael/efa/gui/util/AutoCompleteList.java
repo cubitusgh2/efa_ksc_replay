@@ -1,4 +1,3 @@
-
 /**
  * Title:        efa - elektronisches Fahrtenbuch für Ruderer
  * Copyright:    Copyright (c) 2001-2011 by Nicolas Michael
@@ -48,7 +47,9 @@ import java.util.*;
  * It supports the old-fashioned autocomplete-by-prefix mode, if no filterText has been passed.
  * If a filterText has been passed, any operation works on a filtered list which provided only items which contain the filterText (lowercase).
  * 
- * Whether an autocomplete list is filtered or not, is specified in ItemTypeStringAutoComplete. 
+ * Whether an autocomplete list is filtered or not, is specified in ItemTypeStringAutoComplete, by setting or not setting a filtertext on the list.
+ * When filtered, the autocomplete list also handles the lookup of aliases for persons. So if a filtertext matches an alias, the item matching the alias
+ * is added to the result set (if not already in the result set). 
  * 
  */
 public class AutoCompleteList {
@@ -116,11 +117,11 @@ public class AutoCompleteList {
     public Vector<String> getDataVisible() {
         return dataVisible;
     }
-
+    
     public Vector<String> getDataVisibleFiltered(){
     	return dataVisibleFiltered;
     }
-    
+
     public void setDataVisible(Vector<String> dataVisible) {
         this.dataVisible = dataVisible;
         updateVisibleFilteredList();
@@ -153,9 +154,18 @@ public class AutoCompleteList {
     				dataVisibleFiltered.add(dataVisible.get(i));
     			}
     		}
+    		//for entries with aliases, check wether the alias points to an entry that is not yet in the filtered list
+    		if (aliases2realVisible.containsKey(filterText.toLowerCase())) {
+    			String theValue=aliases2realVisible.get(filterText.toLowerCase());
+    			if (!dataVisibleFiltered.contains(theValue)) {
+    				dataVisibleFiltered.add(theValue);
+    			}
+    		}
     	} else { //no applicable filtertext, use unfiltered data
     		dataVisibleFiltered = dataVisible; 
     	}
+    	
+    	Collections.sort(dataVisibleFiltered);
     }
     
     /**
@@ -187,67 +197,67 @@ public class AutoCompleteList {
                 Daten.efaConfig != null && Daten.efaConfig.data() != null &&
                 (dataAccess.getSCN() != dataAccessSCN ||
                  Daten.efaConfig.data().getSCN() != efaConfigSCN)) {
-                dataAccessSCN = dataAccess.getSCN();
-                efaConfigSCN = Daten.efaConfig.data().getSCN();
-                dataVisible = new Vector<String>();
-                name2valid = new Hashtable<String,ValidInfo>();
-                lower2realVisible = new Hashtable<String,String>();
-                lower2realInvisible = new Hashtable<String,String>();
-                aliases2realVisible = new Hashtable<String,String>();
-                DataKeyIterator it = dataAccess.getStaticIterator();
-                ;
-                for (DataKey k = it.getFirst(); k != null; k = it.getNext()) {
-                    DataRecord r = dataAccess.get(k);
-                    if (r != null) {
-                        if (_searchId != null && r.getUniqueIdForRecord() != null && _searchId.equals(r.getUniqueIdForRecord().toString())) {
-                            _foundValue = r.getQualifiedName();
-                        }
-                        String s = r.getQualifiedName();
-                        if (r instanceof DestinationRecord) {
-                            if (filterDataOnlyForThisBoathouse && numberOfBoathouses > 1 &&
-                                    ((DestinationRecord)r).getOnlyInBoathouseIdAsInt() >= 0 &&
-                                myBoathouseId != ((DestinationRecord)r).getOnlyInBoathouseIdAsInt()) {
-                                continue;
-                            }
-                            if (Daten.efaConfig.getValuePrefixDestinationWithWaters()) {
-                                s = ((DestinationRecord)r).getWatersNamesStringListPrefix() + s;
-                            }
-                            if (!postfixNamesWithBoathouseName && myBoathouseName != null) {
-                                // remove postfix from qualified name
-                                String dest = DestinationRecord.getDestinationNameFromPostfixedDestinationBoathouseString(s);
-                                String bths = DestinationRecord.getBoathouseNameFromPostfixedDestinationBoathouseString(s);
-                                if (dest != null && bths != null && myBoathouseName.equals(bths)) {
-                                    s = dest;
-                                }
-                            }
-                        }
-                        String alias = null;
-                        if (r instanceof PersonRecord) {
-                            alias = ((PersonRecord)r).getInputShortcut();
-                            if (Daten.efaConfig.getValuePostfixPersonsWithClubName()) {
-                                s = s + ((PersonRecord)r).getAssociationPostfix();
-                            }
-                            
-                        }
-                    
-                        if (!r.getDeleted()) {
-                            if (s.length() > 0) {
-                                ValidInfo vi = null;
-                                if (dataAccess.getMetaData().isVersionized()) {
-                                    vi = new ValidInfo(r.getValidFrom(), r.getInvalidFrom());
-                                }
-                                add(s, alias, 
-                                        r.isInValidityRange(validFrom, validUntil) && !r.getInvisible(), vi);
-                            }
-                        } else {
-                            if (!r.getDeleted()) {
-                                add(s, alias, false, null);
-                            }
-                        }
-                    }
-                }
-                sort();
-            }
+	                dataAccessSCN = dataAccess.getSCN();
+	                efaConfigSCN = Daten.efaConfig.data().getSCN();
+	                dataVisible = new Vector<String>();
+	                name2valid = new Hashtable<String,ValidInfo>();
+	                lower2realVisible = new Hashtable<String,String>();
+	                lower2realInvisible = new Hashtable<String,String>();
+	                aliases2realVisible = new Hashtable<String,String>();
+	                DataKeyIterator it = dataAccess.getStaticIterator();
+	                ;
+	                for (DataKey k = it.getFirst(); k != null; k = it.getNext()) {
+	                    DataRecord r = dataAccess.get(k);
+	                    if (r != null) {
+	                        if (_searchId != null && r.getUniqueIdForRecord() != null && _searchId.equals(r.getUniqueIdForRecord().toString())) {
+	                            _foundValue = r.getQualifiedName();
+	                        }
+	                        String s = r.getQualifiedName();
+	                        if (r instanceof DestinationRecord) {
+	                            if (filterDataOnlyForThisBoathouse && numberOfBoathouses > 1 &&
+	                                    ((DestinationRecord)r).getOnlyInBoathouseIdAsInt() >= 0 &&
+	                                myBoathouseId != ((DestinationRecord)r).getOnlyInBoathouseIdAsInt()) {
+	                                continue;
+	                            }
+	                            if (Daten.efaConfig.getValuePrefixDestinationWithWaters()) {
+	                                s = ((DestinationRecord)r).getWatersNamesStringListPrefix() + s;
+	                            }
+	                            if (!postfixNamesWithBoathouseName && myBoathouseName != null) {
+	                                // remove postfix from qualified name
+	                                String dest = DestinationRecord.getDestinationNameFromPostfixedDestinationBoathouseString(s);
+	                                String bths = DestinationRecord.getBoathouseNameFromPostfixedDestinationBoathouseString(s);
+	                                if (dest != null && bths != null && myBoathouseName.equals(bths)) {
+	                                    s = dest;
+	                                }
+	                            }
+	                        }
+	                        String alias = null;
+	                        if (r instanceof PersonRecord) {
+	                            alias = ((PersonRecord)r).getInputShortcut();
+	                            if (Daten.efaConfig.getValuePostfixPersonsWithClubName()) {
+	                                s = s + ((PersonRecord)r).getAssociationPostfix();
+	                            }
+	                            
+	                        }
+                        
+	                        if (!r.getDeleted()) {
+	                            if (s.length() > 0) {
+	                                ValidInfo vi = null;
+	                                if (dataAccess.getMetaData().isVersionized()) {
+	                                    vi = new ValidInfo(r.getValidFrom(), r.getInvalidFrom());
+	                                }
+	                                add(s, alias, 
+	                                        r.isInValidityRange(validFrom, validUntil) && !r.getInvisible(), vi);
+	                            }
+	                        } else {
+	                            if (!r.getDeleted()) {
+	                                add(s, alias, false, null);
+	                            }
+	                        }
+	                    }
+	                }
+	                sort();
+	            }
         } catch (Exception e) {
         }
         updateVisibleFilteredList();

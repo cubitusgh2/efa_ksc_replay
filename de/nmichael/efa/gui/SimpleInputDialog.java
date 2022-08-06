@@ -41,7 +41,7 @@ public class SimpleInputDialog extends BaseDialog {
     }
 
     public void _keyAction(ActionEvent evt) {
-        if (evt.getActionCommand().equals(KEYACTION_ENTER)) {
+    	if (evt.getActionCommand().equals(KEYACTION_ENTER)) {
             closeButton_actionPerformed(evt);
         }
         super._keyAction(evt);
@@ -52,7 +52,10 @@ public class SimpleInputDialog extends BaseDialog {
     }
 
     protected void iniDialog() throws Exception {
-        KEYACTION_ENTER = addKeyAction("ENTER");
+    	if (Daten.efaConfig.getValuePopupContainsMode()==false) {
+    		//ENTER Key handling needed for AutoCompleteLists which use filtered lists instead of autocomplete lists
+    		KEYACTION_ENTER = addKeyAction("ENTER");
+    	}
 
         // create GUI items
         mainPanel.setLayout(new GridBagLayout());
