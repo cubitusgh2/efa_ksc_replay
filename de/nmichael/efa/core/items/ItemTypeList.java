@@ -10,19 +10,51 @@
 
 package de.nmichael.efa.core.items;
 
-import java.util.*;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import de.nmichael.efa.*;
-import de.nmichael.efa.util.*;
-import de.nmichael.efa.util.Dialog;
-import de.nmichael.efa.gui.*;
-import de.nmichael.efa.gui.util.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.GridBagConstraints;
+import java.awt.Image;
+import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.Window;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.util.Vector;
+
+import javax.swing.BorderFactory;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.DefaultListModel;
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import javax.swing.ListModel;
+import javax.swing.ListSelectionModel;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.SwingConstants;
+import javax.swing.ToolTipManager;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.border.EmptyBorder;
+
+import de.nmichael.efa.Daten;
+import de.nmichael.efa.gui.BaseDialog;
+import de.nmichael.efa.gui.util.EfaMouseListener;
+import de.nmichael.efa.util.Dialog;
+import de.nmichael.efa.util.Mnemonics;
 
 public class ItemTypeList extends ItemType implements ActionListener, DocumentListener, KeyListener {
 
@@ -32,12 +64,14 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     JList list = new JList();
     JTextField filterTextField;
     JPopupMenu popup;
+    Long lastFilterChange=0l;
     DefaultListModel<ItemTypeListData> data; // no longer Vector as we need a DefaultListModel for filtering
     String[] actions;
     String incrementalSearch = "";
     int iconWidth = 0;
     int iconHeight = 0;
     private static final String LIST_SECTION_STRING = "---------- ";
+    protected static final long FILTER_RESET_INTERVAL=90000l; // 1.5 minutes
     private boolean showFilterField = false;
     
     class ListDataCellRenderer extends DefaultListCellRenderer {
@@ -87,10 +121,12 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
                 } catch(Exception eignore) {
                 }
             }
-            return this;
-        }
+        return this;
     }
+}
 
+
+    
     class ItemTypeListData {
         String text;
         Object object;
@@ -98,14 +134,15 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         int section;
         String image;
         Color[] colors;
+
         public ItemTypeListData(String text, Object object, boolean separator, int section) {
             ini(text, object, separator, section, null, null);
         }
-        public ItemTypeListData(String text, Object object, boolean separator, int section,
+        public ItemTypeListData(String text, Object object, boolean separator, int section, 
                 String image, Color[] colors) {
             ini(text, object, separator, section, image, colors);
         }
-        private void ini(String text, Object object, boolean separator, int section,
+        private void ini(String text, Object object, boolean separator, int section, 
                 String image, Color[] colors) {
             this.text = text;
             this.object = object;
@@ -127,6 +164,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         this.description = description;
         this.showFilterField = showFilterField;
         data = new DefaultListModel<ItemTypeListData>();
+       
     }
     
     public ItemTypeList(String name,
@@ -189,6 +227,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         }
         return data.size();
     }
+    
 
     public String getItemText(int idx) {
         if (idx >= 0 && idx < data.size()) {
@@ -197,6 +236,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         return null;
     }
 
+    
     public Object getItemObject(int idx) {
         if (idx >= 0 && idx < data.size()) {
             return data.get(idx).object;
@@ -246,10 +286,12 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 	        filterTextField.addKeyListener(this);
 	        filterTextField.putClientProperty("caretWidth", 3);
 	        filterTextField.setMargin(new Insets(0,2,0,0));
+	        updateLastFilterChange();
         }
         popup = new JPopupMenu();
         scrollPane = new JScrollPane();
         this.field = scrollPane;
+
         mypanel = new JPanel();
         mypanel.setLayout(new BorderLayout());
 
@@ -298,7 +340,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         });
         list.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(MouseEvent e) {
-                ((JList) e.getSource()).setToolTipText(null); // remove tool tip from scrolling/searching
+            	 ((JList) e.getSource()).setToolTipText(null); // remove tool tip from scrolling/searching
             }
         });
 
@@ -339,6 +381,24 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 	        filterPanel.add(myFilterLabel, BorderLayout.WEST);
 	        filterPanel.add(filterTextField, BorderLayout.CENTER);
 	        panelDescriptionAndFilter.add(filterPanel, BorderLayout.SOUTH);
+	        this.field=filterTextField; // by this, when the boat status list receives focus, and the filter text field is visible, the filter text field gets the focus.
+	        
+	        filterTextField.addFocusListener(new java.awt.event.FocusAdapter() {
+	            public void focusGained(FocusEvent e) {
+	                filterTextField.setBackground(Color.YELLOW);
+	            }
+	        });
+	        filterTextField.addFocusListener(new java.awt.event.FocusAdapter() {
+	            public void focusLost(FocusEvent e) {
+	            	if (!filterTextField.getText().isEmpty()) {
+	            		filterTextField.setBackground(new Color(255,255,204));
+	            	
+	            	} else {	
+	            		filterTextField.setBackground(Color.WHITE);
+	            	}
+	            }
+	        });
+	        
         }
 
         mypanel.add(panelDescriptionAndFilter, BorderLayout.NORTH);
@@ -408,11 +468,27 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
             list.setSelectedIndex(0);
         }
         clearIncrementalSearch();
+
         if (listener != null) {
             listener.itemListenerAction(this, e);
         }
     }
 
+    /* clear filtertextfield, if it has been unchanged more than two minutes */
+    public void clearFilterText() {
+    	if (this.showFilterField && (System.currentTimeMillis()>(lastFilterChange+FILTER_RESET_INTERVAL))) {
+    		if (this.filterTextField != null) {
+    			this.filterTextField.setText("");
+            	updateLastFilterChange();
+        		if (!this.filterTextField.hasFocus()) {
+        			this.filterTextField.setBackground(Color.WHITE);
+        		}
+        		filter();    
+    		}
+    	}
+	
+    }
+    
     // scrolle in der Liste list (deren Inhalt der Vector entries ist), zu dem Eintrag
     // mit dem Namen such und selektiere ihn. Zeige unterhalb des Boote bis zu plus weitere Einträge.
     private void scrollToEntry(String search, int plus, int direction) {
@@ -443,7 +519,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 
                 if (incrementalSearch == null || incrementalSearch.length() == 0) {
                     // if we haven't searched for anything before, jump to the start of this section
-                    while (start > 0 && !((String) theData.get(start).text).startsWith(LIST_SECTION_STRING)) {
+                	 while (start > 0 && !((String) theData.get(start).text).startsWith(LIST_SECTION_STRING)) {
                         start--;
                     }
                 }
@@ -521,7 +597,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
             return null;
         }
     }
-
+    
     public String getSelectedText() {
         try {
             if (list == null || list.isSelectionEmpty()) {
@@ -586,7 +662,6 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         filter();
     }
 
-
     public void removeUpdate(DocumentEvent e) {
         filter();
     }
@@ -602,12 +677,12 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     	if (this.showFilterField) {
 	    
     		DefaultListModel<ItemTypeListData> theModel = new DefaultListModel<ItemTypeList.ItemTypeListData>();
-			String s = filterTextField.getText();
+			String s = filterTextField.getText().trim();
 	        if (!s.isEmpty()) {
 	        	
 	        	for (int i=0; i< data.getSize();i++) {
 	        		ItemTypeListData item = data.getElementAt(i);
-		            if (item.toString().toLowerCase().contains(s.toLowerCase())||item.toString().startsWith(LIST_SECTION_STRING)){
+	        		if (item.toString().toLowerCase().contains(s.toLowerCase())||item.toString().startsWith(LIST_SECTION_STRING)){
 		                theModel.addElement(item);
 		            }
 	        	}
@@ -633,12 +708,13 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     }
     
     public void keyPressed(KeyEvent e) {
-    	
+    	updateLastFilterChange();
     }
     
     public void keyReleased(KeyEvent e) {
-    	
+
     	if (e.getComponent().equals(filterTextField)) {
+        	updateLastFilterChange();
 	    	if (e.getKeyCode()== KeyEvent.VK_ENTER || e.getKeyCode() == KeyEvent.VK_DOWN) {
 	    		list.requestFocus();
 	    	} else if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
@@ -651,6 +727,11 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     }
     
     public void keyTyped(KeyEvent e) {
-    	
+    	updateLastFilterChange();
     }
+    
+    private void updateLastFilterChange() {
+    	lastFilterChange=System.currentTimeMillis(); 
+    }
+
 }
