@@ -73,6 +73,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     private static final String LIST_SECTION_STRING = "---------- ";
     protected static final long FILTER_RESET_INTERVAL=90000l; // 1.5 minutes
     private boolean showFilterField = false;
+    protected String other_item_text=""; //item text of the element for <other boat> or <other person>
     
     class ListDataCellRenderer extends DefaultListCellRenderer {
         public Component getListCellRendererComponent(JList list, Object value,
@@ -586,6 +587,32 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         } catch (Exception ee) { /* just to be sure */ }
     }
 
+    private void selectFirstMatchingElement() {
+    	int index=1; //start with item 1 as item 0 is always "<other boat>" or "<other person>"
+		DefaultListModel <ItemTypeListData> theData= (DefaultListModel)list.getModel();
+    	  // check whether we should really select this item
+        
+		if (filterTextField.getText().trim().length()==0){
+			index=0;
+		} else { 
+			while (index >= 0 && index < theData.size() && (theData.get(index).separator)) {
+	            index += 1;
+	        }
+		}
+		if (index>=theData.size()) {
+        	//no element could be found which is not a separator and not "<other boat>" or "<other person>"
+        	//so we select the first element nonetheless
+        	index=0;
+        }
+        
+        if (index >= 0 && index < theData.size()) {
+            list.setSelectedIndex(index);
+            Rectangle rect = list.getCellBounds(index, (index + 15 >= theData.size() ? theData.size() - 1 : index + 15));
+            list.scrollRectToVisible(rect);
+        }
+    	
+    }
+    
     public Object getSelectedValue() {
         try {
             if (list == null || list.isSelectionEmpty()) {
@@ -682,7 +709,8 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 	        	
 	        	for (int i=0; i< data.getSize();i++) {
 	        		ItemTypeListData item = data.getElementAt(i);
-	        		if (item.toString().toLowerCase().contains(s.toLowerCase())||item.toString().startsWith(LIST_SECTION_STRING)){
+	        		if (item.toString().toLowerCase().contains(s.toLowerCase())||item.toString().startsWith(LIST_SECTION_STRING)||
+		            		item.text.equals(other_item_text)){ //also allow <other boat> or <other person> to be visible when filter is active
 		                theModel.addElement(item);
 		            }
 	        	}
@@ -703,7 +731,8 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 		     } else {
 		    	list.setModel(data);
 		     }
-        }
+	        selectFirstMatchingElement();
+        }//if ShowFilterField
 
     }
     
