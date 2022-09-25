@@ -610,7 +610,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
             addParameter(popupComplete = new ItemTypeBoolean("AutoCompleteListShow", true,
                     IItemType.TYPE_EXPERT,BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_GUI),
                     International.getString("Beim Vervollständigen Popup-Liste anzeigen")));
-            addParameter(popupContainsMode= new ItemTypeBoolean("AutoCompleteContainsMode", false,
+            addParameter(popupContainsMode= new ItemTypeBoolean("AutoCompleteContainsMode", true,
             		IItemType.TYPE_EXPERT,BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_GUI),
             		International.getString("Popup-Liste nach Teilbegriff durchsuchen (statt nach Wortanfang)")));                 
             addParameter(fensterZentriert = new ItemTypeBoolean("WindowCentered", false,
