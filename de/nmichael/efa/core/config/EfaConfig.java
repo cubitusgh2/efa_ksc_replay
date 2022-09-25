@@ -173,6 +173,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
     private ItemTypeBoolean efaBoathouseFilterTextfieldStandardLists;
     private ItemTypeBoolean efaBoathouseFilterTextfieldBoatsNotAvailableList;
     private ItemTypeBoolean efaBoathouseBetterListLook;
+    private ItemTypeBoolean efaBoathouseExtdToolTips;
     private ItemTypeString efaBoathouseNonAllowedUnknownPersonNames;
     private ItemTypeBoolean efaDirekt_eintragHideUnnecessaryInputFields;
     private ItemTypeInteger efaDirekt_plusMinutenAbfahrt;
@@ -836,7 +837,10 @@ public class EfaConfig extends StorageObject implements IItemFactory {
             		International.getString("Filter-Feld über Liste nicht verfügbarer Boote")));
             addParameter(efaBoathouseBetterListLook= new ItemTypeBoolean("efaBoathouseBetterListLook", true, 
             		IItemType.TYPE_EXPERT,BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),
-            		International.getString("Hübschere Darstellung der Bootshaus-Listen")));
+            		International.getString("Bootshaus-Listen mit verbesserter Darstellung")));
+			addParameter(efaBoathouseExtdToolTips = new ItemTypeBoolean("efaBoathouseExtdToolTips", true,
+					IItemType.TYPE_EXPERT, BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),
+					International.getString("Bootshaus-Listen mit Tooltips")));
             addParameter(efaDirekt_sortByAnzahl = new ItemTypeBoolean("BoatListSortBySeats", true,
                     IItemType.TYPE_EXPERT,BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),
                     International.getString("sortiere Boote nach Anzahl der Bootsplätze")));
@@ -1861,6 +1865,11 @@ public class EfaConfig extends StorageObject implements IItemFactory {
     public boolean getValueEfaBoathouseBetterListLook() {
     	return efaBoathouseBetterListLook.getValue();
     }
+    
+	public boolean getValueEfaBoathouseExtdToolTips() {
+		return efaBoathouseExtdToolTips.getValue();
+	}
+	
     
     public boolean getValueEfaDirekt_showUhr() {
         return efaDirekt_showUhr.getValue();
