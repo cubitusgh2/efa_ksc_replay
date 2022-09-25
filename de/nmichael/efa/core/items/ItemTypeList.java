@@ -744,7 +744,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 
     	if (e.getComponent().equals(filterTextField)) {
         	updateLastFilterChange();
-	    	if (e.getKeyCode()== KeyEvent.VK_ENTER || e.getKeyCode() == KeyEvent.VK_DOWN || e.getKeyCode() == KeyEvent.VK_UP)) {
+	    	if (e.getKeyCode()== KeyEvent.VK_ENTER || e.getKeyCode() == KeyEvent.VK_DOWN || e.getKeyCode() == KeyEvent.VK_UP) {
 	    		list.requestFocus();
 	    	} else if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
 	    		if (this.showFilterField) {
