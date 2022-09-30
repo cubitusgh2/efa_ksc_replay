@@ -683,7 +683,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
 
             if (e != null && (mode != Mode.normal && (e.getKeyCode() == KeyEvent.VK_ENTER) && AutoCompletePopupWindow.isShowingAt(field))) { // nur bei wirklichen Eingaben
               	complete = AutoCompletePopupWindow.getWindow().getSelectedEintrag();
-            	field.setText(complete);
+            	if (complete!=null && !complete.isEmpty()) {field.setText(complete);}
                 matching = true;
             }
 
