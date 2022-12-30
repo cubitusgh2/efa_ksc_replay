@@ -59,8 +59,8 @@ public class MenuData extends MenuBase {
     public void printHelpContext() {
         printUsage(CMD_LIST,        "[all|invisible|deleted]", "list " + storageObjectDescription);
         printUsage(CMD_SHOW,        "[name|index]", "show record");
-        printUsage(CMD_EXPORT,      "[-format=xml|csv] [-encoding=ENCODING] [-csvsep=X] [-csvquote=X] [-email=emailadress] [-emailsubject=value] <filename>", "export records to a file and to an email adress");
-        printUsage(CMD_IMPORT,      "[-encoding=ENCODING] [-csvsep=X] [-csvquote=X] [-impmode=add|update|addupdate] [-updversion=update|new] [-entryno=dupskip|dupadd|alwaysadd] <filename>", "import records");
+        printUsage(CMD_EXPORT,      "[-format=xml|csv] [-encoding=ISO-8859-1|UTF-8] [-csvsep=X] [-csvquote=X] [-email=emailadress] [-emailsubject=value] <filename>", "export records to a file and to an email adress");
+        printUsage(CMD_IMPORT,      "[-encoding=ISO-8859-1|UTF-8] [-csvsep=X] [-csvquote=X] [-impmode=add|update|addupdate] [-updversion=update|new] [-entryno=dupskip|dupadd|alwaysadd] <filename>", "import records");
     }
 
     public void list(String args) {
@@ -140,6 +140,12 @@ public class MenuData extends MenuBase {
         String csvQuote="\"";
         String emailSubj="";
         String filename = args;
+        
+        //if user forgets to specify a filename, we cannot proceed.
+        if (filename == null || filename.isEmpty()) {
+            cli.loginfo("No filename specified. Cannot export data.");
+            return;
+        }
         
         DataExport.Format format = DataExport.Format.xml;
         if (options.get(EXPORT_OPTION_FORMAT) != null && options.get(EXPORT_OPTION_FORMAT).equalsIgnoreCase("csv")) {
@@ -338,7 +344,12 @@ public class MenuData extends MenuBase {
     }
 
     protected String removeOptionsFromArgs(String args) {
-        StringBuilder sb = new StringBuilder();
+        
+    	if (args == null || args.isEmpty()) {
+    		return null;
+    	}
+    	
+    	StringBuilder sb = new StringBuilder();
         StringTokenizer tok = new StringTokenizer(args, " ");
         if (tok.countTokens() == 0) {
             return args;
