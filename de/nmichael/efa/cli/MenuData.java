@@ -13,6 +13,7 @@ package de.nmichael.efa.cli;
 import java.nio.charset.Charset;
 import java.time.ZonedDateTime;
 import java.util.Hashtable;
+import java.util.Locale;
 import java.util.Stack;
 import java.util.StringTokenizer;
 import java.util.Vector;
@@ -39,8 +40,9 @@ public class MenuData extends MenuBase {
     private static final String EXPORT_OPTION_EMAILSUBJECT = "emailsubject";
 	private static final String EXPORT_OPTION_FORMAT = "format";
 	private static final String EXPORT_OPTION_CSV_SEPARATOR="csvsep";
-	private static final String EXPORT_OPTION_CSV_QUOTE="csvquote";
+	private static final String EXPORT_OPTION_CSV_QUOTE = "csvquote";
 	private static final String EXPORT_OPTION_ENCODING = "encoding";
+	private static final String EXPORT_OPTION_LOCALE = "csvlocale";
 	
 	public static final String CMD_LIST   = "list";
     public static final String CMD_SHOW   = "show";
@@ -59,8 +61,15 @@ public class MenuData extends MenuBase {
     public void printHelpContext() {
         printUsage(CMD_LIST,        "[all|invisible|deleted]", "list " + storageObjectDescription);
         printUsage(CMD_SHOW,        "[name|index]", "show record");
-        printUsage(CMD_EXPORT,      "[-format=xml|csv] [-encoding=ISO-8859-1|UTF-8] [-csvsep=X] [-csvquote=X] [-email=emailadress] [-emailsubject=value] <filename>", "export records to a file and to an email adress");
-        printUsage(CMD_IMPORT,      "[-encoding=ISO-8859-1|UTF-8] [-csvsep=X] [-csvquote=X] [-impmode=add|update|addupdate] [-updversion=update|new] [-entryno=dupskip|dupadd|alwaysadd] <filename>", "import records");
+        printUsage(CMD_EXPORT,      "[-format=xml|csv|csv_bom_utf8] [-encoding=ENCODING] [-csvlocale=LOCALE] [-csvsep=X] [-csvquote=X] [-email=emailadress] [-emailsubject=value] <filename>", "export records to a file and to an email adress");
+        printUsage(CMD_IMPORT,      "[-encoding=ENCODING] [-csvsep=X] [-csvquote=X] [-impmode=add|update|addupdate] [-updversion=update|new] [-entryno=dupskip|dupadd|alwaysadd] <filename>", "import records");
+        cli.loginfo("");
+        cli.loginfo("ENCODING   - Any encoding, e.g. ISO-8859-1 or UTF-8. UTF-8 is default.");
+        cli.loginfo("LOCALE 	- Any ISO-Code for a country, e.g. DE or EN" );
+        cli.loginfo("");
+        cli.loginfo("Format		- csv_bom_utf8 is neccessary for Microsoft(r) Excel to read UTF8-based csv files.");
+        cli.loginfo("");
+        
     }
 
     public void list(String args) {
@@ -138,6 +147,7 @@ public class MenuData extends MenuBase {
         
         String csvSeparator="|";
         String csvQuote="\"";
+        Locale csvLocale = null;
         String emailSubj="";
         String filename = args;
         
@@ -151,6 +161,9 @@ public class MenuData extends MenuBase {
         if (options.get(EXPORT_OPTION_FORMAT) != null && options.get(EXPORT_OPTION_FORMAT).equalsIgnoreCase("csv")) {
             format = DataExport.Format.csv;
         }
+        if (options.get(EXPORT_OPTION_FORMAT) != null && options.get(EXPORT_OPTION_FORMAT).equalsIgnoreCase("csv_bom_utf8")) {
+            format = DataExport.Format.csv_bom_utf8;
+        }
         if (options.get(EXPORT_OPTION_CSV_SEPARATOR)!=null) {
         	csvSeparator=options.get(EXPORT_OPTION_CSV_SEPARATOR);
         	if (csvSeparator.isEmpty()) {
@@ -162,6 +175,10 @@ public class MenuData extends MenuBase {
         	if (csvQuote.isEmpty()) {
         		csvQuote="\"";
         	}
+        }
+        
+        if (options.get(EXPORT_OPTION_LOCALE)!=null) {
+        	csvLocale=Locale.forLanguageTag(options.get(EXPORT_OPTION_LOCALE));
         }
         
         emailSubj="EfaCLI "+filename+" export " + ZonedDateTime.now().toString();
@@ -193,7 +210,7 @@ public class MenuData extends MenuBase {
        cli.loginfo("Exporting data ...");
        DataExport export = new DataExport(storageObject, System.currentTimeMillis(), null,
                 storageObject.createNewRecord().getFields(), format,
-                encoding, filename, DataExport.EXPORT_TYPE_TEXT, csvSeparator, csvQuote);
+                encoding, filename, DataExport.EXPORT_TYPE_TEXT, csvSeparator, csvQuote, csvLocale);
         int count = export.runExport();
         cli.loginfo(count + " records exported to " + filename);
         

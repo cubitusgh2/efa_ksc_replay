@@ -47,8 +47,6 @@ public interface IDataAccess {
     public static final int DATA_LIST_UUID = 108;    // UUID-based list
     public static final int DATA_VIRTUAL = 999;      // Virtual String, will not be stored in file
  
-    public static final int[] STRINGBASED_DATATYPES = {DATA_STRING, DATA_TEXT, DATA_UUID, DATA_INTSTRING, DATA_PASSWORDH, DATA_PASSWORDC, DATA_LIST_STRING, DATA_LIST_INTEGER, DATA_LIST_UUID};
- 
     public static final int  UNDEFINED_INT  = Integer.MIN_VALUE + 1;
     public static final long UNDEFINED_LONG = Long.MIN_VALUE + 1;
     public static final double  UNDEFINED_DOUBLE  = -Double.MAX_VALUE+1;
