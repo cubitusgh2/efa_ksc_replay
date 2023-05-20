@@ -101,6 +101,10 @@ public class EfaConfig extends StorageObject implements IItemFactory {
         "c:\\Program Files\\Adobe\\Reader 9.0\\Reader\\AcroRd32.exe"
     };
 
+    public static final String WEEKLY_RESERVATION_CONFLICT_IGNORE="WEEKLY_RESERVATION_CONFLICT_IGNORE";
+    public static final String WEEKLY_RESERVATION_CONFLICT_STRICT="WEEKLY_RESERVATION_CONFLICT_STRICT";
+    public static final String WEEKLY_RESERVATION_CONFLICT_PRIORITIZE_WEEKLY="WEEKLY_RESERVATION_CONFLICT_PRIORITIZE_WEEKLY";
+    
     // private configuration data
     private ItemTypeString lastProjectEfaBase;
     private ItemTypeString lastProjectEfaBoathouse;
@@ -126,6 +130,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
     private ItemTypeBoolean showObmann;
     private ItemTypeBoolean autoObmann;
     private ItemTypeStringList defaultObmann;
+    private ItemTypeStringList weeklyReservationConflictBehaviour;
     private ItemTypeBoolean showDestinationInfoForInput;
     private ItemTypeBoolean additionalWatersInput;
     private ItemTypeBoolean prefixDestinationWithWaters;
@@ -313,6 +318,9 @@ public class EfaConfig extends StorageObject implements IItemFactory {
     private Vector<IWidget> widgets;
     private ItemTypeItemList crontab;
 
+    private Color tableSelectionBackgroundColor = new Color(75,134,193);
+    private Color tableSelectionForegroundColor = Color.WHITE;
+    
     // private internal data
     private HashMap<String,IItemType> configValues; // always snychronize on this object!!
     private Vector<String> configValueNames;
@@ -534,6 +542,14 @@ public class EfaConfig extends StorageObject implements IItemFactory {
                     makeObmannArray(STRINGLIST_VALUES), makeObmannArray(STRINGLIST_DISPLAY),
                     IItemType.TYPE_PUBLIC,BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_INPUT),
                     International.getString("Standard-Obmann für ungesteuerte Boote")));
+            
+            addParameter(weeklyReservationConflictBehaviour = new ItemTypeStringList("repeatingReservationBehaviour", WEEKLY_RESERVATION_CONFLICT_IGNORE,
+                    new String[] { WEEKLY_RESERVATION_CONFLICT_IGNORE, WEEKLY_RESERVATION_CONFLICT_STRICT, WEEKLY_RESERVATION_CONFLICT_PRIORITIZE_WEEKLY },
+                    new String[] { International.getString("Konflikt_ignorieren"), International.getString("Konflikt_strikt_behandeln"),
+                    		International.getString("Konflikt_woechentliche_Reservierung_hat_Vorrang")},
+                IItemType.TYPE_PUBLIC,BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_INPUT),
+                International.getString("Verhalten_bei_Konflikten_einmalige_oder_woechentliche_Reservierungen")));
+            
             addParameter(showDestinationInfoForInput = new ItemTypeBoolean("DestinationInfoShowForInput", false,
                     IItemType.TYPE_PUBLIC,BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_INPUT),
                     International.getString("Zielinformationen bei Eingabe anzeigen")));
@@ -2215,6 +2231,18 @@ public class EfaConfig extends StorageObject implements IItemFactory {
         setValue(translateLanguageBase, lang);
     }
 
+    public Color getTableSelectionBackgroundColor() {
+    	return tableSelectionBackgroundColor;
+    }
+    
+    public Color getTableSelectionForegroundColor() {
+    	return tableSelectionForegroundColor;
+    }
+    
+    public String getWeeklyReservationConflictBehaviour() {
+    	return weeklyReservationConflictBehaviour.getValue();
+    }
+    
     public IItemType getExternalGuiItem(String name) {
         synchronized (configValues) {
             IItemType item = configValues.get(name);

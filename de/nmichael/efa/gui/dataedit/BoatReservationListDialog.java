@@ -101,6 +101,9 @@ public class BoatReservationListDialog extends DataListDialog {
             actionType = new int[] { };
         }
         this.allowNewReservationsWeekly = allowNewReservationsWeekly;
+        
+		//From and to columns should be wider than default
+		this.minColumnWidths = new int[] {150,120,120,120,12};   
     }
 
 

@@ -10,12 +10,14 @@
 
 package de.nmichael.efa.data;
 
+import de.nmichael.efa.Daten;
 import de.nmichael.efa.core.config.AdminRecord;
 import de.nmichael.efa.data.storage.*;
 import de.nmichael.efa.core.items.*;
 import de.nmichael.efa.gui.util.*;
 import de.nmichael.efa.util.*;
 import java.awt.AWTEvent;
+import java.awt.GridBagConstraints;
 import java.util.*;
 
 // @i18n complete
@@ -224,6 +226,11 @@ public class StatusRecord extends DataRecord implements IItemListener {
         Vector<IItemType> v = new Vector<IItemType>();
         v.add(item = new ItemTypeLabel("LABEL", 
                 IItemType.TYPE_PUBLIC, CAT_BASEDATA, International.getString("Typ") + ": " + getTypeDescription()));
+        item.setPadding(0, 0, 0, 10);
+        item.setBackgroundColor(Daten.efaConfig.getTableSelectionBackgroundColor());
+        item.setColor(Daten.efaConfig.getTableSelectionForegroundColor());
+        item.setFieldGrid(2,GridBagConstraints.EAST, GridBagConstraints.BOTH);
+        
         v.add(item = new ItemTypeString(StatusRecord.NAME, getStatusName(),
                 IItemType.TYPE_PUBLIC, CAT_BASEDATA, International.getString("Status")));
         if (isTypeUser()) {

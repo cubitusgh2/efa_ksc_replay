@@ -18,6 +18,8 @@ import de.nmichael.efa.data.types.*;
 import de.nmichael.efa.core.items.*;
 import de.nmichael.efa.gui.util.*;
 import de.nmichael.efa.util.*;
+
+import java.awt.GridBagConstraints;
 import java.util.*;
 
 // @i18n complete
@@ -306,6 +308,9 @@ public class BoatStatusRecord extends DataRecord {
         v.add(item = new ItemTypeLabel("GUI_BOAT_NAME",
                 IItemType.TYPE_PUBLIC, CAT_STATUS, International.getMessage("Bootsstatus für {boat}", getBoatNameAsString(System.currentTimeMillis()))));
         item.setPadding(0, 0, 0, 10);
+        item.setBackgroundColor(Daten.efaConfig.getTableSelectionBackgroundColor());
+        item.setColor(Daten.efaConfig.getTableSelectionForegroundColor());
+        item.setFieldGrid(2,GridBagConstraints.EAST, GridBagConstraints.BOTH);
 
         v.add(item = new ItemTypeString(BoatStatusRecord.BOATTEXT, getBoatText(),
                 IItemType.TYPE_EXPERT, CAT_STATUS,

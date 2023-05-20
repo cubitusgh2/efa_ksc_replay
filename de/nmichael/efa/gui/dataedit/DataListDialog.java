@@ -10,7 +10,9 @@
 
 package de.nmichael.efa.gui.dataedit;
 
+import de.nmichael.efa.Daten;
 import de.nmichael.efa.core.config.AdminRecord;
+import de.nmichael.efa.core.config.EfaConfig;
 import de.nmichael.efa.gui.*;
 import de.nmichael.efa.util.*;
 import de.nmichael.efa.util.Dialog;
@@ -210,6 +212,9 @@ public abstract class DataListDialog extends BaseDialog implements IItemListener
             JLabel filterName = new JLabel();
             filterName.setText(filterFieldDescription);
             filterName.setHorizontalAlignment(SwingConstants.CENTER);
+            filterName.setBackground(Daten.efaConfig.getTableSelectionBackgroundColor());
+            filterName.setForeground(Daten.efaConfig.getTableSelectionForegroundColor());
+            filterName.setOpaque(true);
             mainTablePanel.add(filterName, BorderLayout.NORTH);
             mainTablePanel.setBorder(new EmptyBorder(10,0,0,0));
         }

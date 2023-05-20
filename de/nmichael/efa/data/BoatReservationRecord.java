@@ -17,6 +17,8 @@ import de.nmichael.efa.core.config.*;
 import de.nmichael.efa.gui.util.*;
 import de.nmichael.efa.util.*;
 import de.nmichael.efa.*;
+
+import java.awt.GridBagConstraints;
 import java.util.*;
 
 // @i18n complete
@@ -211,7 +213,7 @@ public class BoatReservationRecord extends DataRecord {
         }
         return "";
     }
-
+    
     public String getDateTimeToDescription() {
         String type = getType();
         if (type != null && type.equals(TYPE_ONETIME)) {
@@ -222,7 +224,43 @@ public class BoatReservationRecord extends DataRecord {
         }
         return "";
     }
+    
+    /*
+     * Within the BoatReservationList, weekly reservations will be shown as
+     * - From = Day of Week
+     * - To = TimeFrom - TimeTo 
+     */
+    public String getGuiDateTimeFromDescription() {
+        String type = getType();
+        if (type != null && type.equals(TYPE_ONETIME)) {
+            return getDateTimeFromDescription();
+        }
+        if (type != null && type.equals(TYPE_WEEKLY)) {
+            return getDateDescription(null, getDayOfWeek(), null); //
+        }
+        return "";
+    }
 
+    /*
+     * Within the BoatReservationList, weekly reservations will be shown as
+     * - From = Day of Week
+     * - To = TimeFrom - TimeTo 
+     */
+    public String getGuiDateTimeToDescription() {
+        String type = getType();
+        if (type != null && type.equals(TYPE_ONETIME)) {
+            return getDateTimeToDescription();
+        }
+        if (type != null && type.equals(TYPE_WEEKLY)) {
+            return getWeeklyTimeDescription(getTimeFrom(), getTimeTo());
+        }
+        return "";
+    }    
+
+    private String getWeeklyTimeDescription(DataTypeTime from, DataTypeTime to) {
+        return (from != null ? from.toString() : "") + " - " + (to != null ? to.toString() : "");
+    }
+    
     public String getReservationTimeDescription() {
         return getDateTimeFromDescription() + " - " + getDateTimeToDescription();
     }
@@ -422,6 +460,9 @@ public class BoatReservationRecord extends DataRecord {
         v.add(item = new ItemTypeLabel("GUI_BOAT_NAME",
                 IItemType.TYPE_PUBLIC, CAT_BASEDATA, International.getMessage("Reservierung für {boat}", boatName)));
         item.setPadding(0, 0, 0, 10);
+        item.setBackgroundColor(Daten.efaConfig.getTableSelectionBackgroundColor());
+        item.setColor(Daten.efaConfig.getTableSelectionForegroundColor());
+        item.setFieldGrid(2,GridBagConstraints.EAST, GridBagConstraints.BOTH);
         v.add(item = new ItemTypeRadioButtons(BoatReservationRecord.TYPE, (getType() != null && getType().length() > 0 ? getType() : TYPE_ONETIME),
                 new String[] {
                     TYPE_ONETIME,
@@ -505,8 +546,8 @@ public class BoatReservationRecord extends DataRecord {
     public TableItem[] getGuiTableItems() {
         TableItem[] items = new TableItem[6];
         items[0] = new TableItem(getBoatName());
-        items[1] = new TableItem(getDateTimeFromDescription());
-        items[2] = new TableItem(getDateTimeToDescription());
+        items[1] = new TableItem(getGuiDateTimeFromDescription());
+        items[2] = new TableItem(getGuiDateTimeToDescription());
         items[3] = new TableItem(getPersonAsName());
         items[4] = new TableItem(getReason());
         items[5] = new TableItem(getContact());
