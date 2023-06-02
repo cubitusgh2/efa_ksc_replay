@@ -132,7 +132,7 @@ public class BoatReservations extends StorageObject {
     private String buildOverlappingReservationInfo(BoatReservationRecord reservation) {
         String result = "";
 
-        if (reservation.getType().equals(BoatReservationRecord.TYPE_WEEKLY)) {
+        if (reservation.getType().equals(BoatReservationRecord.TYPE_WEEKLY) || reservation.getType().equals(BoatReservationRecord.TYPE_WEEKLY_LIMITED)) {
             result = "\n\n" + reservation.getBoatName() + " / " + reservation.getPersonAsName() + " (" + Daten.efaTypes.getValueWeekday(reservation.getDayOfWeek()) + " " + reservation.getTimeFrom() + " -- " + reservation.getTimeTo() + ")"
                     + "\n" + International.getString("Reservierungsgrund") + ": " + reservation.getReason()
                     + "\n" + International.getString("Telefon für Rückfragen") + ": " + reservation.getContact();
@@ -154,56 +154,124 @@ public class BoatReservations extends StorageObject {
             BoatReservationRecord r = ((BoatReservationRecord)record);
             BoatReservationRecord[] br = this.getBoatReservations(r.getBoatId());
             for (int i=0; br != null && i<br.length; i++) {
-                if (br[i].getReservation() == r.getReservation()) {
+                // are reservations identical records? then ignore.
+            	if (br[i].getReservation() == r.getReservation()) {
                     continue;
                 }
+            	
+            	
+            	// check if reservations have different type and overlap
                 if (!r.getType().equals(br[i].getType())) {
                     checkMixedTypeReservations(r, br[i]); //throws an EfaModifyException, if overlapping
                     continue; // if no exception is thrown, we're done here and proceed to the next item on the list.
                 }
-                if (r.getType().equals(BoatReservationRecord.TYPE_WEEKLY)) {
-                    assertFieldNotEmpty(record, BoatReservationRecord.DAYOFWEEK);
-                    assertFieldNotEmpty(record, BoatReservationRecord.TIMEFROM);
-                    assertFieldNotEmpty(record, BoatReservationRecord.TIMETO);
-                    if (!r.getDayOfWeek().equals(br[i].getDayOfWeek())) {
-                        continue;
-                    }
-                    if (DataTypeTime.isRangeOverlap(r.getTimeFrom(), r.getTimeTo(),
-                            br[i].getTimeFrom(), br[i].getTimeTo())) {
-                        throw new EfaModifyException(Logger.MSG_DATA_MODIFYEXCEPTION,
-                                International.getString("Die Reservierung überschneidet sich mit einer anderen Reservierung.") + buildOverlappingReservationInfo(br[i]),
-                                Thread.currentThread().getStackTrace());
-                        
-                    }
-                }
-                if (r.getType().equals(BoatReservationRecord.TYPE_ONETIME)) {
-                    assertFieldNotEmpty(record, BoatReservationRecord.DATEFROM);
-                    assertFieldNotEmpty(record, BoatReservationRecord.DATETO);
-                    assertFieldNotEmpty(record, BoatReservationRecord.TIMEFROM);
-                    assertFieldNotEmpty(record, BoatReservationRecord.TIMETO);
-                    if (DataTypeDate.isRangeOverlap(r.getDateFrom(),
-                                                    r.getTimeFrom(),
-                                                    r.getDateTo(),
-                                                    r.getTimeTo(),
-                                                    br[i].getDateFrom(),
-                                                    br[i].getTimeFrom(),
-                                                    br[i].getDateTo(),
-                                                    br[i].getTimeTo())) {
-                        throw new EfaModifyException(Logger.MSG_DATA_MODIFYEXCEPTION,
-                                International.getString("Die Reservierung überschneidet sich mit einer anderen Reservierung.") + buildOverlappingReservationInfo(br[i]),
-                                Thread.currentThread().getStackTrace());
-
-                    }
-                }
+                
+                // check if both reservations are weekly reservations and overlap
+                checkWeeklyReservationsOverlap(r, br[i]);
+                
+                // check if both reservations are weekly reservations with a limiting period
+                checkWeeklyLimitedReservationsOverlap(r, br[i]);
+                
+                
+                // check if two one-time reservations overlap
+                checkOnetimeReservationsOverlap(r, br[i]);
+                
             }
+            
+            // no overlapping reservations, clean up some unused attributes for one-time and weekly reservation
+            
+            //one time reservations shall not have a weekday set
             if (r.getType().equals(BoatReservationRecord.TYPE_ONETIME) &&
                 r.getDayOfWeek() != null) {
                 r.setDayOfWeek(null);
             }
+            //weekly, unlimited reservations shall not have a datefrom/dateto set
+            if (r.getType().equals(BoatReservationRecord.TYPE_WEEKLY) &&
+                    r.getDateFrom() != null) {
+                    r.setDateFrom(null);
+                }            
+            if (r.getType().equals(BoatReservationRecord.TYPE_WEEKLY) &&
+                    r.getDateTo() != null) {
+                    r.setDateTo(null);
+                }            
+            
         }
     }
 
+    // throws an exception if overlapping detected between two weekly reservations
+    private void checkWeeklyReservationsOverlap(BoatReservationRecord r, BoatReservationRecord br_i) throws EfaModifyException {
+        if (r.getType().equals(BoatReservationRecord.TYPE_WEEKLY)) {
+            assertFieldNotEmpty(r, BoatReservationRecord.DAYOFWEEK);
+            assertFieldNotEmpty(r, BoatReservationRecord.TIMEFROM);
+            assertFieldNotEmpty(r, BoatReservationRecord.TIMETO);
+            if (!r.getDayOfWeek().equals(br_i.getDayOfWeek())) {
+                return;
+            }
+            if (DataTypeTime.isRangeOverlap(r.getTimeFrom(), r.getTimeTo(),
+            		br_i.getTimeFrom(), br_i.getTimeTo())) {
+                throw new EfaModifyException(Logger.MSG_DATA_MODIFYEXCEPTION,
+                        International.getString("Die Reservierung überschneidet sich mit einer anderen Reservierung.") + buildOverlappingReservationInfo(br_i),
+                        Thread.currentThread().getStackTrace());
+                
+            }
+        }
+    	
+    }
     
+    // throws an exception if overlapping detected between two weekly reservations
+    private void checkWeeklyLimitedReservationsOverlap(BoatReservationRecord r, BoatReservationRecord br_i) throws EfaModifyException {    
+	    if (r.getType().equals(BoatReservationRecord.TYPE_WEEKLY_LIMITED)) {
+	        assertFieldNotEmpty(r, BoatReservationRecord.DATEFROM);
+	        assertFieldNotEmpty(r, BoatReservationRecord.DATETO);
+	        assertFieldNotEmpty(r, BoatReservationRecord.DAYOFWEEK);
+	        assertFieldNotEmpty(r, BoatReservationRecord.TIMEFROM);
+	        assertFieldNotEmpty(r, BoatReservationRecord.TIMETO);
+	
+	        //date range of the reservations must be overlapping
+	        if (!DataTypeDate.isRangeOverlap(
+	        		r.getDateFrom(),
+	                r.getDateTo(),
+	                br_i.getDateFrom(),
+	                br_i.getDateTo())) {
+	        	return;
+	        }
+	        	
+	        // then weekday of reservation must be identical
+	        if (!r.getDayOfWeek().equals(br_i.getDayOfWeek())) {
+	            return;
+	        }                    
+	        // then time of day must be overlapping
+	        if (DataTypeTime.isRangeOverlap(r.getTimeFrom(), r.getTimeTo(),
+	        		br_i.getTimeFrom(), br_i.getTimeTo())) {
+	            throw new EfaModifyException(Logger.MSG_DATA_MODIFYEXCEPTION,
+	                    International.getString("Die Reservierung überschneidet sich mit einer anderen Reservierung.") + buildOverlappingReservationInfo(br_i),
+	                    Thread.currentThread().getStackTrace());
+	            
+	        }                    
+	    }
+    }
+    
+    private void checkOnetimeReservationsOverlap(BoatReservationRecord r, BoatReservationRecord br_i) throws EfaModifyException {
+        if (r.getType().equals(BoatReservationRecord.TYPE_ONETIME)) {
+            assertFieldNotEmpty(r, BoatReservationRecord.DATEFROM);
+            assertFieldNotEmpty(r, BoatReservationRecord.DATETO);
+            assertFieldNotEmpty(r, BoatReservationRecord.TIMEFROM);
+            assertFieldNotEmpty(r, BoatReservationRecord.TIMETO);
+            if (DataTypeDate.isRangeOverlap(r.getDateFrom(),
+                                            r.getTimeFrom(),
+                                            r.getDateTo(),
+                                            r.getTimeTo(),
+                                            br_i.getDateFrom(),
+                                            br_i.getTimeFrom(),
+                                            br_i.getDateTo(),
+                                            br_i.getTimeTo())) {
+                throw new EfaModifyException(Logger.MSG_DATA_MODIFYEXCEPTION,
+                        International.getString("Die Reservierung überschneidet sich mit einer anderen Reservierung.") + buildOverlappingReservationInfo(br_i),
+                        Thread.currentThread().getStackTrace());
+
+            }
+        }    	
+    }
     /*
      * Returns a list of Weekdays (as EFA Types) which are within a period defined by two dates.
      * 
@@ -229,16 +297,53 @@ public class BoatReservations extends StorageObject {
     	
     }    
     
+    /*
+     * true, wenn die unlimited weekly Reservation sich mit einer aktuellen oder zukünftigen weekly limited überschneidet.
+     */
+    private boolean isWeeklyReservationOverlappingWithWeeklyLimited(BoatReservationRecord weeklyRes, BoatReservationRecord weeklyLimitedRes) {
+    	
+    	if (!weeklyRes.getDayOfWeek().equals(weeklyLimitedRes.getDayOfWeek())) {
+    		return false; // no matching weekday. conflict impossible.
+    	}
+    	
+    	if (!weeklyLimitedRes.isWeeklyLimitedReservationValidNowOrInFuture(System.currentTimeMillis())) {
+    		return false; // limited weekly reservation's end date is in the past - so no conflict
+    	}
+    	
+    	//if we are here, we need to check for overlapping begin and end times.
+    	return (DataTypeTime.isRangeOverlap(weeklyRes.getTimeFrom(), weeklyRes.getTimeTo(),
+	        		weeklyLimitedRes.getTimeFrom(), weeklyLimitedRes.getTimeTo()));
+    	
+    	
+    }
+    
     private boolean isOneTimeReservationOverlappingWithWeeklyReservation(BoatReservationRecord oneTimeRes, BoatReservationRecord periodRes) {
     	
     	boolean overLapping=false;
+
+    	if (periodRes.getType().equals(BoatReservationRecord.TYPE_WEEKLY_LIMITED)) {
+
+    		//first we have to check, if the oneTimeReservation period covers the period of the weekly reservation
+    		//if not, this weekly reservation is not overlapping.
+    		
+    		DataTypeDate myFromDate=periodRes.getDateFrom();
+    		DataTypeDate myToDate=periodRes.getDateTo();
+    		
+    		//determine from and to, if left empty
+    		myFromDate=(myFromDate==null ? new DataTypeDate(01,01,1970) : myFromDate);
+    		myToDate=(myToDate==null ? new DataTypeDate(31,12,9999): myToDate);
+    		
+    		if (!DataTypeDate.isRangeOverlap(oneTimeRes.getDateFrom(), oneTimeRes.getDateTo(), myFromDate, myToDate)) {
+    			return false;
+    		}
+    		// else we continue
+    	}
     	
       	
     	ArrayList <String> theWeekDays= getWeekdaysOfTimePeriod(oneTimeRes.getDateFrom(), oneTimeRes.getDateTo());
     	
-    	//Wenn der Wochentag der Weekly-Reservierung in der ermittelten Liste der Wochentage ist,
-    	//und der Zeitraum eine Überdeckung hat, dann liegt ein Konflikt mit der Reserierung vor.
-   	
+    	//if weekday of the weekly reservation is within the list of determined weekdays,
+    	//and the time period matches, then we have a conflict.
     	                    
     	if (theWeekDays.contains(periodRes.getDayOfWeek())) {
     		
@@ -286,11 +391,18 @@ public class BoatReservations extends StorageObject {
     	
     }    
 
+    /*
+     * Reservierungstypen weichen voneinander ab. Möglichkeiten:
+     * ONETIME - WEEKLY
+     * ONETIME - WEEKLY_LIMITED
+     * 
+     * WEEKLY  - WEEKLY_LIMITED
+     */
     private void checkMixedTypeReservations (BoatReservationRecord oneReservation, BoatReservationRecord otherReservation) throws EfaModifyException {
         // das hier ist der interessante Fall: 
         
-        // die neue Reservierung ist einmalig, die vorhandene Reservierung ist eine wöchentliche  
-        if (oneReservation.getType()== BoatReservationRecord.TYPE_ONETIME) {
+        // die neue Reservierung ist einmalig, die vorhandene Reservierung ist eine wöchentliche (egal ob limitiert oder nicht)  
+        if (oneReservation.getType().equals(BoatReservationRecord.TYPE_ONETIME)) {
             // wir ermitteln die Wochentage, die von der NEUEN Reservierung betroffen sind.
       	
             if (isOneTimeReservationOverlappingWithWeeklyReservation (oneReservation, otherReservation)) {
@@ -310,7 +422,9 @@ public class BoatReservations extends StorageObject {
             	} 	            	
             }        	
         }
-        else if (oneReservation.getType()==BoatReservationRecord.TYPE_WEEKLY) {
+       
+        else if (((oneReservation.getType().equals(BoatReservationRecord.TYPE_WEEKLY))||(oneReservation.getType().equals(BoatReservationRecord.TYPE_WEEKLY_LIMITED))) 
+        		  && otherReservation.getType().equals(BoatReservationRecord.TYPE_ONETIME)) {
         	// wir haben eine neue wöchentliche Reservierung, 
         	// die sich mit einer vorhandenen einmaligen Reservierung beißen kann.
         	
@@ -338,7 +452,23 @@ public class BoatReservations extends StorageObject {
         	 }
         	
         	
-        }    	
+        }
+        else { // wir haben einen mix aus weekly und weekly_unlimited
+        	
+        	boolean conflict =false;
+        	if (oneReservation.getType().equals(BoatReservationRecord.TYPE_WEEKLY)) {
+        		conflict = isWeeklyReservationOverlappingWithWeeklyLimited(oneReservation, otherReservation);
+        	} else {
+        		conflict = isWeeklyReservationOverlappingWithWeeklyLimited(otherReservation, oneReservation);
+        	}
+        	if (conflict) { 
+         		throw new EfaModifyException(Logger.MSG_DATA_MODIFYEXCEPTION,
+	                       International.getString("Die_Reservierung_ueberschneidet_sich_mit_einer_anderen_Reservierung") + buildOverlappingReservationInfo(otherReservation),
+	                       Thread.currentThread().getStackTrace());        		
+        	}
+        	
+        }
+        	
     }
     
 }

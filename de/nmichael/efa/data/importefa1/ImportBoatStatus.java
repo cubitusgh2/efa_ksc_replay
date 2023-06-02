@@ -136,6 +136,8 @@ public class ImportBoatStatus extends ImportBase {
                                 if (r.getWeekdayFrom() != null && r.getWeekdayFrom().length() > 0) {
                                     rr.setDayOfWeek(r.getWeekdayFrom());
                                 }
+                                //EFA1 does only provide weekly reservations, not weekly limited reservations.
+                                //so, no todo here.
                             }
                             if (r.getForName() != null && r.getForName().length() > 0) {
                                 UUID id = findPerson(persons, IDXP, r.getForName(), false, -1);
