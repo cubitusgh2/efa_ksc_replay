@@ -248,7 +248,7 @@ public class BoatReservationRecord extends DataRecord {
             return getDateDescription(null, getDayOfWeek(), getTimeTo());
         }
         if (type != null && type.equals(TYPE_WEEKLY_LIMITED)) {
-            return getDateDescription(null, getDayOfWeek(), getTimeFrom(), getDateFrom(), getDateTo());
+            return getDateDescription(null, getDayOfWeek(), getTimeTo(), getDateFrom(), getDateTo());
         }                
         return "";
     }
@@ -417,12 +417,12 @@ public class BoatReservationRecord extends DataRecord {
         } else {
         	//it is a weekly limited reservation
         	// datefrom and dateto may be null.
-        	// then we set them to 01.01.1970 (from) and (31.12.9999) (to)
+        	// then we set them to 01.01.1970 (from) and (31.12.3000) (to)
         	mydateFrom= (mydateFrom == null ? new DataTypeDate(01,01,1970) : mydateFrom);
-        	mydateTo = (mydateTo == null ? new DataTypeDate(30,12,9999): mydateTo);
+        	mydateTo = (mydateTo == null ? new DataTypeDate(30,12,3000): mydateTo);
        	
-            long resStart = mydateFrom.getTimestamp(null);
-            long resEnd   = mydateTo.getTimestamp(null);        	
+            long resStart = mydateFrom.getTimestamp(new DataTypeTime(00,00,00));
+            long resEnd   = mydateTo.getTimestamp(new DataTypeTime(23,59,59));        	
         	
             return (now >= resStart && now <= resEnd);
             
@@ -430,6 +430,10 @@ public class BoatReservationRecord extends DataRecord {
 		
 	}
 
+	public boolean isWeeklyLimitedReservationIntervalApplying(DataTypeDate nowDate) {
+		return (nowDate == null ? false : isWeeklyLimitedReservationIntervalApplying(nowDate.getTimestamp(new DataTypeTime(0,0,0))));
+	}	
+	
     /*
      * returns true if the current reservation is weekly limited
      * and the dateTo date of the reservation is higher than today
@@ -446,8 +450,8 @@ public class BoatReservationRecord extends DataRecord {
         } else {
         	//it is a weekly limited reservation
         	// datefrom and dateto may be null.
-        	// then we set them to 01.01.1970 (from) and (31.12.9999) (to)
-        	mydateTo = (mydateTo == null ? new DataTypeDate(30,12,9999): mydateTo);
+        	// then we set them to 01.01.1970 (from) and (31.12.3000) (to)
+        	mydateTo = (mydateTo == null ? new DataTypeDate(30,12,3000): mydateTo);
        	
             long resEnd   = mydateTo.getTimestamp(null);        	
         	

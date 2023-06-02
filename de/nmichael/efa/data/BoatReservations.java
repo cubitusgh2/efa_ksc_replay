@@ -331,7 +331,7 @@ public class BoatReservations extends StorageObject {
     		
     		//determine from and to, if left empty
     		myFromDate=(myFromDate==null ? new DataTypeDate(01,01,1970) : myFromDate);
-    		myToDate=(myToDate==null ? new DataTypeDate(31,12,9999): myToDate);
+    		myToDate=(myToDate==null ? new DataTypeDate(31,12,3000): myToDate);
     		
     		if (!DataTypeDate.isRangeOverlap(oneTimeRes.getDateFrom(), oneTimeRes.getDateTo(), myFromDate, myToDate)) {
     			return false;
