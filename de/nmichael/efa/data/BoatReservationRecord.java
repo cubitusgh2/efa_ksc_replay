@@ -372,7 +372,7 @@ public class BoatReservationRecord extends DataRecord {
                 if (!isTodayReservationDayOfWeek(now)) {
                 	return -1;
                 }
-                if (!isWeeklyLimitedReservationIntervalApplying(now)) {
+                if ((this.getType().equals(TYPE_WEEKLY_LIMITED) && !isWeeklyLimitedReservationIntervalApplying(now))) {
                 	return -1;
                 }
                 // ok, this is our current weekday, and the provided interval applies...
