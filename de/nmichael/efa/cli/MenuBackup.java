@@ -16,6 +16,7 @@ import de.nmichael.efa.core.BackupMetaDataItem;
 import de.nmichael.efa.util.EfaUtil;
 import de.nmichael.efa.util.Email;
 import java.io.File;
+import java.util.Hashtable;
 import java.util.Stack;
 import java.util.Vector;
 
@@ -30,7 +31,7 @@ public class MenuBackup extends MenuBase {
     }
 
     public void printHelpContext() {
-        printUsage(CMD_BACKUP,  "[project|config|all] [directory/file]", "create backup");
+        printUsage(CMD_BACKUP,  "[project|config|all] [-includeefalog] [directory/file/mailto:emailadress]", "create backup");
         printUsage(CMD_RESTORE, "<zipfile> [objects...]", "restore backup");
         printUsage(CMD_SHOW,    "<zipfile>", "show archive content");
     }
@@ -40,6 +41,10 @@ public class MenuBackup extends MenuBase {
             cli.logerr("You don't have permission to access this function.");
             return CLI.RC_NO_PERMISSION;
         }
+        
+        Hashtable<String,String> parameters = getOptionsFromArgs(args);
+        args = removeOptionsFromArgs(args);        
+        
         Vector<String> options = super.getCommandOptions(args);
         if (options == null || options.size() < 1 || options.size() > 2) {
             printHelpContext();
@@ -48,6 +53,9 @@ public class MenuBackup extends MenuBase {
         
         boolean backupProject = false;
         boolean backupConfig = false;
+        boolean backupEfaLog = false;
+        backupEfaLog = parameters.containsKey("includeefalog");
+        
         String backupDir = Daten.efaBakDirectory;
         String backupFile = null;
         String backupEmail = null;
@@ -94,8 +102,9 @@ public class MenuBackup extends MenuBase {
         }
 
         Backup backup = (backupEmail == null ?
-            new Backup(backupDir, backupFile, backupProject, backupConfig) :
-            new Backup(Daten.efaTmpDirectory, null, backupEmail, backupProject, backupConfig) );
+            new Backup(backupDir, backupFile, backupProject, backupConfig, backupEfaLog) :
+            new Backup(Daten.efaTmpDirectory, null, backupEmail, backupProject, backupConfig, backupEfaLog) );
+        
         int ret = backup.runBackup(null);
         if (ret > 0) {
             return CLI.RC_COMMAND_COMPLETED_WITH_ERRORS;

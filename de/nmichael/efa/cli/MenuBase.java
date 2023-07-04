@@ -12,7 +12,11 @@ package de.nmichael.efa.cli;
 
 import de.nmichael.efa.Daten;
 import de.nmichael.efa.util.EfaUtil;
+import de.nmichael.efa.util.Logger;
+
+import java.util.Hashtable;
 import java.util.Stack;
+import java.util.StringTokenizer;
 import java.util.Vector;
 
 public abstract class MenuBase {
@@ -76,4 +80,45 @@ public abstract class MenuBase {
         return -1; // to be handled by subclass
     }
 
+    protected Hashtable<String, String> getOptionsFromArgs(String args) {
+        Hashtable<String, String> options = new Hashtable<String, String>();
+        try {
+            StringTokenizer tok = new StringTokenizer(args, " ");
+            while (tok.hasMoreTokens()) {
+                String s = tok.nextToken().trim();
+                if (s.startsWith("-")) {
+                    int pos = s.indexOf("=");
+                    String name = s.substring(1).toLowerCase();
+                    String value = "";
+                    if (pos > 0) {
+                        name = s.substring(1, pos).toLowerCase();
+                        value = s.substring(pos + 1);
+                    }
+                    options.put(name, value);
+                }
+            }
+        } catch (Exception e) {
+            Logger.logdebug(e);
+        }
+        return options;
+    }
+
+    protected String removeOptionsFromArgs(String args) {
+    	if (args == null || args.isEmpty()) {
+    		return null;
+    	}
+    	StringBuilder sb = new StringBuilder();
+        StringTokenizer tok = new StringTokenizer(args, " ");
+        if (tok.countTokens() == 0) {
+            return args;
+        }
+        while (tok.hasMoreTokens()) {
+            String s = tok.nextToken().trim();
+            if (!s.startsWith("-")) {
+                sb.append( (sb.length() > 0 ? " " : "") + s);
+            }
+        }
+        return sb.toString();
+    }    
+    
 }

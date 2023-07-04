@@ -369,7 +369,7 @@ class ExecuteAfterDownloadImpl implements ExecuteAfterDownload {
                     || Daten.project.getProjectStorageType() == IDataAccess.TYPE_EFA_REMOTE) {
                 backupProject = false;
             }
-            Backup backup = new Backup(Daten.efaBakDirectory, null, backupProject, true);
+            Backup backup = new Backup(Daten.efaBakDirectory, null, backupProject, true,false);//do not back up efa log
             if (backup.runBackup(null) != 0) {
                 lastError = LogString.operationFailed(International.getString("Backup"));
                 if (parent == null) {
