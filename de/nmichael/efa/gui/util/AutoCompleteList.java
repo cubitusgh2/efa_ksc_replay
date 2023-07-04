@@ -15,7 +15,43 @@ import de.nmichael.efa.data.storage.*;
 import de.nmichael.efa.data.*;
 import de.nmichael.efa.util.*;
 import java.util.*;
-
+/*
+ * AutoCompleteList
+ * 
+ * Holds the data behind ItemTypeStringAutoComplete.
+ * 
+ * Connects to a data access (table) which implies the data to hold.
+ * AutoCompleteList elements are updated, when the dataaccess has a newer timestamp (SCN), or the efaconfig has been updated.
+ *  
+ * When updating AutoCompleteList, items from the database can be
+ * - invalid at the current time (so they should not be shown in a dropdown list). Nonetheless, invalid items once were valid, so they can be autocompleted.
+ * - marked as invisible in the db (so they should not be shown in a dropdown list)
+ * - can have an alias, when it comes to persondb entries.
+ * 
+ * Class contains several lists
+ * - dataVisible: visible items from the data access. 
+ * 		items in this list are also avaliable in lower2realvisible.
+ * - dataVisibleFiltered: when a filterText has been provided, this list contains all items which *contain* the filtertext case-insensitive.
+ * 		ItemTypeAutoComplete and AutoCompletePopupWindow mostly work with this filtered list.
+ * - lower2realVisible: lowerCase representation of dataVisible items.
+ * - lower2realInvisible: items can be valid, but in the past, or they are marked as invisible. 
+ *      These items should not be in the visible list, and shall only be found on special occasions. This list contains such items.    
+ * - aliases2realVisible: A person can have an alias (provided in person list master data). The mapping alias<>person is contained in this list (supposing the autocompletelist contains person items).
+ * - name2valid: contains the valid dates of an item which is in one of the (datavisible, dataVisibleFiltered, lower2realVisible, lower2realInvisible, aliases2realVisible) lists.
+ * 
+ * Major update for filtered lists
+ * A request from users is that autocomplete lists should only show items in the dropdown list which contain the text of the corresponding textfield.
+ * This does not comply with an autocomplete function, which always tries to match by using the text of the corresponding textfield as prefix.
+ * 
+ * So, to support two types of autocomplete lists, this class has been altered.
+ * It supports the old-fashioned autocomplete-by-prefix mode, if no filterText has been passed.
+ * If a filterText has been passed, any operation works on a filtered list which provided only items which contain the filterText (lowercase).
+ * 
+ * Whether an autocomplete list is filtered or not, is specified in ItemTypeStringAutoComplete, by setting or not setting a filtertext on the list.
+ * When filtered, the autocomplete list also handles the lookup of aliases for persons. So if a filtertext matches an alias, the item matching the alias
+ * is added to the result set (if not already in the result set). 
+ * 
+ */
 public class AutoCompleteList {
 
     private class ValidInfo {
@@ -36,6 +72,7 @@ public class AutoCompleteList {
     private long validFrom = -1;
     private long validUntil = Long.MAX_VALUE;
     private Vector<String> dataVisible = new Vector<String>();
+    private Vector<String> dataVisibleFiltered= new Vector<String>();
     private Hashtable<String,ValidInfo> name2valid = new Hashtable<String,ValidInfo>();
     private Hashtable<String,String> lower2realVisible = new Hashtable<String,String>();;
     private Hashtable<String,String> lower2realInvisible = new Hashtable<String,String>();;
@@ -47,6 +84,7 @@ public class AutoCompleteList {
     private String _foundValue;
     private boolean filterDataOnlyForThisBoathouse = false;
     private boolean postfixNamesWithBoathouseName = true;
+    private String filterText=null;
 
     public AutoCompleteList() {
     }
@@ -79,9 +117,14 @@ public class AutoCompleteList {
     public Vector<String> getDataVisible() {
         return dataVisible;
     }
+    
+    public Vector<String> getDataVisibleFiltered(){
+    	return dataVisibleFiltered;
+    }
 
     public void setDataVisible(Vector<String> dataVisible) {
         this.dataVisible = dataVisible;
+        updateVisibleFilteredList();
     }
 
     public void setFilterDataOnlyForThisBoathouse(boolean filterDataOnlyForThisBoathouse) {
@@ -91,7 +134,40 @@ public class AutoCompleteList {
     public void setPostfixNamesWithBoathouseName(boolean postfixNamesWithBoathouseName) {
         this.postfixNamesWithBoathouseName = postfixNamesWithBoathouseName;
     }
+    
+    public synchronized void setFilterText(String v) {
+    	if (v!=null && !v.isEmpty()) {
+    		this.filterText=v.trim().toLowerCase();
+    	} else {
+    		this.filterText=null;
+    	}
+    	updateVisibleFilteredList();
+    }
 
+    private synchronized void updateVisibleFilteredList() {
+    	if (filterText!=null) {
+    		dataVisibleFiltered=new Vector<String>();
+    		
+    		for (int i=0; i<dataVisible.size()-1; i++) {
+    			if (dataVisible.get(i).toLowerCase().contains(filterText))
+    			{
+    				dataVisibleFiltered.add(dataVisible.get(i));
+    			}
+    		}
+    		//for entries with aliases, check wether the alias points to an entry that is not yet in the filtered list
+    		if (aliases2realVisible.containsKey(filterText.toLowerCase())) {
+    			String theValue=aliases2realVisible.get(filterText.toLowerCase());
+    			if (!dataVisibleFiltered.contains(theValue)) {
+    				dataVisibleFiltered.add(theValue);
+    			}
+    		}
+    	} else { //no applicable filtertext, use unfiltered data
+    		dataVisibleFiltered = dataVisible; 
+    	}
+    	
+    	Collections.sort(dataVisibleFiltered);
+    }
+    
     /**
      * Synchronize this list with the underlying DataAccess, if necessary
      */
@@ -121,68 +197,70 @@ public class AutoCompleteList {
                 Daten.efaConfig != null && Daten.efaConfig.data() != null &&
                 (dataAccess.getSCN() != dataAccessSCN ||
                  Daten.efaConfig.data().getSCN() != efaConfigSCN)) {
-                dataAccessSCN = dataAccess.getSCN();
-                efaConfigSCN = Daten.efaConfig.data().getSCN();
-                dataVisible = new Vector<String>();
-                name2valid = new Hashtable<String,ValidInfo>();
-                lower2realVisible = new Hashtable<String,String>();
-                lower2realInvisible = new Hashtable<String,String>();
-                aliases2realVisible = new Hashtable<String,String>();
-                DataKeyIterator it = dataAccess.getStaticIterator();
-                ;
-                for (DataKey k = it.getFirst(); k != null; k = it.getNext()) {
-                    DataRecord r = dataAccess.get(k);
-                    if (r != null) {
-                        if (_searchId != null && r.getUniqueIdForRecord() != null && _searchId.equals(r.getUniqueIdForRecord().toString())) {
-                            _foundValue = r.getQualifiedName();
-                        }
-                        String s = r.getQualifiedName();
-                        if (r instanceof DestinationRecord) {
-                            if (filterDataOnlyForThisBoathouse && numberOfBoathouses > 1 &&
-                                    ((DestinationRecord)r).getOnlyInBoathouseIdAsInt() >= 0 &&
-                                myBoathouseId != ((DestinationRecord)r).getOnlyInBoathouseIdAsInt()) {
-                                continue;
-                            }
-                            if (Daten.efaConfig.getValuePrefixDestinationWithWaters()) {
-                                s = ((DestinationRecord)r).getWatersNamesStringListPrefix() + s;
-                            }
-                            if (!postfixNamesWithBoathouseName && myBoathouseName != null) {
-                                // remove postfix from qualified name
-                                String dest = DestinationRecord.getDestinationNameFromPostfixedDestinationBoathouseString(s);
-                                String bths = DestinationRecord.getBoathouseNameFromPostfixedDestinationBoathouseString(s);
-                                if (dest != null && bths != null && myBoathouseName.equals(bths)) {
-                                    s = dest;
-                                }
-                            }
-                        }
-                        String alias = null;
-                        if (r instanceof PersonRecord) {
-                            alias = ((PersonRecord)r).getInputShortcut();
-                            if (Daten.efaConfig.getValuePostfixPersonsWithClubName()) {
-                                s = s + ((PersonRecord)r).getAssociationPostfix();
-                            }
-                            
-                        }
-                        if (!r.getDeleted()) {
-                            if (s.length() > 0) {
-                                ValidInfo vi = null;
-                                if (dataAccess.getMetaData().isVersionized()) {
-                                    vi = new ValidInfo(r.getValidFrom(), r.getInvalidFrom());
-                                }
-                                add(s, alias, 
-                                        r.isInValidityRange(validFrom, validUntil) && !r.getInvisible(), vi);
-                            }
-                        } else {
-                            if (!r.getDeleted()) {
-                                add(s, alias, false, null);
-                            }
-                        }
-                    }
-                }
-                sort();
-            }
+	                dataAccessSCN = dataAccess.getSCN();
+	                efaConfigSCN = Daten.efaConfig.data().getSCN();
+	                dataVisible = new Vector<String>();
+	                name2valid = new Hashtable<String,ValidInfo>();
+	                lower2realVisible = new Hashtable<String,String>();
+	                lower2realInvisible = new Hashtable<String,String>();
+	                aliases2realVisible = new Hashtable<String,String>();
+	                DataKeyIterator it = dataAccess.getStaticIterator();
+	                ;
+	                for (DataKey k = it.getFirst(); k != null; k = it.getNext()) {
+	                    DataRecord r = dataAccess.get(k);
+	                    if (r != null) {
+	                        if (_searchId != null && r.getUniqueIdForRecord() != null && _searchId.equals(r.getUniqueIdForRecord().toString())) {
+	                            _foundValue = r.getQualifiedName();
+	                        }
+	                        String s = r.getQualifiedName();
+	                        if (r instanceof DestinationRecord) {
+	                            if (filterDataOnlyForThisBoathouse && numberOfBoathouses > 1 &&
+	                                    ((DestinationRecord)r).getOnlyInBoathouseIdAsInt() >= 0 &&
+	                                myBoathouseId != ((DestinationRecord)r).getOnlyInBoathouseIdAsInt()) {
+	                                continue;
+	                            }
+	                            if (Daten.efaConfig.getValuePrefixDestinationWithWaters()) {
+	                                s = ((DestinationRecord)r).getWatersNamesStringListPrefix() + s;
+	                            }
+	                            if (!postfixNamesWithBoathouseName && myBoathouseName != null) {
+	                                // remove postfix from qualified name
+	                                String dest = DestinationRecord.getDestinationNameFromPostfixedDestinationBoathouseString(s);
+	                                String bths = DestinationRecord.getBoathouseNameFromPostfixedDestinationBoathouseString(s);
+	                                if (dest != null && bths != null && myBoathouseName.equals(bths)) {
+	                                    s = dest;
+	                                }
+	                            }
+	                        }
+	                        String alias = null;
+	                        if (r instanceof PersonRecord) {
+	                            alias = ((PersonRecord)r).getInputShortcut();
+	                            if (Daten.efaConfig.getValuePostfixPersonsWithClubName()) {
+	                                s = s + ((PersonRecord)r).getAssociationPostfix();
+	                            }
+	                            
+	                        }
+                        
+	                        if (!r.getDeleted()) {
+	                            if (s.length() > 0) {
+	                                ValidInfo vi = null;
+	                                if (dataAccess.getMetaData().isVersionized()) {
+	                                    vi = new ValidInfo(r.getValidFrom(), r.getInvalidFrom());
+	                                }
+	                                add(s, alias, 
+	                                        r.isInValidityRange(validFrom, validUntil) && !r.getInvisible(), vi);
+	                            }
+	                        } else {
+	                            if (!r.getDeleted()) {
+	                                add(s, alias, false, null);
+	                            }
+	                        }
+	                    }
+	                }
+	                sort();
+	            }
         } catch (Exception e) {
         }
+        updateVisibleFilteredList();
     }
 
     public synchronized String getValueForId(String id) {
@@ -293,15 +371,20 @@ public class AutoCompleteList {
     }
 
     public synchronized String getNext() {
-        if (pos < dataVisible.size() - 1) {
-            return dataVisible.get(++pos);
+        if (pos < dataVisibleFiltered.size() - 1) {
+            return dataVisibleFiltered.get(++pos);
+        } else if (dataVisibleFiltered.size() == 1) {
+        	return dataVisibleFiltered.get(0);
         }
+        	
         return null;
     }
 
     public synchronized String getPrev() {
         if (pos > 0) {
-            return dataVisible.get(--pos);
+            return dataVisibleFiltered.get(--pos);
+        } else if (dataVisibleFiltered.size() == 1) {
+        	return dataVisibleFiltered.get(0);
         }
         return null;
     }
@@ -309,10 +392,20 @@ public class AutoCompleteList {
     public synchronized String getFirst(String prefix) {
         prefix = prefix.toLowerCase();
         lastPrefix = prefix;
-        for (pos = 0; pos < dataVisible.size(); pos++) {
-            if (dataVisible.get(pos).toLowerCase().startsWith(prefix)) {
-                return dataVisible.get(pos);
-            }
+        if (filterText==null) 
+        {
+	        for (pos = 0; pos < dataVisibleFiltered.size(); pos++) {
+	            if (dataVisibleFiltered.get(pos).toLowerCase().startsWith(prefix)) {
+	                return dataVisibleFiltered.get(pos);
+	            }
+	        }
+        } else {//we already have a filtered list, get the first item no matter what the prefix is
+    		if (dataVisibleFiltered.size()>0) {
+        		pos=0;
+        		return dataVisibleFiltered.get(pos);
+        	} else {
+        		return null;
+        	}
         }
         return null;
     }
@@ -320,39 +413,66 @@ public class AutoCompleteList {
     public synchronized String getLast(String prefix) {
         prefix = prefix.toLowerCase();
         lastPrefix = prefix;
-        for (pos = dataVisible.size()-1; pos >= 0; pos--) {
-            if (dataVisible.get(pos).toLowerCase().startsWith(prefix)) {
-                return dataVisible.get(pos);
-            }
+
+        if (filterText==null) {
+	        for (pos = dataVisibleFiltered.size()-1; pos >= 0; pos--) {
+	            if (dataVisibleFiltered.get(pos).toLowerCase().startsWith(prefix)) {
+	                return dataVisibleFiltered.get(pos);
+	            }
+	        }
+        } else {//we already have a filtered list, get the last item no matter what the prefix is
+        	if (dataVisibleFiltered.size()>0) {
+        		pos=dataVisibleFiltered.size()-1;
+        		return dataVisibleFiltered.get(pos);
+        	} else {
+        		return null;
+        	}
         }
         return null;
     }
 
     public synchronized String getNext(String prefix) {
-        prefix = prefix.toLowerCase();
-        if (lastPrefix == null || !prefix.equals(lastPrefix)) {
-            return getFirst(prefix);
-        }
-        if (pos < dataVisible.size() - 1) {
-            String s = dataVisible.get(++pos);
-            if (s.toLowerCase().startsWith(prefix)) {
-                return s;
-            }
-        }
-        return null;
+
+    	if (filterText==null) {
+	    	prefix = prefix.toLowerCase();
+	        if (lastPrefix == null || !prefix.equals(lastPrefix)) {
+	        	return getFirst(prefix);
+	        }
+	        
+	        if (pos < dataVisibleFiltered.size() - 1) {
+	            String s = dataVisibleFiltered.get(++pos);
+	            if (s.toLowerCase().startsWith(prefix)) {
+	                return s;
+	            }
+	        }
+    	} else {// filterText has been specified so all items match
+    		if (pos < dataVisibleFiltered.size() - 1) {
+	            return dataVisibleFiltered.get(++pos);
+    		}
+    	}
+	        
+	    return null;
     }
 
     public synchronized String getPrev(String prefix) {
-        prefix = prefix.toLowerCase();
-        if (lastPrefix == null || !prefix.equals(lastPrefix)) {
-            return getFirst(prefix);
-        }
-        if (pos > 0) {
-            String s = dataVisible.get(--pos);
-            if (s.toLowerCase().startsWith(prefix)) {
-                return s;
-            }
-        }
+        
+    	if (filterText==null) {
+	    	prefix = prefix.toLowerCase();
+	        if (lastPrefix == null || !prefix.equals(lastPrefix)) {
+	            return getLast(prefix);
+	        }
+	        
+	        if (pos > 0) {
+	            String s = dataVisibleFiltered.get(--pos);
+	            if (s.toLowerCase().startsWith(prefix)) {
+	                return s;
+	            }
+	        }
+    	} else { // filterText has been specified so all items match
+	        if (pos > 0) {
+	            return dataVisibleFiltered.get(--pos);
+	        }
+    	}
         return null;
     }
 
@@ -365,7 +485,7 @@ public class AutoCompleteList {
     }
 
     public String[] getData() {
-        return dataVisible.toArray(new String[0]);
+        return dataVisibleFiltered.toArray(new String[0]);
     }
 
     public synchronized Object getId(String qname) {
@@ -527,6 +647,7 @@ public class AutoCompleteList {
         dataVisible = new Vector<String>();
         dataVisible.addAll(name2valid.keySet());
         sort();
+        updateVisibleFilteredList();
         lastPrefix = null;
         pos = 0;
     }

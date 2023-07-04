@@ -2110,15 +2110,36 @@ public class Project extends StorageObject {
         if (Daten.applID == Daten.APPL_EFABASE) {
             name = getCurrentClubworkEfaBase();
         }
+        
         if (Daten.applID == Daten.APPL_EFABH) {
             name = getCurrentClubworkEfaBoathouse();
         }
+       
+
         if (name != null && name.length() > 0) {
             return getClubwork(name, false);
         }
         return null;
     }
 
+    // If EFACLI wants to get data for clubwork, we have to define wether to use clubwork defined in efabase
+    // or in efaboathouse. Although I do not know why there is a difference yet.
+    
+    public Clubwork getCurrentClubworkForCLI(boolean useClubworkFromBoathouse) {
+        String name = null;
+        if (useClubworkFromBoathouse ) {
+            name = getCurrentClubworkEfaBoathouse();
+        } else {
+            name = getCurrentClubworkEfaBase();
+        }        
+
+        if (name != null && name.length() > 0) {
+            return getClubwork(name, false);
+        }
+        return null;
+    
+    }
+    
     public String getClubName() {
         return getClubRecord().getClubName();
     }

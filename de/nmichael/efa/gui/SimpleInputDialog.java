@@ -40,19 +40,12 @@ public class SimpleInputDialog extends BaseDialog {
         this.items = items;
     }
 
-    public void _keyAction(ActionEvent evt) {
-        if (evt.getActionCommand().equals(KEYACTION_ENTER)) {
-            closeButton_actionPerformed(evt);
-        }
-        super._keyAction(evt);
-    }
-
     public void keyAction(ActionEvent evt) {
         _keyAction(evt);
     }
 
     protected void iniDialog() throws Exception {
-        KEYACTION_ENTER = addKeyAction("ENTER");
+   		this.getRootPane().setDefaultButton(closeButton);
 
         // create GUI items
         mainPanel.setLayout(new GridBagLayout());

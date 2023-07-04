@@ -9,8 +9,8 @@
  */
 package de.nmichael.efa.data.types;
 
-import java.time.LocalTime;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.GregorianCalendar;
 
 import de.nmichael.efa.Daten;
@@ -205,6 +205,10 @@ public class DataTypeDate implements Cloneable, Comparable<DataTypeDate> {
                 EfaUtil.int2String(month,2) + "/" + EfaUtil.int2String(day,2) + "/" + EfaUtil.int2String(year,4);
     }
 
+    public Date getDate() {
+    	return new Date(year-1900,month-1,day);
+    }
+    
     public boolean isSet() {
         return day != -1 && month != -1 && year != -1;
     }

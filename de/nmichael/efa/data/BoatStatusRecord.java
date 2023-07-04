@@ -10,15 +10,30 @@
 
 package de.nmichael.efa.data;
 
+import java.awt.GridBagConstraints;
+import java.util.UUID;
+import java.util.Vector;
+
 import de.nmichael.efa.Daten;
 import de.nmichael.efa.core.config.AdminRecord;
 import de.nmichael.efa.core.config.EfaTypes;
-import de.nmichael.efa.data.storage.*;
-import de.nmichael.efa.data.types.*;
-import de.nmichael.efa.core.items.*;
-import de.nmichael.efa.gui.util.*;
-import de.nmichael.efa.util.*;
-import java.util.*;
+import de.nmichael.efa.core.items.IItemType;
+import de.nmichael.efa.core.items.ItemTypeBoolean;
+import de.nmichael.efa.core.items.ItemTypeLabel;
+import de.nmichael.efa.core.items.ItemTypeString;
+import de.nmichael.efa.core.items.ItemTypeStringList;
+import de.nmichael.efa.data.storage.DataKey;
+import de.nmichael.efa.data.storage.DataRecord;
+import de.nmichael.efa.data.storage.IDataAccess;
+import de.nmichael.efa.data.storage.MetaData;
+import de.nmichael.efa.data.types.DataTypeDate;
+import de.nmichael.efa.data.types.DataTypeIntString;
+import de.nmichael.efa.data.types.DataTypeTime;
+import de.nmichael.efa.gui.util.TableItem;
+import de.nmichael.efa.gui.util.TableItemHeader;
+import de.nmichael.efa.util.EfaUtil;
+import de.nmichael.efa.util.International;
+import de.nmichael.efa.util.Logger;
 
 // @i18n complete
 
@@ -201,6 +216,25 @@ public class BoatStatusRecord extends DataRecord {
         return r != null && isOnTheWaterShowNotAvailable(r.getSessionType(), r.getEndDate());
     }
 
+    public String getSessionType() {
+        LogbookRecord r = getLogbookRecord(); 	
+        if (r==null) {
+        	return "";
+        } else {
+        	return Daten.efaTypes.getValue(EfaTypes.CATEGORY_SESSION,r.getSessionType());
+        }
+
+    }
+    
+    public String getDestination() {
+        LogbookRecord r = getLogbookRecord(); 	
+        if (r==null) {
+        	return "";
+        } else {
+        	return r.getDestinationAndVariantName();
+        }
+    }
+    
     public void setOnlyInBoathouseId(int boathouseId) {
         setString(ONLYINBOATHOUSEID, (boathouseId < 0 ? null : Integer.toString(boathouseId)));
     }
@@ -306,6 +340,9 @@ public class BoatStatusRecord extends DataRecord {
         v.add(item = new ItemTypeLabel("GUI_BOAT_NAME",
                 IItemType.TYPE_PUBLIC, CAT_STATUS, International.getMessage("Bootsstatus für {boat}", getBoatNameAsString(System.currentTimeMillis()))));
         item.setPadding(0, 0, 0, 10);
+        item.setBackgroundColor(Daten.efaConfig.getTableSelectionBackgroundColor());
+        item.setColor(Daten.efaConfig.getTableSelectionForegroundColor());
+        item.setFieldGrid(2,GridBagConstraints.EAST, GridBagConstraints.BOTH);        
 
         v.add(item = new ItemTypeString(BoatStatusRecord.BOATTEXT, getBoatText(),
                 IItemType.TYPE_EXPERT, CAT_STATUS,

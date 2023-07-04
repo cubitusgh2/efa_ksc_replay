@@ -13,6 +13,7 @@ package de.nmichael.efa.cli;
 import de.nmichael.efa.Daten;
 import de.nmichael.efa.util.EfaUtil;
 import java.util.Stack;
+import java.util.StringTokenizer;
 import java.util.Vector;
 
 public abstract class MenuBase {
@@ -28,7 +29,7 @@ public abstract class MenuBase {
     }
 
     public void printUsage(String cmd, String args, String description) {
-        cli.loginfo(EfaUtil.getString(cmd, 16) + " " + EfaUtil.getString(args, 35) + " " + description);
+        cli.loginfo(EfaUtil.getString(cmd, 17) + " " + EfaUtil.getString(args, 35) + " " + description);
     }
 
     public void printHelpHeader(String menu) {
@@ -76,4 +77,23 @@ public abstract class MenuBase {
         return -1; // to be handled by subclass
     }
 
+    protected String removeOptionsFromArgs(String args) {
+        if (args!= null && !args.isEmpty()) {
+	    	StringBuilder sb = new StringBuilder();
+	        StringTokenizer tok = new StringTokenizer(args, " ");
+	        if (tok.countTokens() == 0) {
+	            return args;
+	        }
+	        while (tok.hasMoreTokens()) {
+	            String s = tok.nextToken().trim();
+	            if (!s.startsWith("-")) {
+	                sb.append( (sb.length() > 0 ? " " : "") + s);
+	            }
+	        }
+	        return sb.toString();
+        } else {
+        	return "";
+        }
+    }
+    
 }

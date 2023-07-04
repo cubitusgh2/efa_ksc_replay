@@ -225,6 +225,7 @@ public class KanuEfbSyncTask extends ProgressTask {
     private int countSyncTrips = 0;
     private int countWarnings = 0;
     private int countErrors = 0;
+    private boolean verboseMode=false;
 
     TrustManager[] trustAllCerts = new TrustManager[]{
         new X509TrustManager() {
@@ -243,11 +244,12 @@ public class KanuEfbSyncTask extends ProgressTask {
         }
     };
 
-    public KanuEfbSyncTask(Logbook logbook, AdminRecord admin) {
+    public KanuEfbSyncTask(Logbook logbook, AdminRecord admin, boolean verbose) {
         super();
         this.admin = admin;
         getConfigValues();
         this.logbook = logbook;
+        this.verboseMode=verbose;
     }
 
     private void getConfigValues() {
@@ -602,6 +604,11 @@ public class KanuEfbSyncTask extends ProgressTask {
         	       	
         	logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Synchronisiere Fahrten...");
         	logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Bootstypen, für die Fahrten synchronisiert werden können: "+ Daten.efaConfig.getCanoeBoatTypes());
+        	if (Daten.efaConfig.getValueKanuEfb_SyncUnknownBoats()) {
+        		logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Fahrten mit unbekannten Booten werden synchronisiert.");
+        	} else {
+        		logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Fahrten mit unbekannten Booten werden nicht synchronisiert.");
+        	}
             if (Daten.efaConfig.getValueKanuEfb_FullSync() ) {
             	logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Modus FullSync: Es wird das vollständige Fahrtenbuch übertragen.");           	
             } else {
@@ -617,8 +624,9 @@ public class KanuEfbSyncTask extends ProgressTask {
             boolean isUnfinishedTrip=false;
             boolean isTooEarlyTrip=false;
             boolean isUpdatedTrip=false;
-            boolean isNonSupportedCanoeBoatType=false;
+            boolean isKnownBoatButNonSupportedCanoeBoatType=false;
             boolean isEmptyBoatRecordTrip=false;
+            boolean isEmptyBoatRecordTrip_SyncAnyway=false;
 
             KanuEfbStatistics kStatistics=new KanuEfbStatistics(logbook.data().getNumberOfRecords());
             
@@ -667,10 +675,12 @@ public class KanuEfbSyncTask extends ProgressTask {
                 	isTooEarlyTrip = r.getDate().isBefore(Daten.efaConfig.getValueKanuEfb_SyncTripsAfterDate());
                 	
                 	isEmptyBoatRecordTrip = r.getBoatRecord(r.getValidAtTimestamp()) == null;
+                	isEmptyBoatRecordTrip_SyncAnyway = isEmptyBoatRecordTrip && Daten.efaConfig.getValueKanuEfb_SyncUnknownBoats();
                 	
                 	// We only support EFB synchronization for special boat types, which are set in efaConfig 
-                	isNonSupportedCanoeBoatType = !isCanoeBoatType(r.getBoatRecord(r.getValidAtTimestamp())) && !isEmptyBoatRecordTrip;
-                	
+                	// this is only true if boat is in our boat database and has a boat type that is not in our list of syncable types
+                	isKnownBoatButNonSupportedCanoeBoatType = !isCanoeBoatType(r.getBoatRecord(r.getValidAtTimestamp())) && !isEmptyBoatRecordTrip;
+
                 	// let's get some statistics...
                 	kStatistics.incrementNonCanoeingTripCntIfTrue(!isRowingOrCanoeingSession);
                 	kStatistics.incrementAlreadySyncedTripCntIfTrue(isAlreadySyncedTrip);                	
@@ -684,19 +694,35 @@ public class KanuEfbSyncTask extends ProgressTask {
 
                 			if (!isTooEarlyTrip) {
                 				//only one of these values can be true
-                				kStatistics.incrementNonSupportedBoatTypeTriCntIfTrue(isNonSupportedCanoeBoatType);
-                				kStatistics.incrementEmptyBoatRecordTripCntIfTrue(isEmptyBoatRecordTrip);
+                				//todo hier was machen
+                				kStatistics.incrementKnownBoatNonSupportedBoatTypeTripCntIfTrue(isKnownBoatButNonSupportedCanoeBoatType);
+                				kStatistics.incrementEmptyBoatRecordTripCntIfTrue(isEmptyBoatRecordTrip && !isEmptyBoatRecordTrip_SyncAnyway);
                 				
-                				if (isEmptyBoatRecordTrip) {
-                                    logInfo(Logger.WARNING, Logger.MSG_SYNC_SYNCINFO, "  Fahrt " +  r.getQualifiedName()+ " - Bootstyp nicht gesetzt/Boot unbekannt: " + r.getBoatAsName());
-                				}
+            					if (isEmptyBoatRecordTrip && !isEmptyBoatRecordTrip_SyncAnyway && verboseMode) {
+            						// only log about unknown boats in verbose mode as this can happen any synchronisation
+            						logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "  Fahrt " +  r.getQualifiedName()+ " - Bootstyp nicht gesetzt/Boot unbekannt: " + r.getBoatAsName());
+            					} else if (isEmptyBoatRecordTrip && isEmptyBoatRecordTrip_SyncAnyway) {
+            						// we always log if we sync trips for unknown boats, as this message can only happen once (as the trip gets synced)
+            						// and info is of interest for boats manager to keep boats list up to date.
+            						logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "  Fahrt " +  r.getQualifiedName()+ " - Boot unbekannt: " + r.getBoatAsName() + " - Fahrt wird trotzdem synchronisiert");
+            					}
                 			}
                 		}
                 	}
                 }
                 
                 
-                if (r != null && (!isAlreadySyncedTrip) && isRowingOrCanoeingSession && !isNonSupportedCanoeBoatType && !isUnfinishedTrip && !isTooEarlyTrip && !isEmptyBoatRecordTrip) {
+                if (r != null 
+                		// Die Fahrt darf noch nicht synchronisiert sein, und muss eine echte Fahrt sein (kein ERGO oder so)
+                		&& (!isAlreadySyncedTrip) && isRowingOrCanoeingSession  
+                		// nur Fahrten mit Enddatum synchronisieren, wobei Enddatum auch überschritten sein muss
+                		&& !isUnfinishedTrip && !isTooEarlyTrip 
+                		// wenn es eine Fahrt mit einem bekannten Boot ist, oder wir die Fahrt
+                		// mit dem unbekannten Boot synchronisieren sollen
+                		&& (!isEmptyBoatRecordTrip || isEmptyBoatRecordTrip_SyncAnyway)
+                		// es ist eine Fahrt mit einem bekannten Boot ist, und der Bootstyp für das Boot gesetzt ist
+                		&& (!isKnownBoatButNonSupportedCanoeBoatType) // muss man hier )
+                		) {
                 	
                 	createRequestWithStatistics(request, r, efaEntryIds, kStatistics, isUpdatedTrip);
                 	
@@ -937,8 +963,8 @@ public class KanuEfbSyncTask extends ProgressTask {
 //        } else if (isTripWithAtLeastOneCrewMemberWithEFBID && !isUpdatedTrip) {
 //        	syncTripCnt++;
 //        } else 
-       	if (!isTripWithIdentifiedCrewMember){
-            logInfo(Logger.WARNING, Logger.MSG_SYNC_SYNCINFO, "  Fahrt " +  r.getQualifiedName()+ " - Keines der Crewmitglieder in der Personenliste: "+ unidentifiedCrewMembers);
+       	if (!isTripWithIdentifiedCrewMember && verboseMode){
+            logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "  Fahrt " +  r.getQualifiedName()+ " - Keines der Crewmitglieder in der Personenliste: "+ unidentifiedCrewMembers);
         }
     }
     
@@ -1125,5 +1151,13 @@ public class KanuEfbSyncTask extends ProgressTask {
     public boolean isSuccessfullyCompleted() {
         return successfulCompleted;
     }
+
+	public boolean getVerboseMode() {
+		return verboseMode;
+	}
+
+	public void setVerboseMode(boolean verboseMode) {
+		this.verboseMode = verboseMode;
+	}
 
 }

@@ -101,6 +101,9 @@ public class BoatReservationListDialog extends DataListDialog {
             actionType = new int[] { };
         }
         this.allowNewReservationsWeekly = allowNewReservationsWeekly;
+        
+		//From and to columns should be wider than default
+		this.minColumnWidths = new int[] {150,120,120,120,12};   
     }
 
 
@@ -116,7 +119,7 @@ public class BoatReservationListDialog extends DataListDialog {
         if (record == null) {
             long now = System.currentTimeMillis();
             ItemTypeStringAutoComplete boat = new ItemTypeStringAutoComplete("BOAT", "", IItemType.TYPE_PUBLIC,
-                    "", International.getString("Boot"), false);
+                    "", International.getString("Boot"), true);
             boat.setAutoCompleteData(new AutoCompleteList(Daten.project.getBoats(false).data(), now, now));
             if (SimpleInputDialog.showInputDialog(this, International.getString("Boot auswählen"), boat)) {
                 String s = boat.toString();

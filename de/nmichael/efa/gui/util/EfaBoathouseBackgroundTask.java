@@ -38,6 +38,7 @@ public class EfaBoathouseBackgroundTask extends Thread {
     private long lastEfaConfigScn = -1;
     private long lastBoatStatusScn = -1;
     private long newBoatStatusScn = -1;
+    private long lastListUpdate = -1;
 
     public EfaBoathouseBackgroundTask(EfaBoathouseFrame efaBoathouseFrame) {
         this.efaBoathouseFrame = efaBoathouseFrame;
@@ -145,6 +146,9 @@ public class EfaBoathouseBackgroundTask extends Thread {
 
                 // Fokus-Kontrolle
                 checkFocus();
+                
+                // FIlter-Felder leeren nach Zeitintervall
+                checkFilterTextFields();
 
                 // Speicher-Überwachung
                 checkMemory();
@@ -172,6 +176,10 @@ public class EfaBoathouseBackgroundTask extends Thread {
         } // end: while(true)
     } // end: run
 
+    private void checkFilterTextFields() {
+    	efaBoathouseFrame.clearListFilterAfterInterval();
+    }
+    
     private void updateProjectInfo() {
         try {
             if (Daten.project != null) {
@@ -286,7 +294,7 @@ public class EfaBoathouseBackgroundTask extends Thread {
         lastBoatStatusScn = newBoatStatusScn;
 
         if (isProjectOpen && !isLocalProject) {
-            efaBoathouseFrame.updateBoatLists(listChanged);
+            efaBoathouseFrame.updateBoatLists(listChanged,false);
             if (Logger.isTraceOn(Logger.TT_BACKGROUND, 8)) {
                 Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
                         "EfaBoathouseBackgroundTask: checkBoatStatus() - done for remote project");
@@ -445,7 +453,14 @@ public class EfaBoathouseBackgroundTask extends Thread {
                 Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
                         "EfaBoathouseBackgroundTask: checkBoatStatus() - calling updateBoatLists("+listChanged+") ...");
             }
-            efaBoathouseFrame.updateBoatLists(listChanged);
+            if (now-lastListUpdate>10*60*1000) {
+            	listChanged=true;
+            }
+            if (listChanged) {
+            	lastListUpdate=now;
+            }
+            efaBoathouseFrame.updateBoatLists(listChanged,false);
+            
             if (Logger.isTraceOn(Logger.TT_BACKGROUND, 9)) {
                 Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
                         "EfaBoathouseBackgroundTask: checkBoatStatus() - done");
@@ -855,7 +870,7 @@ public class EfaBoathouseBackgroundTask extends Thread {
                     + "auf dem Wasser. Diese Fahrten wurden ABGEBROCHEN. Die abgebrochenen "
                     + "Fahrten sind in der Logdatei verzeichnet.") : ""));
             EfaUtil.sleep(500);
-            efaBoathouseFrame.updateBoatLists(true);
+            efaBoathouseFrame.updateBoatLists(true,false);
             EfaUtil.sleep(500);
             interrupt();
         } catch (Exception e) {
