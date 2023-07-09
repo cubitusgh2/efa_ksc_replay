@@ -38,6 +38,9 @@ public class EfaBoathouseBackgroundTask extends Thread {
     private long lastEfaConfigScn = -1;
     private long lastBoatStatusScn = -1;
     private long newBoatStatusScn = -1;
+    private long lastReservationStatusScn = -1;
+    private long newReservationStatusScn =-1;
+
     private long lastListUpdate = -1;
 
     public EfaBoathouseBackgroundTask(EfaBoathouseFrame efaBoathouseFrame) {
@@ -215,7 +218,7 @@ public class EfaBoathouseBackgroundTask extends Thread {
             } catch (Exception e) {
                 // wenn unterbrochen, dann versuch nochmal, kurz zu schlafen, und arbeite dann weiter!! ;-)
                 try {
-                    Thread.sleep(100);
+                    Thread.sleep(600);
                 } catch (Exception ee) {
                     EfaUtil.foo();
                 }
@@ -233,6 +236,15 @@ public class EfaBoathouseBackgroundTask extends Thread {
             } catch(Exception e) {
                 Logger.logdebug(e);
             }
+            
+            BoatReservations boatReservations=null;
+            try {
+            	boatReservations = (Daten.project != null ? Daten.project.getBoatReservations(false) : null);
+            } catch(Exception e) {
+                Logger.logdebug(e);
+            }
+            
+            
             for (int i=0; i<cnt; i++) {
                 if (Logger.isTraceOn(Logger.TT_BACKGROUND, 9)) {
                     Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
@@ -243,7 +255,7 @@ public class EfaBoathouseBackgroundTask extends Thread {
                 } catch(Exception e) {
                     // wenn unterbrochen, dann versuch nochmal, kurz zu schlafen, und arbeite dann weiter!! ;-)
                     try {
-                        Thread.sleep(100);
+                        Thread.sleep(600);
                     } catch (Exception ee) {
                         EfaUtil.foo();
                     }
@@ -262,6 +274,20 @@ public class EfaBoathouseBackgroundTask extends Thread {
                 } catch(Exception e) {
                     Logger.logdebug(e);
                 }
+                try {
+                    newReservationStatusScn = (boatReservations!= null ? boatReservations.data().getSCN() : -1);
+                    if (Logger.isTraceOn(Logger.TT_BACKGROUND, 9)) {
+                        Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
+                                "EfaBoathouseBackgroundTask: BoatReservations scn is " + newReservationStatusScn + " (previously " + lastReservationStatusScn +")");
+                    }
+                    if (newReservationStatusScn != -1 && newReservationStatusScn != lastReservationStatusScn) {
+                        // do NOT set lastReservationStatusScn = scn here! This will be done when boat status is
+                        // updated.
+                        break;
+                    }
+                } catch(Exception e) {
+                    Logger.logdebug(e);
+                }                
             }
         }
     }
@@ -290,9 +316,16 @@ public class EfaBoathouseBackgroundTask extends Thread {
                     "EfaBoathouseBackgroundTask: checkBoatStatus()");
         }
 
+        //Some changes in boat status? then the lists in efaBoatHouseFrame need update.
         boolean listChanged = (newBoatStatusScn != -1 && newBoatStatusScn != lastBoatStatusScn);
         lastBoatStatusScn = newBoatStatusScn;
 
+        //this also applies when some change on a reservation has happened.
+        //adding/removing/changing reservations can have an effect on the lists, 
+        //when they shall display reservation data.
+        listChanged = (listChanged || (newReservationStatusScn != -1 && newReservationStatusScn != lastReservationStatusScn));
+        lastReservationStatusScn = newReservationStatusScn;
+        
         if (isProjectOpen && !isLocalProject) {
             efaBoathouseFrame.updateBoatLists(listChanged,false);
             if (Logger.isTraceOn(Logger.TT_BACKGROUND, 8)) {
@@ -454,12 +487,19 @@ public class EfaBoathouseBackgroundTask extends Thread {
                         "EfaBoathouseBackgroundTask: checkBoatStatus() - calling updateBoatLists("+listChanged+") ...");
             }
             if (now-lastListUpdate>10*60*1000) {
-            	listChanged=true;
+            	// if Boathouse lists shall contain information info, they need to be updated regularily.
+            	// reservation info consists of when a boat has its next reservation on the current day,
+            	// and this is not computed by this background task. The lists compute this info on their own.
+            	// update every 10 minutes, after the last update of the boat lists.
+            	if (Daten.efaConfig.getValueEfaBoathouseBoatListReservationInfo()) {
+            		listChanged=true;
+            		}
             }
             if (listChanged) {
             	lastListUpdate=now;
+                efaBoathouseFrame.updateBoatLists(listChanged,false);            	
             }
-            efaBoathouseFrame.updateBoatLists(listChanged,false);
+
             
             if (Logger.isTraceOn(Logger.TT_BACKGROUND, 9)) {
                 Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
@@ -469,7 +509,6 @@ public class EfaBoathouseBackgroundTask extends Thread {
             Logger.logdebug(e);
         }
     }
-
     private void checkForUnreadMessages() {
         if (Logger.isTraceOn(Logger.TT_BACKGROUND, 8)) {
             Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,

@@ -10,25 +10,42 @@
 
 package de.nmichael.efa.gui.dataedit;
 
-import de.nmichael.efa.*;
+import java.awt.AWTEvent;
+import java.awt.BorderLayout;
+import java.awt.Frame;
+import java.awt.event.ActionEvent;
+import java.util.UUID;
+
+import javax.swing.JDialog;
+import javax.swing.JPanel;
+
+import de.nmichael.efa.Daten;
 import de.nmichael.efa.core.config.AdminRecord;
-import de.nmichael.efa.core.items.*;
-import de.nmichael.efa.data.*;
-import de.nmichael.efa.data.storage.*;
+import de.nmichael.efa.core.items.IItemType;
+import de.nmichael.efa.core.items.ItemTypeBoolean;
+import de.nmichael.efa.core.items.ItemTypeDataRecordTable;
+import de.nmichael.efa.core.items.ItemTypeStringAutoComplete;
+import de.nmichael.efa.data.BoatRecord;
+import de.nmichael.efa.data.BoatReservationRecord;
+import de.nmichael.efa.data.BoatReservations;
+import de.nmichael.efa.data.BoatStatusRecord;
+import de.nmichael.efa.data.Boats;
+import de.nmichael.efa.data.storage.DataRecord;
+import de.nmichael.efa.data.storage.StorageObject;
+import de.nmichael.efa.data.types.DataTypeDate;
 import de.nmichael.efa.gui.SimpleInputDialog;
 import de.nmichael.efa.gui.util.AutoCompleteList;
-import de.nmichael.efa.util.*;
 import de.nmichael.efa.util.Dialog;
-import java.util.*;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
+import de.nmichael.efa.util.International;
+import de.nmichael.efa.util.Logger;
 
 
 // @i18n complete
 public class BoatReservationListDialog extends DataListDialog {
 
     boolean allowNewReservationsWeekly = true;
+	protected ItemTypeBoolean showTodaysReservationsOnly;
+
 
     public BoatReservationListDialog(Frame parent, AdminRecord admin) {
         super(parent, International.getString("Bootsreservierungen"), Daten.project.getBoatReservations(false), 0, admin);
@@ -182,4 +199,46 @@ public class BoatReservationListDialog extends DataListDialog {
 		//show only matching items by default in BoatDamageListDialog 
 		table.setIsFilterSet(true);
 	}
+    protected void iniControlPanel() {
+    	// we want to put an additional element after the control panel
+    	super.iniControlPanel();
+    	this.iniBoatDamageListFilter();
+    }
+	
+	private void iniBoatDamageListFilter() {
+		JPanel myControlPanel= new JPanel();
+    	
+		showTodaysReservationsOnly = new ItemTypeBoolean("SHOW_TODAYS_RESERVATIONS_ONLY",
+                false,
+                IItemType.TYPE_PUBLIC, "", International.getString("nur heutige Reservierungen anzeigen"));
+		showTodaysReservationsOnly.setPadding(0, 0, 0, 0);
+		showTodaysReservationsOnly.displayOnGui(this, myControlPanel, 0, 0);
+		showTodaysReservationsOnly.registerItemListener(this);
+        mainPanel.add(myControlPanel, BorderLayout.NORTH);
+	}
+	
+    public void itemListenerAction(IItemType itemType, AWTEvent event) {
+    	
+    	// handle our special filter for today's reservations, else use default item handler
+    	if (itemType.equals(showTodaysReservationsOnly)) {
+    		
+    		 if (event.getID() == ActionEvent.ACTION_PERFORMED) {
+    			 showTodaysReservationsOnly.getValueFromGui();
+    			 if (showTodaysReservationsOnly.getValue()) {
+    				 table.getSearchField().setValue(DataTypeDate.today().toString());
+    				 table.getFilterBySearch().setValue(true);
+    				 table.updateData();
+    				 table.showValue();
+    			 } else {
+    				 table.getSearchField().setValue("");
+    				 table.getFilterBySearch().setValue(false);
+    				 table.updateData();
+    				 table.showValue();
+    			 }
+    		 }
+     		
+     	} else {
+     		super.itemListenerAction(itemType, event);
+     	}
+     }	    		
 }

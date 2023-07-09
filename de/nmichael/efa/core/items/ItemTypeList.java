@@ -10,53 +10,20 @@
 
 package de.nmichael.efa.core.items;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.Graphics2D;
-import java.awt.GridBagConstraints;
-import java.awt.Image;
-import java.awt.Insets;
-import java.awt.Rectangle;
-import java.awt.Window;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.FocusEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseEvent;
+import java.util.*;
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
+import de.nmichael.efa.*;
+import de.nmichael.efa.util.*;
+import de.nmichael.efa.util.Dialog;
+import de.nmichael.efa.gui.*;
+import de.nmichael.efa.gui.util.*;
 import java.awt.image.BufferedImage;
-import java.util.Vector;
-
-import javax.swing.BorderFactory;
-import javax.swing.DefaultListCellRenderer;
-import javax.swing.DefaultListModel;
-import javax.swing.ImageIcon;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JMenuItem;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.JScrollPane;
-import javax.swing.JTextField;
-import javax.swing.ListModel;
-import javax.swing.ListSelectionModel;
-import javax.swing.ScrollPaneConstants;
-import javax.swing.SwingConstants;
-import javax.swing.ToolTipManager;
-import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-
-import de.nmichael.efa.Daten;
-import de.nmichael.efa.gui.BaseDialog;
-import de.nmichael.efa.gui.util.EfaMouseListener;
-import de.nmichael.efa.util.EfaUtil;
-import de.nmichael.efa.util.Dialog;
-import de.nmichael.efa.util.Logger;
-import de.nmichael.efa.util.Mnemonics;
+import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
 
 public class ItemTypeList extends ItemType implements ActionListener, DocumentListener, KeyListener {
 
@@ -78,11 +45,11 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     //Spacings for pretty rendering
     private static final int SPACING_BOATNAME_SECONDPART = 60; //60 pixels
 	private static final int HORZ_SINGLE_BORDER=5;
-    
+	private static Border _emptyBorder = new EmptyBorder(2, HORZ_SINGLE_BORDER, 2, HORZ_SINGLE_BORDER);
+	private static Color _separatorBackground = new Color(240,240,240);
     private boolean showFilterField = false;
-    private boolean showPrettyList=false;
+    private boolean showTwoColumnList=false;
     protected String other_item_text=""; //value of the first element representing an "other boat/person" element
-
     
     class ListDataCellRenderer extends DefaultListCellRenderer {
         public Component getListCellRendererComponent(JList list, Object value,
@@ -98,30 +65,63 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
             }
 
             try {
-	            if (showPrettyList) {
-		            ItemTypeListData item = (ItemTypeListData)value;
-		         
-		            if (item.separator) {
-		                if (!isSelected) { setBackground(new Color(240,240,240)); }
-		                
-	                    this.setHorizontalAlignment(LEFT);
-		                long listWidth=Math.max(80,list.getParent().getWidth()-2*HORZ_SINGLE_BORDER-2);
-	                    long tableWidth=listWidth-Math.max(iconWidth,0)-4;
-	            		this.setText("<html><table border=0 cellpadding=0 cellspacing=0 width='"+tableWidth+ "'>"
-	            				+ "<tr><td align=center>"+EfaUtil.escapeHtml(item.text)+"</td></tr>"
-	            						+ "</table></html>");	                
-		                
-		            	this.setBorder(BorderFactory.createEmptyBorder(2, HORZ_SINGLE_BORDER, 2, HORZ_SINGLE_BORDER));
-		          	
-		            } else { // not a separator
-	            	
-	            		this.setText(getHTMLTableFor(getFirstPart(item.text), item.secondaryElement));
-	
-	            		setHorizontalAlignment(JLabel.LEFT);
-		            	this.setBorder(BorderFactory.createEmptyBorder(2, HORZ_SINGLE_BORDER, 2, HORZ_SINGLE_BORDER)); 
-	            
-		            } //if not a separator
+            	this.setBorder(_emptyBorder);
+            	
+            	if (showTwoColumnList) {
+            		/* Pretty lists
+            		 * Data is put together in ItemTypeBoatStatuslist.sortBootsList and sortMemberList
+            		 * 
+            		 * - Center separator texts, with grey background
+					 * - left side: original data
+					 * 
+            		 * Available boats: (right side)
+            		 * - show today's next reservation of a boat 
+            		 * 
+            		 * Boats on water: (right side)
+            		 * - show destination of a boat 
+            		 * 
+            		 * Unavailable boats
+            		 * - show "boat damage" if the boatcomment begins with this text on the l
+            		 * - show destination of boat
+            		 * - show reservation end if boat is reserved
+            		 * 
+            		 * Performance
+            		 * - only create a HTML table when neccessary. Creation of HTML tables consume a lot of 
+            		 *   time, due to string concatenation.
+            		 */
+            		
+		            //at startup, the efa boathouse frame is not visible, but the renderer is invoked.
+		            //then, the list width may be zero. Do nothing then.  
+		            if (list.getParent().getWidth()>0) {
+			            ItemTypeListData item = (ItemTypeListData)value;
+
+		            	if (item.separator) {
+			                if (!isSelected) { setBackground(_separatorBackground); }
+		                    this.setHorizontalAlignment(JLabel.CENTER);
+			            } else { // not a separator
+			            	if (item.secondaryElement!=null) {
+			            		//only build the p
+			            		this.setText(getHTMLTableFor(item.text, item.secondaryElement));
+			            	} 
+		            		setHorizontalAlignment(JLabel.LEFT);
+		            
+			            } //if not a separator
+		            }//if parent width>0
 	            }// if showprettylist
+            	else {
+		            ItemTypeListData item = (ItemTypeListData)value;            		
+	            	if (item.separator) {
+		                if (!isSelected) { setBackground(_separatorBackground); }
+	                    //why don't we put this on center?
+		                //because in "boats on the water list", the list items can get very long
+		                //when they also contain a destination. Then the "center" mode may look bad
+		                //for very long 
+		                this.setHorizontalAlignment(JLabel.LEFT);
+	            	} else {
+	                    this.setHorizontalAlignment(JLabel.LEFT);
+	            	}
+            	}
+
 	            
             } catch(Exception eignore) {
             	Logger.log(eignore);
@@ -130,6 +130,11 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         return this;
     }
 
+
+        
+    /* 
+     * Set icon for a boat depending on the groups who can row with this boat
+     */
     private void BuildIcon(Object value) {
     	
         ItemTypeListData item = (ItemTypeListData)value;
@@ -172,31 +177,6 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 
     }
     
-    private String getFirstPart(String theText) {
-    	
-		String firstPart="";
-		
-    	if (theText.contains(STR_DESTINATION_DELIMITER)) {
-    		//an item with a destination delimiter is a current session.
-    		//for better readability, we then split the boat name and the destination
-    		//boat name is left-aligned, destination is right-aligned in a html table
-    		//(programming this in pure swing would be exhausting).
-
-    		String[] itemParts= theText.split(STR_DESTINATION_DELIMITER);
-    		if (itemParts.length>1) {
-    			for (int i=0; i<itemParts.length-1; i++) {
-    				firstPart=firstPart.concat(itemParts[i]);
-    			}
-    			firstPart=firstPart.trim();
-    		} else {
-    			//itemparts=0 oder 1
-    			firstPart=theText.trim();
-    		}
-    	} else {
-    		firstPart=theText;
-    	}
-    	return firstPart;
-    }      
 
     /*
      * Creates a HTML table consisting of two rows.
@@ -222,16 +202,17 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     	boolean cutText = false;
     	
 		long listWidth=Math.max(80,list.getParent().getWidth()-2*HORZ_SINGLE_BORDER-2);
-
-		long firstPartLength=label.getFontMetrics(label.getFont()).stringWidth(firstPart);
-		long maxStringWidth =listWidth-SPACING_BOATNAME_SECONDPART-firstPartLength-4;
-		long characterWidth = Math.min(8,label.getFontMetrics(label.getFont()).stringWidth("X"));
+		FontMetrics myFontMetrics = label.getFontMetrics(label.getFont());
+		
+		long firstPartLength= myFontMetrics.stringWidth(firstPart);
+		long maxStringWidth = listWidth-SPACING_BOATNAME_SECONDPART-firstPartLength-4;
+		long characterWidth = myFontMetrics.stringWidth("X");
 		
 		if (iconWidth >0 ) {
 			maxStringWidth= listWidth-SPACING_BOATNAME_SECONDPART-(iconWidth)-firstPartLength-4;
 		}
 		
-        int stringWidth = label.getFontMetrics(label.getFont()).stringWidth(secondPart);
+        int stringWidth = myFontMetrics.stringWidth(secondPart);
         
         //listWidth can be zero directly after start of efaBoatHouse, so we stop under this condition.
         while (listWidth>0 &&(stringWidth>maxStringWidth) && (secondPart.length()>0)) {
@@ -241,21 +222,20 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         	cutChars=(int)Math.min(secondPart.length(), cutChars); // limit cut items to length of second part
         	
         	secondPart=secondPart.substring(0,secondPart.length()-(int)Math.max(((cutChars)),1)).trim();
-        	stringWidth = label.getFontMetrics(label.getFont()).stringWidth(secondPart);
+        	stringWidth = myFontMetrics.stringWidth(secondPart);
         	cutText=true;
         }
 
         if (cutText &&secondPart.length()>0) {secondPart+="\u2026";} //append an ellipsis
-        long tableWidth=listWidth-Math.max(iconWidth,0)-4;
-        StringBuilder sb= new StringBuilder();
-        sb.append("<html><table border=0 cellpadding=0 cellspacing=0 width='");
-        sb.append(tableWidth);
-        sb.append("'><tr><td align=left>");
-        sb.append(EfaUtil.escapeHtml(firstPart));
-        sb.append("</td><td align=right><font color=#888888>");
-        sb.append(EfaUtil.escapeHtml(secondPart));
-        sb.append("</font></td></tr></table></html>");
-        return sb.toString();
+        Integer tableWidth =new Integer((int)listWidth-Math.max(iconWidth,0)-4);
+        
+        return  "<html><table border=0 cellpadding=0 cellspacing=0 width='"
+        		.concat(tableWidth.toString())
+        		.concat("'><tr><td align=left>")
+        		.concat(EfaUtil.escapeHtml(firstPart))
+        		.concat("</td><td align=right><font color=#888888>")
+        		.concat(EfaUtil.escapeHtml(secondPart))
+        		.concat("</font></td></tr></table></html>");
 		
     }
 }
@@ -272,7 +252,6 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         int section;
         String image;
         Color[] colors;
-
         public ItemTypeListData(String text, String toolTipText, String secondaryElement, Object object, boolean separator, int section) {
             ini(text, toolTipText, secondaryElement, object, separator, section, null, null);
         }
@@ -286,10 +265,12 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
             this.toolTipText = toolTipText;
             if (toolTipText!=null) {
             	try {
+            		//this removes all html tags from the tooltiptext. 
+            		//although it is told it may be unsafe to remove tags by regular expressions, it works.
             		this.toolTipFilterText = toolTipText.replaceAll("<[^\\P{Graph}>]+(?: [^\\P{Graph}>]*)*>", "");
             	} catch (Exception e) {
             		Logger.log(e);
-            		this.toolTipFilterText=null;
+            		this.toolTipFilterText=null; // just in case the removal of html tags fails, set tooltippfiltertext to null.
             	}
             } 
             this.object = object;
@@ -308,10 +289,9 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         	} else {
         		return text;
         	}
-        		
+
         }
     }
-
 
     public ItemTypeList(String name,
             int type, String category, String description, boolean showFilterField, boolean showPrettyList) {
@@ -320,9 +300,8 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         this.category = category;
         this.description = description;
         this.showFilterField = showFilterField;
-        this.showPrettyList= showPrettyList;
+        this.showTwoColumnList= showPrettyList;
         data = new DefaultListModel<ItemTypeListData>();
-       
     }
     
     public ItemTypeList(String name,
@@ -336,17 +315,17 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     }
 
     public IItemType copyOf() {
-        return new ItemTypeList(name, type, category, description, this.showFilterField, this.showPrettyList);
+        return new ItemTypeList(name, type, category, description, this.showFilterField, this.showTwoColumnList);
     }
 
-    public void addItem(String text, String toolTipText, String secondaryItem,  Object object, boolean separator, char separatorHotkey) {
+    public void addItem(String text, String toolTipText, String secondaryItem, Object object, boolean separator, char separatorHotkey) {
         data.addElement(new ItemTypeListData(text, toolTipText, secondaryItem, object, separator, separatorHotkey));
         filter();
     }
 
-    public void addItem(String text, String toolTipText, String secondaryItem,  Object object, boolean separator, char separatorHotkey,
+    public void addItem(String text, String toolTipText, String secondaryItem, Object object, boolean separator, char separatorHotkey,
             String image, Color[] colors) {
-        data.addElement(new ItemTypeListData(text, toolTipText, secondaryItem,  object, separator, separatorHotkey, image, colors));
+        data.addElement(new ItemTypeListData(text, toolTipText, secondaryItem, object, separator, separatorHotkey, image, colors));
         filter();
     }
 
@@ -386,13 +365,12 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     public int size() {
         if (data == null) {
             return 0;
-        } else {
-        	return data.size();
         }
-        	
+        return data.size();
     }
-    
+
     // returns the size of the list when the filter text field is applied.
+    // if no filter is set, the list data size is returned.
     public int filteredSize() {
     	ListModel theList = null;
     	
@@ -409,7 +387,6 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         }
     }
     
-
     public String getItemText(int idx) {
         if (idx >= 0 && idx < data.size()) {
             return data.get(idx).text;
@@ -417,7 +394,6 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         return null;
     }
 
-    
     public Object getItemObject(int idx) {
         if (idx >= 0 && idx < data.size()) {
             return data.get(idx).object;
@@ -427,7 +403,6 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 
     void clearIncrementalSearch() {
             incrementalSearch = "";
-           //Logger.log(Logger.DEBUG, "clearIncrementalSearch");
             if (list != null) {
             	if (Daten.efaConfig.getValueEfaBoathouseExtdToolTips()==false) {
             		list.setToolTipText(null);
@@ -444,7 +419,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     }
 
     protected void iniDisplay() {
-        // not used, everything done in displayOnGui()...)
+        // not used, everything done in displayOnGui(...)
     }
 
     public int displayOnGui(Window dlg, JPanel panel, int x, int y) {
@@ -463,7 +438,6 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     private JPanel setupPanel(Window dlg) {
         this.dlg = dlg;
 
-      
         list = createNewListWithTooltippSupport();
         
         if (this.showFilterField) {
@@ -479,7 +453,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         //scrollbar is shown only when needed
         scrollPane = new JScrollPane(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         this.field = scrollPane;
-
+        
         mypanel = new JPanel();
         mypanel.setLayout(new BorderLayout());
 
@@ -492,6 +466,10 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
             }
             if (color != null) {
                 label.setForeground(color);
+            }
+            if (backgroundColor != null) {
+            	label.setBackground(backgroundColor);
+            	label.setOpaque(true);
             }
             label.setFont(label.getFont().deriveFont(Font.BOLD));
 
@@ -526,11 +504,11 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
                 list_keyReleased(e);
             }
         });
-		if (Daten.efaConfig.getValueEfaBoathouseExtdToolTips()==false) { 
+    	if (Daten.efaConfig.getValueEfaBoathouseExtdToolTips()==false) { 
 			list.addMouseListener(new java.awt.event.MouseAdapter() {
 	            public void mouseEntered(MouseEvent e) {
 	            	try {
-            			((JList) e.getSource()).setToolTipText(null); // SGB remove tool tip from scrolling/searching
+            			((JList) e.getSource()).setToolTipText(null); // remove tool tip from scrolling/searching
 	            	} catch (Exception ee) {
 	            		Logger.logdebug(ee);
 	            	}}});
@@ -590,7 +568,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 	            	}
 	            }
 	        });
-	        
+	        	        
         }
 
         mypanel.add(panelDescriptionAndFilter, BorderLayout.NORTH);
@@ -598,7 +576,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 
         return mypanel;
     }
-
+    
     /*
      * Creates a Panel - 
      * 	left side: a Label with a Displaytext
@@ -660,8 +638,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         if (list != null && list.getFirstVisibleIndex() >= 0 && list.getSelectedIndex() < 0) {
             list.setSelectedIndex(0);
         }
-        //clearIncrementalSearch();
-
+        //clearIncrementalSearch(); // it's better to comment this out, cannot hold 100% backwards compatibility with incremental search
         if (listener != null) {
             listener.itemListenerAction(this, e);
         }
@@ -933,20 +910,21 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         	//so we select the first element nonetheless
         	index=0;
         }
-        
+
         if (index >= 0 && index < theData.size()) {
             list.setSelectedIndex(index);
             Rectangle rect = list.getCellBounds(index, (index + 15 >= theData.size() ? theData.size() - 1 : index + 15));
             list.scrollRectToVisible(rect);
         }
-    	
-    }
+
+    }    
+    
     public void keyPressed(KeyEvent e) {
-    	updateLastFilterChange();
+    	updateLastFilterChange();    	
     }
     
     public void keyReleased(KeyEvent e) {
-
+    	
     	if (e.getComponent().equals(filterTextField)) {
         	updateLastFilterChange();
 	    	if (e.getKeyCode()== KeyEvent.VK_ENTER || e.getKeyCode() == KeyEvent.VK_DOWN || e.getKeyCode() == KeyEvent.VK_UP) {
@@ -961,21 +939,19 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     }
     
     public void keyTyped(KeyEvent e) {
-    	updateLastFilterChange();
+    	updateLastFilterChange();    	
     }
     
     private void updateLastFilterChange() {
     	lastFilterChange=System.currentTimeMillis(); 
     }
-  
-
+    
     private JList createNewListWithTooltippSupport() {
     	return new JList() {
-	        
+
     		public String getToolTipText(MouseEvent me) {
 	          try {
 		        	if ((this.getToolTipText()!=null) && !this.getToolTipText().isEmpty()){
-		        		Logger.log(Logger.DEBUG, "getToolTippText - main Tooltip");
 		        		return this.getToolTipText();
 		            } else {     	
 			        	int index = locationToIndex(me.getPoint());
@@ -993,11 +969,12 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 	        }
     	};
     }
-    public Boolean getShowPrettyList() {
-    	return showPrettyList;
+    
+    public Boolean getShowTwoColumnList() {
+    	return showTwoColumnList;
     }
     
-    public void setShowPrettyList(boolean pretty) {
-    	showPrettyList=pretty;
-    }    
+    public void setShowTwoColumnList(boolean twoColumns) {
+    	showTwoColumnList=twoColumns;
+    }
 }

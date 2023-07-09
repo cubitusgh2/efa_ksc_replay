@@ -540,10 +540,10 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         toggleAvailableBoatsToPersons.setVisible(Daten.efaConfig.getValueEfaDirekt_listAllowToggleBoatsPersons());
 
         // Boat Lists
-        boatsAvailableList = new ItemTypeBoatstatusList("BOATSAVAILABLELIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("verfügbare Boote"), this, Daten.efaConfig.getValueEfaBoathouseFilterTextfieldStandardLists(), Daten.efaConfig.getValueEfaBoathouseBetterListLook());
-        personsAvailableList = new ItemTypeBoatstatusList("PERSONSAVAILABLELIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("Personen"), this,Daten.efaConfig.getValueEfaBoathouseFilterTextfieldStandardLists(), Daten.efaConfig.getValueEfaBoathouseBetterListLook());
-        boatsOnTheWaterList = new ItemTypeBoatstatusList("BOATSONTHEWATERLIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("Boote auf Fahrt"), this,Daten.efaConfig.getValueEfaBoathouseFilterTextfieldStandardLists(), Daten.efaConfig.getValueEfaBoathouseBetterListLook());
-        boatsNotAvailableList = new ItemTypeBoatstatusList("BOATSNOTAVAILABLELIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("nicht verfügbare Boote"), this,Daten.efaConfig.getValueEfaBoathouseFilterTextfieldBoatsNotAvailableList(), Daten.efaConfig.getValueEfaBoathouseBetterListLook());
+        boatsAvailableList = new ItemTypeBoatstatusList("BOATSAVAILABLELIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("verfügbare Boote"), this, Daten.efaConfig.getValueEfaBoathouseFilterTextfieldStandardLists(), Daten.efaConfig.getValueEfaBoathouseTwoColumnList());
+        personsAvailableList = new ItemTypeBoatstatusList("PERSONSAVAILABLELIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("Personen"), this,Daten.efaConfig.getValueEfaBoathouseFilterTextfieldStandardLists(), Daten.efaConfig.getValueEfaBoathouseTwoColumnList());
+        boatsOnTheWaterList = new ItemTypeBoatstatusList("BOATSONTHEWATERLIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("Boote auf Fahrt"), this,Daten.efaConfig.getValueEfaBoathouseFilterTextfieldStandardLists(), Daten.efaConfig.getValueEfaBoathouseTwoColumnList());
+        boatsNotAvailableList = new ItemTypeBoatstatusList("BOATSNOTAVAILABLELIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("nicht verfügbare Boote"), this,Daten.efaConfig.getValueEfaBoathouseFilterTextfieldBoatsNotAvailableList(), Daten.efaConfig.getValueEfaBoathouseTwoColumnList());
         boatsAvailableList.setFieldSize(200, 400);
         personsAvailableList.setFieldSize(200, 400);
         boatsOnTheWaterList.setFieldSize(200, 300);
@@ -556,6 +556,18 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         personsAvailableList.registerItemListener(this);
         boatsOnTheWaterList.registerItemListener(this);
         boatsNotAvailableList.registerItemListener(this);
+
+        //Highlight for Lists
+        boatsAvailableList.setColor(Daten.efaConfig.getTableSelectionForegroundColor());
+        personsAvailableList.setColor(Daten.efaConfig.getTableSelectionForegroundColor());
+        boatsOnTheWaterList.setColor(Daten.efaConfig.getTableSelectionForegroundColor());
+        boatsNotAvailableList.setColor(Daten.efaConfig.getTableSelectionForegroundColor());
+        boatsAvailableList.setBackgroundColor(Daten.efaConfig.getTableSelectionBackgroundColor());
+        personsAvailableList.setBackgroundColor(Daten.efaConfig.getTableSelectionBackgroundColor());
+        boatsOnTheWaterList.setBackgroundColor(Daten.efaConfig.getTableSelectionBackgroundColor());
+        boatsNotAvailableList.setBackgroundColor(Daten.efaConfig.getTableSelectionBackgroundColor());
+
+
         iniGuiListNames();
 
         // add Panels to Gui
@@ -1457,10 +1469,10 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         }
         inUpdateBoatList = true;
         //Option for pretty boat lists shall be considered every time the boat list gets an update
-        this.boatsAvailableList.setShowPrettyList(Daten.efaConfig.getValueEfaBoathouseBetterListLook());
-        this.personsAvailableList.setShowPrettyList(Daten.efaConfig.getValueEfaBoathouseBetterListLook());
-        this.boatsOnTheWaterList.setShowPrettyList(Daten.efaConfig.getValueEfaBoathouseBetterListLook());
-        this.boatsNotAvailableList.setShowPrettyList(Daten.efaConfig.getValueEfaBoathouseBetterListLook());
+        this.boatsAvailableList.setShowTwoColumnList(Daten.efaConfig.getValueEfaBoathouseTwoColumnList());
+        this.personsAvailableList.setShowTwoColumnList(Daten.efaConfig.getValueEfaBoathouseTwoColumnList());
+        this.boatsOnTheWaterList.setShowTwoColumnList(Daten.efaConfig.getValueEfaBoathouseTwoColumnList());
+        this.boatsNotAvailableList.setShowTwoColumnList(Daten.efaConfig.getValueEfaBoathouseTwoColumnList());
         
         try {
             if (Logger.isTraceOn(Logger.TT_GUI, 8)) {
@@ -2207,7 +2219,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         }
 
         showEfaBaseFrame(EfaBaseFrame.MODE_BOATHOUSE_FINISH, item);
-        updateBoatLists(true,false);
+
     }
 
     void actionAbortSession() {

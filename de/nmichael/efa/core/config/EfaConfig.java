@@ -172,7 +172,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 	private ItemTypeBoolean efaBoathouseStrictUnknownPersons;
 	private ItemTypeBoolean efaBoathouseFilterTextfieldStandardLists;
 	private ItemTypeBoolean efaBoathouseFilterTextfieldBoatsNotAvailableList;
-	private ItemTypeBoolean efaBoathouseBetterListLook;
+	private ItemTypeBoolean efaBoathouseTwoColumnList;
 	private ItemTypeBoolean efaBoathouseExtdToolTips;
     private ItemTypeBoolean efaBoathouseBoatListWithReservationInfo;	
 	private ItemTypeString efaBoathouseNonAllowedUnknownPersonNames;
@@ -852,9 +852,9 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					"efaBoathouseFilterTextfieldBoatsNotAvailableList", false, IItemType.TYPE_EXPERT,
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),
 					International.getString("Filter-Feld über Liste nicht verfügbarer Boote")));
-			addParameter(efaBoathouseBetterListLook = new ItemTypeBoolean("efaBoathouseBetterListLook", true,
+			addParameter(efaBoathouseTwoColumnList = new ItemTypeBoolean("efaBoathouseTwoColumnList", true,
 					IItemType.TYPE_EXPERT, BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),
-            		International.getString("Bootshaus-Listen mit verbesserter Darstellung")));
+					International.getString("Bootshaus-Listen mit zwei Spalten darstellen")));
 			addParameter(efaBoathouseExtdToolTips = new ItemTypeBoolean("efaBoathouseExtdToolTips", true,
 					IItemType.TYPE_EXPERT, BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),
 					International.getString("Bootshaus-Listen mit Tooltips")));
@@ -1896,8 +1896,8 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 		return efaBoathouseFilterTextfieldBoatsNotAvailableList.getValue();
 	}
 
-	public boolean getValueEfaBoathouseBetterListLook() {
-		return efaBoathouseBetterListLook.getValue();
+	public boolean getValueEfaBoathouseTwoColumnList() {
+		return efaBoathouseTwoColumnList.getValue();
 	}
 
 	public boolean getValueEfaBoathouseExtdToolTips() {
