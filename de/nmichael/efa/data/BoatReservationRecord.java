@@ -254,14 +254,27 @@ public class BoatReservationRecord extends DataRecord {
     }
     
     /*
-     * Within the BoatReservationList, weekly reservations will be shown as
+     * Within the BoatReservationList from and to fields are shown differently than stored
+     * ONETIME
+     * - If Reservation starts and ends on the same day,
+     * 		- Field "From" = Date
+     * 		- Field "To" = TimeFrom - TimeTo
+     *   else
+     *      - Field "From" and "to" contain date+time
+     *  
+     * WEEKLY / WEEKLY_LIMITED
      * - Field "From" = Day of Week
      * - Field "To" = TimeFrom - TimeTo 
+     * 
      */
     public String getGuiDateTimeFromDescription() {
         String type = getType();
         if (type != null && type.equals(TYPE_ONETIME)) {
-            return getDateTimeFromDescription();
+        	if (getDateFrom().equals(getDateTo())) {
+        		return getDateDescription(getDateFrom(), null, null);
+        	} else {
+        		return getDateDescription(getDateFrom(), null, getTimeFrom());
+        	}
         } else if (type != null && (type.equals(TYPE_WEEKLY) || type.equals(TYPE_WEEKLY_LIMITED))) {
             return getDateDescription(null, getDayOfWeek(), null); //
         }
@@ -271,13 +284,24 @@ public class BoatReservationRecord extends DataRecord {
 
     /*
      * Within the BoatReservationList, weekly reservations will be shown as
+     * ONETIME
+     * - If Reservation starts and ends on the same day,
+     * 		- Field "From" = Date
+     * 		- Field "To" = TimeFrom - TimeTo
+     *   else
+     *      - Field "From" and "to" contain date+time
+     *  WEEKLY / WEEKLY_LIMITED
      * - Field "From" = Day of Week
      * - Field "To" = TimeFrom - TimeTo  (extended with date period, if available)  
      */
     public String getGuiDateTimeToDescription() {
         String type = getType();
         if (type != null && type.equals(TYPE_ONETIME)) {
-            return getDateTimeToDescription();
+        	if (getDateFrom().equals(getDateTo())) {
+        		return getTimePeriodDescription(getTimeFrom(),getTimeTo());
+        	} else {
+        		return getDateTimeToDescription();
+        	}
         } else if (type != null && type.equals(TYPE_WEEKLY)) {
             return getWeeklyTimeDescription(getTimeFrom(), getTimeTo(), null, null);
         }  else if (type != null && type.equals(TYPE_WEEKLY_LIMITED)) {
@@ -295,6 +319,10 @@ public class BoatReservationRecord extends DataRecord {
 	                ")"
         		) : "");
         return result;
+    }
+    
+    private String getTimePeriodDescription (DataTypeTime fromTime, DataTypeTime toTime) {
+        return (fromTime != null ? fromTime.toString() : "") + " - " + (toTime != null ? toTime.toString() : ""); 	
     }
     
     public String getReservationTimeDescription() {
