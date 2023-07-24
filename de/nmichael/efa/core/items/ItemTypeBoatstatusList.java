@@ -77,7 +77,7 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
         list.setSelectedIndex(-1);
         setItems(vdata);
         showValue();
-        list.repaint();
+        //list.repaint();  //do not call list.repaint here. this can cause nullpointerexceptions in jLabel.setIcon() for some reason... 
     }
 
     private Vector<ItemTypeListData> sortBootsList(Vector<BoatStatusRecord> v, Logbook logbook) {
