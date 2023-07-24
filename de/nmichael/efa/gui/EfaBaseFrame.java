@@ -1581,6 +1581,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         } else {
             finishBoathouseAction(success);
         }
+        autoCompleteListPersons.reset();
         return success;
     }
 
@@ -3130,6 +3131,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         if (r != null) {
             setFields(r);
         }
+        autoCompleteListPersons.reset();
     }
 
     void goToEntry(String entryNo, boolean next) {

@@ -86,7 +86,6 @@
  *     übertragen wurden.
  *   - Unterstützt nun tatsächlich einen wählbaren Differential-Modus für die Synchronisation
  *     In früheren Versionen war dies zwar beabsichtigt, kam aber wegen einem Logik-Fehler nicht zum Tragen.
-
  *   - Synchronisiert KEINE Fahrten
  *   	- die zwar eine Start-Uhrzeit, aber keine End-Uhrzeit haben
  *        Dies sind im EFA alle noch nicht beendeten Fahrten. Das EFB weist solche Fahrten mit einem Fehler ab.
@@ -95,6 +94,10 @@
  *        Dies ist unabhängig von der Konfiguration der Bootstypen, für die die Synchronisation explizit gewünscht ist.
  *      - deren Startdatum < Konfigurationsparameter kanuEfB_SyncTripsAfterDate ist.
  *      - bei denen keines der Crewmitglieder eine Kanu-EFB-ID hat.
+ *        (wird als INFO geloggt, wenn Verbose-Mode aktiv)
+ *      - bei denen das boot keinen Bootstyp hat (dann ist das Boot nicht in der Bootsliste, oder es ist dort nicht vollständig erfasst.
+ *        Der Bootstyp ist relevant, da man ja nur Boote mit bestimmten Typen synchronisieren will.
+ *        (wird als INFO geloggt, wenn Verbose-Mode aktiv).
  *        
  *    - speichert bei jeder synchronisierten Fahrt den Zeitstempel, bei dem die letzte erfolgreiche Synchronisation
  *      stattgefunden hat.
@@ -108,6 +111,10 @@
  *  - isCanoeBoatType(BoatRecord) 
  *    wurde aus efaConfig in die EFB-Synchronisation verschoben, um aus efaConfig eine Abhängigkeit
  *    zu BoatRecord zu vermeiden.
+ *    
+ *  - EFA CLI EFB Sync
+ *    - Parameter -verbose kann angegeben werden, um nicht synchronisierbare Fahrten als Info-Meldungen in das Log auszugeben.
+ *    
  *      
  *  Allgemeine Fragen und Antworten:
  *  a) Muss man im EFB eine Bootsliste pflegen, oder im EFA die Kanu-EFB-ID für das Boot eintragen?
@@ -221,7 +228,6 @@ public class KanuEfbSyncTask extends ProgressTask {
     private long thisSync;
     private boolean loggedIn = false;
     private boolean successfulCompleted = false;
-    private int countSyncUsers = 0;
     private int countSyncTrips = 0;
     private int countWarnings = 0;
     private int countErrors = 0;
@@ -461,125 +467,6 @@ public class KanuEfbSyncTask extends ProgressTask {
         }
         return true;
     }
-
-    private boolean handleSyncUserResponse(KanuEfbXmlResponse response) throws Exception {
-        Persons persons = Daten.project.getPersons(false);
-        if (response != null && response.isResponseOk("SyncUsers")) {
-            logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Synchronisierungs-Antwort erhalten für " + response.getNumberOfRecords() + " Personen ...");
-            for (int i = 0; i < response.getNumberOfRecords(); i++) {
-                Hashtable<String, String> fields = response.getFields(i);
-                boolean ok = false;
-                String personName = "<unknown>";
-                String firstName = fields.get("firstname");
-                String lastName = fields.get("lastname");
-                String dateOfBirth = fields.get("dateofbirth");
-                String efbId = fields.get("id");
-                if (firstName != null && lastName != null) {
-                    firstName = firstName.trim();
-                    lastName = lastName.trim();
-                    personName = PersonRecord.getFullName(firstName, lastName, "", false);
-                    PersonRecord[] plist = persons.getPersons(personName, thisSync);
-                    PersonRecord p = (plist != null && plist.length == 1 ? plist[0] : null);
-
-                    // try to match person on date of birth
-                    for (int pi = 0; p == null && plist != null && pi < plist.length; pi++) {
-                        if (plist[pi].getBirthday() != null && dateOfBirth != null
-                                && plist[pi].getBirthday().isSet()) {
-                            DataTypeDate bday = DataTypeDate.parseDate(dateOfBirth);
-                            if (bday != null && bday.isSet()) {
-                                if (bday.equals(plist[pi].getBirthday())) {
-                                    p = plist[pi];
-                                } else {
-                                    if (plist[i].getBirthday().getDay() < 1
-                                            && plist[i].getBirthday().getMonth() < 1
-                                            && plist[i].getBirthday().getYear() == bday.getYear()) {
-                                        p = plist[pi];
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if (efbId != null && p != null) {
-                        efbId = efbId.trim();
-                        if (!efbId.equals(p.getEfbId())) {
-                            p.setEfbId(efbId);
-                            persons.data().update(p);
-                            countSyncUsers++;
-                        }
-                        ok = true;
-                    }
-                }
-                if (Logger.isTraceOn(Logger.TT_SYNC)) {
-                    if (ok) {
-                        logInfo(Logger.DEBUG, Logger.MSG_SYNC_SYNCINFO, "  Synchronisierungs-Antwort für Person: " + personName + " (EfbId=" + efbId + ")");
-                    } else {
-                        logInfo(Logger.DEBUG, Logger.MSG_SYNC_WARNINCORRECTRESPONSE, "  Synchronisierungs-Antwort für unbekannte Person: " + personName);
-                    }
-                }
-            }
-            logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, countSyncUsers + " neue Personen synchronisiert.");
-            return true;
-        } else {
-            logInfo(Logger.ERROR, Logger.MSG_SYNC_ERRORINVALIDRESPONSE, "Ungültige Synchronisierungs-Antwort.");
-            return false;
-        }
-    }
-
-    private boolean syncUsers() {
-        try {
-           /* logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Synchronisiere Personen ...");
-
-            // ask eFB to sync all users from eFB -> efa
-            // this is deprecated
-            StringBuilder request = new StringBuilder();
-            buildRequestHeader(request, "SyncUsers");
-            buildRequestFooter(request);
-            logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Sende Synchronisierungs-Anfrage für alle Personen ...");
-            KanuEfbXmlResponse response = sendRequest(request.toString(), true);
-            if (!handleSyncUserResponse(response)) {
-                return false;
-            }
-            
-*/
-            // transmit all efa users without eFB ID's to eFB
-            /*
-            StringBuilder request = new StringBuilder();
-            buildRequestHeader(request, "SyncUsers");
-            Persons persons = Daten.project.getPersons(false);
-            int reqCnt = 0;
-            DataKeyIterator it = persons.data().getStaticIterator();
-            DataKey k = it.getFirst();
-            while (k != null) {
-                PersonRecord r = (PersonRecord)persons.data().get(k);
-                if (r != null && r.isValidAt(thisSync) && r.isStatusMember() &&
-                    (r.getLastModified() > lastSync || r.getEfbId() == null || r.getEfbId().length() == 0)) {
-                    if (Logger.isTraceOn(Logger.TT_SYNC)) {
-                        logInfo(Logger.DEBUG, Logger.MSG_SYNC_SYNCINFO, "  erstelle Synchronisierungs-Anfrage für Person: " + r.getQualifiedName());
-                    }
-                    request.append("<person>");
-                    request.append("<firstName>"+r.getFirstName()+"</firstName>");
-                    request.append("<lastName>"+r.getLastName()+"</lastName>");
-                    if (r.getBirthday() != null && r.getBirthday().isSet()) {
-                        request.append("<dateOfBirth>"+r.getBirthday().toString()+"</dateOfBirth>");
-                    }
-                    request.append("</person>\n");
-                    reqCnt++;
-                }
-                k = it.getNext();
-            }
-            buildRequestFooter(request);
-            logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Sende Synchronisierungs-Anfrage für " + reqCnt + " Personen ...");
-            KanuEfbXmlResponse response = sendRequest(request.toString(), true);
-            if (!handleSyncUserResponse(response)) {
-                return false;
-            }
-            */
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-        return true;
-    }
  
     private int countNumberOfPersonsWithEfbIds() {
         int count = 0;
@@ -604,17 +491,17 @@ public class KanuEfbSyncTask extends ProgressTask {
         	       	
         	logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Synchronisiere Fahrten...");
         	logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Bootstypen, für die Fahrten synchronisiert werden können: "+ Daten.efaConfig.getCanoeBoatTypes());
-        	if (Daten.efaConfig.getValueKanuEfb_SyncUnknownBoats()) {
-        		logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Fahrten mit unbekannten Booten werden synchronisiert.");
-        	} else {
-        		logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Fahrten mit unbekannten Booten werden nicht synchronisiert.");
-        	}
             if (Daten.efaConfig.getValueKanuEfb_FullSync() ) {
             	logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Modus FullSync: Es wird das vollständige Fahrtenbuch übertragen.");           	
             } else {
             	logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Modus DifferentialSync: Es werden nur neue und geänderte Fahrten übertragen.");           	
             }
             logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Es werden Fahrten ignoriert, deren Beginndatum früher ist als: "+ Daten.efaConfig.getValueKanuEfb_SyncTripsAfterDate().toString());
+        	if (Daten.efaConfig.getValueKanuEfb_SyncUnknownBoats()) {
+        		logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Fahrten mit unbekannten Booten werden synchronisiert.");
+        	} else {
+        		logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Fahrten mit unbekannten Booten werden ignoriert.");
+        	}
             logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Personen mit eFB-IDs, für die Fahrten synchronisiert werden: "+countNumberOfPersonsWithEfbIds());
             
             Hashtable<String,LogbookRecord> efaEntryIds = new Hashtable<String,LogbookRecord>();
@@ -694,7 +581,6 @@ public class KanuEfbSyncTask extends ProgressTask {
 
                 			if (!isTooEarlyTrip) {
                 				//only one of these values can be true
-                				//todo hier was machen
                 				kStatistics.incrementKnownBoatNonSupportedBoatTypeTripCntIfTrue(isKnownBoatButNonSupportedCanoeBoatType);
                 				kStatistics.incrementEmptyBoatRecordTripCntIfTrue(isEmptyBoatRecordTrip && !isEmptyBoatRecordTrip_SyncAnyway);
                 				
@@ -702,9 +588,8 @@ public class KanuEfbSyncTask extends ProgressTask {
             						// only log about unknown boats in verbose mode as this can happen any synchronisation
             						logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "  Fahrt " +  r.getQualifiedName()+ " - Bootstyp nicht gesetzt/Boot unbekannt: " + r.getBoatAsName());
             					} else if (isEmptyBoatRecordTrip && isEmptyBoatRecordTrip_SyncAnyway) {
-            						// we always log if we sync trips for unknown boats, as this message can only happen once (as the trip gets synced)
-            						// and info is of interest for boats manager to keep boats list up to date.
-            						logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "  Fahrt " +  r.getQualifiedName()+ " - Boot unbekannt: " + r.getBoatAsName() + " - Fahrt wird trotzdem synchronisiert");
+            						// do nothing here. next step is to create requests if at least one person in the crew has an EFB ID.
+            						// this will be done in createRequestsWithStatistics
             					}
                 			}
                 		}
@@ -724,7 +609,7 @@ public class KanuEfbSyncTask extends ProgressTask {
                 		&& (!isKnownBoatButNonSupportedCanoeBoatType) // muss man hier )
                 		) {
                 	
-                	createRequestWithStatistics(request, r, efaEntryIds, kStatistics, isUpdatedTrip);
+                	createRequestWithStatistics(request, r, efaEntryIds, kStatistics, isUpdatedTrip, isEmptyBoatRecordTrip, isEmptyBoatRecordTrip_SyncAnyway);
                 	
                 } else {
                     if (r != null) {
@@ -815,7 +700,8 @@ public class KanuEfbSyncTask extends ProgressTask {
          }
     }
     
-    private void createRequestWithStatistics(StringBuilder request,  LogbookRecord r, Hashtable<String,LogbookRecord> efaEntryIds, KanuEfbStatistics statistics, boolean isUpdatedTrip) {
+    private void createRequestWithStatistics(StringBuilder request,  LogbookRecord r, Hashtable<String,LogbookRecord> efaEntryIds, KanuEfbStatistics statistics, 
+    		boolean isUpdatedTrip, boolean isEmptyBoatRecordTrip, boolean isEmptyBoatRecordTrip_SyncAnyway) {
     	//we want to check if the current trip leads to at least one request. 
     	//if not, the trip is ignored due to the fact that none of the crew members has an EfbID.
     	long oldRequestCnt=statistics.getRequestCnt(); 
@@ -952,6 +838,28 @@ public class KanuEfbSyncTask extends ProgressTask {
         } // end of for each Crew Member
     	
     	
+    	// check if the boat was unknown, but at least one trip could be synced anyway.
+    	// do appropiate logging and statistics.
+    	if (isEmptyBoatRecordTrip && isEmptyBoatRecordTrip_SyncAnyway) {
+    		//Boat is unknown (means:not in the database), but config says whe shall sync such trips anyway.
+    		if (isTripWithAtLeastOneCrewMemberWithEFBID) {
+    			//if there was at least one person with an efbID, the trip got synced.
+    			//we log this fact and document that the boat was unknown. 
+    			//logging is done also if verbose mode is off, as this log entry gets only written once per trip (so it does not fill the efa log with unneccesary messages)
+    			logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "  Fahrt " +  r.getQualifiedName()+ " - Boot unbekannt: " + r.getBoatAsName() + " - Fahrt wird trotzdem synchronisiert");
+    		} else {
+    			// Boot unbekannt, sollte aber trotzdem synchronisiert werden - aber kein crewmitglied mit EFBID.
+    			// die Fahrt gilt als nicht synchronisiert weil kein crewmitglied eine EFB ID hatte, und NICHT weil das Boot unbekannt war.
+    			// daher müssen wir an dieser Stelle keine Statistik pflegen.
+    			// sehr wohl dokumentieren wir im Verbose Mode, dass der Bootsname unbekannt war, und die Fahrt nicht synchronisiert wurde.
+    			// so hat der Admin die Möglichkeit, das Boot in die Bootsliste aufzunehmen, und die Fahrt in einem späteren Synchronisationsversuch doch noch zu synchronisieren.
+    			if (verboseMode) {
+					// only log about unknown boats in verbose mode as this can happen any synchronisation
+					logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "  Fahrt " +  r.getQualifiedName()+ " - Bootstyp nicht gesetzt/Boot unbekannt und keine Person hat EFB-ID: " + r.getBoatAsName());
+    			}
+    		}
+    	}
+	    	
       	// if the number of requests has not changed, none of the crew members has an EFB ID, so the trip is ignored...
     	statistics.incrementPersonWithoutEFBIDTripCntIfTrue(oldRequestCnt==statistics.getRequestCnt());
        	//personWithoutEFBIDTripCnt = (oldRequestCnt==requestCnt) ? personWithoutEFBIDTripCnt+1 : personWithoutEFBIDTripCnt;
@@ -1017,10 +925,7 @@ public class KanuEfbSyncTask extends ProgressTask {
                 break;
             }
             setCurrentWorkDone(++i);
-            if (!syncUsers()) {
-                break;
-            }
-            setCurrentWorkDone(++i);
+
             if (!syncTrips()) {
                 break;
             }
@@ -1050,7 +955,6 @@ public class KanuEfbSyncTask extends ProgressTask {
             }
             logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Endzeit der Synchronisierung: " +  EfaUtil.getTimeStamp(thisSync) + " (" + thisSync + ")");
             msg.append(" [");
-            msg.append(countSyncUsers  + " Personen, ");
             msg.append(countSyncTrips  + " Fahrten synchronisiert] [");
             msg.append(countWarnings   + " Warnungen, ");
             msg.append(countErrors     + " Fehler");
@@ -1065,14 +969,13 @@ public class KanuEfbSyncTask extends ProgressTask {
     }
 
     public int getAbsoluteWork() {
-        return 4; //login, sync persons, sync trips, logout.
+        return 3; //login, sync trips, logout.
     }
 
     public String getSuccessfullyDoneMessage() {
         if (successfulCompleted) {
             return LogString.operationSuccessfullyCompleted(International.getString("Synchronisation")) +
                    "\n"   + countSyncTrips + " Fahrten synchronisiert." +
-                   "\n"   + countSyncUsers + " Personen synchronisiert." +
                    "\n\n" + countWarnings + " Warnungen" +
                    "\n"   + countErrors + " Fehler";
         } else {

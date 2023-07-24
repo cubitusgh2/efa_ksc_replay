@@ -1568,11 +1568,10 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             } else {
 
             	if (toggleAvailableBoatsToBoats.isSelected()) {
-            		//requesting a focus automatically brings the containing jframe to front 
-            		//(or, on windows, sets the corresponding entry in the task bar to a highlight mode
-            		//we only do want this if efa is already the front window. 
-            		//otherwise (like, a web browser in front), we do not request focus and do not
-            		//push efaBoathouseFrame to the front.
+            		//Requesting a focus brings the containing JFrame to front on Linux systems.
+            		//On Windows systems, the task bar entry of efaBoatHouse gets a highlight.
+            		//We only want to request focus for a list on the main window 
+            		//if efaBoatHouse is already focused itself.   
                 	if (this.isFocused()) {
                 		boatsAvailableList.requestFocus();
                 	}
@@ -1793,6 +1792,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         boatsNotAvailableList.clearPopup();
     }
 
+    //displays a text for the selected list element in the status label.
     void showBoatStatus(int listnr, ItemTypeBoatstatusList list, int direction) {
         if (Daten.project == null) {
             return;

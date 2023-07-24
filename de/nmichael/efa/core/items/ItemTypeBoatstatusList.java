@@ -35,6 +35,7 @@ import de.nmichael.efa.data.storage.DataKeyIterator;
 import de.nmichael.efa.data.types.DataTypeDate;
 import de.nmichael.efa.data.types.DataTypeIntString;
 import de.nmichael.efa.data.types.DataTypeList;
+import de.nmichael.efa.data.types.DataTypeTime;
 import de.nmichael.efa.gui.EfaBoathouseFrame;
 import de.nmichael.efa.util.EfaUtil;
 import de.nmichael.efa.util.International;
@@ -42,7 +43,6 @@ import de.nmichael.efa.util.Logger;
 
 public class ItemTypeBoatstatusList extends ItemTypeList {
 
-    private static final int WITHIN_CURRENT_DAY = 24*60;//current day has 24 hours
 	public static final int SEATS_OTHER = 99;
     public static final String TYPE_OTHER = "";
     public static final String RIGGER_OTHER = "";
@@ -365,7 +365,7 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
 
     	if (showReservationInfo && showInList.equals(BoatStatusRecord.STATUS_AVAILABLE)) {
 	    		//available list: show next reservation within 8 hours as secondary item
-	    		return getBoatReservation(bs.getBoatId(), WITHIN_CURRENT_DAY, false);
+	    		return getBoatReservation(bs.getBoatId(), getRemainingMinutesToday(), false);
 
     	} else if (showDestination && showInList.equals(BoatStatusRecord.STATUS_ONTHEWATER) ) {
     		//Boat is on the water: we show the destination as secondary item
@@ -393,6 +393,23 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
 
     	}
     	return null;
+    }
+    
+    
+    /*
+     * Calculates the remaining minutes until today, 23:59:00
+     */
+    private long getRemainingMinutesToday() {
+    	
+    	long value = 0;
+    	
+    	DataTypeTime nowTime = DataTypeTime.now();
+
+    	value = (23-nowTime.getHour())*60; // 60 minutes per Hour
+    	value = value + (59 - nowTime.getMinute());
+    	
+    	return value;
+    	
     }
     
     private String getBoatReservation(UUID boatID, long lookAheadMinutes, Boolean buildForTooltip) {
@@ -508,7 +525,7 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
        	    		// reservations only relevant if boat is available or NOT available.
        	    		// boats on the water only get destination strings.
        				if (bli.boat!=null && showReservation && (!boatStatus.equals(BoatStatusRecord.STATUS_ONTHEWATER))) {
-       					boatReservation= getBoatReservation(bli.boat.getId(), WITHIN_CURRENT_DAY, true);
+       					boatReservation= getBoatReservation(bli.boat.getId(), getRemainingMinutesToday(), true);
        					if (boatReservation==null) {boatReservation="";}
        				}
        				

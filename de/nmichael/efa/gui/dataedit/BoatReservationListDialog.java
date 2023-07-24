@@ -231,7 +231,7 @@ public class BoatReservationListDialog extends DataListDialog {
     				 table.showValue();
     			 } else {
     				 table.getSearchField().setValue("");
-    				 table.getFilterBySearch().setValue(false);
+    				 table.getFilterBySearch().setValue(true);
     				 table.updateData();
     				 table.showValue();
     			 }
