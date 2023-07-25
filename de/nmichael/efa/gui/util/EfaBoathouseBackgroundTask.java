@@ -9,17 +9,41 @@
  */
 package de.nmichael.efa.gui.util;
 
-import de.nmichael.efa.Daten;
-import de.nmichael.efa.data.*;
-import de.nmichael.efa.data.types.*;
-import de.nmichael.efa.data.storage.*;
-import de.nmichael.efa.gui.*;
-import de.nmichael.efa.util.*;
-import de.nmichael.efa.util.Dialog;
+import java.awt.Window;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Vector;
 
-import java.awt.*;
-import java.io.*;
-import java.util.*;
+import javax.swing.SwingUtilities;
+
+import de.nmichael.efa.Daten;
+import de.nmichael.efa.data.BoatDamageRecord;
+import de.nmichael.efa.data.BoatDamages;
+import de.nmichael.efa.data.BoatRecord;
+import de.nmichael.efa.data.BoatReservationRecord;
+import de.nmichael.efa.data.BoatReservations;
+import de.nmichael.efa.data.BoatStatus;
+import de.nmichael.efa.data.BoatStatusRecord;
+import de.nmichael.efa.data.Logbook;
+import de.nmichael.efa.data.LogbookRecord;
+import de.nmichael.efa.data.MessageRecord;
+import de.nmichael.efa.data.Messages;
+import de.nmichael.efa.data.storage.DataKey;
+import de.nmichael.efa.data.storage.DataKeyIterator;
+import de.nmichael.efa.data.storage.IDataAccess;
+import de.nmichael.efa.data.types.DataTypeDate;
+import de.nmichael.efa.data.types.DataTypeTime;
+import de.nmichael.efa.gui.EfaBaseFrame;
+import de.nmichael.efa.gui.EfaBoathouseFrame;
+import de.nmichael.efa.gui.EfaExitFrame;
+import de.nmichael.efa.util.Dialog;
+import de.nmichael.efa.util.EfaUtil;
+import de.nmichael.efa.util.International;
+import de.nmichael.efa.util.LogString;
+import de.nmichael.efa.util.Logger;
 
 public class EfaBoathouseBackgroundTask extends Thread {
 
@@ -149,9 +173,6 @@ public class EfaBoathouseBackgroundTask extends Thread {
 
                 // Fokus-Kontrolle
                 checkFocus();
-                
-                // FIlter-Felder leeren nach Zeitintervall
-                checkFilterTextFields();
 
                 // Speicher-Überwachung
                 checkMemory();
@@ -179,10 +200,6 @@ public class EfaBoathouseBackgroundTask extends Thread {
         } // end: while(true)
     } // end: run
 
-    private void checkFilterTextFields() {
-    	efaBoathouseFrame.clearListFilterAfterInterval();
-    }
-    
     private void updateProjectInfo() {
         try {
             if (Daten.project != null) {
@@ -217,6 +234,23 @@ public class EfaBoathouseBackgroundTask extends Thread {
                 Thread.sleep(CHECK_INTERVAL * 1000);
             } catch (Exception e) {
                 // wenn unterbrochen, dann versuch nochmal, kurz zu schlafen, und arbeite dann weiter!! ;-)
+            	// Note added by Stefan Gebers:
+            	// this exception here is thrown when the thread is interrupted, meaning: woken up to Update it's data.
+            	//
+            	// the former boat lists in efaBoatHouse main screen take some 100 msec to get an update on an raspberry pi 3.
+            	// the new two column lists take some 500-800 msec to get an update, depending on number of boats, 
+            	// reservations and boats on the water.
+            	// the old code told to sleep 100 msec here. in combination with two column lists this lead to some exceptions
+            	// in the efa.log file concerning some exceptions in the java swing code (updating jLists).
+            	// Increasing this secondary sleep to more than 600 msec resolved the problem.
+            	// 
+            	// What does sleeping 700 msec at this station mean?
+            	// we are in the efaBoathouseBackgroundTask. Due to some changes in the data (like: adding reservations, adding, editing, finishing trips)
+            	// we get woken up to force the update of efaBoathouse boat lists. 
+            	// the user CAN actually work within efaBths, as this is an background task and does not affect the responsiveness of the swing gui.
+            	// 
+            	// so after being woken up after some changes in the data, the list contents get updated in less than a second AFTER the data has been changed.
+            	// this is fast enough for the common user.
                 try {
                     Thread.sleep(600);
                 } catch (Exception ee) {
@@ -255,7 +289,8 @@ public class EfaBoathouseBackgroundTask extends Thread {
                 } catch(Exception e) {
                     // wenn unterbrochen, dann versuch nochmal, kurz zu schlafen, und arbeite dann weiter!! ;-)
                     try {
-                        Thread.sleep(600);
+                        // see comment above in this method
+                    	Thread.sleep(600);
                     } catch (Exception ee) {
                         EfaUtil.foo();
                     }
@@ -301,7 +336,11 @@ public class EfaBoathouseBackgroundTask extends Thread {
             try {
                 long scn = Daten.efaConfig.data().getSCN();
                 if (scn != lastEfaConfigScn) {
-                    efaBoathouseFrame.updateGuiElements();
+                	SwingUtilities.invokeLater(new Runnable() {
+              	      public void run() {
+                      	efaBoathouseFrame.updateGuiElements();
+              	      }
+                	});
                     lastEfaConfigScn = scn;
                 }
             } catch (Exception e) {
@@ -327,7 +366,7 @@ public class EfaBoathouseBackgroundTask extends Thread {
         lastReservationStatusScn = newReservationStatusScn;
         
         if (isProjectOpen && !isLocalProject) {
-            efaBoathouseFrame.updateBoatLists(listChanged,false);
+	        	SwingUtilities.invokeLater(new BthsUpdateBoatLists(listChanged,false));
             if (Logger.isTraceOn(Logger.TT_BACKGROUND, 8)) {
                 Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
                         "EfaBoathouseBackgroundTask: checkBoatStatus() - done for remote project");
@@ -487,17 +526,28 @@ public class EfaBoathouseBackgroundTask extends Thread {
                         "EfaBoathouseBackgroundTask: checkBoatStatus() - calling updateBoatLists("+listChanged+") ...");
             }
             if (now-lastListUpdate>10*60*1000) {
-            	// if Boathouse lists shall contain information info, they need to be updated regularily.
+            	// if Boathouse lists shall contain reservation info, they need to be updated regularly.
             	// reservation info consists of when a boat has its next reservation on the current day,
             	// and this is not computed by this background task. The lists compute this info on their own.
             	// update every 10 minutes, after the last update of the boat lists.
+            	// as boat lists compute reservations for the remaining day, and are updated every time a reservation
+            	// is added, updated, deleted, the regular update of the boatlists is neccesary at 0:00 am,  
+            	// when a new day has begun. 
+            	// however, we update every 10 minutes to be sure.
             	if (Daten.efaConfig.getValueEfaBoathouseBoatListReservationInfo()) {
             		listChanged=true;
             		}
             }
             if (listChanged) {
             	lastListUpdate=now;
-                efaBoathouseFrame.updateBoatLists(listChanged,false);            	
+                
+            	//calling updateBoatLists from an other task is prone to swing exceptions,
+            	//as jLists get updated and may interfere with user interaction
+            	//Update of lists should be run from AWT main thread. That's the task of invokeLater();
+            	
+            	SwingUtilities.invokeLater(new BthsUpdateBoatLists(listChanged, false));
+            	
+            	//efaBoathouseFrame.updateBoatLists(listChanged,false);            	
             }
 
             
@@ -544,7 +594,9 @@ public class EfaBoathouseBackgroundTask extends Thread {
                 Logger.logdebug(e);
             }
         }
-        efaBoathouseFrame.setUnreadMessages(admin, boatmaintenance);
+
+    	SwingUtilities.invokeLater(new BthsSetUnreadMessages(admin, boatmaintenance));
+        //efaBoathouseFrame.setUnreadMessages(admin, boatmaintenance);
     }
 
     private void checkForExitOrRestart() {
@@ -670,7 +722,11 @@ public class EfaBoathouseBackgroundTask extends Thread {
                 }
             }
             if (topWindow && Daten.efaConfig.getValueEfaDirekt_immerImVordergrundBringToFront()) {
-                efaBoathouseFrame.bringFrameToFront();
+            	SwingUtilities.invokeLater(new Runnable() {
+            		public void run() {
+                        efaBoathouseFrame.bringFrameToFront();
+            		}
+            	});
             }
         }
 
@@ -683,7 +739,11 @@ public class EfaBoathouseBackgroundTask extends Thread {
         }
         if (this.efaBoathouseFrame != null && this.efaBoathouseFrame.getFocusOwner() == this.efaBoathouseFrame) {
             // das Frame selbst hat den Fokus: Das soll nicht sein! Gib einer Liste den Fokus!
-            efaBoathouseFrame.boatListRequestFocus(0);
+        	SwingUtilities.invokeLater(new Runnable() {
+        		public void run() {
+                	efaBoathouseFrame.boatListRequestFocus(0);
+        		}
+        	});
         }
     }
 
@@ -932,4 +992,37 @@ public class EfaBoathouseBackgroundTask extends Thread {
         }
 
     }
+    
+    class BthsUpdateBoatLists implements Runnable {
+        
+    	private Boolean bListChanged=false;
+    	private Boolean bOnlyAvailablePersons=false;
+    	
+    	public BthsUpdateBoatLists(Boolean listChanged, Boolean onlyAvailablePersonsOrBoats) {
+    		bListChanged=listChanged;
+    		bOnlyAvailablePersons=onlyAvailablePersonsOrBoats;
+    	}
+    	
+    	public void run() {
+	        	efaBoathouseFrame.updateBoatLists(bListChanged, bOnlyAvailablePersons);
+	      }
+	}
+	
+	class BthsSetUnreadMessages implements Runnable {
+		
+		private Boolean bAdmin=false;
+		private Boolean bBoatMaintenance=false;
+		
+    	public BthsSetUnreadMessages(Boolean admin, Boolean boatMaintenance) {
+    		bAdmin=admin;
+    		bBoatMaintenance=boatMaintenance;
+    	}
+		
+		public void run() {
+		    efaBoathouseFrame.setUnreadMessages(bAdmin, bBoatMaintenance);
+		}
+		
+	}
+
+
 }
