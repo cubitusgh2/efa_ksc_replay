@@ -11,28 +11,65 @@
 package de.nmichael.efa.data.sync;
 
 // @i18n complete
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.net.CookieHandler;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
+import java.net.CookieStore;
+import java.net.HttpCookie;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import org.xml.sax.*;
-import de.nmichael.efa.data.*;
-import de.nmichael.efa.data.storage.*;
-import de.nmichael.efa.util.*;
-import de.nmichael.efa.*;
-import de.nmichael.efa.core.config.AdminRecord;
-import de.nmichael.efa.core.config.EfaTypes;
-import de.nmichael.efa.data.types.DataTypeDate;
-import de.nmichael.efa.data.types.DataTypeList;
-import de.nmichael.efa.gui.EfaConfigDialog;
-import de.nmichael.efa.gui.ProgressDialog;
-import de.nmichael.efa.gui.BaseTabbedDialog;
-import de.nmichael.efa.gui.dataedit.ProjectEditDialog;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.swing.JDialog;
+
+import org.xml.sax.InputSource;
+import org.xml.sax.XMLReader;
+
+import de.nmichael.efa.Daten;
+import de.nmichael.efa.core.config.AdminRecord;
+import de.nmichael.efa.core.config.EfaTypes;
+import de.nmichael.efa.data.BoatRecord;
+import de.nmichael.efa.data.Boats;
+import de.nmichael.efa.data.DestinationRecord;
+import de.nmichael.efa.data.Destinations;
+import de.nmichael.efa.data.Logbook;
+import de.nmichael.efa.data.LogbookRecord;
+import de.nmichael.efa.data.PersonRecord;
+import de.nmichael.efa.data.Persons;
+import de.nmichael.efa.data.ProjectRecord;
+import de.nmichael.efa.data.SessionGroupRecord;
+import de.nmichael.efa.data.Waters;
+import de.nmichael.efa.data.WatersRecord;
+import de.nmichael.efa.data.storage.DataKey;
+import de.nmichael.efa.data.storage.DataKeyIterator;
+import de.nmichael.efa.data.storage.IDataAccess;
+import de.nmichael.efa.data.types.DataTypeDate;
+import de.nmichael.efa.data.types.DataTypeList;
+import de.nmichael.efa.gui.BaseTabbedDialog;
+import de.nmichael.efa.gui.EfaConfigDialog;
+import de.nmichael.efa.gui.ProgressDialog;
+import de.nmichael.efa.gui.dataedit.ProjectEditDialog;
+import de.nmichael.efa.util.Dialog;
+import de.nmichael.efa.util.EfaUtil;
+import de.nmichael.efa.util.International;
+import de.nmichael.efa.util.LogString;
+import de.nmichael.efa.util.Logger;
+import de.nmichael.efa.util.ProgressTask;
 
 
 public class KanuEfbSyncTask extends ProgressTask {
@@ -47,15 +84,15 @@ public class KanuEfbSyncTask extends ProgressTask {
     private String password;
     private HttpCookie sessionCookie;
     private long lastSync;
-    private long thisSync;
-    private boolean loggedIn = false;
-    private boolean successfulCompleted = false;
+    protected long thisSync;
+    protected boolean loggedIn = false;
+    protected boolean successfulCompleted = false;
     private int countSyncUsers = 0;
     private int countSyncBoats = 0;
     private int countSyncWaters = 0;
     private int countSyncTrips = 0;
-    private int countWarnings = 0;
-    private int countErrors = 0;
+    protected int countWarnings = 0;
+    protected int countErrors = 0;
 
     TrustManager[] trustAllCerts = new TrustManager[]{
         new X509TrustManager() {
@@ -92,21 +129,23 @@ public class KanuEfbSyncTask extends ProgressTask {
         }
     }
 
-    private void buildRequestHeader(StringBuilder s, String requestName) {
+    protected void buildRequestHeader(StringBuilder s, String requestName) {
         s.append("<?xml version='1.0' encoding='UTF-8' ?>\n");
         s.append("<xml>\n");
         s.append("<request command=\""+requestName+"\">\n");
     }
 
-    private void buildRequestFooter(StringBuilder s) {
+    protected void buildRequestFooter(StringBuilder s) {
         s.append("</request>\n");
         s.append("</xml>\n");
     }
 
-    private KanuEfbXmlResponse sendRequest(String request, boolean expectResponse) throws Exception {
+    protected KanuEfbXmlResponse sendRequest(String request, boolean expectResponse) throws Exception {
         if (Logger.isTraceOn(Logger.TT_SYNC)) {
             logInfo(Logger.DEBUG, Logger.MSG_SYNC_SYNCDEBUG, "Sende Synchronisierungs-Anfrage an "+cmdurl+":\n"+request);
         }
+        logInfo(Logger.INFO,Logger.MSG_SYNC_SYNCDEBUG, request);
+        
         URL url = new URL(this.cmdurl);
         URLConnection connection = url.openConnection();
         connection.setDoOutput(true);
@@ -134,7 +173,7 @@ public class KanuEfbSyncTask extends ProgressTask {
     }
 
     private KanuEfbXmlResponse getResponse(URLConnection connection, BufferedInputStream in) {
-        if (Logger.isTraceOn(Logger.TT_SYNC)) {
+    //    if (Logger.isTraceOn(Logger.TT_SYNC)) {
             try {
                 in.mark(DEBUG_MARK_SIZE);
                 logInfo(Logger.DEBUG, Logger.MSG_SYNC_SYNCDEBUG, "Antwort von Kanu-eFB:");
@@ -155,8 +194,10 @@ public class KanuEfbSyncTask extends ProgressTask {
             } catch (Exception e) {
                 Logger.log(e);
             }
-        }
+    //    }
 
+            //in=tidyXML(in);            
+            
         KanuEfbXmlResponse response = null;
         try {
             XMLReader parser = EfaUtil.getXMLReader();
@@ -171,14 +212,47 @@ public class KanuEfbSyncTask extends ProgressTask {
             response = null;
         }
 
-        if (Logger.isTraceOn(Logger.TT_SYNC) && response != null) {
+        //if (Logger.isTraceOn(Logger.TT_SYNC) && response != null) {
             response.printAll();
-        }
+        //}
 
         return response;
     }
 
-    private boolean login() {
+ private BufferedInputStream tidyXML(BufferedInputStream in) {
+    	
+        StringBuilder sb= new StringBuilder(250);
+    	try {
+    		in.mark(DEBUG_MARK_SIZE); //memorize current position in stream
+	    	BufferedReader buf = new BufferedReader(new InputStreamReader(in));
+	        String s;
+	  
+	        boolean inXML=false;
+	        while ((s = buf.readLine()) != null) {
+	        	if (s.trim().toLowerCase().startsWith("<xml")||s.trim().toLowerCase().startsWith("<?xml")) {
+	        		inXML=true;
+	        	}
+	        	else {
+	        		inXML=inXML; // just for debug purposes
+	        	}
+	        	if (inXML) {
+	        		sb.append(s);
+	        	}
+	        }
+	        in.reset(); // and reset reading position to memorized position.
+    	} catch(Exception e) {
+            Logger.log(e);
+            if (Logger.isTraceOn(Logger.TT_SYNC)) {
+                logInfo(Logger.DEBUG, Logger.MSG_SYNC_SYNCDEBUG, "Exceptione:" + e.toString());
+            }
+            return in;
+        }
+
+        return new BufferedInputStream(new ByteArrayInputStream(sb.toString().getBytes(StandardCharsets.UTF_8)));
+        
+    }    
+    
+    protected boolean login() {
         try {
             loggedIn = false;
             logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCDEBUG, "Login auf " + this.loginurl+ " mit Benutzername " + this.username + " ...");
@@ -710,7 +784,7 @@ public class KanuEfbSyncTask extends ProgressTask {
         return true;
     }
 
-    private boolean syncDone() {
+    protected boolean syncDone() {
         try {
             if (loggedIn) {
                 logInfo(Logger.INFO, Logger.MSG_SYNC_SYNCINFO, "Logout ...");
@@ -814,7 +888,7 @@ public class KanuEfbSyncTask extends ProgressTask {
         }
     }
 
-    private void logInfo(String type, String key, String msg) {
+    protected void logInfo(String type, String key, String msg) {
         Logger.log(type, key, msg);
         //if (!type.equals(Logger.DEBUG)) {
             logInfo(msg+"\n");

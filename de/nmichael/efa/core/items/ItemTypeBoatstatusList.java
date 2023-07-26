@@ -68,6 +68,7 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
 
         Groups groups = Daten.project.getGroups(false);
         Hashtable<UUID, Color> groupColors = new Hashtable<UUID, Color>();
+        Hashtable<UUID, MutableInt> groupBoatcount = new Hashtable<UUID, MutableInt>();
         try {
             DataKeyIterator it = groups.data().getStaticIterator();
             for (DataKey k = it.getFirst(); k != null; k = it.getNext()) {
@@ -79,6 +80,11 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
                     }
                 }
             }
+            // wenn es mindestens eine Gruppe gibt, schon mal die IconHeight festlegen.
+            // wenn iconHeight>0 dann wird in der Liste der verfügbaren Boote die Farbe der Gruppe vor dem Bootsnamen angezeigt.
+            // Da es auch möglich ist, eine Personengruppe anzulegen, ohne dass da ein Boot zugeordnet sein muss,
+            // wird diese iconWidth/Height im Nachgang nochmal auf 0 gesetzt, wenn es zu keiner Gruppe ein konfiguriertes
+            // boot gibt.
             this.iconWidth = (groupColors.size() > 0 ? Daten.efaConfig.getValueEfaDirekt_fontSize() : 0);
             this.iconHeight = this.iconWidth;
         } catch(Exception e) {
@@ -188,6 +194,13 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
                             Color c = groupColors.get(id);
                             if (c != null) {
                                 aColors.add(c);
+                            }
+                            //count
+                            MutableInt iBoatCount= groupBoatcount.get(id); //get the boatCount of the Group ID
+                            if (iBoatCount != null) {
+                            	iBoatCount.increment();
+                            } else { 
+                            	groupBoatcount.put(id, new MutableInt());
                             }
                         }
                     }
@@ -304,6 +317,15 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
             }
             vv.add(new ItemTypeListData(a[i].name, a[i].record, false, -1, null, a[i].colors));
         }
+        
+        //now, check wether there is at least one boat with an assigned group.
+        //if there is none, no need to show the group icon
+        if (groupBoatcount.isEmpty()) {
+        	//no boat is assigned to a group
+        	this.iconHeight=0;
+        	this.iconWidth=0;
+        }
+        
         return vv;
     }
 
@@ -505,5 +527,10 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
         }
     }
 
+    class MutableInt {
+    	  int value = 1; // note that we start at 1 since we're counting
+    	  public void increment () { ++value;      }
+    	  public int  get ()       { return value; }
+    	} 
 
 }
