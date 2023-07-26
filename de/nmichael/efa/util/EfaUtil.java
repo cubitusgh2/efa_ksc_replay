@@ -12,6 +12,7 @@ package de.nmichael.efa.util;
 import de.nmichael.efa.efa1.Synonyme;
 import de.nmichael.efa.efa1.DatenFelder;
 import de.nmichael.efa.core.config.EfaTypes;
+import de.nmichael.efa.data.types.DataTypeTime;
 import de.nmichael.efa.*;
 import de.nmichael.efa.core.CrontabThread;
 import java.text.SimpleDateFormat;
@@ -2084,5 +2085,21 @@ public class EfaUtil {
     	if (efaWeekDay.equals(EfaTypes.TYPE_WEEKDAY_SATURDAY)) {return 7;}
     	if (efaWeekDay.equals(EfaTypes.TYPE_WEEKDAY_SUNDAY)) {return 1;}
     	return 1; //Default use Sunday 
+    }
+    
+    /*
+     * Calculates the remaining minutes until today, 23:59:00
+     */
+    public static long getRemainingMinutesToday() {
+    	
+    	long value = 0;
+    	
+    	DataTypeTime nowTime = DataTypeTime.now();
+
+    	value = (23-nowTime.getHour())*60; // 60 minutes per Hour
+    	value = value + (59 - nowTime.getMinute());
+    	
+    	return value;
+    	
     }    
 }

@@ -29,6 +29,7 @@ import java.awt.event.WindowEvent;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Hashtable;
 import java.util.Stack;
 import java.util.UUID;
@@ -69,6 +70,8 @@ import de.nmichael.efa.data.MessageRecord;
 import de.nmichael.efa.data.Persons;
 import de.nmichael.efa.data.Project;
 import de.nmichael.efa.data.efacloud.TxRequestQueue;
+import de.nmichael.efa.data.storage.DataKey;
+import de.nmichael.efa.data.storage.DataKeyIterator;
 import de.nmichael.efa.data.storage.DataRecord;
 import de.nmichael.efa.data.storage.IDataAccess;
 import de.nmichael.efa.data.types.DataTypeDate;
@@ -1502,11 +1505,23 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
                 	String strDebugTimes="";
                 	long start = System.currentTimeMillis();
                 	
+                	Vector <BoatReservationRecord> todaysReservations; 
+                	//obtain reservation info only if they shall be shown in the boatLists
+                	if (Daten.efaConfig.getValueEfaBoathouseBoatListReservationInfo()) {
+                    	todaysReservations=getTodaysReservations();
+                	} else {
+                		 todaysReservations=new Vector <BoatReservationRecord>();
+                	}
+
+                	strDebugTimes=strDebugTimes+(System.currentTimeMillis()-start);                	
+
+                    start= System.currentTimeMillis();
+                    
                     if (!Daten.efaConfig.getValueEfaDirekt_listAllowToggleBoatsPersons() || toggleAvailableBoatsToBoats.isSelected()) {
                         if (Logger.isTraceOn(Logger.TT_GUI, 9)) {
                             Logger.log(Logger.DEBUG, Logger.MSG_GUI_DEBUGGUI, "updateBoatLists(" + listChanged + ") - setting boatsAvailableList ...");
                         }
-                        boatsAvailableList.setBoatStatusData(boatStatus.getBoats(BoatStatusRecord.STATUS_AVAILABLE, true), logbook, "<" + International.getString("anderes Boot") + ">");
+                        boatsAvailableList.setBoatStatusData(boatStatus.getBoats(BoatStatusRecord.STATUS_AVAILABLE, true), logbook, "<" + International.getString("anderes Boot") + ">", todaysReservations);
                         if (Logger.isTraceOn(Logger.TT_GUI, 9)) {
                             Logger.log(Logger.DEBUG, Logger.MSG_GUI_DEBUGGUI, "updateBoatLists(" + listChanged + ") - setting boatsAvailableList - done");
                         }
@@ -1522,17 +1537,17 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
 	                        }
                     	
                     }
-                   	strDebugTimes=strDebugTimes+(System.currentTimeMillis()-start);            
+                   	strDebugTimes=strDebugTimes+";"+(System.currentTimeMillis()-start);            
 
                     if (Logger.isTraceOn(Logger.TT_GUI, 9)) {
                         Logger.log(Logger.DEBUG, Logger.MSG_GUI_DEBUGGUI, "updateBoatLists(" + listChanged + ") - setting boatsOnTheWaterList and boatsNotAvailableList ...");
                     }
                     if (!onlyAvailableBoatsOrPersons) {
 	                    start = System.currentTimeMillis();                    
-	                    boatsOnTheWaterList.setBoatStatusData(boatStatus.getBoats(BoatStatusRecord.STATUS_ONTHEWATER, true), logbook, null);
+	                    boatsOnTheWaterList.setBoatStatusData(boatStatus.getBoats(BoatStatusRecord.STATUS_ONTHEWATER, true), logbook, null, todaysReservations);
 	                    strDebugTimes=strDebugTimes+";"+(System.currentTimeMillis()-start);
 	                    start = System.currentTimeMillis();
-	                    boatsNotAvailableList.setBoatStatusData(boatStatus.getBoats(BoatStatusRecord.STATUS_NOTAVAILABLE, true), logbook, null);
+	                    boatsNotAvailableList.setBoatStatusData(boatStatus.getBoats(BoatStatusRecord.STATUS_NOTAVAILABLE, true), logbook, null, todaysReservations);
 	                    strDebugTimes=strDebugTimes+";"+(System.currentTimeMillis()-start);
                     }
                     Logger.log(Logger.INFO, "Aufrufzeiten: "+ strDebugTimes);
@@ -1594,7 +1609,63 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         }
     }
 
+    /**
+     * Returns a vector that contains all reservations which take place within the current day.
+     * The list is sorted by boat and valid_in_minutes, so that the next upcoming reservations are the first items in the list.
+     * This usually is a much smaller list than the total list of reservations in the db.
+     * 
+     * If efaConfig is set that no reservation info shall be shown in the boatlists, this methods returns an empty vector.
+     * 
+     * So the assumption is:
+     *   Performance is crucial as we are in swing's main thread (so every other operation is halted until we finished)
+     *   and it is very crucial on low-power devices like the Raspberry Pi 3.
+     *    
+     * - two lists in efaBoatHouseFrame can be configured to show reservation data (of the next reservation of the boat today)
+     * - if so, obtaining the reservation info for each boat can be a matter of performance, if looked up within the whole reservation DB.
+     *   AND if there are a lot of boats within efa.
+     * - using this list as a cache, there is less of a performance bottleneck.
 
+     * 
+     */
+    private Vector <BoatReservationRecord> getTodaysReservations() {
+    	Vector <BoatReservationRecord> result = new Vector <BoatReservationRecord>();
+        
+        if (Daten.efaConfig.getValueEfaBoathouseBoatListReservationInfo()) {
+	    	Long now = System.currentTimeMillis();
+	        Long remainingMinutesToday = EfaUtil.getRemainingMinutesToday();
+	    	
+	        BoatReservations boatReservationDB = (Daten.project != null ? Daten.project.getBoatReservations(false) : null);
+	        //get reservations valid within 8 hours        
+	      	
+	        try {
+	        	DataKeyIterator iter = boatReservationDB.data().getStaticIterator();
+	            DataKey k = iter.getFirst();
+	            while (k != null) {
+	                BoatReservationRecord r = (BoatReservationRecord) boatReservationDB.data().get(k);
+	                if (r != null) {
+	                    boolean show = (!r.getInvisible()) &&
+	                                   (!r.getDeleted());
+	                    if (show) {
+	                        if (r.getReservationValidInMinutes(now, remainingMinutesToday) >= 0) { 
+	                        	//store the reservation 
+	                        	result.add(r);
+	                        }
+	                    }
+	                }
+	                k = iter.getNext();
+	            }
+	        	
+	        } catch (Exception e) {
+	        	Logger.log(e);
+	        }
+	        
+	        //sort by time span until reservation gets active, ascending
+	        result.sort(new BoatReservationComparatorByNextOccurrence());
+        }
+        return result;
+    	
+    }
+    
     // ========================================================================================================================================
     // Callbacks and Events
     // ========================================================================================================================================
@@ -2673,4 +2744,9 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         isLocked = false;
     }
 
+}
+class BoatReservationComparatorByNextOccurrence implements Comparator<BoatReservationRecord> {
+	public int compare(BoatReservationRecord brr1, BoatReservationRecord brr2) {
+		return (int)(brr1.getReservationValidInMinutes() - brr2.getReservationValidInMinutes());
+	}
 }
