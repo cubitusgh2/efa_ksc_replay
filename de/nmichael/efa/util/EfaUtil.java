@@ -60,6 +60,10 @@ public class EfaUtil {
         str = replaceString(str, "\u2026","&hellip;");
         return str;
     }
+    
+    public static String escapeHtmlWithLinefeed(String str) {
+        return replaceString(escapeHtml(str),"\n","<br>");
+    }    
 
     public static String escapeHtmlGetString(String str) {
         if (str == null) {

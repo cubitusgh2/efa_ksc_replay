@@ -409,123 +409,129 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
      * gets these exceptions, logs them as warning and returns an empty tooltip string.
      * 
      */
-        private String buildToolTipText(BoatString bs, Vector <BoatReservationRecord> rTodayCache, Boolean showReservation) {
+    private String buildToolTipText(BoatString bs, Vector <BoatReservationRecord> rTodayCache, Boolean showReservation) {
 
-       		try {
+   		try {
 
-       	    	if (bs!=null) {
-       	   			String boatName;
+   	    	if (bs!=null) {
+   	   			String boatName;
 
-       	    		BoatListItem bli = (BoatListItem) bs.record;
-       	    		if (bli.boat != null) {
-       	    			boatName=bli.boat.getName();//.getBoatNameAsString(System.currentTimeMillis());
-       	    		} else {
-       	    			boatName=bs.name;
-       	    		}
-       	    	
-       	    		String boatDestination="";
-       	    		String boatVariant="";
-       	    		String boatStatus=bli.boatStatus.getCurrentStatus();
-       	    		String boatRuderErlaubnis="";
-       	    		String boatReservation="";
+   	    		BoatListItem bli = (BoatListItem) bs.record;
+   	    		if (bli.boat != null) {
+   	    			boatName=bli.boat.getName();//.getBoatNameAsString(System.currentTimeMillis());
+   	    		} else {
+   	    			boatName=bs.name;
+   	    		}
+   	    	
+   	    		String boatDestination="";
+   	    		String boatVariant="";
+   	    		String boatStatus=bli.boatStatus.getCurrentStatus();
+   	    		String boatRuderErlaubnis="";
+   	    		String boatReservation="";
 
-       	    		//data if boat is on the water
-       	    		String boatTimeEntry=EfaUtil.getTimeStamp(bli.boatStatus.getLastModified());
-       	    		String boatComment=bli.boatStatus.getComment();
-       	    		if (boatComment==null) {boatComment="";}
-       	    		
-       	    		// reservations only relevant if boat is available or NOT available.
-       	    		// boats on the water only get destination strings.
-       				if (bli.boat!=null && showReservation && (!boatStatus.equals(BoatStatusRecord.STATUS_ONTHEWATER))) {
-       					boatReservation= getBoatReservationString(bli.boat.getId(), rTodayCache, EfaUtil.getRemainingMinutesToday(), true);
-       					if (boatReservation==null) {boatReservation="";}
-       				}
-       				
-       	    		if (boatStatus.equals(BoatStatusRecord.STATUS_ONTHEWATER)) {
-       	        		if(bli.boat != null) {
-    	   	    			//boatName=bli.boat.getName();
-    	   	        		boatDestination=bli.boatStatus.getDestination();
-    	   	        		if (boatDestination==null) {boatDestination="";};
-       	        		} 
-       	        		
-       	    		} else if (boatStatus.equals(BoatStatusRecord.STATUS_AVAILABLE)) {
-       	    			boatTimeEntry="";
-       	    			if (bli.boat!=null) {
-       		    			boatVariant=bli.boat.getDetailedBoatType(bli.boat.getVariantIndex(bli.boatVariant));
-       		    			
-       		    			String groups = bli.boat.getAllowedGroupsAsNameString(System.currentTimeMillis());
-       		                if (groups.length() > 0) {
-       		                	boatRuderErlaubnis = (boatRuderErlaubnis.length() > 0 ? boatRuderErlaubnis + ", "
-       		                            : "; " + International.getMessage("nur für {something}", groups));
-       		                }
-       	    			}
-       	    		}
+   	    		//data if boat is on the water
+   	    		String boatTimeEntry=EfaUtil.getTimeStamp(bli.boatStatus.getLastModified());
+   	    		String boatComment=bli.boatStatus.getComment();
+   	    		if (boatComment==null) {boatComment="";}
+   	    		
+   	    		// reservations only relevant if boat is available or NOT available.
+   	    		// boats on the water only get destination strings.
+   				if (bli.boat!=null && showReservation && (!boatStatus.equals(BoatStatusRecord.STATUS_ONTHEWATER))) {
+   					boatReservation= getBoatReservationString(bli.boat.getId(), rTodayCache, EfaUtil.getRemainingMinutesToday(), true);
+   					if (boatReservation==null) {boatReservation="";}
+   				}
+   				
+   	    		if (boatStatus.equals(BoatStatusRecord.STATUS_ONTHEWATER)) {
+   	        		if(bli.boat != null) {
+	   	    			//boatName=bli.boat.getName();
+	   	        		boatDestination=bli.boatStatus.getDestination();
+	   	        		if (boatDestination==null) {boatDestination="";};
+   	        		} 
+   	        		
+   	    		} else if (boatStatus.equals(BoatStatusRecord.STATUS_AVAILABLE)) {
+   	    			boatTimeEntry="";
+   	    			if (bli.boat!=null) {
+   		    			boatVariant=bli.boat.getDetailedBoatType(bli.boat.getVariantIndex(bli.boatVariant));
+   		    			
+   		    			String groups = bli.boat.getAllowedGroupsAsNameString(System.currentTimeMillis());
+   		                if (groups.length() > 0) {
+   		                	boatRuderErlaubnis = (boatRuderErlaubnis.length() > 0 ? boatRuderErlaubnis + ", "
+   		                            : "; " + International.getMessage("nur für {something}", groups));
+   		                }
+   	    			}
+   	    		}
 
-       	    		//concat is the fastest way to build strings
-       	    		String result = "<html><body><table border=\"0\"><tr><td align=\"left\"><b>"
-       	    				.concat(EfaUtil.escapeHtml(boatName))
-       	    				.concat(boatTimeEntry)
-       	    				.concat("</b></td><td align=\"right\">")
-       	    				.concat(EfaUtil.escapeHtml(boatTimeEntry))
-       	    				.concat("</td></tr><tr><td colspan=2><hr></td></tr>");
-       	    		if (!boatReservation.isEmpty()) {
-       	    			result=result.concat("<tr><td align=\"left\" colspan=2>")
-       	    				.concat(EfaUtil.escapeHtml(boatReservation))
-       	    				.concat("</td></tr>");
-       	    		}
-       	    		if (!boatVariant.isEmpty()) {
-       	    			result=result.concat("<tr><td align=\"left\" colspan=2>")
-       	    				.concat(EfaUtil.escapeHtml(boatVariant))
-       	    				.concat("</td></tr>");
-       	    		}
-       	    		if (!boatRuderErlaubnis.isEmpty()) {
-       	    			result=result.concat("<tr><td align=\"left\" colspan=2>")
-       	    				.concat(EfaUtil.escapeHtml(boatRuderErlaubnis))
-       	    				.concat("</td></tr>");
-       	    		}
-       	    		
-       	    		if (!boatDestination.isEmpty()) {
-       	    			//den Text vor der destination entfernen
-       	    			if (!boatComment.isEmpty()) {
-       	    				int iPos=boatComment.indexOf(boatDestination);
-       	    				if (iPos>0) {
-       	    					boatComment=boatComment.substring(iPos);
-       	    				}
-       	    				try {
-       	    	   	    		String boatStatusText=bli.boatStatus.getStatusDescription(boatStatus);   	    					
-       	    					boatComment=boatComment.replace(boatName, "").replace(boatStatusText,"")
-       	    							.replace(boatDestination, "").replaceAll(";", ";<br>");
-       	    				} catch (Exception e){
-       	    					Logger.log(e);
-       	    				}
-       	    				
-       	    			}
-       	    			result=result.concat("<tr><td colspan=2>")
-       	    				.concat(EfaUtil.escapeHtml(boatDestination))
-       	    				.concat("</td></tr><tr><td align=\"left\" colspan=2>")
-       	    				.concat(EfaUtil.escapeHtml(boatComment))
-       	    				.concat("</td></tr>");
-       	    		} else {
-       		    		if (boatComment!=null) {
-       		    			result=result.concat("<tr><td align=\"left\" colspan=2>")
-       	   	    				.concat(EfaUtil.escapeHtml(boatComment))
-       	   	    				.concat("</td></tr>");
-       		    		}
-       	    		}
-       	    	
-       	    		return result.concat("</table></body></html>");
-       	    		
-       	    	} else {//BoatString is null
-       	    		return null;
-       	    	}
-       		} catch (Exception pe) {
-       			//just in case some item of the BoatString could not be resolved as they may be 
-       			//unexpectedly null
-                Logger.log(Logger.WARNING, Logger.MSG_ERROR_EXCEPTION, pe.getMessage()+ " "+ (pe.getCause()));
-                return null;
-    		}    
+   	    		//concat is the fastest way to build strings
+   	    		String result = "<html><body><table border=\"0\"><tr><td align=\"left\"><b>"
+   	    				.concat(EfaUtil.escapeHtml(boatName))
+   	    				.concat("</b></td><td align=\"right\">")
+   	    				.concat(EfaUtil.escapeHtml(boatTimeEntry))
+   	    				.concat("</td></tr><tr><td colspan=2><hr></td></tr>");
+   	    		if (!boatReservation.isEmpty()) {
+   	    			result=result.concat("<tr><td align=\"left\" colspan=2>")
+   	    				.concat(EfaUtil.escapeHtml(boatReservation))
+   	    				.concat("</td></tr>");
+   	    		}
+   	    		if (!boatVariant.isEmpty()) {
+   	    			result=result.concat("<tr><td align=\"left\" colspan=2>")
+   	    				.concat(EfaUtil.escapeHtml(boatVariant))
+   	    				.concat("</td></tr>");
+   	    		}
+   	    		if (!boatRuderErlaubnis.isEmpty()) {
+   	    			result=result.concat("<tr><td align=\"left\" colspan=2>")
+   	    				.concat(EfaUtil.escapeHtml(boatRuderErlaubnis))
+   	    				.concat("</td></tr>");
+   	    		}
+   	    		
+   	    		if (!boatDestination.isEmpty()) {
+   	    			//den Text vor der destination entfernen
+   	    			if (!boatComment.isEmpty()) {
+   	    				int iPos=boatComment.indexOf(boatDestination);
+   	    				if (iPos>0) {
+   	    					boatComment=boatComment.substring(iPos);
+   	    				}
+   	    				try {
+   	    	   	    		String boatStatusText=bli.boatStatus.getStatusDescription(boatStatus);   	    					
+   	    					boatComment=boatComment.replace(boatName, "").replace(boatStatusText,"")
+   	    							.replace(boatDestination, "").replaceAll(";", ";\n");
+   	    				} catch (Exception e){
+   	    					Logger.log(e);
+   	    				}
+   	    				
+   	    			}
+   	    			result=result.concat("<tr><td colspan=2>")
+   	    				.concat(EfaUtil.escapeHtml(boatDestination))
+   	    				.concat("</td></tr><tr><td align=\"left\" colspan=2>")
+   	    				.concat(EfaUtil.escapeHtmlWithLinefeed(boatComment))
+   	    				.concat("</td></tr>");
+   	    		} else {
+   		    		if (boatComment!=null) {
+   		    			String boatStatusText="";
+   		    			if (bli.boatStatus!=null) {
+   		    					boatStatusText=bli.boatStatus.getStatusDescription(boatStatus);
+   		    			}
+    					boatComment=boatComment.replace(boatName, "").replace(boatStatusText,"")
+   	    							.replaceAll(";", ";\n");
+   		    			
+   		    			result=result.concat("<tr><td align=\"left\" colspan=2>")
+   	   	    				.concat(EfaUtil.escapeHtmlWithLinefeed(boatComment))
+   	   	    				.concat("</td></tr>");
+   		    		}
+   	    		}
+   	    	
+   	    		return result.concat("</table></body></html>");
+   	    		
+   	    	} else {//BoatString is null
+   	    		return null;
+   	    	}
+   		} catch (Exception pe) {
+   			//just in case some item of the BoatString could not be resolved as they may be 
+   			//unexpectedly null
+            Logger.log(Logger.WARNING, Logger.MSG_ERROR_EXCEPTION, pe.getMessage()+ " "+ (pe.getCause()));
+            return null;
+		}    
 
-        }
+    }
     
         // is the current comment beginning with "Bootsschaden" in the corresponding locale? 
         private boolean isCommentBoatDamage(String s) {

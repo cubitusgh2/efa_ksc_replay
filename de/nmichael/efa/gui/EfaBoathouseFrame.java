@@ -1465,9 +1465,9 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             return;
         }
         if (inUpdateBoatList) {
-            if (Logger.isTraceOn(Logger.TT_GUI, 8)) {
-                Logger.log(Logger.DEBUG, Logger.MSG_GUI_DEBUGGUI, "updateBoatLists(" + listChanged + ") - concurrent call, aborting");
-            }
+            //if (Logger.isTraceOn(Logger.TT_GUI, 8)) {
+                Logger.log(Logger.INFO, Logger.MSG_GUI_DEBUGGUI, "updateBoatLists(" + listChanged + ") - concurrent call, aborting");
+            //}
             return;
         }
         inUpdateBoatList = true;

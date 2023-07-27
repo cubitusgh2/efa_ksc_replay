@@ -60,7 +60,11 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
                 try {
                 	BuildIcon(value);
                 } catch(Exception eignore) {
-                		Logger.log(eignore);
+                	// Actually, there is an exception which gets thrown on efa startup
+                	// when there is a need to create icons in the boat lists, but
+                	// the efaBoatHouseFrame is not visible yet. so...
+                	// we stay with eIgnore and ignore that exception
+                	Logger.log(eignore);
                 }
             }
 
@@ -168,12 +172,18 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
             }
             icon = new ImageIcon(image);
         }
+        
         if (icon.getIconWidth() > iconWidth
                 || icon.getIconHeight() > iconHeight) {
             icon = new ImageIcon(icon.getImage().getScaledInstance(iconWidth, iconHeight,
                     Image.SCALE_SMOOTH));
         }
-        setIcon(icon);
+    	if (list.getParent() != null && list.getParent().getWidth()>0) {
+    		// this.setIcon causes Nullpointerexceptions, when efaBoathouseFrame gets initialized,
+    		// but is not yet visible. So we only set an icon if the parent of the list has a width>0 
+    		this.setIcon(icon);
+        }
+        
 
     }
     
