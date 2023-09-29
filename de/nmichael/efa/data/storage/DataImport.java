@@ -34,6 +34,8 @@ public class DataImport extends ProgressTask {
     public static final String UPDMODE_UPDATEVALIDVERSION = "UPDVERSION"; // update version which is valid at specified timestamp; fail if no version is valid
     public static final String UPPMODE_CREATENEWVERSION   = "NEWVERSION"; // always create a version at specified timestamp; fail if version for exact same timestamp exists
 
+    private static final String UTF8_BOM = "\uFEFF";    
+    
     private StorageObject storageObject;
     private IDataAccess dataAccess;
     private String[] fields;
@@ -361,7 +363,12 @@ public class DataImport extends ProgressTask {
             String s;
             DataRecord dummyRecord = storageObject.createNewRecord();
             while ( (s = f.readLine()) != null) {
-                s = s.trim();
+                if (linecnt==0) {
+                	//Remove Excel's UTF-8 BOM prefix on the first line, if it is there
+                	s = s.replace(UTF8_BOM, "").trim();
+                } else {
+                	s= s.trim();
+                }
                 if (s.length() == 0)  {
                     continue;
                 }
