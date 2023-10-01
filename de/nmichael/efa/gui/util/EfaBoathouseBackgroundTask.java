@@ -737,7 +737,16 @@ public class EfaBoathouseBackgroundTask extends Thread {
             Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
                     "EfaBoathouseBackgroundTask: checkFocus()");
         }
-        if (this.efaBoathouseFrame != null && this.efaBoathouseFrame.getFocusOwner() == this.efaBoathouseFrame) {
+
+        if (this.efaBoathouseFrame != null) {
+        	SwingUtilities.invokeLater(new Runnable() {
+        		public void run() {
+        			efaBoathouseFrame.clearListFilterAfterInterval();
+        		}
+        	});
+        }
+        
+        if (this.efaBoathouseFrame != null && (this.efaBoathouseFrame.getFocusOwner() == this.efaBoathouseFrame) || this.efaBoathouseFrame.getFocusOwner() == null) {
             // das Frame selbst hat den Fokus: Das soll nicht sein! Gib einer Liste den Fokus!
         	SwingUtilities.invokeLater(new Runnable() {
         		public void run() {
