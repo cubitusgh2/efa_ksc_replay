@@ -276,6 +276,8 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         iniGuiMain();
         iniApplication();
         iniGuiRemaining();
+        iniGuiHeaderColors();
+        iniGuiTooltipDelays();
         prepareEfaBaseFrame();
     }
 
@@ -595,6 +597,40 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         eastPanel.add(boatsNotAvailablePanel, BorderLayout.CENTER);
     }
 
+	private void iniGuiHeaderColors() {
+		if (Daten.efaConfig.getBoathouseHeaderUseHighlightColor()) {
+			boatsAvailableList.setColor(Daten.efaConfig.getBoathouseHeaderForegroundColor());
+	        personsAvailableList.setColor(Daten.efaConfig.getBoathouseHeaderForegroundColor());
+	        boatsOnTheWaterList.setColor(Daten.efaConfig.getBoathouseHeaderForegroundColor());
+	        boatsNotAvailableList.setColor(Daten.efaConfig.getBoathouseHeaderForegroundColor());
+	        boatsAvailableList.setBackgroundColor(Daten.efaConfig.getBoathouseHeaderBackgroundColor());
+	        personsAvailableList.setBackgroundColor(Daten.efaConfig.getBoathouseHeaderBackgroundColor());
+	        boatsOnTheWaterList.setBackgroundColor(Daten.efaConfig.getBoathouseHeaderBackgroundColor());
+	        boatsNotAvailableList.setBackgroundColor(Daten.efaConfig.getBoathouseHeaderBackgroundColor());
+		} else {
+			boatsAvailableList.setColor(null);
+	        personsAvailableList.setColor(null);
+	        boatsOnTheWaterList.setColor(null);
+	        boatsNotAvailableList.setColor(null);
+	        boatsAvailableList.setBackgroundColor(null);
+	        personsAvailableList.setBackgroundColor(null);
+	        boatsOnTheWaterList.setBackgroundColor(null);
+	        boatsNotAvailableList.setBackgroundColor(null);
+		}
+	}    
+
+	private void iniGuiTooltipDelays() {        
+		int initialDelay=Daten.efaConfig.getValueEfaBoathouseExtdToolTipInitialDelayMsec();
+	    int dismissDelay=Daten.efaConfig.getValueEfaBoathouseExtdToolTipDismissDelayMsec();
+	    if (initialDelay>0) {
+	    	javax.swing.ToolTipManager.sharedInstance().setInitialDelay(initialDelay);
+	    	javax.swing.ToolTipManager.sharedInstance().setReshowDelay(initialDelay);
+	    }
+	    if (dismissDelay>0) {
+	    	javax.swing.ToolTipManager.sharedInstance().setDismissDelay(dismissDelay);
+	    }
+	}    
+    
     private void iniGuiListNames() {
         boolean fkey = Daten.efaConfig.getValueEfaDirekt_showButtonHotkey();
         if (!Daten.efaConfig.getValueEfaDirekt_listAllowToggleBoatsPersons() || toggleAvailableBoatsToBoats.isSelected()) {
@@ -2515,6 +2551,8 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             }
             updateBoatLists(true,false);
             updateGuiElements();
+            iniGuiHeaderColors();
+            iniGuiTooltipDelays();
         } finally {
             Daten.applMode = Daten.APPL_MODE_NORMAL;
         }
