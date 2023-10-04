@@ -166,7 +166,7 @@ public class AutoCompleteList {
     		dataVisibleFiltered = dataVisible; 
     	}
     	
-    	Collections.sort(dataVisibleFiltered);
+    	sortFilteredList();
     }
     
     /**
@@ -339,25 +339,12 @@ public class AutoCompleteList {
         scn++;
     }
 
-    class MyStringComparator implements Comparator {
-
-        public int compare(Object o1, Object o2) {
-            String s1 = ((String)o1);
-            String s2 = ((String)o2);
-            s1 = EfaUtil.replaceListByList(s1, "ÄÖÜäöüßé", "AOUaouse");
-            s2 = EfaUtil.replaceListByList(s2, "ÄÖÜäöüßé", "AOUaouse");
-            return s1.compareToIgnoreCase(s2);
-        }
-
-    }
-
     public synchronized void sort() {
-        String[] a = dataVisible.toArray(new String[0]);
-        Arrays.sort(a, new MyStringComparator());
-        dataVisible = new Vector(a.length);
-        for (int i=0; i<a.length; i++) {
-            dataVisible.add(a[i]);
-        }
+    	Collections.sort(dataVisible, new EfaSortStringComparator());
+    }
+    
+    public synchronized void sortFilteredList() {
+    	Collections.sort(dataVisibleFiltered, new EfaSortStringComparator());
     }
 
     public synchronized String getExact(String s) {

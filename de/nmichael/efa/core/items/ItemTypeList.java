@@ -39,7 +39,6 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     String incrementalSearch = "";
     int iconWidth = 0;
     int iconHeight = 0;
-    protected static final long FILTER_RESET_INTERVAL=90000l; // 1.5 minutes
     protected static final String LIST_SECTION_STRING = "------";
     private static final String STR_DESTINATION_DELIMITER=     	"     -> ";
     //Spacings for pretty rendering
@@ -656,17 +655,28 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 
     /* clear filtertextfield, if it has been unchanged more than two minutes */
     public void clearFilterText() {
-    	if (this.showFilterField && (System.currentTimeMillis()>(lastFilterChange+FILTER_RESET_INTERVAL))) {
-    		if (this.filterTextField != null) {
-    			this.filterTextField.setText("");
-            	updateLastFilterChange();
-        		if (!this.filterTextField.hasFocus()) {
-        			this.filterTextField.setBackground(Color.WHITE);
-        		}
-        		filter();    
-    		}
+    	
+    	// get the reset filter interval in minutes from efaConfig.
+    	long filterResetInterval= (Daten.efaConfig.getValueEfaBoathouseFilterTextAutoClearInterval()*60*1000); 
+    	
+    	
+    	if (filterResetInterval>0) {
+    		//reduce filterResetInterval by 5 seconds.
+    		//this is because clearFilterText gets called regularily by efaBoatHouseBackgroundTask, in the interval of every minute.
+    		//so if we have exactly an minute interval, and the boathousetask also calls this every minute,
+    		//chances are high that we miss the first call. So... we handle this by reducing the configured interval by 5 seconds.
+    		filterResetInterval = filterResetInterval-(5*1000);
+	    	if (this.showFilterField && (System.currentTimeMillis()>(lastFilterChange+filterResetInterval))) {
+	    		if (this.filterTextField != null) {
+	    			this.filterTextField.setText("");
+	            	updateLastFilterChange();
+	        		if (!this.filterTextField.hasFocus()) {
+	        			this.filterTextField.setBackground(Color.WHITE);
+	        		}
+	        		filter();    
+	    		}
+	    	}
     	}
-	
     }
     
     // scrolle in der Liste list (deren Inhalt der Vector entries ist), zu dem Eintrag
