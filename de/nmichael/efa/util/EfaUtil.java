@@ -43,8 +43,8 @@ public class EfaUtil {
     private static final int ZIP_BUFFER = 2048;
     private static java.awt.Container java_awt_Container = new java.awt.Container();
     
-    private static String UMLAUTS 		= "åàáâăäćçčèéêęëěìíîďńňñòóôőõöøřůùúûűüýšśşťţżžź";
-	private static String REPLACEMENT 	= "aaaaaaccceeeeeeiiidnnnoooooooruuuuuuysssttzzz";     
+	private static String UMLAUTS 		= "åàáâăäāąćçčèéêęëėěēìíîįīïďđģķĺļłńňñņòóôőõöōøřŕůùúûűüųūýÿšśşťţżžź";
+	private static String REPLACEMENT 	= "aaaaaaaaccceeeeeeeeiiiiiiddgklllnnnnoooooooorruuuuuuuuyysssttzzz"; 
 
     public static String escapeXml(String str) {
         str = replaceString(str, "&", "&amp;");

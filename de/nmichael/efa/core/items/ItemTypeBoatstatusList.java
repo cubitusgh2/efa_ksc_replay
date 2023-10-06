@@ -285,7 +285,7 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
         for (int i=0; i<boatStringArray.length; i++) {
             boatStringArray[i] = bsv.get(i);
         }
-        Arrays.sort(boatStringArray);
+        Arrays.sort(boatStringArray); // a is a BoatString which has its own comparator which handles umlauts etc.
 
         Vector<ItemTypeListData> vv = new Vector<ItemTypeListData>();
         int anz = -1;
@@ -761,6 +761,12 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
         public String type;
         public String rigger;
 
+        /**
+         * Turns a string to lowercase and replaces all western european special characters with simple latin characters (like à -> a).
+         * Needed for better sorting of lists.
+         * @param s
+         * @return
+         */
         private String normalizeString(String s) {
             if (s == null) {
                 return "";

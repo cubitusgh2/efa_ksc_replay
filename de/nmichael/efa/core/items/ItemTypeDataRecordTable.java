@@ -8,23 +8,46 @@
  */
 package de.nmichael.efa.core.items;
 
-import de.nmichael.efa.core.config.AdminRecord;
-import de.nmichael.efa.gui.dataedit.VersionizedDataDeleteDialog;
-import de.nmichael.efa.gui.dataedit.DataEditDialog;
-import de.nmichael.efa.util.*;
-import de.nmichael.efa.util.Dialog;
-import de.nmichael.efa.gui.util.*;
-import de.nmichael.efa.data.storage.*;
-import de.nmichael.efa.ex.*;
-import de.nmichael.efa.gui.BaseDialog;
-import de.nmichael.efa.gui.ImagesAndIcons;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.table.AbstractTableModel;
+import java.awt.AWTEvent;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.Window;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Vector;
+
+import javax.swing.JPanel;
+import javax.swing.JTable;
+import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
-import java.util.*;
+
+import de.nmichael.efa.Daten;
+import de.nmichael.efa.core.config.AdminRecord;
+import de.nmichael.efa.data.storage.DataKey;
+import de.nmichael.efa.data.storage.DataKeyIterator;
+import de.nmichael.efa.data.storage.DataRecord;
+import de.nmichael.efa.data.storage.IDataAccess;
+import de.nmichael.efa.data.storage.StorageObject;
+import de.nmichael.efa.ex.EfaModifyException;
+import de.nmichael.efa.gui.BaseDialog;
+import de.nmichael.efa.gui.ImagesAndIcons;
+import de.nmichael.efa.gui.dataedit.DataEditDialog;
+import de.nmichael.efa.gui.dataedit.VersionizedDataDeleteDialog;
+import de.nmichael.efa.gui.util.EfaMouseListener;
+import de.nmichael.efa.gui.util.TableItem;
+import de.nmichael.efa.gui.util.TableItemHeader;
+import de.nmichael.efa.util.Dialog;
+import de.nmichael.efa.util.EfaUtil;
+import de.nmichael.efa.util.International;
+import de.nmichael.efa.util.Logger;
 
 // @i18n complete
 public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListener {
@@ -464,8 +487,16 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
     	
         String sSearchValue = searchField.getValueFromField();
         if (sSearchValue != null && sSearchValue.length() > 0 && keys != null && items != null) {
-            sSearchValue = sSearchValue.toLowerCase();
-            Vector<String> sSplittedSearchValues = null;
+        	boolean ignoreSpecialCharacters = Daten.efaConfig.getValueEfaDirekt_tabelleIgnoreSpecialCharacters();
+
+        	if (ignoreSpecialCharacters) {
+        		sSearchValue = EfaUtil.replaceAllUmlautsLowerCaseFast(sSearchValue);
+        	} else {
+        		sSearchValue = sSearchValue.toLowerCase();
+        	}
+
+        	//split the modified searchstring into an array if it contains spaces.
+        	Vector<String> sSplittedSearchValues = null;
             boolean[] bDidFindValue = null;
             if (sSearchValue.indexOf(" ") > 0) {
                 sSplittedSearchValues = EfaUtil.split(sSearchValue, ' ');
@@ -486,7 +517,11 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
                 for (int iCurrentCol = 0; row != null && rowFound < 0 && iCurrentCol < row.length; iCurrentCol++) {
                     // search in row i, column j
                     String t = (row[iCurrentCol] != null ? row[iCurrentCol].toString() : null);
-                    t = (t != null ? t.toLowerCase() : null);
+                    if (ignoreSpecialCharacters) {
+                    	t = (t != null ? EfaUtil.replaceAllUmlautsLowerCaseFast(t) : null);
+                    } else {
+                    	t = (t != null ? t.toLowerCase() : null);
+                    }
                     if (t == null) {
                         continue;
                     }
@@ -498,6 +533,8 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
 
                     if (sSplittedSearchValues != null && rowFound < 0) {
                         // match column agains substrings
+                    	// no need to check for special character handling here,
+                    	// as sSearchvalue and t both are already normalized in earlier places of this code.
                         for (int k = 0; k < sSplittedSearchValues.size(); k++) {
                             if (t.indexOf(sSplittedSearchValues.get(k)) >= 0) {
                                 bDidFindValue[k] = true;
@@ -589,11 +626,17 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
         }
         try {
             String filterByAnyText = null;
+            boolean ignoreSpecialCharacters = Daten.efaConfig.getValueEfaDirekt_tabelleIgnoreSpecialCharacters();
+            
             if (filterBySearch != null && searchField != null) {
                 filterBySearch.getValueFromField();
                 searchField.getValueFromGui();
                 if (filterBySearch.getValue() && searchField.getValue() != null && searchField.getValue().length() > 0) {
-                    filterByAnyText = searchField.getValue().toLowerCase();
+                    if (ignoreSpecialCharacters) {
+                    	filterByAnyText = EfaUtil.replaceAllUmlautsLowerCaseFast(searchField.getValue().trim());
+                    } else {
+                    	filterByAnyText = searchField.getValue().trim().toLowerCase();
+                    }
                 }
             }
             myValidAt = (validAt >= 0 ? validAt : System.currentTimeMillis());
@@ -639,9 +682,15 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
 	                    if (filterFieldName == null || filterFieldValue == null
 	                            || filterFieldValue.equals(r.getAsString(filterFieldName))) {
 	                    	// Check if field content matches to the searchtext. Also, check if the entry matches for a certain date.
-	                    	if (filterByAnyText == null || r.getAllFieldsAsSeparatedText().toLowerCase().indexOf(filterByAnyText) >= 0 || filterFromToAppliesToDate(r, filterByAnyText)) {
-	                            data.add(r);
-	                        }
+	                    	if (ignoreSpecialCharacters) {
+		                    	if (filterByAnyText == null || EfaUtil.replaceAllUmlautsLowerCaseFast(r.getAllFieldsAsSeparatedText()).indexOf(filterByAnyText) >= 0 || filterFromToAppliesToDate(r, filterByAnyText)) {
+		                            data.add(r);
+		                        }
+	                    	} else {
+		                    	if (filterByAnyText == null || r.getAllFieldsAsSeparatedText().toLowerCase().indexOf(filterByAnyText) >= 0 || filterFromToAppliesToDate(r, filterByAnyText)) {
+		                            data.add(r);
+		                        }	                    		
+	                    	}
 	                    }
                 	}
                 }

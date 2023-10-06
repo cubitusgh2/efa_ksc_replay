@@ -149,11 +149,18 @@ public class AutoCompleteList {
     	if (filterText!=null) {
     		dataVisibleFiltered=new Vector<String>();
     		
-    		for (int i=0; i<dataVisible.size()-1; i++) {
-    			if (dataVisible.get(i).toLowerCase().contains(filterText))
-    			{
-    				dataVisibleFiltered.add(dataVisible.get(i));
-    			}
+    		boolean ignoreSpecialCharacters = Daten.efaConfig.getValuePopupContainsModeIgnoreSpecialCharacters();
+
+    		String filterTextNoSpecialCharacters=EfaUtil.replaceAllUmlautsLowerCaseFast(filterText);
+
+    		for (int i=0; i<dataVisible.size(); i++) {
+    			if (ignoreSpecialCharacters) {
+    				if (EfaUtil.replaceAllUmlautsLowerCaseFast(dataVisible.get(i)).contains(filterTextNoSpecialCharacters)){
+    					dataVisibleFiltered.add(dataVisible.get(i));
+    				}
+    			} else if (dataVisible.get(i).toLowerCase().contains(filterText)){
+	    				dataVisibleFiltered.add(dataVisible.get(i));
+	    		}
     		}
     		//for entries with aliases, check wether the alias points to an entry that is not yet in the filtered list
     		if (aliases2realVisible.containsKey(filterText.toLowerCase())) {
