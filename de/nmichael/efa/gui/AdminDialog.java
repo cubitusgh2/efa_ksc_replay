@@ -205,18 +205,21 @@ public class AdminDialog extends BaseDialog implements IItemListener {
         }
 
         try {
-            ProjectRecord r = Daten.project.getBoathouseRecord();
-            if (r.getAutoNewLogbookName() != null && r.getAutoNewLogbookName().length() > 0
-                    && r.getAutoNewLogbookDate() != null && r.getAutoNewLogbookDate().isSet()) {
-                logbookName.setText(logbookName.getText() + " ["
-                        + International.getMessage("ab {timestamp}", r.getAutoNewLogbookDate().toString()) + ": "
-                        + r.getAutoNewLogbookName() + "]");
-            }
-            if (r.getAutoNewClubworkName() != null && r.getAutoNewClubworkName().length() > 0
-                    && r.getAutoNewClubworkDate() != null && r.getAutoNewClubworkDate().isSet()) {
-                clubworkName.setText(clubworkName.getText() + " ["
-                        + International.getMessage("ab {timestamp}", r.getAutoNewClubworkDate().toString()) + ": "
-                        + r.getAutoNewClubworkName() + "]");
+            if (Daten.project != null) {
+            	//only update further information if we have an open project.
+            	ProjectRecord r = Daten.project.getBoathouseRecord();
+	            if (r.getAutoNewLogbookName() != null && r.getAutoNewLogbookName().length() > 0
+	                    && r.getAutoNewLogbookDate() != null && r.getAutoNewLogbookDate().isSet()) {
+	                logbookName.setText(logbookName.getText() + " ["
+	                        + International.getMessage("ab {timestamp}", r.getAutoNewLogbookDate().toString()) + ": "
+	                        + r.getAutoNewLogbookName() + "]");
+	            }
+	            if (r.getAutoNewClubworkName() != null && r.getAutoNewClubworkName().length() > 0
+	                    && r.getAutoNewClubworkDate() != null && r.getAutoNewClubworkDate().isSet()) {
+	                clubworkName.setText(clubworkName.getText() + " ["
+	                        + International.getMessage("ab {timestamp}", r.getAutoNewClubworkDate().toString()) + ": "
+	                        + r.getAutoNewClubworkName() + "]");
+	            }
             }
         } catch (Exception eignore) {
             Logger.logdebug(eignore);
@@ -247,9 +250,12 @@ public class AdminDialog extends BaseDialog implements IItemListener {
 
     @Override
     public void closeButton_actionPerformed(ActionEvent e) {
-        if ((Daten.project.getProjectStorageType() == IDataAccess.TYPE_EFA_CLOUD)
-                && (TxRequestQueue.getInstance() != null))
-            TxRequestQueue.getInstance().clearAdminCredentials();
+        //TODO! Check with TYFH
+    	if (Daten.project!=null) {
+	    	if ((Daten.project.getProjectStorageType() == IDataAccess.TYPE_EFA_CLOUD)
+	                && (TxRequestQueue.getInstance() != null))
+	            TxRequestQueue.getInstance().clearAdminCredentials();
+    	}
         super.closeButton_actionPerformed(e);
     }
 

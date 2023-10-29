@@ -119,7 +119,8 @@ public class HTMLWidget extends Widget {
 
         public void run() {
             while (keepRunning) {
-                try {
+                
+            	try {
                     try {
                         if (url != null && url.length() > 0) {
                             url = EfaUtil.correctUrl(url);
@@ -133,8 +134,15 @@ public class HTMLWidget extends Widget {
                                 + International.getMessage("Kann Adresse '{url}' nicht öffnen: {message}", url, ee.toString()));
                     }
                     Thread.sleep(updateIntervalInSeconds*1000);
+                } catch (InterruptedException e) {
+                	EfaUtil.foo();
                 } catch (Exception e) {
-                    Logger.logdebug(e);
+                	Throwable t = e.getCause();
+                	if (t.getClass().getName().equalsIgnoreCase("java.lang.InterruptedException")) {
+                		EfaUtil.foo();
+                	} else {
+                		Logger.logdebug(e);
+                	}
                 }
             }
         }

@@ -18,7 +18,9 @@ import de.nmichael.efa.data.storage.IDataAccess;
 import de.nmichael.efa.data.storage.StorageObject;
 import de.nmichael.efa.data.storage.XMLFile;
 import de.nmichael.efa.gui.BaseDialog;
+import de.nmichael.efa.gui.EfaBoathouseFrame;
 import de.nmichael.efa.gui.ProgressDialog;
+import de.nmichael.efa.gui.util.EfaBoathouseBackgroundTask;
 import de.nmichael.efa.util.EfaUtil;
 import de.nmichael.efa.util.Email;
 import de.nmichael.efa.util.International;
@@ -385,7 +387,8 @@ public class Backup {
         if (zipFile == null || zipFile.length() == 0) {
             return -1;
         }
-
+        boolean bConfigRestored=false;
+        
         backupMetaData = new BackupMetaData(null);
         if (!backupMetaData.read(zipFile)) {
             lastErrorMsg = LogString.fileOpenFailed(zipFile, International.getString("Archiv"), 
@@ -398,6 +401,8 @@ public class Backup {
             boolean isRemoteProject = Daten.project != null && Daten.project.isOpen() &&
                     Daten.project.getProjectStorageType() == IDataAccess.TYPE_EFA_REMOTE;
 
+
+            
             logMsg(Logger.INFO, Logger.MSG_BACKUP_RESTORESTARTED,
                    International.getMessage("Starte Wiederherstellung von Projekt {name} mit {count} Objekten in {zip} ...",
                    (backupMetaData.getProjectName() != null ? backupMetaData.getProjectName() :
@@ -429,9 +434,13 @@ public class Backup {
                         continue; // this object was not selected to be restored
                     }
                     restoreObjectsHash.remove(meta.getNameAndType());
-                    if (restoreStorageObject(meta,
-                            isRemoteProject, zip)) {
+                    if (restoreStorageObject(meta, isRemoteProject, zip)) {
                         successful++;
+                        if (meta.getName().equalsIgnoreCase("configuration") ||
+                        		meta.getName().equalsIgnoreCase("admins") ||
+                        		meta.getName().equalsIgnoreCase("types")) {
+                        	bConfigRestored=true;
+                        }
                     } else {
                         errors++;
                     }
@@ -453,17 +462,47 @@ public class Backup {
                     International.getMessage("{n} Objekte wiederhergestellt.",
                     successful, zipFile));
 
-            // re-open project
-            if (Daten.applID != Daten.APPL_CLI) {
-                String pName = Daten.project.getProjectName();
-                logMsg(Logger.INFO, Logger.MSG_BACKUP_REOPENINGFILES,
-                        LogString.fileClosing(pName, International.getString("Projekt")));
-                Daten.project.closeAllStorageObjects();
-                logMsg(Logger.INFO, Logger.MSG_BACKUP_REOPENINGFILES,
-                        LogString.fileOpening(pName, International.getString("Projekt")));
-                Daten.project.openProject(pName, true);
-                logMsg(Logger.INFO, Logger.MSG_EVT_PROJECTOPENED,
-                        LogString.fileOpened(pName, International.getString("Projekt")));
+
+            
+            // re-open project 
+            // avoid re-opening project when backuptask is running in efaCLI
+            
+            if ((Daten.applID != Daten.APPL_CLI) ) {
+                //Daten.project can be null after installation and after restoring config items only.
+            	//Avoid a nullpointer here
+            	if (Daten.project != null) {
+	            	String pName = Daten.project.getProjectName();
+	                logMsg(Logger.INFO, Logger.MSG_BACKUP_REOPENINGFILES,
+	                        LogString.fileClosing(pName, International.getString("Projekt")));
+
+	                // closing the project is okay in efaBths as efaBoathouseBackgroundTask stops its actions
+	                // if Daten.getAdminMode==true which is so right after starting admin mode.
+	                // So we are safe in bths mode although there is an background task.
+	                Project currentProject = Daten.project;
+	                Daten.project=null; // this is set up again when calling openProject() but we need it to be null for efaBthsBackgroundTask
+	                currentProject.closeAllStorageObjects();
+	                
+	                if (!bConfigRestored) {
+	                	logMsg(Logger.INFO, Logger.MSG_BACKUP_REOPENINGFILES,
+		                        LogString.fileOpening(pName, International.getString("Projekt")));
+	                	//re-open project if NO config files were affected
+	                	//this automatically starts the audit task
+		                Daten.project.openProject(pName, true);
+		                logMsg(Logger.INFO, Logger.MSG_EVT_PROJECTOPENED,
+		                        LogString.fileOpened(pName, International.getString("Projekt")));
+	                } else {
+	                    // if config data is restored, a restart of efa is neccessary.
+	                	// we do not reopen the project to avoid problems with audit task and outdated efaTypes and other configuration information.
+	                    // efaTypes cannot be reloaded automatically after a restore action. a restart of efa is a safe way to get ALL of the config data
+	                	// into action before any project is reopened.
+
+	                    logMsg(Logger.WARNING, Logger.MSG_BACKUP_RESTOREFINISHEDINFO,
+	                            International.getString("ACHTUNG - Es wurden Konfigurationselemente wiederhergestellt."));
+	                    logMsg(Logger.WARNING, Logger.MSG_BACKUP_RESTOREFINISHEDINFO,
+	                            International.getString("ACHTUNG - Bitte starten Sie EFA neu, damit die Konfiguration aktiv wird und das Projekt sauber geöffnet werden kann."));
+	                    //TODO: eigentlich müsste auch bei der Erfolgsmeldung in der GUI noch der TExt hin, dass EFA neu gestartet werden muss. 
+	                }
+                }
             }
 
             if (errors == 0) {
@@ -480,6 +519,7 @@ public class Backup {
             Logger.logdebug(e);
             return -1;
         }
+
         return errors;
     }
 

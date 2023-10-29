@@ -147,52 +147,60 @@ public class EfaBoathouseBackgroundTask extends Thread {
                     Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK, "EfaBoathouseBackgroundTask: alive!");
                 }
 
-                // find out whether a project is open, and whether it's local or remote
-                updateProjectInfo();
-
-                // Update GUI on Config Changes
-                checkUpdateGui();
-
-                // Reservierungs-Checker
-                checkBoatStatus();
-
-                // Nach ungelesenen Nachrichten für den Admin suchen
-                checkForUnreadMessages();
-
-                // automatisches Beenden von efa
-                checkForExitOrRestart();
-
-                // efa zeitgesteuert sperren
-                checkForLockEfa();
-
-                // automatisches Beginnen eines neuen Fahrtenbuchs (z.B. zum Jahreswechsel)
-                checkForAutoCreateNewLogbook();
-
-                // immer im Vordergrund
-                checkAlwaysInFront();
-
-                // Fokus-Kontrolle
-                checkFocus();
-
-                // Filter-Felder leeren nach Zeitintervall
-                checkFilterTextFields();
-                
-                // Speicher-Überwachung
-                checkMemory();
-
-                // Aktivitäten einmal pro Stunde
-                if (--onceAnHour <= 0) {
-                    System.gc(); // Damit Speicherüberwachung funktioniert (anderenfalls wird CollectionUsage nicht aktualisiert; Java-Bug)
-                    onceAnHour = ONCE_AN_HOUR;
-                    if (Logger.isTraceOn(Logger.TT_BACKGROUND)) {
-                        Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK, "EfaBoathouseBackgroundTask: alive!");
-                    }
-
-                    checkWarnings();
-
-                    checkUnfixedBoatDamages();
-
-                    remindAdminOfLogbookSwitch();
+                //Daten.isAdminMode is true if Application is efaBths AND Admin mode is true.
+                //if efaBths is in admin mode, stop the efaBthsBackgroundTask actions, as in admin mode some
+                //critical changes can take place like changing the current project, closing the project due to backup/restore functions
+                //and more.
+                //so, in isAdminMode=true mode we only sleep for a while...
+                if (!Daten.isAdminMode()) {
+                	
+                    // find out whether a project is open, and whether it's local or remote
+                    updateProjectInfo();
+                    
+	                // Update GUI on Config Changes
+	                checkUpdateGui();
+	
+	                // Reservierungs-Checker
+	                checkBoatStatus();
+	
+	                // Nach ungelesenen Nachrichten für den Admin suchen
+	                checkForUnreadMessages();
+	
+	                // automatisches Beenden von efa
+	                checkForExitOrRestart();
+	
+	                // efa zeitgesteuert sperren
+	                checkForLockEfa();
+	
+	                // automatisches Beginnen eines neuen Fahrtenbuchs (z.B. zum Jahreswechsel)
+	                checkForAutoCreateNewLogbook();
+	
+	                // immer im Vordergrund
+	                checkAlwaysInFront();
+	
+	                // Fokus-Kontrolle
+	                checkFocus();
+	
+	                // Filter-Felder leeren nach Zeitintervall
+	                checkFilterTextFields();
+	                
+	                // Speicher-Überwachung
+	                checkMemory();
+	
+	                // Aktivitäten einmal pro Stunde
+	                if (--onceAnHour <= 0) {
+	                    System.gc(); // Damit Speicherüberwachung funktioniert (anderenfalls wird CollectionUsage nicht aktualisiert; Java-Bug)
+	                    onceAnHour = ONCE_AN_HOUR;
+	                    if (Logger.isTraceOn(Logger.TT_BACKGROUND)) {
+	                        Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK, "EfaBoathouseBackgroundTask: alive!");
+	                    }
+	
+	                    checkWarnings();
+	
+	                    checkUnfixedBoatDamages();
+	
+	                    remindAdminOfLogbookSwitch();
+	                }
                 }
                 
                 sleepForAWhile();
@@ -380,6 +388,15 @@ public class EfaBoathouseBackgroundTask extends Thread {
                 Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
                         "EfaBoathouseBackgroundTask: checkBoatStatus() - done for remote project");
             }
+            return;
+        }
+        
+        if (!isProjectOpen) {
+	        SwingUtilities.invokeLater(new BthsUpdateBoatLists(listChanged,false));
+            if (Logger.isTraceOn(Logger.TT_BACKGROUND, 8)) {
+                Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
+                        "EfaBoathouseBackgroundTask: checkBoatStatus() - done for closed project");
+            }	        
             return;
         }
 
