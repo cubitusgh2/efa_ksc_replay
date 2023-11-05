@@ -62,6 +62,8 @@ public class Backup {
     private int totalWork = 0;
     private int totalWorkDone = 0;
     private StringBuilder msgOut = new StringBuilder();
+    boolean bConfigRestored=false;
+    boolean bRestoredDataIsEfaCloudBased=false;
 
     public Backup(String backupDir, String backupFile,
             boolean backupProject,
@@ -387,7 +389,6 @@ public class Backup {
         if (zipFile == null || zipFile.length() == 0) {
             return -1;
         }
-        boolean bConfigRestored=false;
         
         backupMetaData = new BackupMetaData(null);
         if (!backupMetaData.read(zipFile)) {
@@ -478,6 +479,7 @@ public class Backup {
 	                // closing the project is okay in efaBths as efaBoathouseBackgroundTask stops its actions
 	                // if Daten.getAdminMode==true which is so right after starting admin mode.
 	                // So we are safe in bths mode although there is an background task.
+	                this.bRestoredDataIsEfaCloudBased= (Daten.project.getProjectStorageType() == IDataAccess.TYPE_EFA_CLOUD);
 	                Project currentProject = Daten.project;
 	                Daten.project=null; // this is set up again when calling openProject() but we need it to be null for efaBthsBackgroundTask
 	                currentProject.closeAllStorageObjects();
@@ -500,8 +502,17 @@ public class Backup {
 	                            International.getString("ACHTUNG - Es wurden Konfigurationselemente wiederhergestellt."));
 	                    logMsg(Logger.WARNING, Logger.MSG_BACKUP_RESTOREFINISHEDINFO,
 	                            International.getString("ACHTUNG - Bitte starten Sie EFA neu, damit die Konfiguration aktiv wird und das Projekt sauber geöffnet werden kann."));
-	                    //TODO: eigentlich müsste auch bei der Erfolgsmeldung in der GUI noch der TExt hin, dass EFA neu gestartet werden muss. 
+
 	                }
+	                
+	                if (bRestoredDataIsEfaCloudBased) {
+	                    logMsg(Logger.WARNING, Logger.MSG_BACKUP_RESTOREFINISHEDINFO,International.getString("ACHTUNG - Das wiederhergestellte Projekt basiert auf efaCloud."));
+	                    logMsg(Logger.WARNING, Logger.MSG_BACKUP_RESTOREFINISHEDINFO,International.getString("Es wird der im wiederhergestellten Projekt hinterlegte efaCloud Benutzername verwendet."));
+	                    logMsg(Logger.WARNING, Logger.MSG_BACKUP_RESTOREFINISHEDINFO,International.getString("Jede efa-Betriebsstelle sollte zur besseren Nachvollziehbarkeit einen eigenen efaCloud Benutzernamen verwenden."));
+	                    logMsg(Logger.WARNING, Logger.MSG_BACKUP_RESTOREFINISHEDINFO,International.getString("Bitte prüfen Sie, ob die efaCloud Einstellungen angepasst werden sollten."));
+
+	                }
+	                
                 }
             }
 
@@ -611,6 +622,12 @@ public class Backup {
         backupTask.startBackup(progressDialog);
     }
 
+    public boolean getRestoreConfigUpdated() {    
+    	return this.bConfigRestored;
+    }
+    public boolean getRestoreProjectIsEfaCloud() {
+    	return this.bRestoredDataIsEfaCloudBased;
+    }
 }
 
 class BackupTask extends ProgressTask {
@@ -675,8 +692,18 @@ class BackupTask extends ProgressTask {
                             International.getString("Archiv") + ": \n" +
                             backup.getZipFile();
                 case restore:
-                    return LogString.operationSuccessfullyCompleted(
+                    String userFeedback = LogString.operationSuccessfullyCompleted(
                             International.getString("Wiederherstellung"));
+                    if (backup.getRestoreConfigUpdated()) {
+                    	userFeedback = userFeedback + "\n\n" + International.getString("Konfigurationselemente wurden wiederhergestellt.\nDirekter Neustart von EFA erforderlich, damit diese aktiv werden.");
+                    }
+                    if (backup.getRestoreProjectIsEfaCloud()) {
+                    	userFeedback = userFeedback + "\n\n" + International.getString("Das wiederhergestellte Projekt basiert auf efaCloud.");
+                    	userFeedback = userFeedback + "\n" + International.getString("Es wird der im wiederhergestellten Projekt hinterlegte efaCloud Benutzername verwendet.");
+                    	userFeedback = userFeedback + "\n\n" + International.getString("Jede efa-Betriebsstelle sollte zur besseren Nachvollziehbarkeit einen eigenen efaCloud Benutzernamen verwenden.");
+                    	userFeedback = userFeedback + "\n\n" + International.getString("Bitte prüfen Sie, ob die efaCloud Einstellungen angepasst werden sollten.");
+                    }
+                    return userFeedback;
             }
             return LogString.operationSuccessfullyCompleted(
                             International.getString("Operation"));
@@ -698,5 +725,13 @@ class BackupTask extends ProgressTask {
         } else {
             return null;
         }
+    }
+    
+    public boolean getRestoreConfigUpdated() {
+    	return backup.getRestoreConfigUpdated();
+    }
+    
+    public boolean getRestoreProjectIsEfaCloud() {
+    	return backup.getRestoreProjectIsEfaCloud();
     }
 }
