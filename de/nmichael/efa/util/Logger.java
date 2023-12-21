@@ -521,11 +521,25 @@ public class Logger {
         if (logfile != null) {
             try {
                 // Archive an existing, too big logfile.
-                // This is allowed only when the current main program is EFA_BOATHOUSE.
-            	// If another efa program, e.g. EFA_CLI would rotate the logfile while EFA_BOATHOUSE is running in background,
-            	// EFA_BOATHOUSE would no longer be able to log into the former or the new logfile.
+                // This is allowed only when the current main program is EFA_BOATHOUSE or EFA_BASE to avoid conflicts
+            	// in access to efa.log file and possibly missing efa log entries.
             	//
-            	// So in conclusion, a rotation of the logfile only takes place during the startup of EFA_BOATHOUSE or EFABASE
+            	// If another efa program, e.g. EFA_CLI would rotate the logfile while EFA_BOATHOUSE / EFA_BASE is running in background,
+            	// EFA_BOATHOUSE/EFA_BASE would no longer be able to log into the former or the new logfile.
+            	//
+            	// So in conclusion, a rotation of the logfile only takes place during the *startup* of efaBase or efaBths.
+            	// This usually takes place at 4am, or if the programs get started manually.
+            	// efaBase and efaBths cannot be run at the same time on the same machine, so there is no problem that
+            	// two instances are trying to rotate the log file simultaneously.
+            	//
+            	// All other efa programs (CLI, emil, ...) cannot rotate the log file any more.
+            	// 
+            	// This fix is not final, but it pretty much solves the problem stated in 
+            	// http://forum.nmichael.de/viewtopic.php?f=15&t=1214&p=4792#p4792
+            	//
+            	// A final solution to this problem would be switching to Log4J and configuring it to prudent mode. 
+            	// This is a major refactoring.
+            	
             	if (Daten.applID==Daten.APPL_EFABH ||Daten.applID == Daten.APPL_EFABASE) {
 	            	try {
 	                    // Wenn Logdatei zu groß ist, die alte Logdatei verschieben

@@ -81,7 +81,7 @@ public abstract class BaseDialog extends JDialog implements ActionListener {
     public static final String BIGIMAGE_DARKNESS   = ImagesAndIcons.BIGIMAGE_DARKNESS;
     public static final String BIGIMAGE_INFO       = ImagesAndIcons.BIGIMAGE_INFO;
     public static final String BIGIMAGE_WARNING    = ImagesAndIcons.BIGIMAGE_WARNING;
-    
+
     protected Window _parent;
     protected String _title;
     protected String _closeButtonText;
@@ -304,6 +304,7 @@ public abstract class BaseDialog extends JDialog implements ActionListener {
         mainScrollPane.setPreferredSize(Dialog.getMaxSize(dim));
 
         mainScrollPane.getViewport().add(mainPanel, null);
+        mainScrollPane.setBorder(BorderFactory.createEmptyBorder(4,4,4,4));        
     }
 
     protected abstract void iniDialog() throws Exception;

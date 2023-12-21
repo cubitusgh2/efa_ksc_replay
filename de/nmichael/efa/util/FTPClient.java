@@ -33,7 +33,6 @@ public class FTPClient {
         return s != null && (s.toLowerCase().startsWith("ftp:") ||
                              s.toLowerCase().startsWith("ftp-pasv:") );
     }
-    
 
     public FTPClient(String ftpString, String localFileWithPath) {
         this.ftpString = ftpString;
@@ -148,20 +147,17 @@ public class FTPClient {
             }
             ftpClient.setConnectMode(pasv ? com.enterprisedt.net.ftp.FTPConnectMode.PASV :
                                             com.enterprisedt.net.ftp.FTPConnectMode.ACTIVE);
-
             ftpClient.login(username, password);
             if (remoteDirectory != null) {
                 ftpClient.chdir( (remoteDirectory.length() == 0 ? "/" : remoteDirectory) );
             }
             ftpClient.setType(FTPTransferType.BINARY);
-
             ftpClient.put(localFileWithPath, remoteFile);
             ftpClient.quit();
             return null; // korrektes Ende!
         } catch (Exception e) {
             Logger.logdebug(e);
             return e.toString();
-            
         }
     }
 

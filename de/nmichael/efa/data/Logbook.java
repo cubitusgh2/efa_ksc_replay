@@ -259,14 +259,13 @@ public class Logbook extends StorageObject {
                     new String[] { BoatStatusRecord.LOGBOOK }, new String[] { getName() } );
         }
     }
-    
+
     public LogbookRecord getLastLogbookRecord() {
         try {
-       	 return (LogbookRecord) data().getLast();
+        	return (LogbookRecord) data().getLast();
         } catch (Exception e) {
-       	 Logger.logdebug(e);
-       	 return null;
+       	 	Logger.logdebug(e);
+       	 	return null;
         }
-       }
-
+    }    
 }

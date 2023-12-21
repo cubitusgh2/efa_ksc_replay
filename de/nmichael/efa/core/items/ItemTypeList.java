@@ -10,20 +10,58 @@
 
 package de.nmichael.efa.core.items;
 
-import java.util.*;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import de.nmichael.efa.*;
-import de.nmichael.efa.util.*;
-import de.nmichael.efa.util.Dialog;
-import de.nmichael.efa.gui.*;
-import de.nmichael.efa.gui.util.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics2D;
+import java.awt.GridBagConstraints;
+import java.awt.Image;
+import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.Window;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
+import java.util.Vector;
+
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.DefaultListModel;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import javax.swing.ListModel;
+import javax.swing.ListSelectionModel;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.SwingConstants;
+import javax.swing.ToolTipManager;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+
+import de.nmichael.efa.Daten;
+import de.nmichael.efa.gui.BaseDialog;
+import de.nmichael.efa.gui.util.EfaMouseListener;
+import de.nmichael.efa.gui.util.RoundedBorder;
+import de.nmichael.efa.gui.util.RoundedLabel;
+import de.nmichael.efa.util.Dialog;
+import de.nmichael.efa.util.EfaUtil;
+import de.nmichael.efa.util.Logger;
+import de.nmichael.efa.util.Mnemonics;
+import de.nmichael.efa.gui.ImagesAndIcons;
 
 public class ItemTypeList extends ItemType implements ActionListener, DocumentListener, KeyListener {
 
@@ -39,16 +77,17 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     String incrementalSearch = "";
     int iconWidth = 0;
     int iconHeight = 0;
-    protected static final String LIST_SECTION_STRING = "------";
-    private static final String STR_DESTINATION_DELIMITER=     	"     -> ";
+
+    protected static final String LIST_SECTION_STRING = "-----";
     //Spacings for pretty rendering
-    private static final int SPACING_BOATNAME_SECONDPART = 60; //60 pixels
+    private static final int SPACING_BOATNAME_SECONDPART  = 60; //60 pixels
 	private static final int HORZ_SINGLE_BORDER=5;
 	private static Border _emptyBorder = new EmptyBorder(2, HORZ_SINGLE_BORDER, 2, HORZ_SINGLE_BORDER);
-	private static Color _separatorBackground = new Color(240,240,240);
+	private Color _separatorBackground = new Color(240,240,240);
+	private Color _filterTextfieldDefaultBackground = Color.WHITE;
     private boolean showFilterField = false;
-    private boolean showTwoColumnList=false;
-    protected String other_item_text=""; //value of the first element representing an "other boat/person" element
+  	private boolean showTwoColumnList=false;
+    protected String other_item_text=""; //item text of the element for <other boat> or <other person>
     
     class ListDataCellRenderer extends DefaultListCellRenderer {
         public Component getListCellRendererComponent(JList list, Object value,
@@ -59,11 +98,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
                 try {
                 	BuildIcon(value);
                 } catch(Exception eignore) {
-                	// Actually, there is an exception which gets thrown on efa startup
-                	// when there is a need to create icons in the boat lists, but
-                	// the efaBoatHouseFrame is not visible yet. so...
-                	// we stay with eIgnore and ignore that exception
-                	Logger.log(eignore);
+                		Logger.log(eignore);
                 }
             }
 
@@ -71,7 +106,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
             	this.setBorder(_emptyBorder);
             	
             	if (showTwoColumnList) {
-            		/* Pretty lists
+            		/* Two Column Lists
             		 * Data is put together in ItemTypeBoatStatuslist.sortBootsList and sortMemberList
             		 * 
             		 * - Center separator texts, with grey background
@@ -101,16 +136,17 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 		            	if (item.separator) {
 			                if (!isSelected) { setBackground(_separatorBackground); }
 		                    this.setHorizontalAlignment(JLabel.CENTER);
+		                    this.setFont(this.getFont().deriveFont(Font.BOLD)); 
 			            } else { // not a separator
 			            	if (item.secondaryElement!=null) {
 			            		//only build the p
-			            		this.setText(getHTMLTableFor(item.text, item.secondaryElement));
+			            		this.setText(getHTMLTableFor(item.text, item.secondaryElement, isSelected));
 			            	} 
 		            		setHorizontalAlignment(JLabel.LEFT);
 		            
 			            } //if not a separator
 		            }//if parent width>0
-	            }// if showprettylist
+	            }// if showTowColumnList
             	else {
 		            ItemTypeListData item = (ItemTypeListData)value;            		
 	            	if (item.separator) {
@@ -171,19 +207,16 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
             }
             icon = new ImageIcon(image);
         }
-        
         if (icon.getIconWidth() > iconWidth
                 || icon.getIconHeight() > iconHeight) {
             icon = new ImageIcon(icon.getImage().getScaledInstance(iconWidth, iconHeight,
                     Image.SCALE_SMOOTH));
         }
     	if (list.getParent() != null && list.getParent().getWidth()>0) {
-    		// this.setIcon causes Nullpointerexceptions, when efaBoathouseFrame gets initialized,
-    		// but is not yet visible. So we only set an icon if the parent of the list has a width>0 
+    		// this.setIcon causes nullpointer exceptions, when efaBoathouseFrame gets initialized,
+    		// but is not yet visible. So we only set an icon if the parent of the list has a width>0. 
     		this.setIcon(icon);
         }
-        
-
     }
     
 
@@ -193,7 +226,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
      * - right row gets remaining space and is truncated on the right side, if contents do not fit.
      *   also, right row contents are rendered in grey text color.
      */
-    private String getHTMLTableFor(String firstPart, String secondPart) {
+    private String getHTMLTableFor(String firstPart, String secondPart, boolean isSelected) {
     	
     	// der Aufbau der HTML-Tabelle ist wegen dem Kürzen des secondPart performancelastig,
     	// wenn es eine volle Bootstabelle gibt. Bei ~200 Booten und einem Raspi3
@@ -238,11 +271,14 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         if (cutText &&secondPart.length()>0) {secondPart+="\u2026";} //append an ellipsis
         Integer tableWidth =new Integer((int)listWidth-Math.max(iconWidth,0)-4);
         
+        String fontColorTag="color=#888888>";
+        if (isSelected) {fontColorTag=">";}
+        
         return  "<html><table border=0 cellpadding=0 cellspacing=0 width='"
         		.concat(tableWidth.toString())
         		.concat("'><tr><td align=left>")
         		.concat(EfaUtil.escapeHtml(firstPart))
-        		.concat("</td><td align=right><font color=#888888>")
+        		.concat("</td><td align=right><font ").concat(fontColorTag)
         		.concat(EfaUtil.escapeHtml(secondPart))
         		.concat("</font></td></tr></table></html>");
 		
@@ -250,7 +286,6 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 }
 
 
-    
     class ItemTypeListData {
         String text;
         String toolTipText;
@@ -303,14 +338,18 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     }
 
     public ItemTypeList(String name,
-            int type, String category, String description, boolean showFilterField, boolean showPrettyList) {
+            int type, String category, String description, boolean showFilterField, boolean showTwoColumnList) {
         this.name = name;
         this.type = type;
         this.category = category;
         this.description = description;
         this.showFilterField = showFilterField;
-        this.showTwoColumnList= showPrettyList;
+        this.showTwoColumnList= showTwoColumnList;
         data = new DefaultListModel<ItemTypeListData>();
+        //overwrite standard separator color with efaFlatBackgroundColor if efaFlat is the current look
+        if (Daten.isEfaFlatLafActive()) {
+        	this._separatorBackground=Daten.efaConfig.getEfaGuiflatLaf_Background();
+       }
     }
     
     public ItemTypeList(String name,
@@ -455,7 +494,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 	        filterTextField.addKeyListener(this);
 	        filterTextField.putClientProperty("caretWidth", 3);
 	        filterTextField.setMargin(new Insets(0,2,0,0));
-	        lastFilterChange=System.currentTimeMillis();
+	        updateLastFilterChange();
         }
         popup = new JPopupMenu();
         //Vertical scrollbar shall be shown always, because better ListCellRendering does not work optically well when
@@ -467,8 +506,14 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         mypanel.setLayout(new BorderLayout());
 
         if (getDescription() != null) {
-            label = new JLabel();
-            Mnemonics.setLabel(dlg, label, getDescription() + ": ");
+            if (Daten.efaConfig.getHeaderUseHighlightColor()) {
+            	label = new RoundedLabel();            
+                label.setBorder(new RoundedBorder(this.color));
+            }else {
+            	label = new JLabel();
+            	label.setBorder(new EmptyBorder(4,0,4,0));//4 pixel space before and after the label
+            }
+            Mnemonics.setLabel(dlg, label, " " + getDescription() + ": ");
             label.setHorizontalAlignment(SwingConstants.CENTER);
             if (type == IItemType.TYPE_EXPERT) {
                 label.setForeground(Color.red);
@@ -490,7 +535,6 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
             
             Dialog.setPreferredSize(label, fieldWidth, 20);
             
-            label.setBorder(new EmptyBorder(4,0,4,0));//4 pixel space before and after the label
         }
 
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -500,6 +544,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
             menuItem.setActionCommand(EfaMouseListener.EVENT_POPUP_CLICKED + "_" + actions[i].substring(0, 1));
             menuItem.addActionListener(this);
             popup.add(menuItem);
+            menuItem.setIcon(getIconFromActionID(actions[i].substring(0, 1)));
         }
         // KeyListeners entfernen, damit unter Java 1.4.x nicht automatisch gescrollt wird, sondern durch den eigenen Algorithmus
         try {
@@ -561,6 +606,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 	        filterPanel.add(filterTextField, BorderLayout.CENTER);
 	        panelDescriptionAndFilter.add(filterPanel, BorderLayout.SOUTH);
 	        this.field=filterTextField; // by this, when the boat status list receives focus, and the filter text field is visible, the filter text field gets the focus.
+	        _filterTextfieldDefaultBackground = filterTextField.getBackground();
 	        
 	        filterTextField.addFocusListener(new java.awt.event.FocusAdapter() {
 	            public void focusGained(FocusEvent e) {
@@ -570,14 +616,14 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 	        filterTextField.addFocusListener(new java.awt.event.FocusAdapter() {
 	            public void focusLost(FocusEvent e) {
 	            	if (!filterTextField.getText().isEmpty()) {
-	            		filterTextField.setBackground(new Color(255,255,204));
-	            	
+	            		filterTextField.setBackground(new Color(255,255,204)); //some white yellow so it is clear that some stuff is in this field.
+
 	            	} else {	
-	            		filterTextField.setBackground(Color.WHITE);
+	            		// use standard background color. for flatlaf, this is not white as it is for the other lafs.
+	            		filterTextField.setBackground(_filterTextfieldDefaultBackground); 
 	            	}
 	            }
 	        });
-	        	        
         }
 
         mypanel.add(panelDescriptionAndFilter, BorderLayout.NORTH);
@@ -585,23 +631,17 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 
         return mypanel;
     }
+
+    private Icon getIconFromActionID(String actionID) {
+    	if (actionID.equals("1")) return ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_ACTION_START_SESSION);
+    	if (actionID.equals("2")) return ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_ACTION_FINISH_SESSION);	
+    	if (actionID.equals("3")) return ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_ACTION_LATE_ENTRY);
+    	if (actionID.equals("5")) return ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_ACTION_ABORT_SESSION);
+    	if (actionID.equals("6")) return ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_ACTION_BOAT_RESERVATIONS);
+    	
+    	return null;
+    }
     
-    /*
-     * Creates a Panel - 
-     * 	left side: a Label with a Displaytext
-     *   center: the filter text field
-     */
-     private JPanel createPanelForFilterTextfield(JTextField theFilter, String theDisplayText) {
-     	JPanel myPanel=new JPanel();
-     	myPanel.setBorder(new EmptyBorder(4,0,4,0));//4 pix space top and bottom
-     	myPanel.setLayout(new BorderLayout());
-     	JLabel myLabel = new JLabel();
-     	myLabel.setText(theDisplayText);
-     	mypanel.add(myLabel, BorderLayout.WEST);
-     	mypanel.add(theFilter, BorderLayout.CENTER);
-     	return mypanel;
-     }
-     
     public void actionPerformed(ActionEvent e) {
         if (listener != null) {
             listener.itemListenerAction(this, e);
@@ -619,7 +659,6 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
             //list.setSelectedIndices(new int[0]);
             list.clearSelection();
         } catch(Exception e) {
-        	Logger.logdebug(e);
         }
     }
 
@@ -652,14 +691,14 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
             listener.itemListenerAction(this, e);
         }
     }
-
+    
     /* clear filtertextfield, if it has been unchanged more than two minutes */
     public void clearFilterTextByInterval() {
-
+    	
     	// get the reset filter interval in minutes from efaConfig.
     	long filterResetInterval= (Daten.efaConfig.getValueEfaBoathouseFilterTextAutoClearInterval()*60*1000); 
-
-
+    	
+    	
     	if (filterResetInterval>0) {
     		//reduce filterResetInterval by 5 seconds.
     		//this is because clearFilterText gets called regularily by efaBoatHouseBackgroundTask, in the interval of every minute.
@@ -671,7 +710,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 	    	}
     	}
     }
-    
+
     /* clear filter text field intentionally, if it is displayed */
     public void clearFilterText() {
 
@@ -679,9 +718,9 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 			this.filterTextField.setText("");
         	updateLastFilterChange();
     		if (!this.filterTextField.hasFocus()) {
-    			this.filterTextField.setBackground(Color.WHITE);
+    			this.filterTextField.setBackground(_filterTextfieldDefaultBackground);
     		}
-    		filter();  
+    		filter();    
     	}
     }
     
@@ -780,8 +819,34 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 	                ToolTipManager.sharedInstance().setInitialDelay(origDelay);
 	            }
             }
-        } catch (Exception ee) {
-        	Logger.logdebug(ee);/* just to be sure */ }
+
+        } catch (Exception ee) { Logger.logdebug(ee);/* just to be sure */ }
+    }
+
+    private void selectFirstMatchingElement() {
+    	int index=1; //start with item 1 as item 0 is always "<other boat>" or "<other person>"
+		DefaultListModel <ItemTypeListData> theData= (DefaultListModel)list.getModel();
+    	  // check whether we should really select this item
+
+		if (filterTextField.getText().trim().length()==0){
+			index=0;
+		} else { 
+			while (index >= 0 && index < theData.size() && (theData.get(index).separator)) {
+	            index += 1;
+	        }
+		}
+		if (index>=theData.size()) {
+        	//no element could be found which is not a separator and not "<other boat>" or "<other person>"
+        	//so we select the first element nonetheless
+        	index=0;
+        }
+
+        if (index >= 0 && index < theData.size()) {
+            list.setSelectedIndex(index);
+            Rectangle rect = list.getCellBounds(index, (index + 15 >= theData.size() ? theData.size() - 1 : index + 15));
+            list.scrollRectToVisible(rect);
+        }
+
     }
 
     public Object getSelectedValue() {
@@ -795,7 +860,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
             return null;
         }
     }
-    
+
     public boolean getSelectedItemIsSeparator() {
         try {
             if (list == null || list.isSelectionEmpty()) {
@@ -807,7 +872,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
             return false;
         }    	
     }
-
+    
     public String getSelectedText() {
         try {
             if (list == null || list.isSelectionEmpty()) {
@@ -872,6 +937,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         filter();
     }
 
+
     public void removeUpdate(DocumentEvent e) {
         filter();
     }
@@ -884,26 +950,39 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     //if filtertextfield is empty, set list Data to the alldata.
     private void filter() {
         
-    	if (this.showFilterField) {
+		// this.filterTextField actually CAN be null also if this.showFilterField is true
+		// this is the fact for personsAvailableList which is only shown after first user interaction - 
+		// before the user interaction of showing the personsAvailableList, the filterTextfield is null.
+		// so let's avoid a nullpointerexception here. 
+
+    	if (this.showFilterField && this.filterTextField!=null) {
+
+    		boolean ignoreSpecialCharacters = Daten.efaConfig.getValueEfaBoathouseFilterTextfieldEasyFindEntriesWithSpecialCharacters();
     		
-       		boolean ignoreSpecialCharacters = Daten.efaConfig.getValueEfaBoathouseFilterTextfieldIgnoreSpecialCharacters();
-	    
     		DefaultListModel<ItemTypeListData> theModel = new DefaultListModel<ItemTypeList.ItemTypeListData>();
-    		String searchString = null;
-
-			searchString = (ignoreSpecialCharacters ? EfaUtil.replaceAllUmlautsLowerCaseFast(filterTextField.getText().trim()) : filterTextField.getText().trim().toLowerCase());
-
+			String searchString = filterTextField.getText().trim().toLowerCase();
+			Boolean searchStringWithUmlaut = EfaUtil.containsUmlaut(searchString);
+			
 	        if (!searchString.isEmpty()) {
 	        	
 	        	for (int i=0; i< data.getSize();i++) {
 	        		ItemTypeListData item = data.getElementAt(i);
+
 	        		if (item.separator || item.text.equals(other_item_text)) {
 		                theModel.addElement(item);	        			
 	        		} else {
 	        			// this is the slow part
 	        			boolean hit=false;
 	        			if (ignoreSpecialCharacters) {
-	        				hit = EfaUtil.replaceAllUmlautsLowerCaseFast(item.getFilterableText()).contains(searchString);
+	        				if (searchStringWithUmlaut) {
+	        					//search string contains a special character. this indicates user is definitely looking
+	        					//for an entry that contains this character. So we switch to standard contains mode.
+	        					hit = item.getFilterableText().toLowerCase().contains(searchString);
+	        				} else {
+	        					//search string has no umlaut --> we also want to find entries which contain special characters
+		        				hit = EfaUtil.replaceAllUmlautsLowerCaseFast(item.getFilterableText()).contains(searchString);	        					
+	        				}
+
 	        			} else {
 	        				hit = item.getFilterableText().toLowerCase().contains(searchString);
 	        			}
@@ -911,8 +990,9 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 	        			if (hit) {
 	        				theModel.addElement(item);
 	        			}
-
+	        		  
 	        	  }
+
 	        	}
 	        	
 	        	// we have a problem if there are section strings at the end of the list
@@ -932,45 +1012,20 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 		    	list.setModel(data);
 		     }
 	        selectFirstMatchingElement();
-        }//if showFilterTextField
+        } //if showFilterTextField
 
     }
     
-    private void selectFirstMatchingElement() {
-    	int index=1; //start with item 1 as item 0 is always "<other boat>" or "<other person>"
-		DefaultListModel <ItemTypeListData> theData= (DefaultListModel)list.getModel();
-    	  // check whether we should really select this item
-        
-		if (filterTextField.getText().trim().length()==0){
-			index=0;
-		} else { 
-			while (index >= 0 && index < theData.size() && (theData.get(index).separator)) {
-	            index += 1;
-	        }
-		}
-		if (index>=theData.size()) {
-        	//no element could be found which is not a separator and not "<other boat>" or "<other person>"
-        	//so we select the first element nonetheless
-        	index=0;
-        }
-
-        if (index >= 0 && index < theData.size()) {
-            list.setSelectedIndex(index);
-            Rectangle rect = list.getCellBounds(index, (index + 15 >= theData.size() ? theData.size() - 1 : index + 15));
-            list.scrollRectToVisible(rect);
-        }
-
-    }    
-    
     public void keyPressed(KeyEvent e) {
-    	updateLastFilterChange();    	
+       	updateLastFilterChange();   	
     }
     
     public void keyReleased(KeyEvent e) {
     	
     	if (e.getComponent().equals(filterTextField)) {
         	updateLastFilterChange();
-	    	if (e.getKeyCode()== KeyEvent.VK_ENTER || e.getKeyCode() == KeyEvent.VK_DOWN || e.getKeyCode() == KeyEvent.VK_UP) {
+
+        if (e.getKeyCode()== KeyEvent.VK_ENTER || e.getKeyCode() == KeyEvent.VK_DOWN || e.getKeyCode() == KeyEvent.VK_UP) {
 	    		list.requestFocus();
 	    	} else if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
 	    		if (this.showFilterField) {
@@ -982,9 +1037,9 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     }
     
     public void keyTyped(KeyEvent e) {
-    	updateLastFilterChange();    	
+    	updateLastFilterChange();
     }
-    
+
     private void updateLastFilterChange() {
     	lastFilterChange=System.currentTimeMillis(); 
     }
@@ -1019,5 +1074,11 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     
     public void setShowTwoColumnList(boolean twoColumns) {
     	showTwoColumnList=twoColumns;
+    }
+    
+    public void updateSeparatorColorFromEfaConfig() {
+        if (Daten.isEfaFlatLafActive()) {
+        	this._separatorBackground=Daten.efaConfig.getEfaGuiflatLaf_Background();
+       }
     }
 }

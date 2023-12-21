@@ -9,45 +9,75 @@
  */
 package de.nmichael.efa;
 
-import de.nmichael.efa.data.efacloud.TableBuilder;
-import de.nmichael.efa.data.efawett.WettDefs;
-import de.nmichael.efa.core.config.*;
-import de.nmichael.efa.core.items.*;
-import de.nmichael.efa.core.*;
 import static de.nmichael.efa.core.config.EfaTypes.CATEGORY_SESSION;
 import static de.nmichael.efa.core.config.EfaTypes.TYPE_SESSION_INSTRUCTION;
 import static de.nmichael.efa.core.config.EfaTypes.TYPE_SESSION_JUMREGATTA;
-import static de.nmichael.efa.core.config.EfaTypes.TYPE_SESSION_NORMAL;
-import static de.nmichael.efa.core.config.EfaTypes.TYPE_SESSION_REGATTA;
 import static de.nmichael.efa.core.config.EfaTypes.TYPE_SESSION_TOUR;
 import static de.nmichael.efa.core.config.EfaTypes.TYPE_SESSION_TRAINING;
-import de.nmichael.efa.data.*;
+
+import java.awt.Color;
+import java.awt.Frame;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.lang.management.ManagementFactory;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.util.Enumeration;
+import java.util.Vector;
+import java.util.jar.JarFile;
+
+import javax.swing.UIDefaults;
+import javax.swing.UIManager;
+import javax.swing.plaf.ColorUIResource;
+import javax.swing.text.Style;
+import javax.swing.text.html.HTMLDocument;
+import javax.swing.text.html.HTMLEditorKit;
+import javax.swing.text.html.StyleSheet;
+
+import com.formdev.flatlaf.FlatLaf;
+
+import de.nmichael.efa.core.CrontabThread;
+import de.nmichael.efa.core.EfaKeyStore;
+import de.nmichael.efa.core.EfaRunning;
+import de.nmichael.efa.core.EfaSec;
+import de.nmichael.efa.core.EmailSenderThread;
+import de.nmichael.efa.core.Plugins;
+import de.nmichael.efa.core.config.AdminRecord;
+import de.nmichael.efa.core.config.Admins;
+import de.nmichael.efa.core.config.CustSettings;
+import de.nmichael.efa.core.config.EfaBaseConfig;
+import de.nmichael.efa.core.config.EfaConfig;
+import de.nmichael.efa.core.config.EfaTypes;
+import de.nmichael.efa.core.items.IItemType;
+import de.nmichael.efa.core.items.ItemTypeFile;
+import de.nmichael.efa.data.Project;
+import de.nmichael.efa.data.efacloud.TableBuilder;
+import de.nmichael.efa.data.efawett.WettDefs;
 import de.nmichael.efa.data.storage.DataFile;
 import de.nmichael.efa.data.storage.RemoteEfaServer;
 import de.nmichael.efa.data.types.DataTypeDate;
-import de.nmichael.efa.util.*;
+import de.nmichael.efa.gui.BrowserDialog;
+import de.nmichael.efa.gui.EfaFirstSetupDialog;
+import de.nmichael.efa.gui.SimpleInputDialog;
 import de.nmichael.efa.util.Dialog;
-import de.nmichael.efa.gui.*;
-import java.io.*;
-import java.util.jar.*;
-import java.util.*;
-import java.awt.*;
-import javax.swing.UIManager;
-import java.lang.management.*;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import javax.swing.plaf.ColorUIResource;
+import de.nmichael.efa.util.EfaSortStringComparator;
+import de.nmichael.efa.util.EfaUtil;
+import de.nmichael.efa.util.HtmlFactory;
+import de.nmichael.efa.util.International;
+import de.nmichael.efa.util.LogString;
+import de.nmichael.efa.util.Logger;
 
 // @i18n complete
 public class Daten {
 
-    public final static String VERSION            = "2.3.0_dev_SGB_TblPck,ListFilter+Focus,Sync+Cfg+Fullsync,LogRotate,ToFrontFix,FilterFix,SyncRefac,SyncLessWarn,SyncVerbose,Look,Bulletfix,ListFix2_CSVExport,FilterDropDV3,TtipC,filterhlght,prettybulletfix,ttcommnfix,filterotherboatfix,clubwrkexpV3,weeklyres,resBoatlist,resBoatPerfFixv2,efbsyncunkboats,limitedweeklyv5,exceptfix,perffixv2,resOnetimeDate,todaysresFilter,efbsync_unkboatlesslogging,resTodayFix,btlistexeptfix,restodayCache,exfixv8,tooltipfix,clearfilterfix,csvfix,autocompletefix,sortfix,efaconfigrefactor,boatrescopy,ttipconfig,umlauts,clearafteraction"; // Version für die Ausgabe (z.B. 2.1.0, kann aber auch Zusätze wie "alpha" o.ä. enthalten)
-    public final static String VERSIONID          = "2.3.0";   // VersionsID: Format: "X.Y.Z_MM"; final-Version z.B. 1.4.0_00; beta-Version z.B. 1.4.0_#1
-    public final static String VERSIONRELEASEDATE = "06.10.2023";  // Release Date: TT.MM.JJJJ
+    public final static String VERSION            = "2.3.4_00_0_dev_ListFix2_CSVExport,clubwrkexpV3,clearfilterfix,csvfix,EFA_057_LAF_6_1423"; // Version für die Ausgabe (z.B. 2.1.0, kann aber auch Zusätze wie "alpha" o.ä. enthalten)
+    public final static String VERSIONID          = "2.3.4_00";   // VersionsID: Format: "X.Y.Z_MM"; final-Version z.B. 1.4.0_00; beta-Version z.B. 1.4.0_#1
+    public final static String VERSIONRELEASEDATE = "21.12.2023";  // Release Date: TT.MM.JJJJ
     public final static String MAJORVERSION       = "2";
-    public final static String PROGRAMMID         = "EFA.230"; // Versions-ID für Wettbewerbsmeldungen
-    public final static String PROGRAMMID_DRV     = "EFADRV.230"; // Versions-ID für Wettbewerbsmeldungen
-    public final static String COPYRIGHTYEAR      = "22";   // aktuelles Jahr (Copyright (c) 2001-COPYRIGHTYEAR)
+    public final static String PROGRAMMID         = "EFA.233"; // Versions-ID für Wettbewerbsmeldungen
+    public final static String PROGRAMMID_DRV     = "EFADRV.233"; // Versions-ID für Wettbewerbsmeldungen
+    public final static String COPYRIGHTYEAR      = "23";   // aktuelles Jahr (Copyright (c) 2001-COPYRIGHTYEAR)
     public final static int REQUIRED_JAVA_VERSION = 8;
 
     // enable/disable development functions for next version
@@ -148,6 +178,14 @@ public class Daten {
     public static String osVersion = "";
     public static String lookAndFeel = "";
 
+    public static String LAF_METAL="MetalLookAndFeel";
+    public static String LAF_EFAFLAT_LIGHT="EfaFlatLightLookAndFeel";
+    public static String LAF_EFAFLAT_DARK = "EfaFlatLightLookAndFeel";
+    public static String LAF_NIMBUS="NimbusLookAndFeel";
+    public static String LAF_WINDOWS="WindowsLookAndFeel";
+    public static String LAF_WINDOWS_CLASSIC="WindowsClassicLookAndFeel";
+    public static String LAF_LINUX_GTK = "GTKLookAndFeel";
+    
     public final static String PLUGIN_INFO_FILE = "plugins.xml";
     public static String pluginWebpage = "http://efa.nmichael.de/plugins.html"; // wird automatisch auf das in der o.g. Datei stehende gesetzt
 
@@ -1001,11 +1039,20 @@ public class Daten {
         // Look&Feel
         if (Daten.efaConfig != null) { // is null for applDRV
             try {
+            	// Make sure that settings in FlatIntelliJLaf.properties are read on startup
+            	FlatLaf.registerCustomDefaultsSource( "de.nmichael.efa.themes" );
+            	// We just want plain java functions, for maximum compatibility.
+            	System.setProperty( "flatlaf.useNativeLibrary", "false" );
+            	System.setProperty( "flatlaf.animation", "false" );
+            	System.setProperty( "flatlaf.useWindowDecorations" , "false" );
+            	System.setProperty( "flatlaf.menuBarEmbedded", "false" );
+                
                 if (Daten.efaConfig.getValueLookAndFeel().length() == 0) {
                     UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
                 } else {
-                    UIManager.setLookAndFeel(Daten.efaConfig.getValueLookAndFeel());
+                	UIManager.setLookAndFeel(Daten.efaConfig.getValueLookAndFeel());
                 }
+                
             } catch (Exception e) {
                 Logger.log(Logger.WARNING, Logger.MSG_WARN_CANTSETLOOKANDFEEL,
                         International.getString("Konnte Look&Feel nicht setzen") + ": " + e.toString());
@@ -1015,12 +1062,21 @@ public class Daten {
         // Look&Feel specific Work-Arounds
         try {
             lookAndFeel = UIManager.getLookAndFeel().getClass().toString();
-            if (!lookAndFeel.endsWith("MetalLookAndFeel")) {
+
+            if (efaConfig.getToolTipSpecialColors()) {
+            	Dialog.getUiDefaults().put("ToolTip.background", new ColorUIResource(efaConfig.getToolTipBackgroundColor()));
+            	Dialog.getUiDefaults().put("ToolTip.foreground", new ColorUIResource(efaConfig.getToolTipForegroundColor()));
+            }
+            
+            EfaUtil.handleEfaFlatLafDefaults();
+            
+
+            
+            if (!lookAndFeel.endsWith(Daten.LAF_METAL)) {
                 // to make PopupMenu's work properly and not swallow the next MousePressed Event, see: http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6753637
                 Dialog.getUiDefaults().put("PopupMenu.consumeEventOnClose", false);
             }
-            Color buttonFocusColor = (Daten.efaConfig != null ?
-                Daten.efaConfig.getLafButtonFocusColor() : null);
+            Color buttonFocusColor = (Daten.efaConfig != null ? Daten.efaConfig.getLafButtonFocusColor() : null);
             if (buttonFocusColor != null) {
                 // colored square around text of selected button
                 Dialog.getUiDefaults().put("Button.focus", new ColorUIResource(buttonFocusColor));
@@ -1032,19 +1088,42 @@ public class Daten {
                         "SPACE", "pressed",
                         "released SPACE", "released"
                     }));
+            
+            
+            
         } catch (Exception e) {
             Logger.log(Logger.WARNING, Logger.MSG_WARN_CANTSETLOOKANDFEEL,
                     "Failed to apply LookAndFeel Workarounds: " + e.toString());
         }
 
+        // HTML Editor Kit Font Base and Style
+        // this is used for ItemTypeHTMLList as well as the widgets which display HTML.
+        new HTMLEditorKit().getStyleSheet().addRule("body  {font-size: 14pt;\r\n"
+				+ "       font-family: Dialog;\r\n" // this is different from the standard CSS Style sheet, where serif is the standard font.
+				+ "       font-weight: normal;\r\n"
+				+ "       margin-left: 0;\r\n"
+				+ "       margin-right: 0;\r\n"
+				+ "       color: black}");
+        
         // Font Size
         if (applID == APPL_EFABH) {
             try {
-                Dialog.setGlobalFontSize(Daten.efaConfig.getValueEfaDirekt_fontSize(), Daten.efaConfig.getValueEfaDirekt_fontStyle());
+                Dialog.setGlobalFontSize(Daten.efaConfig.getValueEfaDirekt_BthsFontSize(), Daten.efaConfig.getValueEfaDirekt_BthsFontStyle());
+                Dialog.setGlobalTableFontSize(Daten.efaConfig.getValueEfaDirekt_BthsTableFontSize());
             } catch (Exception e) {
                 Logger.log(Logger.WARNING, Logger.MSG_WARN_CANTSETFONTSIZE,
                         International.getString("Schriftgröße konnte nicht geändert werden") + ": " + e.toString());
             }
+        }
+        
+        if (applID == APPL_EFABASE) {
+            try {
+            	Dialog.setGlobalFontSize(Daten.efaConfig.getValueEfaDirekt_OtherFontSize(), Daten.efaConfig.getValueEfaDirekt_OtherFontStyle());
+                Dialog.setGlobalTableFontSize(Daten.efaConfig.getValueEfaDirekt_OtherTableFontSize());
+            } catch (Exception e) {
+                Logger.log(Logger.WARNING, Logger.MSG_WARN_CANTSETFONTSIZE,
+                        International.getString("Schriftgröße konnte nicht geändert werden") + ": " + e.toString());
+            }        	
         }
     }
 
@@ -1165,6 +1244,42 @@ public class Daten {
         return false;
     }
 
+    public static Vector getUIProperties() {
+    	
+        Vector infos = new Vector();
+ 	   	UIDefaults uid = Dialog.getUiDefaults();
+		
+        java.util.Enumeration keys = uid.keys();
+        while (keys.hasMoreElements()) {
+            Object key = keys.nextElement();
+            Object value = uid.get(key);
+
+            if (value!=null) {
+            	infos.add(key+" = "+value.toString().replaceAll("\n", " "));
+            } else {
+            	infos.add(key+" = <null>");
+            }
+        }
+        
+        infos.sort(new EfaSortStringComparator());
+        return infos;
+    }
+
+    public static Vector getCSSInfo() {
+    	
+        Vector infos = new Vector();
+    	HTMLEditorKit kit = new HTMLEditorKit();
+    	StyleSheet styles = kit.getStyleSheet();
+    	Enumeration rules = styles.getStyleNames();
+    	while (rules.hasMoreElements()) {
+	    	String name = (String) rules.nextElement();
+	    	Style rule = styles.getStyle(name);
+	    	infos.add(rule.toString());
+    	}
+        infos.sort(new EfaSortStringComparator());
+        return infos;
+    }
+
     public static Vector getEfaInfos() {
         return getEfaInfos(true, true, true, true, false);
     }
@@ -1179,6 +1294,8 @@ public class Daten {
         // efa-Infos
         if (efaInfos) {
             infos.add("efa.version=" + Daten.VERSIONID);
+            infos.add("efa.version.extended=" + Daten.VERSION);
+            infos.add("efa.releaseDate="+Daten.VERSIONRELEASEDATE);
             if (EFALIVE_VERSION != null && EFALIVE_VERSION.length() > 0) {
                 infos.add("efalive.version=" + Daten.EFALIVE_VERSION);
             }
@@ -1451,6 +1568,10 @@ public class Daten {
         if (Daten.efaDocDirectory == null) {
             return;
         }
+    }
+    
+    public static Boolean isEfaFlatLafActive() {
+    	return (lookAndFeel.endsWith(Daten.LAF_EFAFLAT_LIGHT) || lookAndFeel.endsWith(Daten.LAF_EFAFLAT_DARK));
     }
     
 }

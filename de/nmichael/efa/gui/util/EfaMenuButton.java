@@ -22,6 +22,7 @@ import de.nmichael.efa.data.storage.RemoteCommand;
 import de.nmichael.efa.data.sync.KanuEfbSyncTask;
 import de.nmichael.efa.gui.*;
 import de.nmichael.efa.gui.dataedit.*;
+import de.nmichael.efa.gui.ImagesAndIcons;
 import de.nmichael.efa.util.Dialog;
 import de.nmichael.efa.util.Help;
 import de.nmichael.efa.util.International;
@@ -34,7 +35,7 @@ import javax.swing.ImageIcon;
 
 public class EfaMenuButton {
 
-    public final static String SEPARATOR                = "SEPARATOR";
+	public final static String SEPARATOR                = "SEPARATOR";
 
     public final static String MENU_FILE                = "FILE";
     public final static String BUTTON_PROJECTS          = "PROJECTS";
@@ -387,7 +388,7 @@ public class EfaMenuButton {
         v.add(new EfaMenuButton(MENU_INFO, BUTTON_HELP,
                 International.getStringWithMnemonic("Info"),
                 International.getStringWithMnemonic("Hilfe"),
-                BaseFrame.getIcon("menu_help.png")));
+                BaseFrame.getIcon(ImagesAndIcons.IMAGE_MENU_HELP)));
         if (v.size() > 0 && v.get(v.size()-1).getMenuName().equals(MENU_INFO) && !v.get(v.size()-1).isSeparator()) {
             v.add(new EfaMenuButton(MENU_INFO, SEPARATOR,
                     null, null, null));
@@ -951,7 +952,7 @@ public class EfaMenuButton {
                 insufficientRights(admin, action);
                 return false;
             }
-            KanuEfbSyncTask syncTask = new KanuEfbSyncTask(logbook, admin, true);
+            KanuEfbSyncTask syncTask = new KanuEfbSyncTask(logbook, admin, true);//always verbose mode when running sync in GUI
             ProgressDialog progressDialog = (parentFrame != null ?
                     new ProgressDialog(parentFrame, International.onlyFor("Mit Kanu-eFB synchronisieren", "de"), syncTask, false) :
                     new ProgressDialog(parentDialog, International.onlyFor("Mit Kanu-eFB synchronisieren", "de"), syncTask, false) );

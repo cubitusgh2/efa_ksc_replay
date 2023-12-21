@@ -16,8 +16,8 @@ import de.nmichael.efa.core.items.ItemTypeString;
 import de.nmichael.efa.util.*;
 import de.nmichael.efa.data.*;
 import de.nmichael.efa.gui.BaseDialog;
-import de.nmichael.efa.gui.ImagesAndIcons;
 import de.nmichael.efa.gui.SimpleInputDialog;
+import de.nmichael.efa.gui.ImagesAndIcons;
 import de.nmichael.efa.statistics.StatisticTask;
 import de.nmichael.efa.util.Dialog;
 import java.awt.*;
@@ -28,7 +28,7 @@ import javax.swing.*;
 // @i18n complete
 public class StatisticsEditDialog extends UnversionizedDataEditDialog {
 
-    public StatisticsEditDialog(Frame parent, StatisticsRecord r, boolean newRecord, AdminRecord admin) {
+	public StatisticsEditDialog(Frame parent, StatisticsRecord r, boolean newRecord, AdminRecord admin) {
         super(parent, International.getString("Statistik"), r, newRecord, admin);
         initialize(false);
     }

@@ -50,6 +50,8 @@ import de.nmichael.efa.gui.DataPrintListDialog;
 import de.nmichael.efa.gui.ProgressDialog;
 import de.nmichael.efa.gui.SimpleInputDialog;
 import de.nmichael.efa.gui.util.EfaMenuButton;
+import de.nmichael.efa.gui.util.RoundedBorder;
+import de.nmichael.efa.gui.util.RoundedLabel;
 import de.nmichael.efa.util.Dialog;
 import de.nmichael.efa.util.International;
 import de.nmichael.efa.util.Logger;
@@ -57,13 +59,12 @@ import de.nmichael.efa.util.ProgressTask;
 
 public abstract class DataListDialog extends BaseDialog implements IItemListener, IItemListenerDataRecordTable {
 
-
 	/* Documentation on action numbers: (see @ItemTypeDataRecordTable.iniDisplayActionTable)
 	 * <0  				Do not show this action in the popup menu for an element in the table.
 	 * >0 		<1000	Show as standard buttons with caption and icon
 	 * >1000	<2000	Show as buttons WITHOUT caption, just icons
 	 * >2000		    Do not show as a button
-	 */	
+	 */
 	
     public static final int ACTION_HIDE      =  100;
     public static final int ACTION_MERGE     =  200;
@@ -183,14 +184,13 @@ public abstract class DataListDialog extends BaseDialog implements IItemListener
             }
         }
     }
-
-    /**
-     * Adds an Action into the DataListDialog Button list. Action is added at the end of the list.
-     * 
-     * @param text Displaytext for the button
-     * @param type Action Type (see DataListDialog.ACTION_* or ItemTypeDataRecordTable.ACTION_*)
-     * @param image Image Name (see BaseDialog.IMAGE_*)
-     */
+/**
+ * Adds an Action into the DataListDialog Button list. Action is added at the end of the list.
+ * 
+ * @param text Displaytext for the button
+ * @param type Action Type (see DataListDialog.ACTION_* or ItemTypeDataRecordTable.ACTION_*)
+ * @param image Image Name (see BaseDialog.IMAGE_*)
+ */
     protected void addAction(String text, int type, String image) {
         if (actionText == null) {
             actionText = new String[0];
@@ -217,8 +217,7 @@ public abstract class DataListDialog extends BaseDialog implements IItemListener
         actionType[actionType.length - 1] = type;
         actionImage[actionImage.length - 1] = image;
     }
-
-
+   
     /**
      * Adds an Action into the DataListDialog Button list. Action is added right after the position of insertAfterType.
      * If insertAfterType Action is not found, Action is positioned at the end.
@@ -241,12 +240,12 @@ public abstract class DataListDialog extends BaseDialog implements IItemListener
         String[] _actionText = actionText;
         int[] _actionType = actionType;
         String[] _actionImage = actionImage;
-
+        
         // Extend the new array of actions by one item
         actionText = new String[_actionText.length + 1];
         actionType = new int[_actionType.length + 1];
         actionImage = new String[_actionImage.length + 1];
-
+        
         int insertPosition=0;
         boolean insertAfterTypeIsFound=false;
         // arrays must all be the same length!
@@ -258,7 +257,7 @@ public abstract class DataListDialog extends BaseDialog implements IItemListener
             actionType[insertPosition] = _actionType[i];
             actionImage[insertPosition] = _actionImage[i];
             insertPosition++; // done with the current element
-
+            
             if (_actionType[i]==insertAfterType) {
             	//we need to add the new action after the current one
             	actionText[insertPosition] = text;
@@ -274,8 +273,8 @@ public abstract class DataListDialog extends BaseDialog implements IItemListener
             actionType[actionType.length - 1] = type;
             actionImage[actionImage.length - 1] = image;    	
         }
-    }  
-    
+    }
+
     /**
      * Removes an action from the button list of the data list dialog.
      * @param type type of the action to be removed
@@ -313,12 +312,13 @@ public abstract class DataListDialog extends BaseDialog implements IItemListener
         mainTablePanel.setLayout(new BorderLayout());
 
         if (filterFieldDescription != null) {
-            JLabel filterName = new JLabel();
+            JLabel filterName = new RoundedLabel();
+            filterName.setBorder(new RoundedBorder(Daten.efaConfig.getHeaderForegroundColor()));
+            filterName.setBackground(Daten.efaConfig.getHeaderBackgroundColor());
+            filterName.setOpaque(true);
+            filterName.setForeground(Daten.efaConfig.getHeaderForegroundColor());
             filterName.setText(filterFieldDescription);
             filterName.setHorizontalAlignment(SwingConstants.CENTER);
-            filterName.setBackground(Daten.efaConfig.getTableSelectionBackgroundColor());
-            filterName.setForeground(Daten.efaConfig.getTableSelectionForegroundColor());
-            filterName.setOpaque(true);
             mainTablePanel.add(filterName, BorderLayout.NORTH);
             mainTablePanel.setBorder(new EmptyBorder(10,0,0,0));
         }

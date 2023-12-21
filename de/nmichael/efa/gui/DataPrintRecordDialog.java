@@ -25,7 +25,7 @@ import javax.swing.*;
 
 public class DataPrintRecordDialog extends BaseDialog {
 
-    private JScrollPane selectedFieldsScrollPane;
+	private JScrollPane selectedFieldsScrollPane;
     private JList selectedFields;
     private JCheckBox printEmptyFields;
 

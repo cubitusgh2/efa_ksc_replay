@@ -35,13 +35,12 @@ public class BoatReservationEditDialog extends UnversionizedDataEditDialog imple
         initListener();
         setAllowWeeklyReservation(allowWeeklyReservation);
     }
-    
     public BoatReservationEditDialog(JDialog parent, BoatReservationRecord r, 
             boolean newRecord, boolean allowWeeklyReservation, AdminRecord admin, String title) throws Exception {
         super(parent, title, r, newRecord, admin);
         initListener();
         setAllowWeeklyReservation(allowWeeklyReservation);
-    }        
+    }    
 
     public void keyAction(ActionEvent evt) {
         _keyAction(evt);
@@ -76,11 +75,11 @@ public class BoatReservationEditDialog extends UnversionizedDataEditDialog imple
                     		type.equals(BoatReservationRecord.TYPE_WEEKLY_LIMITED));
                 }
                 if (it.getName().equals(BoatReservationRecord.DATEFROM)) {
-                    it.setVisible(type.equals(BoatReservationRecord.TYPE_ONETIME)||
+                    it.setVisible(type.equals(BoatReservationRecord.TYPE_ONETIME) ||
                     		type.equals(BoatReservationRecord.TYPE_WEEKLY_LIMITED));
                 }
                 if (it.getName().equals(BoatReservationRecord.DATETO)) {
-                    it.setVisible(type.equals(BoatReservationRecord.TYPE_ONETIME)||
+                    it.setVisible(type.equals(BoatReservationRecord.TYPE_ONETIME) ||
                     		type.equals(BoatReservationRecord.TYPE_WEEKLY_LIMITED));
                 }
             }
@@ -91,7 +90,7 @@ public class BoatReservationEditDialog extends UnversionizedDataEditDialog imple
         if (!allowWeeklyReservation) {
             if (!newRecord && dataRecord != null &&
                     (BoatReservationRecord.TYPE_WEEKLY.equals(((BoatReservationRecord)dataRecord).getType()) ||
-                     BoatReservationRecord.TYPE_WEEKLY_LIMITED.equals(((BoatReservationRecord)dataRecord).getType()))) {
+                            BoatReservationRecord.TYPE_WEEKLY_LIMITED.equals(((BoatReservationRecord)dataRecord).getType()))) {
                 throw new Exception(International.getString("Diese Reservierung kann nicht bearbeitet werden."));
             }
             for (IItemType it : allGuiItems) {

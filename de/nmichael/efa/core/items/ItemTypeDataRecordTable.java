@@ -8,46 +8,24 @@
  */
 package de.nmichael.efa.core.items;
 
-import java.awt.AWTEvent;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.awt.Window;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.Vector;
-
-import javax.swing.JPanel;
-import javax.swing.JTable;
-import javax.swing.SwingConstants;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableModel;
-
 import de.nmichael.efa.Daten;
 import de.nmichael.efa.core.config.AdminRecord;
-import de.nmichael.efa.data.storage.DataKey;
-import de.nmichael.efa.data.storage.DataKeyIterator;
-import de.nmichael.efa.data.storage.DataRecord;
-import de.nmichael.efa.data.storage.IDataAccess;
-import de.nmichael.efa.data.storage.StorageObject;
-import de.nmichael.efa.ex.EfaModifyException;
+import de.nmichael.efa.gui.dataedit.VersionizedDataDeleteDialog;
+import de.nmichael.efa.gui.dataedit.DataEditDialog;
+import de.nmichael.efa.util.*;
+import de.nmichael.efa.util.Dialog;
+import de.nmichael.efa.gui.util.*;
+import de.nmichael.efa.data.storage.*;
+import de.nmichael.efa.ex.*;
 import de.nmichael.efa.gui.BaseDialog;
 import de.nmichael.efa.gui.ImagesAndIcons;
-import de.nmichael.efa.gui.dataedit.DataEditDialog;
-import de.nmichael.efa.gui.dataedit.VersionizedDataDeleteDialog;
-import de.nmichael.efa.gui.util.EfaMouseListener;
-import de.nmichael.efa.gui.util.TableItem;
-import de.nmichael.efa.gui.util.TableItemHeader;
-import de.nmichael.efa.util.Dialog;
-import de.nmichael.efa.util.EfaUtil;
-import de.nmichael.efa.util.International;
-import de.nmichael.efa.util.Logger;
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
+import java.util.*;
 
 // @i18n complete
 public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListener {
@@ -63,7 +41,7 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
 	public static final int ACTIONTYPE_SHOW_AS_SMALL_BUTTONS=1000;
 	public static final int ACTIONTYPE_DO_NOT_SHOW_AS_BUTTONS=2000;
 	
-    public static final int ACTION_NEW = 0;
+	public static final int ACTION_NEW = 0;
     public static final int ACTION_EDIT = 1;
     public static final int ACTION_DELETE = 2;
     public static final int ACTION_OTHER = -1;
@@ -118,6 +96,7 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
         setActions(actions, actionTypes, actionIcons);
         this.itemListenerActionTable = itemListenerActionTable;
         renderer = new de.nmichael.efa.gui.util.TableCellRenderer();
+        renderer.setAlternatingRowColor(Daten.efaConfig.getTableAlternatingRowColor());
         renderer.setMarkedBold(false);
         renderer.setMarkedForegroundColor(markedCellColor);
         renderer.setMarkedBold(markedCellBold);
@@ -217,7 +196,7 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
             ItemTypeButton button = new ItemTypeButton(action, IItemType.TYPE_PUBLIC, "BUTTON_CAT",
                     (actionTypes[i] < ACTIONTYPE_SHOW_AS_SMALL_BUTTONS ? actionText[i] : null)); // >= 2000 just as small buttons without text
             button.registerItemListener(this);
-            if (actionTypes[i] < ACTIONTYPE_SHOW_AS_SMALL_BUTTONS ) {
+            if (actionTypes[i] < ACTIONTYPE_SHOW_AS_SMALL_BUTTONS) {
                 button.setPadding(20, 20, (i > 0 && actionTypes[i] < 0 && actionTypes[i - 1] >= 0 ? 20 : 0), 5);
                 button.setFieldSize(200, -1);
             } else {
@@ -302,6 +281,7 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
             if (isVersionized && (!r.isValidAt(myValidAt) || r.getInvisible())) {
                 for (TableItem it : content) {
                     it.setDisabled(true);
+                    if (r.getInvisible()) {it.setInvisible(true);}
                 }
             }
 
@@ -487,13 +467,11 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
     	
         String sSearchValue = searchField.getValueFromField();
         if (sSearchValue != null && sSearchValue.length() > 0 && keys != null && items != null) {
-        	boolean ignoreSpecialCharacters = Daten.efaConfig.getValueEfaDirekt_tabelleIgnoreSpecialCharacters();
-
-        	if (ignoreSpecialCharacters) {
-        		sSearchValue = EfaUtil.replaceAllUmlautsLowerCaseFast(sSearchValue);
-        	} else {
-        		sSearchValue = sSearchValue.toLowerCase();
-        	}
+        	
+        	boolean easyFindEntriesWithSpecialCharacters = Daten.efaConfig.getValueEfaDirekt_tabelleEasyfindEntriesWithSpecialCharacters();
+        	
+        	sSearchValue = sSearchValue.trim().toLowerCase();
+        	boolean searchValueWithSpecialCharacters = EfaUtil.containsUmlaut(sSearchValue);
 
         	//split the modified searchstring into an array if it contains spaces.
         	Vector<String> sSplittedSearchValues = null;
@@ -517,8 +495,16 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
                 for (int iCurrentCol = 0; row != null && rowFound < 0 && iCurrentCol < row.length; iCurrentCol++) {
                     // search in row i, column j
                     String t = (row[iCurrentCol] != null ? row[iCurrentCol].toString() : null);
-                    if (ignoreSpecialCharacters) {
-                    	t = (t != null ? EfaUtil.replaceAllUmlautsLowerCaseFast(t) : null);
+                    if (easyFindEntriesWithSpecialCharacters) {
+                    	if (searchValueWithSpecialCharacters) {
+                    		//Searchstring contains special characters - so we use contains mode only
+                    		//as we are searching for entries that DO contain these special characters.
+                        	t = (t != null ? t.toLowerCase() : null);                    		
+                    	} else {
+                    		//searchstring does not contain special characters - user enters "a" but also
+                    		// wants results containing ä, á or other equivalents of "a"
+                    		t = (t != null ? EfaUtil.replaceAllUmlautsLowerCaseFast(t) : null);
+                    	}
                     } else {
                     	t = (t != null ? t.toLowerCase() : null);
                     }
@@ -625,20 +611,22 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
             return;
         }
         try {
-            String filterByAnyText = null;
-            boolean ignoreSpecialCharacters = Daten.efaConfig.getValueEfaDirekt_tabelleIgnoreSpecialCharacters();
+            boolean easyFindEntriesWithSpecialCharacters = Daten.efaConfig.getValueEfaDirekt_tabelleEasyfindEntriesWithSpecialCharacters();
             
+        	String filterByAnyText = null;
+        	Boolean isFilterTextWithUmlauts=false;
             if (filterBySearch != null && searchField != null) {
                 filterBySearch.getValueFromField();
                 searchField.getValueFromGui();
                 if (filterBySearch.getValue() && searchField.getValue() != null && searchField.getValue().length() > 0) {
-                    if (ignoreSpecialCharacters) {
-                    	filterByAnyText = EfaUtil.replaceAllUmlautsLowerCaseFast(searchField.getValue().trim());
-                    } else {
                     	filterByAnyText = searchField.getValue().trim().toLowerCase();
-                    }
                 }
             }
+
+            if (filterByAnyText!=null) {
+            	isFilterTextWithUmlauts=EfaUtil.containsUmlaut(filterByAnyText);
+            }
+            
             myValidAt = (validAt >= 0 ? validAt : System.currentTimeMillis());
             data = new Vector<DataRecord>();
             IDataAccess dataAccess = persistence.data();
@@ -682,11 +670,22 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
 	                    if (filterFieldName == null || filterFieldValue == null
 	                            || filterFieldValue.equals(r.getAsString(filterFieldName))) {
 	                    	// Check if field content matches to the searchtext. Also, check if the entry matches for a certain date.
-	                    	if (ignoreSpecialCharacters) {
-		                    	if (filterByAnyText == null || EfaUtil.replaceAllUmlautsLowerCaseFast(r.getAllFieldsAsSeparatedText()).indexOf(filterByAnyText) >= 0 || filterFromToAppliesToDate(r, filterByAnyText)) {
-		                            data.add(r);
-		                        }
-	                    	} else {
+	                    	if (easyFindEntriesWithSpecialCharacters) {
+	                    		if (isFilterTextWithUmlauts) {
+	                    			//filterText has umlauts --> so we are explicitly searching for entries containing these umlauts
+			                    	if (filterByAnyText == null || r.getAllFieldsAsSeparatedText().toLowerCase().indexOf(filterByAnyText) >= 0 || filterFromToAppliesToDate(r, filterByAnyText)) {
+			                            data.add(r);
+			                        }	
+	                    		} else {
+	                    			//filter text has no umlauts, we also want results containing umlauts
+	                    			// e.g. "arger" as search string shall find entries "ärger" or "argér"
+	                    			//so we remove all umlauts from the record
+			                    	if (filterByAnyText == null || EfaUtil.replaceAllUmlautsLowerCaseFast(r.getAllFieldsAsSeparatedText()).indexOf(filterByAnyText) >= 0 || filterFromToAppliesToDate(r, filterByAnyText)) {
+			                            data.add(r);
+			                        }	                    			
+	                    		}
+
+	                    	} else {// no easyFindEntriesWithSpecialCharacters
 		                    	if (filterByAnyText == null || r.getAllFieldsAsSeparatedText().toLowerCase().indexOf(filterByAnyText) >= 0 || filterFromToAppliesToDate(r, filterByAnyText)) {
 		                            data.add(r);
 		                        }	                    		
@@ -785,11 +784,12 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
     	updateFilter();
     	updateData();
     }
+    
     public ItemTypeString getSearchField(){
     	return searchField;
     };
     
     public ItemTypeBoolean getFilterBySearch() {
     	return filterBySearch;
-    }    
+    }
 }

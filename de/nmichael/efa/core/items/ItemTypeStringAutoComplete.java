@@ -18,8 +18,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.KeyEvent;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Vector;
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -142,6 +144,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
             });
         }
         super.iniDisplay();
+        
         ((JTextField)field).addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(KeyEvent e) { autoComplete(e); }
         });
@@ -151,10 +154,9 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
         	//and if the autocomplete list is defined as filtered list.
         	public void keyPressed(KeyEvent e) { 
             	if ((e!=null) && e.getKeyCode()==KeyEvent.VK_ENTER && Daten.efaConfig.getValuePopupContainsMode()) {autoComplete(e);}}
-        });        
+        });   
     }
 
-    
     public int displayOnGui(Window dlg, JPanel panel, int x, int y) {
         int plusy = super.displayOnGui(dlg, panel, x, y);
         if (button != null) {
@@ -174,7 +176,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
     }
 
     public AutoCompleteList getAutoCompleteData() {
-    	return this.autoCompleteList;
+        return this.autoCompleteList;
     }
 
     public void setChecks(boolean checkSpelling, boolean checkPermutations) {
@@ -297,7 +299,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
     }
 
     private void autoComplete(KeyEvent e) {
-    	
+
     	//Check if contains filtering mode is wanted.
     	//this is the most efficient place to switch to the new method
     	if (Daten.efaConfig.getValuePopupContainsMode()) {
@@ -306,21 +308,21 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
     	}
 
     	//else, use classic prefix search mode
-
-        if (field == null) {
+    	
+    	if (field == null) {
             return;
         }
         JTextField field = (JTextField)this.field;
         //System.out.println("autoComplete("+e+") on "+getName()+" with text '"+field.getText()+"'");
 
         AutoCompleteList list = getAutoCompleteList();
-
         if (list == null) {
             setButtonColor(null);
             return;
         } else {
-        	list.update();
-            list.setFilterText(null);
+            list.update();
+	    list.setFilterText(null); // todo there may be some magic in here? // das hier ist ein Code aus kscRelease, wo im offiziellen Zweig fehlt.
+	    // warum ist der da?
         }
 
         if (e != null && e.getKeyCode() == -23) {
@@ -561,32 +563,34 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
             int radius = (name.length() < 6 ? name.length() / 2 : 3);
             neighbours = list.getNeighbours(name, radius, (isCheckPermutations ? 6 : 0));
         }
- 
+        
         if (Daten.efaConfig.getValuePopupContainsMode()) {
         	//if the autocomplete list shall support full text search, so should the spell checking
         	//it is a quite common mistake that the user enters some characters into the field,
         	//selects an item and presses TAB (which leads to a focusLost event, and the selected item is not activated)
         	//so all elements *containing* the entered value should be added.
-        	
+
         	if (list.getExact(name)==null) {
         		//no exact match --> possibly misspelled	
-	        	
+
 	        	if (neighbours==null) {
 	        		neighbours=new Vector<String>();
 	        	}
 	        	list.setFilterText(name);
-	        	neighbours.addAll(list.getDataVisibleFiltered());
+	        	addButAvoidDuplicates(neighbours, list.getDataVisibleFiltered());
+	        	//neighbours.addAll(list.getDataVisibleFiltered());
 	        	neighbours.remove(name);
 	        	Collections.sort(neighbours,new EfaSortStringComparator());
 	        	list.setFilterText(null);
         	}
         }
+        
         if (neighbours != null && neighbours.size() > 0) {
             ItemTypeList item = new ItemTypeList("NAME", IItemType.TYPE_PUBLIC, "",
                     LogString.itemIsUnknown(name, International.getString("Name")) + "\n" +
                    International.getString("Meintest Du ...?"));
             for (int i=0; i<neighbours.size(); i++) {
-                item.addItem(neighbours.get(i),neighbours.get(i), null, neighbours.get(i), false, '\0');
+                item.addItem(neighbours.get(i), neighbours.get(i), null, neighbours.get(i), false, '\0');
             }
             item.setFieldSize(300, 200);
 
@@ -613,8 +617,22 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
             }
         }
     }
-
     
+    private void addButAvoidDuplicates (Vector <String> target, Vector <String> source) {
+    	String value;
+    	for (int i=0; i<source.size(); i++) {
+    		value = source.get(i);
+    		if (!target.contains(value)) {
+    			target.add(value);
+    		}
+    	}
+    }
+    
+    /**
+     * Handles keyboard events for AutoCompleteLists when search for partial matches is active.
+     * The meaning of arrow up/down events is very different to the one in the historic prefix mode list.
+     * @param e KeyEvent
+     */
     private void handleFilteredList(KeyEvent e) {
 
     	if (field == null) {
@@ -663,13 +681,13 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
         if (mode == Mode.normal || ((mode == Mode.enter || mode == Mode.escape || mode == Mode.none))) {
 
 
-        	
+
             if (e != null && e.getKeyCode() == KeyEvent.VK_DOWN) {
                 complete = list.getNext(searchFor);
                 if (complete == null) {
                     complete = list.getFirst(searchFor);
                 }
-                
+
             } else if (e != null && e.getKeyCode() == KeyEvent.VK_UP){
             	setButtonColor(Color.RED);
                 complete = list.getPrev(searchFor);
@@ -707,18 +725,18 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
                 AutoCompletePopupWindow.showAndSelect(field, list, (complete != null ? complete : ""), null);
             }
         }
-        
-        
+
+
        if (mode == Mode.delete) {
             if (withPopup && popupComplete && e != null && mode != Mode.none) {
             	complete = list.getFirst(field.getText());
                 AutoCompletePopupWindow.showAndSelect(field, list, (complete != null ? complete : field.getText()), null);
             }
         }
-       
+
        matching = (list.getExact(field.getText())!=null);
-       
-            
+
+
         // in case of versionized data, make sure it also valid
         boolean valid = true;
         if (matching && validAtDateItem != null) {
@@ -751,14 +769,11 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
                 AutoCompletePopupWindow.hideWindow();
             }
         }
-     	
+
         if (field.getText().length() == 0) {
             setButtonColor(null);
         }
     }
-
-    
-
 
     public void acpwCallback(JTextField field) {
         autoComplete(null);
@@ -772,9 +787,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
         valueIsKnown = (color == Color.green || color == Color.yellow);
         if (button != null) {
             if (color != null) {
-                if (!Daten.lookAndFeel.endsWith("MetalLookAndFeel")) {
-                    button.setContentAreaFilled(true);
-                }
+            	EfaUtil.handleButtonOpaqueForLookAndFeels(button);
                 button.setBackground(color);
             } else {
                 button.setBackground(originalButtonColor);

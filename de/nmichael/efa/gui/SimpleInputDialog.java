@@ -27,7 +27,7 @@ import javax.swing.event.ChangeEvent;
 // @i18n complete
 public class SimpleInputDialog extends BaseDialog {
 
-    private String KEYACTION_ENTER;
+	private String KEYACTION_ENTER;
     protected IItemType[] items;
 
     SimpleInputDialog(Frame parent, String title, IItemType[] items) {
@@ -40,12 +40,21 @@ public class SimpleInputDialog extends BaseDialog {
         this.items = items;
     }
 
+    public void _keyAction(ActionEvent evt) {
+        if (evt.getActionCommand().equals(KEYACTION_ENTER)) {
+            closeButton_actionPerformed(evt);
+        }
+        super._keyAction(evt);
+    }
+
     public void keyAction(ActionEvent evt) {
         _keyAction(evt);
     }
 
     protected void iniDialog() throws Exception {
-   		this.getRootPane().setDefaultButton(closeButton);
+   		//better than addKeyAction("ENTER") as the default button is handled earlier
+    	//and provides better user experience
+    	this.getRootPane().setDefaultButton(closeButton);
 
         // create GUI items
         mainPanel.setLayout(new GridBagLayout());

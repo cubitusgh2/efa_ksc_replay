@@ -42,6 +42,12 @@ class SynchControl {
     boolean synch_upload = false;
     boolean synch_upload_all = false;
     boolean synch_download_all = false;
+    // efaCloudRolleBths is true if the efacloud user role is that of a boathouse. If true, this will enforce
+    // pre-modification checks during download synchronization
+    boolean efaCloudRolleBths = true;
+    // isBoathouseApp is true, if this s run as efaBoathouse. This will enforce pre-modification checks during download
+    // synchronization
+    boolean isBoathouseApp = true;
 
     int table_fixing_index = -1;
     ArrayList<String> tables_to_synchronize = new ArrayList<String>();
@@ -77,16 +83,29 @@ class SynchControl {
      * @param tablename      the name of the affected table
      * @param dataKey        the datakey of the affected record
      * @param logStateChange set true to start entry with STATECHANGE rather than SYNCH
+     * @param isError        set true to log a synchronization error in the respective file.
      */
-    void logSynchMessage(String logMessage, String tablename, DataKey dataKey, boolean logStateChange) {
+    private void logSynchMessage(String logMessage, String tablename, DataKey dataKey, boolean logStateChange, boolean isError) {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String dataKeyStr = (dataKey == null) ? "" : " - " + dataKey.toString();
         String info = (logStateChange) ? "STATECHANGE " : "SYNCH ";
         String dateString = format.format(new Date()) + " INFO state, [" + tablename + dataKeyStr + "]: " + info + logMessage;
-        String path = TxRequestQueue.logFilePath;
+        String path = (isError) ? synchErrorFilePath : TxRequestQueue.logFilePath;
         // truncate log files,
         File f = new File(path);
         TextResource.writeContents(path, dateString, (f.length() <= 200000) || (!f.renameTo(new File(path + ".previous"))));
+    }
+
+    /**
+     * Write a log message to the synch log.
+     *
+     * @param logMessage     the message to be written
+     * @param tablename      the name of the affected table
+     * @param dataKey        the datakey of the affected record
+     * @param logStateChange set true to start entry with STATECHANGE rather than SYNCH
+     */
+    void logSynchMessage(String logMessage, String tablename, DataKey dataKey, boolean logStateChange) {
+        logSynchMessage(logMessage, tablename, dataKey, logStateChange, false);
     }
 
     /**
@@ -216,9 +235,11 @@ class SynchControl {
                     i++;
                 }
             } catch (Exception e) {
-                txq.logApiMessage(International
+                String errorMessage = International
                         .getMessage("Ausnahmefehler beim Versuch einen Schlüssel zu korrigieren in {Tabelle}: {Fehler}.",
-                                tx.tablename, e.getMessage()), 1);
+                                tx.tablename, e.getMessage());
+                txq.logApiMessage(errorMessage, 1);
+                logSynchMessage(errorMessage, tx.tablename, oldDr.getKey(), false, true);
             } finally {
                 efaCloudStorage.releaseGlobalLock(globalLock);
                 efaCloudStorage.setPreModifyRecordCallbackEnabled(true);
@@ -400,7 +421,7 @@ class SynchControl {
                                             "Update-Konflikt bei Datensatz in der {type}-Synchronisation. Unterschiedlich sind: {fields}",
                                             "Download", preUpdateRecordsCompareResult) +
                                             " " + International.getString("Bitte bereinige den Datensatz manuell."), tx.tablename,
-                                    localRecord.getKey(), false);
+                                    localRecord.getKey(), false, true);
 
                         // Run update. This update will use the LastModified and ChangeCount of the record to make
                         // it a true copy of the server side record.
@@ -415,10 +436,12 @@ class SynchControl {
                                         "Lokale Replikation des Datensatzes nach {modification} auf dem Server.",
                                         lastModification), tx.tablename, returnedRecord.getKey(), false);
                             } catch (EfaException e) {
-                                txq.logApiMessage(International.getMessage(
+                                String errorMessage = International.getMessage(
                                         "Ausnahmefehler bei der lokalen Modifikation eines Datensatzes in {Tabelle} ",
                                         tx.tablename) + "\n" + returnedRecord.encodeAsString() + "\n" + e.getMessage() +
-                                        "\n" + e.getStackTraceAsString(), 1);
+                                        "\n" + e.getStackTraceAsString();
+                                txq.logApiMessage(errorMessage, 1);
+                                logSynchMessage(errorMessage, tx.tablename, returnedRecord.getKey(), false, true);
                             } finally {
                                 efaCloudStorage.releaseGlobalLock(globalLock);
                             }
@@ -463,7 +486,8 @@ class SynchControl {
     /**
      * Compares two records whether it is probable that one is the update of the other. If three or more data fields
      * differ, it is not believed that one is an update of the other and a data update conflict is created instead of
-     * updating.
+     * updating. Exception is made, if neither the role of the efaCloudUser is "bths" nor the application mode efaBths,
+     * to ensure proper download synchronisation when using efa at home sporadically.
      *
      * @param dr1 DataRecord one to compare
      * @param dr2 DataRecord two to compare
@@ -471,6 +495,8 @@ class SynchControl {
      * @return empty String, if the records are of the same type and differ in only a tolerable amount of data fields
      */
     private String preUpdateRecordsCompare(DataRecord dr1, DataRecord dr2, String tablename) {
+        if (!efaCloudRolleBths && !isBoathouseApp)
+            return "";
         if ((dr1 == null) || (dr2 == null) || (dr1.getClass() != dr2.getClass()))
             return "type mismatch";
         // if archiving is executed or an archived record is restored, do not check for mismatches

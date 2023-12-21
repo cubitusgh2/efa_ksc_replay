@@ -210,6 +210,7 @@ public class TableSorter extends TableMap {
                 }
             }
 
+            //int result = s1.compareToIgnoreCase(s2);
             int result = EfaUtil.replaceAllUmlautsLowerCaseFast(s1).compareTo(EfaUtil.replaceAllUmlautsLowerCaseFast(s2));
 
 
@@ -260,6 +261,7 @@ public class TableSorter extends TableMap {
                 }
             }
 
+            //int result = s1.compareToIgnoreCase(s2);
             int result = EfaUtil.replaceAllUmlautsLowerCaseFast(s1).compareTo(EfaUtil.replaceAllUmlautsLowerCaseFast(s2));
 
             if (result < 0) {

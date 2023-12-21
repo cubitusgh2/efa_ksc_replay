@@ -9,14 +9,34 @@
  */
 package de.nmichael.efa.util;
 
-import de.nmichael.efa.gui.BrowserDialog;
-import de.nmichael.efa.core.*;
-import de.nmichael.efa.core.config.EfaConfig;
-import de.nmichael.efa.*;
-import javax.swing.*;
-import java.awt.*;
-import java.util.*;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Frame;
+import java.awt.Insets;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.TextField;
+import java.awt.Toolkit;
+import java.awt.Window;
 import java.io.File;
+import java.util.Stack;
+import java.util.Vector;
+
+import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.JTable;
+import javax.swing.JTextArea;
+import javax.swing.ProgressMonitor;
+import javax.swing.UIDefaults;
+import javax.swing.UIManager;
+import javax.swing.plaf.FontUIResource;
+
+import de.nmichael.efa.Daten;
+import de.nmichael.efa.core.ExceptionFrame;
+import de.nmichael.efa.core.config.EfaConfig;
 
 // @i18n complete
 public class Dialog {
@@ -561,7 +581,7 @@ public class Dialog {
     public static UIDefaults getUiDefaults() {
         try {
             String laf = UIManager.getLookAndFeel().getClass().getCanonicalName();
-            if (laf.endsWith("NimbusLookAndFeel")) {
+            if (laf.endsWith(Daten.LAF_NIMBUS)) {
                 return UIManager.getLookAndFeelDefaults();
             } else {
                 return UIManager.getDefaults();
@@ -601,23 +621,36 @@ public class Dialog {
         FONT_SIZE = size;
         FONT_STYLE = style;
 
-        UIDefaults uid = getUiDefaults();
+		if (!Daten.isEfaFlatLafActive()){
+        
+	        UIDefaults uid = getUiDefaults();
+	
+	        java.util.Enumeration keys = uid.keys();
+	        while (keys.hasMoreElements()) {
+	            Object key = keys.nextElement();
+	            //Object value = uid.get(key);
+	            String font = (key == null ? null : key.toString());
+	            if (font != null
+	                    && (font.endsWith(".font")
+	                    || (font.startsWith("OptionPane") && font.endsWith("Font")))) {
+	             
+	            	if (!font.equals("TableHeader.font") && !font.equals("Table.font")) {
+	                    setFontSize(uid, font, size, style);
+	                }
+	            }
+	        }
 
-        java.util.Enumeration keys = uid.keys();
-        while (keys.hasMoreElements()) {
-            Object key = keys.nextElement();
-            Object value = uid.get(key);
-            String font = (key == null ? null : key.toString());
-            if (font != null
-                    && (font.endsWith(".font")
-                    || (font.startsWith("OptionPane") && font.endsWith("Font")))) {
-                if (!font.equals("TableHeader.font") && !font.equals("Table.font")) {
-                    setFontSize(uid, font, size, style);
-                }
-            }
-        }
-        initializeMaxDialogSizes();
+		} else {
+			UIManager.put("defaultFont", new FontUIResource("Dialog",style,size));
+		}
 
+		initializeMaxDialogSizes();
+
+    }
+    
+    public static void setGlobalTableFontSize(int size) {
+		UIManager.put("Table.font", new FontUIResource("Dialog",Font.PLAIN,Math.max(8, Math.min(18, size))));
+		UIManager.put("TableHeader.font", new FontUIResource("Dialog",Font.BOLD,Math.max(8, Math.min(18, size))));
     }
 
     public static void setGlobalFontSize(int size, String style) {

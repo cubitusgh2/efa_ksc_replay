@@ -66,17 +66,18 @@ public class BoatReservationItemTypeDataRecordTable extends ItemTypeDataRecordTa
 				}
 			}
 
-		} else  {
+		} else {
 			// weekly reservation - limited or unlimited
-			// wir ermitteln den Wochentag aus dem eingegebenen Datum, und schauen, 
-			// ob es zu diesem Wochentag eine Reservierung gibt.
+			// obtain the weekday of the filter date and check if we are a weekly/weekly limited
+			// reservation to this weekday
 			
 			if (theDataRecord.getAsString(BoatReservationRecord.TYPE).equals(BoatReservationRecord.TYPE_WEEKLY_LIMITED)) {
 				if (!((BoatReservationRecord) theDataRecord).isWeeklyLimitedReservationIntervalApplying(curDate)) {
-					return false; //limited weekly reservation, date does not fit into period
+					return false; //limited weekly reservation, filter date does not fit into period, so do not show this record 
 				}
 			}
 			//else
+			
 			String strWeekday = curDate.getWeekdayAsEfaType();
 			String strWeekdayFromRecord = theDataRecord.getAsString(BoatReservationRecord.DAYOFWEEK);
 			

@@ -19,6 +19,7 @@ import javax.swing.*;
 
 // @i18n complete
 
+
 /*
  * An item which can be displayed on a screen.
  * Except for the efaBaseFrame dialogs which are used for session start, session finish, late entry,
@@ -26,11 +27,13 @@ import javax.swing.*;
  * 
  * How it works:
  * - the data record determines its fields in the database
+ * 
  * - the data record provides info about the gui by which the data can be edited
  *   (getGuiItems). This methods returns all the information, including
  *   - GUI fields in their corresponding order (in which they shall appear on the screen)
  *   - categories of the GUI fields (which are rendered into tabs in the dialogs)
  *   - swing hints for the layout of the fields, which are stored in properties of ItemTypeLabelValue
+ *   
  * - DataEditDialog (or descendant) 
  * 	 - calls getGuiItems from the configured DataRecord
  *   - determines all categories and builds tabs in the dialog, if there are more than one category over all gui items
@@ -38,15 +41,16 @@ import javax.swing.*;
  *     and this is done by calling ItemTypeLabelValue.displayOnGui() method. 
  *  
  */
+
 public abstract class ItemTypeLabelValue extends ItemType {
 
-    private static final int GUI_SEPARATOR_WIDTH = 30;
+	private static final int GUI_SEPARATOR_WIDTH = 30;
 	public static final int ACTIONID_FIELD_EXPANDED = 38341;
     public static final int ACTIONID_FIELD_COLLAPSED = 38342;
 
     protected JLabel label;
     protected int labelGridWidth = 1; // Swing: how many columns shall the label use?
-    protected int labelGridAnchor = GridBagConstraints.EAST; // alignment on left
+    protected int labelGridAnchor = GridBagConstraints.EAST; // alignment on right looks better than on the left (usability), but we still leave it on the left side
     protected int labelGridFill = GridBagConstraints.NONE; // no extension of the label to column width
     protected Font labelFont;
     protected Font fieldFont;
@@ -57,10 +61,11 @@ public abstract class ItemTypeLabelValue extends ItemType {
     protected JButton expandButton;
     protected boolean itemOnNewRow = false; // set to true, if label and field (e.g. multiline textfield) shall be in separate rows
     protected boolean itemOnSameRowAsPreviousItem = false; // set to true, if this field shall be on the same line as the previous field (allow two-column-layouts)   
+    
     protected int xOffset = 0;
     protected int yOffset = 0;
-	protected JLabel separator = null;
-
+    protected JLabel separator = null;
+    
     protected abstract JComponent initializeField();
 
     protected void iniDisplay() {
@@ -111,6 +116,7 @@ public abstract class ItemTypeLabelValue extends ItemType {
         showValue();
     }
 
+
     /*
      * displayOnGui shows the item on the panel. 
      * 
@@ -131,13 +137,13 @@ public abstract class ItemTypeLabelValue extends ItemType {
         x += xOffset;
         y += yOffset;
         
-        
         /*
          * If we want to have a two column layout, we need to trick and take some assumptions.
          * Problem is
          *  - displayOnGui() does only know this one gui element, and does NOT know any other elements on the gui.
          *  	this method is called on each gui element.
          *  - displayOnGui() needs to return the NEXT (free) row (y position) in the gui after the current gui element
+		 *
          * So, if you want a two column design for fields, you need to tell the item that shall go into the second column,  
          * that it's ACTUAL desired y position in the grid (row) is prior to the current y position given by parameter.
          * 
@@ -171,10 +177,11 @@ public abstract class ItemTypeLabelValue extends ItemType {
         	panel.add(separator, new GridBagConstraints(x, y, 1, 1, 0.0, 0.0,
                     fieldGridAnchor, GridBagConstraints.NONE, 
                     new Insets((itemOnNewRow ? 0 : padYbefore), (itemOnNewRow ? padXbefore : 0), padYafter, padXafter), 0, 0));
-        	
+
         	x+=1;// position of the next label|field pair is after the separator
         }        
         // the following code is unchanged to prior releases 
+        
         if (label != null) {
             panel.add(label, new GridBagConstraints(x, y, labelGridWidth, fieldGridHeight, 0.0, 0.0,
                     labelGridAnchor, labelGridFill, 
@@ -185,6 +192,7 @@ public abstract class ItemTypeLabelValue extends ItemType {
             panel.add(expandButton, new GridBagConstraints(x, y, gridWidth, fieldGridHeight, 0.0, 0.0,
                     labelGridAnchor, labelGridFill, new Insets(padYbefore, padXbefore, padYafter, 0), 0, 0));
         }
+
         if (itemOnNewRow) {
             y++;
         } else {
@@ -196,6 +204,7 @@ public abstract class ItemTypeLabelValue extends ItemType {
         if (!isEnabled) {
             setEnabled(isEnabled);
         }
+        
         return (itemOnNewRow ? 2 : 1);
     }
 
@@ -311,6 +320,7 @@ public abstract class ItemTypeLabelValue extends ItemType {
     public void setVisible(boolean visible) {
         super.setVisible(visible);
         setVisibleInternal(false);
+        
         // if we have a separator due to setIsItemOnSameRowAsPreviousItem, it's visibility shall be the same
         if (separator != null) {
         	separator.setVisible(visible);
@@ -328,6 +338,10 @@ public abstract class ItemTypeLabelValue extends ItemType {
         if (field != null) {
             field.setEnabled(enabled);
         }
+    }
+    
+    public void setIsItemOnSameRowAsPreviousItem(boolean sameRow) {
+    	itemOnSameRowAsPreviousItem=sameRow;
     }
 
     public void showOptional(boolean optional) {
@@ -351,10 +365,6 @@ public abstract class ItemTypeLabelValue extends ItemType {
 
     public void setItemOnNewRow(boolean newRow) {
         itemOnNewRow = newRow;
-    }
-
-    public void setIsItemOnSameRowAsPreviousItem(boolean sameRow) {
-    	itemOnSameRowAsPreviousItem=sameRow;
     }
     
     public void setOffsetXY(int x, int y) {

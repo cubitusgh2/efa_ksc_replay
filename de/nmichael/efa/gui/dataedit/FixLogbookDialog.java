@@ -46,7 +46,7 @@ import javax.swing.border.EmptyBorder;
 
 public class FixLogbookDialog extends BaseDialog implements IItemListener {
 
-    private Logbook logbook;
+	private Logbook logbook;
     private AdminRecord admin;
     private Hashtable<String,ChangeItem> changes;
     private String infotitle = "";

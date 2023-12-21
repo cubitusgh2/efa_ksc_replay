@@ -27,7 +27,7 @@ import javax.swing.event.ChangeEvent;
 // @i18n complete
 public class MultiInputDialog extends BaseDialog {
 
-    private String KEYACTION_ENTER;
+	private String KEYACTION_ENTER;
     protected IItemType[] items;
 
     public MultiInputDialog(Frame parent, String title, IItemType[] items) {

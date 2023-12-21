@@ -9,40 +9,70 @@
  */
 package de.nmichael.efa.util;
 
-import de.nmichael.efa.efa1.Synonyme;
-import de.nmichael.efa.efa1.DatenFelder;
-import de.nmichael.efa.core.config.EfaTypes;
-import de.nmichael.efa.data.types.DataTypeTime;
-import de.nmichael.efa.*;
-import de.nmichael.efa.core.CrontabThread;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.zip.*;
-import java.io.*;
-import java.awt.event.*;
-import java.awt.Window;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Window;
+import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.NetworkInterface;
 import java.net.URL;
 import java.net.URLConnection;
-import javax.swing.JComponent;
-import java.security.*;
+import java.security.MessageDigest;
+import java.text.SimpleDateFormat;
+import java.util.AbstractList;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
+
 import javax.mail.internet.InternetAddress;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
+
+import de.nmichael.efa.Daten;
+import de.nmichael.efa.core.CrontabThread;
+import de.nmichael.efa.core.config.EfaTypes;
+import de.nmichael.efa.data.types.DataTypeTime;
+import de.nmichael.efa.efa1.DatenFelder;
+import de.nmichael.efa.efa1.Synonyme;
+import de.nmichael.efa.themes.EfaFlatDarkLookAndFeel;
+import de.nmichael.efa.themes.EfaFlatLightLookAndFeel;
+import de.nmichael.efa.themes.EfaFlatLookAndFeel;
 
 // @i18n complete
 public class EfaUtil {
 
     private static final int ZIP_BUFFER = 2048;
     private static java.awt.Container java_awt_Container = new java.awt.Container();
-    
+
 	private static String UMLAUTS 		= "åàáâăäāąćçčèéêęëėěēìíîįīïďđģķĺļłńňñņòóôőõöōøřŕůùúûűüųūýÿšśşťţżžź";
 	private static String REPLACEMENT 	= "aaaaaaaaccceeeeeeeeiiiiiiddgklllnnnnoooooooorruuuuuuuuyysssttzzz"; 
 
@@ -63,10 +93,11 @@ public class EfaUtil {
         str = replaceString(str, "\u2026","&hellip;");
         return str;
     }
-    
+
     public static String escapeHtmlWithLinefeed(String str) {
         return replaceString(escapeHtml(str),"\n","<br>");
-    }    
+    }
+    
 
     public static String escapeHtmlGetString(String str) {
         if (str == null) {
@@ -120,6 +151,7 @@ public class EfaUtil {
 
         return buffer.toString();
     }
+    
     @Deprecated
     public static String replaceListByList(String string, String searchList, String replaceList) {
         if (searchList.length() != replaceList.length()) {
@@ -136,7 +168,7 @@ public class EfaUtil {
         }
         return string;
     }
-    
+
     /**
      * Replaces special characters in a string by a replacement.
      * Replacing is done character-by-character, so it is not possible to replace a single character "ä" by a multi-character string "ae". 
@@ -160,7 +192,7 @@ public class EfaUtil {
         }
         return strData;
     }
-
+    
     /**
      * Replaces all umlauts of western character set (German, French, Spanish, Danish) to a simple latin character, e.g. "ä"->"a".
      * This method can be used for sorting lists in efa or for String comparison.
@@ -181,17 +213,27 @@ public class EfaUtil {
     public static String replaceAllUmlautsLowerCaseFast(String data) {
 	    String s1 = data.toLowerCase();
 	    s1 = EfaUtil.replaceListByListFast(s1, UMLAUTS, REPLACEMENT);
-
+	
 	    if (s1.indexOf("ß") >= 0) {
 	        s1 = EfaUtil.replace(s1, "ß", "ss", true);
 	    }
-
+	    
 	    if (s1.indexOf("æ") >= 0) {
 	        s1 = EfaUtil.replace(s1, "æ", "ae", true);
 	    }
+
+	    if (s1.indexOf("œ") >= 0) {
+	        s1 = EfaUtil.replace(s1, "œ", "oe", true);
+	    }
+	    
+	    
 	    return s1;
     }    
-
+    
+    public static boolean containsUmlaut(String data) {
+    	return data.toLowerCase().matches(".*["+UMLAUTS+"]+.*");
+    }
+    
     public static String getString(String s, int length) {
         while (s.length() < length) {
             s = s + " ";
@@ -1420,6 +1462,17 @@ public class EfaUtil {
                 return "";
         }
     }
+    
+    public static int getCalendarWeekDayFromEfaWeekDay(String efaWeekDay) {
+    	if (efaWeekDay.equals(EfaTypes.TYPE_WEEKDAY_MONDAY)) {return 2;}
+    	if (efaWeekDay.equals(EfaTypes.TYPE_WEEKDAY_TUESDAY)) {return 3;}
+    	if (efaWeekDay.equals(EfaTypes.TYPE_WEEKDAY_WEDNESDAY)) {return 4;}
+    	if (efaWeekDay.equals(EfaTypes.TYPE_WEEKDAY_THURSDAY)) {return 5;}
+    	if (efaWeekDay.equals(EfaTypes.TYPE_WEEKDAY_FRIDAY)) {return 6;}
+    	if (efaWeekDay.equals(EfaTypes.TYPE_WEEKDAY_SATURDAY)) {return 7;}
+    	if (efaWeekDay.equals(EfaTypes.TYPE_WEEKDAY_SUNDAY)) {return 1;}
+    	return 1; //Default use Sunday 
+    }
 
     // prüft, ob im String s das Zeichen pos ein "+" ist. Falls der String zu kurz ist, wird false geliefert
     public static boolean isOptionSet(String s, int pos) {
@@ -1809,6 +1862,7 @@ public class EfaUtil {
             size.setSize(size.getWidth() + 2, size.getHeight() + 2);
             frame.setSize(Dialog.getMaxSize(size));
         } catch (Exception e) {
+        	Logger.logdebug(e);
         }
     }
 
@@ -2130,24 +2184,6 @@ public class EfaUtil {
         return null;
     }
 
-    public static void main(String args[]) {
-        String text = "abc & def";
-        System.out.println(text + " -> EfaUtil.escapeXml() = " + EfaUtil.escapeXml(text));
-        System.out.println(replaceListByList("xÄxÖxÜxäxöxüxßx","äöüÄÖÜß","aouAOUs"));
-        System.out.println("test@domain: " + isValidEmail("test@domain"));
-        System.out.println("test@domain.com: " + isValidEmail("test@domain.com"));
-    }
-    
-    public static int getCalendarWeekDayFromEfaWeekDay(String efaWeekDay) {
-    	if (efaWeekDay.equals(EfaTypes.TYPE_WEEKDAY_MONDAY)) {return 2;}
-    	if (efaWeekDay.equals(EfaTypes.TYPE_WEEKDAY_TUESDAY)) {return 3;}
-    	if (efaWeekDay.equals(EfaTypes.TYPE_WEEKDAY_WEDNESDAY)) {return 4;}
-    	if (efaWeekDay.equals(EfaTypes.TYPE_WEEKDAY_THURSDAY)) {return 5;}
-    	if (efaWeekDay.equals(EfaTypes.TYPE_WEEKDAY_FRIDAY)) {return 6;}
-    	if (efaWeekDay.equals(EfaTypes.TYPE_WEEKDAY_SATURDAY)) {return 7;}
-    	if (efaWeekDay.equals(EfaTypes.TYPE_WEEKDAY_SUNDAY)) {return 1;}
-    	return 1; //Default use Sunday 
-    }
     
     /*
      * Calculates the remaining minutes until today, 23:59:00
@@ -2164,4 +2200,115 @@ public class EfaUtil {
     	return value;
     	
     }    
+    
+    /**
+     * Helper class to display a notification message.
+     * If this is a GUI application, we asynchronously display a dialog through
+     * SwingUtilities.invokeLater in a separate thread. If this is not a GUI application,
+     * we will synchronously in the calling thread invoke the logging method.
+     */
+    public static abstract class UserMessage {
+
+        public abstract void run();
+
+        public static void show(UserMessage m) {
+            if (Daten.isGuiAppl()) {
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        m.run();
+                    }
+                });
+            } else {
+                m.run();
+            }
+        }
+    }
+
+
+    /**
+     * Efa uses buttons which are filled with a color. 
+     * Not all LookAndFeels support this natively. This method ensures that color-filled buttons 
+     * are shown correctly in each standard LookAndFeel.
+     * @param button
+     */
+    public static void handleButtonOpaqueForLookAndFeels(JButton button) {
+        if (!Daten.lookAndFeel.endsWith(Daten.LAF_METAL) &&
+        		!Daten.lookAndFeel.endsWith(Daten.LAF_WINDOWS_CLASSIC) && 
+        		!Daten.isEfaFlatLafActive()) {
+        	button.setContentAreaFilled(true);       
+        }
+    	
+    	if (Daten.lookAndFeel.endsWith(Daten.LAF_WINDOWS)||Daten.lookAndFeel.endsWith(Daten.LAF_LINUX_GTK)) {
+        	button.setBorderPainted(true);// leads to full display of the color on the button canvas
+        	button.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+        	button.setContentAreaFilled(false);   
+        	button.setOpaque(true);
+        }                	
+    }    
+    
+    public static void handleTabbedPaneBackgroundColorForLookAndFeels() {
+	    if ( Daten.efaConfig.getHeaderUseForTabbedPanes()==true &&		    
+	    		(Daten.lookAndFeel.endsWith(Daten.LAF_METAL)||
+	    		 Daten.lookAndFeel.endsWith(Daten.LAF_WINDOWS_CLASSIC))){
+			UIManager.put("TabbedPane.selectedForeground", Daten.efaConfig.getHeaderForegroundColor());
+		    UIManager.put("TabbedPane.selectedBackground", Daten.efaConfig.getHeaderBackgroundColor());
+		    UIManager.put("TabbedPane.selected", Daten.efaConfig.getHeaderBackgroundColor());
+	    }
+    }
+    
+    public static void handleEfaFlatLafDefaults() {
+        if (Daten.isEfaFlatLafActive()) {
+        	
+        	EfaFlatLookAndFeel myLaf = (EfaFlatLookAndFeel) UIManager.getLookAndFeel();
+        	
+        	HashMap<String, String> myCustomSettings = new HashMap<String, String>();
+        	myCustomSettings.put("@background", "#"+EfaUtil.getColor(Daten.efaConfig.getEfaGuiflatLaf_Background()));
+        	myCustomSettings.put("@accentBaseColor", "#"+EfaUtil.getColor(Daten.efaConfig.getEfaGuiflatLaf_AccentColor()));
+        	myCustomSettings.put("@buttonBackground", "lighten(@background,"+Daten.efaConfig.getEfaGuiflatLaf_BackgroundFieldsLightenPercentage()+"%)");
+        	myCustomSettings.put("@componentBackground", "lighten(@background,"+Daten.efaConfig.getEfaGuiflatLaf_BackgroundFieldsLightenPercentage()+"%)");
+        	myCustomSettings.put("@menuBackground", "lighten(@background,"+Daten.efaConfig.getEfaGuiflatLaf_BackgroundFieldsLightenPercentage()+"%)");
+        	myCustomSettings.put("@efaTableHeaderBackground", "#"+EfaUtil.getColor(Daten.efaConfig.getTableHeaderBackgroundColor()));
+        	myCustomSettings.put("@efaTableHeaderForeground", "#"+EfaUtil.getColor(Daten.efaConfig.getTableHeaderHeaderColor()));
+        	myCustomSettings.put("@efaFocusColor", "#"+EfaUtil.getColor(Daten.efaConfig.getEfaGuiflatLaf_FocusColor()));
+        	//setting flatLaf efaTableAlternateRowColor will ENABLE alternate row color styling in flatlaf.
+        	//efa itself has a special tableCellRenderer which supports alternate row coloring, and this cell renderer is NOT active
+        	//for displaying the big logbook dialogue available in efaBths. 
+        	//enabling this setting will lead to alternate row coloring also in the logbook dialogue, which does not look nice due to nested tables.
+        	//so we could enable it, but we won't.
+        	//myCustomSettings.put("@efaTableAlternateRowColor", "#"+EfaUtil.getColor(Daten.efaConfig.getTableAlternatingRowColor()));
+        	
+        	if (Daten.efaConfig.getToolTipSpecialColors()) {
+        		myCustomSettings.put("@efaToolTipBorderColor", "#"+EfaUtil.getColor(Daten.efaConfig.getToolTipForegroundColor()));
+        	}
+        	// efaBths uses menu bars as title bar when "window not movable" is used.
+        	// in efaBths this needs to be blue so everything looks fine.
+        	// all other apps need standard settings
+        	if (Daten.isApplEfaBoathouse()) {
+        		myCustomSettings.put("MenuBar.background","#0000AA");
+        		myCustomSettings.put("Menu.background","#0000AA");    
+        		myCustomSettings.put("MenuItem.background","#0000AA");
+        	}
+        	
+        	
+        	//inform Flatlaf about custom settings
+        	myLaf.setExtraDefaults(myCustomSettings); 
+        	
+        	if (Daten.lookAndFeel.endsWith(Daten.LAF_EFAFLAT_LIGHT)) {
+	        	EfaFlatLightLookAndFeel.setup(myLaf);
+	        	EfaFlatLightLookAndFeel.updateUILater();
+        	} else {
+	        	EfaFlatDarkLookAndFeel.setup(myLaf);
+	        	EfaFlatDarkLookAndFeel.updateUILater();
+        	}
+        }
+    	
+    }
+    
+    public static void main(String args[]) {
+        String text = "abc & def";
+        System.out.println(text + " -> EfaUtil.escapeXml() = " + EfaUtil.escapeXml(text));
+        System.out.println(replaceListByList("xÄxÖxÜxäxöxüxßx","äöüÄÖÜß","aouAOUs"));
+        System.out.println("test@domain: " + isValidEmail("test@domain"));
+        System.out.println("test@domain.com: " + isValidEmail("test@domain.com"));
+    }
 }

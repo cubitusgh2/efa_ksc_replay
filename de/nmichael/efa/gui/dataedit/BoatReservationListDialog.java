@@ -8,40 +8,6 @@
  * @version 2
  */
 
-package de.nmichael.efa.gui.dataedit;
-
-import java.awt.AWTEvent;
-import java.awt.BorderLayout;
-import java.awt.Frame;
-import java.awt.GridBagConstraints;
-import java.awt.event.ActionEvent;
-import java.util.UUID;
-
-import javax.swing.JDialog;
-import javax.swing.JPanel;
-
-import de.nmichael.efa.Daten;
-import de.nmichael.efa.core.config.AdminRecord;
-import de.nmichael.efa.core.items.IItemType;
-import de.nmichael.efa.core.items.ItemTypeBoolean;
-import de.nmichael.efa.core.items.ItemTypeDataRecordTable;
-import de.nmichael.efa.core.items.ItemTypeLabel;
-import de.nmichael.efa.core.items.ItemTypeStringAutoComplete;
-import de.nmichael.efa.data.BoatRecord;
-import de.nmichael.efa.data.BoatReservationRecord;
-import de.nmichael.efa.data.BoatReservations;
-import de.nmichael.efa.data.BoatStatusRecord;
-import de.nmichael.efa.data.Boats;
-import de.nmichael.efa.data.storage.DataRecord;
-import de.nmichael.efa.data.storage.StorageObject;
-import de.nmichael.efa.data.types.DataTypeDate;
-import de.nmichael.efa.gui.ImagesAndIcons;
-import de.nmichael.efa.gui.SimpleInputDialog;
-import de.nmichael.efa.gui.util.AutoCompleteList;
-import de.nmichael.efa.util.Dialog;
-import de.nmichael.efa.util.International;
-import de.nmichael.efa.util.Logger;
-
 /*
  * Documentation for BoatReservationListDialog
  *
@@ -73,11 +39,28 @@ import de.nmichael.efa.util.Logger;
  * 
  */
 
+package de.nmichael.efa.gui.dataedit;
+
+import de.nmichael.efa.*;
+import de.nmichael.efa.core.config.AdminRecord;
+import de.nmichael.efa.core.config.EfaConfig;
+import de.nmichael.efa.core.items.*;
+import de.nmichael.efa.data.*;
+import de.nmichael.efa.data.storage.*;
+import de.nmichael.efa.data.types.DataTypeDate;
+import de.nmichael.efa.gui.ImagesAndIcons;
+import de.nmichael.efa.gui.SimpleInputDialog;
+import de.nmichael.efa.gui.util.AutoCompleteList;
+import de.nmichael.efa.util.*;
+import de.nmichael.efa.util.Dialog;
+import java.util.*;
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
+
+
 // @i18n complete
 public class BoatReservationListDialog extends DataListDialog {
-
-    boolean allowNewReservationsWeekly = true;
-	protected ItemTypeBoolean showTodaysReservationsOnly;
 
     public static final int ACTION_CHANGE_BOATNAME = 310;
     public static final int ACTION_COPY_RESERVATION = 311;
@@ -85,6 +68,9 @@ public class BoatReservationListDialog extends DataListDialog {
     public static final String ACTIONTEXT_COPY_RESERVATION = International.getString("Kopie anlegen");
     public static final String ACTIONIMAGE_COPY_RESERVATION = ImagesAndIcons.IMAGE_BUTTON_COPY;
     public static final String ACTIONIMAGE_CHANGE_BOATNAME = ImagesAndIcons.IMAGE_BUTTON_BOAT;
+	
+    boolean allowNewReservationsWeekly = true;
+	protected ItemTypeBoolean showTodaysReservationsOnly;
 
     public BoatReservationListDialog(Frame parent, AdminRecord admin) {
         super(parent, International.getString("Bootsreservierungen"), Daten.project.getBoatReservations(false), 0, admin);
@@ -134,6 +120,7 @@ public class BoatReservationListDialog extends DataListDialog {
         if (allowNewReservations && allowEditDeleteReservations) {
             if (admin != null) {
                 // default: ADD, EDIT, DELETE, IMPORT, EXPORT
+            	// but add an button "Copy reservation"
             } else {
                 actionText = new String[]{
                             ItemTypeDataRecordTable.ACTIONTEXT_NEW,
@@ -146,6 +133,7 @@ public class BoatReservationListDialog extends DataListDialog {
                             ItemTypeDataRecordTable.ACTION_DELETE
                         };
             }
+
             insertAction(ACTIONTEXT_COPY_RESERVATION, ACTION_COPY_RESERVATION, ACTIONIMAGE_COPY_RESERVATION, ItemTypeDataRecordTable.ACTION_NEW);
         	insertAction(ACTIONTEXT_CHANGE_BOATNAME, ACTION_CHANGE_BOATNAME, ACTIONIMAGE_CHANGE_BOATNAME, ItemTypeDataRecordTable.ACTION_EDIT);
         	
@@ -154,7 +142,7 @@ public class BoatReservationListDialog extends DataListDialog {
             actionType = new int[] { ItemTypeDataRecordTable.ACTION_NEW };
             actionImage = new String [] {ImagesAndIcons.IMAGE_BUTTON_ADD };
         	insertAction(ACTIONTEXT_COPY_RESERVATION, ACTION_COPY_RESERVATION, ACTIONIMAGE_COPY_RESERVATION, ItemTypeDataRecordTable.ACTION_NEW);
-        	
+            
         } else if (allowEditDeleteReservations) {
             actionText = new String[] { ItemTypeDataRecordTable.ACTIONTEXT_EDIT, ItemTypeDataRecordTable.ACTIONTEXT_DELETE };
             actionType = new int[] { ItemTypeDataRecordTable.ACTION_EDIT, ItemTypeDataRecordTable.ACTION_DELETE };
@@ -250,13 +238,14 @@ public class BoatReservationListDialog extends DataListDialog {
 		//show only matching items by default in BoatDamageListDialog 
 		table.setIsFilterSet(true);
 	}
+	
     protected void iniControlPanel() {
     	// we want to put an additional element after the control panel
     	super.iniControlPanel();
-    	this.iniBoatDamageListFilter();
+    	this.iniBoatReservationListFilter();
     }
 	
-	private void iniBoatDamageListFilter() {
+	private void iniBoatReservationListFilter() {
 		JPanel myControlPanel= new JPanel();
     	
 		showTodaysReservationsOnly = new ItemTypeBoolean("SHOW_TODAYS_RESERVATIONS_ONLY",
@@ -287,17 +276,18 @@ public class BoatReservationListDialog extends DataListDialog {
     				 table.showValue();
     			 }
     		 }
-     		
-     	} else {
-     		super.itemListenerAction(itemType, event);
-     	}
-     }	    		
+    		
+    	} else {
+    		super.itemListenerAction(itemType, event);
+    	}
+    }	
+    
     
     // @Override
     public void itemListenerActionTable(int actionId, DataRecord[] records)  {
 
     	super.itemListenerActionTable(actionId, records);
-
+    	
     	switch(actionId) {
             case ACTION_CHANGE_BOATNAME:
             	changeBoatName(records);
@@ -307,10 +297,10 @@ public class BoatReservationListDialog extends DataListDialog {
             	break;
         }
     }
-
+            
     private void changeBoatName(DataRecord[] records) {
         DataEditDialog dlg;
-
+    	
         for (int i = 0; records != null && i < records.length; i++) {
             if (records[i] != null) {
 
@@ -326,7 +316,7 @@ public class BoatReservationListDialog extends DataListDialog {
 	                } else {
 	                	//we could save the data. we are changing the boat name.
 	                	// so the original record shall be deleted afterwards.
-
+	                	
 	                    if (records[i] != null) {
 	                        if (persistence.data().getMetaData().isVersionized()) {
 	                        	//could not delete. BoatReservationRecord is not versionized.
@@ -354,18 +344,18 @@ public class BoatReservationListDialog extends DataListDialog {
 	                        	}
 	                        }
 	                    }
-
+	                	
 	                }
             	}
             }        
         }
     }
-
-
+    
+    
     private Boolean isCopyOrBoatChangeAllowed(DataRecord record) {
     	BoatReservationRecord br =((BoatReservationRecord)record); 
     	String boatReservationRecordType=br.getType();
-
+    	
     	if ((boatReservationRecordType.equals(BoatReservationRecord.TYPE_WEEKLY)
     			|| boatReservationRecordType.equals(BoatReservationRecord.TYPE_WEEKLY_LIMITED))
     			&& !this.allowNewReservationsWeekly) {
@@ -377,10 +367,10 @@ public class BoatReservationListDialog extends DataListDialog {
     		return true;
     	}
     }
-
+    
     private void copyReservation(DataRecord[] records)  {
         DataEditDialog dlg;
-
+    	
         for (int i = 0; records != null && i < records.length; i++) {
             if (records[i] != null) {
 
@@ -399,7 +389,7 @@ public class BoatReservationListDialog extends DataListDialog {
         }        
 
     }    
-
+    
 
     /**
      * Creates a copy of a BoatReservationsRecord. 
@@ -425,45 +415,59 @@ public class BoatReservationListDialog extends DataListDialog {
         String strCaption = "";
         String strNewBoatCaption = "";
         String oldBoatName=originalRecord.getBoatName();
-
+        
         if (bDoCopy) {
         	strCaption = International.getMessage("Kopie für Reservierung anlegen ({aktuell} von {anzahl})", iCurrentRecord, iCountRecords);
         	strNewBoatCaption = International.getString("Neues Boot");
         } else {
         	strCaption = International.getMessage("Boot für Reservierung ändern ({aktuell} von {anzahl})",iCurrentRecord, iCountRecords);
-        	strNewBoatCaption = International.getMessage("Ändere \"{alterbootname}\" auf", oldBoatName);       	
+        	strNewBoatCaption = International.getString("Ändere Boot auf");
+        	//strNewBoatCaption = International.getMessage("Ändere \"{alterbootname}\" auf", oldBoatName);       	
         }
-        IItemType[] dialogElements = new IItemType[3];
 
+        
         //Caption
-        ItemTypeLabel caption = new ItemTypeLabel("_GUIITEM_GENERIC_CAPTION", IItemType.TYPE_PUBLIC, null, strCaption);
+        ItemTypeLabel caption = new ItemTypeLabelHeader("_GUIITEM_GENERIC_CAPTION", IItemType.TYPE_PUBLIC, null, strCaption);
         caption.setPadding(0, 0, 0, 10);
-        if (Daten.efaConfig.getBoathouseHeaderUseHighlightColor()) {
-        	caption.setBackgroundColor(Daten.efaConfig.getBoathouseHeaderBackgroundColor());
-        	caption.setColor(Daten.efaConfig.getBoathouseHeaderForegroundColor());
-        	caption.setFieldGrid(3,GridBagConstraints.EAST, GridBagConstraints.BOTH);
-		}                   
-        dialogElements[0]=caption;
+    	caption.setFieldGrid(3,GridBagConstraints.EAST, GridBagConstraints.BOTH);
 
         //Show reservation data
-        ItemTypeLabel lblResData = new ItemTypeLabel("_GUIITEM_BASE_RESERVATION", IItemType.TYPE_PUBLIC, null,
-                "<html><body><p>"+originalRecord.getBoatName()+"</p>"
-                +"<p>"+originalRecord.getGuiDateTimeFromDescription()+" - "+originalRecord.getGuiDateTimeToDescription()+"</p>"
-                +"<p>"+ originalRecord.getPersonAsName()+"</p>"
-                +"<p>("+originalRecord.getReason()+" / "+originalRecord.getContact()+")</p>"+
-                "</body></html>");
-        lblResData.setPadding(0, 0, 0, 10);
-        dialogElements[1]=lblResData;
+        
+        ItemTypeString dataBoatName = new ItemTypeString("_GUIITEM_BASE_RESERVATION_BOATNAME", originalRecord.getBoatName(), IItemType.TYPE_PUBLIC,null, International.getString("Boot"));
+        dataBoatName.setEditable(false);
 
+        ItemTypeString dataResTime = new ItemTypeString("_GUIITEM_BASE_RESERVATION_RESTIME", originalRecord.getGuiDateTimeFromDescription()+" - "+originalRecord.getGuiDateTimeToDescription(), 
+        		IItemType.TYPE_PUBLIC,null, International.getString("Zeitraum"));
+        dataResTime.setEditable(false);
+
+        ItemTypeString dataResPerson = new ItemTypeString("_GUIITEM_BASE_RESERVATION_RESPERSON", originalRecord.getPersonAsName(), 
+        		IItemType.TYPE_PUBLIC,null, International.getString("Reserviert für"));
+        dataResPerson.setEditable(false);
+
+        ItemTypeString dataResReason= new ItemTypeString("_GUIITEM_BASE_RESERVATION_RESREASON", originalRecord.getReason()+" / "+originalRecord.getContact(), 
+        		IItemType.TYPE_PUBLIC,null, International.getString("Reservierungsgrund"));
+        dataResReason.setEditable(false);
+        dataResReason.setPadding(0, 0, 0, 20);
+        
+        
         // show the boat selection list
-        ItemTypeStringAutoComplete boat = new ItemTypeStringAutoComplete("BOAT", "", IItemType.TYPE_PUBLIC,
+        ItemTypeStringAutoComplete newBoat = new ItemTypeStringAutoComplete("BOAT", "", IItemType.TYPE_PUBLIC,
                 "", strNewBoatCaption, true);
-        boat.setAutoCompleteData(new AutoCompleteList(Daten.project.getBoats(false).data(), now, now));
-        dialogElements[2]=boat;
+        newBoat.setAutoCompleteData(new AutoCompleteList(Daten.project.getBoats(false).data(), now, now));
 
-
+        IItemType[] dialogElements = new IItemType[6];        
+        dialogElements[0]=caption;
+        dialogElements[1]=dataBoatName;
+        dialogElements[2]=dataResTime;
+        dialogElements[3]=dataResPerson;
+        dialogElements[4]=dataResReason;
+        
+        dialogElements[5]=newBoat;
+        
+        
+        
         if (SimpleInputDialog.showInputDialog(this, strCaption, dialogElements)) {
-            String s = boat.toString();
+            String s = newBoat.toString();
             try {
                 if (s != null && s.length() > 0) {
                     Boats boats = Daten.project.getBoats(false);
@@ -526,6 +530,9 @@ public class BoatReservationListDialog extends DataListDialog {
             Dialog.error(e.getMessage());
             return null;
         }
-    }        
+    }    
+    
+    
+
     
 }

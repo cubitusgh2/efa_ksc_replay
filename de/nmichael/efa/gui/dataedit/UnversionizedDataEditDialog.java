@@ -28,7 +28,7 @@ import javax.swing.*;
 // @i18n complete
 public class UnversionizedDataEditDialog extends DataEditDialog {
 
-    protected DataRecord dataRecord;
+	protected DataRecord dataRecord;
     protected boolean newRecord;
     protected AdminRecord admin;
     protected boolean _dontSaveRecord = false;

@@ -10,47 +10,38 @@
 
 package de.nmichael.efa.core.items;
 
-import java.awt.Color;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.UUID;
-import java.util.Vector;
-
-import de.nmichael.efa.Daten;
-import de.nmichael.efa.core.config.EfaTypes;
-import de.nmichael.efa.data.BoatRecord;
-import de.nmichael.efa.data.BoatReservationRecord;
-import de.nmichael.efa.data.BoatReservations;
-import de.nmichael.efa.data.BoatStatusRecord;
-import de.nmichael.efa.data.Boats;
-import de.nmichael.efa.data.GroupRecord;
-import de.nmichael.efa.data.Groups;
-import de.nmichael.efa.data.Logbook;
-import de.nmichael.efa.data.LogbookRecord;
-import de.nmichael.efa.data.PersonRecord;
+import java.util.*;
+import de.nmichael.efa.*;
+import de.nmichael.efa.core.config.*;
+import de.nmichael.efa.util.*;
+import de.nmichael.efa.util.EfaUtil;
+import de.nmichael.efa.gui.*;
+import de.nmichael.efa.data.*;
 import de.nmichael.efa.data.storage.DataKey;
 import de.nmichael.efa.data.storage.DataKeyIterator;
-import de.nmichael.efa.data.types.DataTypeDate;
+import de.nmichael.efa.data.storage.DataRecord;
 import de.nmichael.efa.data.types.DataTypeIntString;
 import de.nmichael.efa.data.types.DataTypeList;
-import de.nmichael.efa.data.types.DataTypeTime;
-import de.nmichael.efa.gui.EfaBoathouseFrame;
-import de.nmichael.efa.util.EfaUtil;
-import de.nmichael.efa.util.International;
-import de.nmichael.efa.util.Logger;
+import de.nmichael.efa.data.types.DataTypeDate;
+import java.awt.Color;
+import java.util.UUID;
 
 public class ItemTypeBoatstatusList extends ItemTypeList {
 
-	public static final int SEATS_OTHER = 99;
+    public static final int SEATS_OTHER = 99;
     public static final String TYPE_OTHER = "";
     public static final String RIGGER_OTHER = "";
     private static final String STR_DESTINATION_DELIMITER=     	"     -> ";
     EfaBoathouseFrame efaBoathouseFrame;
     private String STR_RESERVIERT_FUER=International.getString("Reserviert für").toLowerCase();
-    private String STR_BOOTSSCHADEN=International.getString("Bootsschaden");    
+    private String STR_BOOTSSCHADEN=International.getString("Bootsschaden");
+    
+    //Cache for special tooltip colors, set up when sorting boatslist items and determining tooltip texts
+    private String cacheToolTipBgColorText="";
+    private String cacheToolTipFontColorOpeningTag = "";
+    private String cacheToolTipFontColorClosingTag = "";
 
+    
     public ItemTypeBoatstatusList(String name,
             int type, String category, String description,
             EfaBoathouseFrame efaBoathouseFrame) {
@@ -96,15 +87,20 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
      * So any element which is read within a loop is put into a variable - so for instance, the efaConfig values are determined just once
      * instead of for every single BoatStatusRecord element.
      */
-    private Vector<ItemTypeListData> sortBootsList(Vector<BoatStatusRecord> v, Logbook logbook,Vector <BoatReservationRecord> todaysReservations) {    
+    private Vector<ItemTypeListData> sortBootsList(Vector<BoatStatusRecord> v, Logbook logbook,Vector <BoatReservationRecord> todaysReservations) {
     	try {
     	// return empty list if no data available.
     	if (v == null || v.size() == 0 || logbook == null) {
-            return new Vector<ItemTypeListData>();    		
+    		return new Vector <ItemTypeListData>();
         }
 
         long now = System.currentTimeMillis();
         Boats boats = Daten.project.getBoats(false);
+        
+        // Performance for creating tooltips: cache the current config of tooltip colors
+   		this.cacheToolTipBgColorText=(Daten.efaConfig.getToolTipSpecialColors() ? "bgcolor=\"#"+EfaUtil.getColor(Daten.efaConfig.getToolTipHeaderBackgroundColor())+"\"": "");
+   		this.cacheToolTipFontColorOpeningTag = (Daten.efaConfig.getToolTipSpecialColors() ? "<font color=\"#"+EfaUtil.getColor(Daten.efaConfig.getToolTipHeaderForegroundColor())+"\">": "");
+   		this.cacheToolTipFontColorClosingTag = (Daten.efaConfig.getToolTipSpecialColors()? "</font>": "");
 
         Groups groups = Daten.project.getGroups(false);
         boolean buildToolTips = Daten.efaConfig.getValueEfaBoathouseExtdToolTips();
@@ -113,7 +109,6 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
         boolean sortByAnzahl =  Daten.efaConfig.getValueEfaDirekt_sortByAnzahl();
         boolean sortByRigger = Daten.efaConfig.getValueEfaDirekt_sortByRigger();
         boolean sortByType = Daten.efaConfig.getValueEfaDirekt_sortByType();
-
         
         //Determine whether or not to show the colored icons in front of a boat
         //which visualize which group of persons can use a boat.
@@ -131,12 +126,12 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
                     }
                 }
             }
-            this.iconWidth = (groupColors.size() > 0 ? Daten.efaConfig.getValueEfaDirekt_fontSize() : 0);
+            this.iconWidth = (groupColors.size() > 0 ? Daten.efaConfig.getValueEfaDirekt_BthsFontSize() : 0);
             this.iconHeight = this.iconWidth;
         } catch(Exception e) {
             Logger.logdebug(e);
         }
-
+        
         // Build the list elements for the boat list.
         Vector<BoatString> bsv = new Vector<BoatString>();
         for (int i = 0; i < v.size(); i++) {
@@ -250,7 +245,7 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
                 BoatListItem item = new BoatListItem();
                 item.list = this;
                 item.text = curBoatString.name;
-                item.boat = curBoatRecord;
+                item.boat = curBoatRecord; //r is the current boat record 
                 item.boatStatus = curBoatStatusRecord;
                 item.boatVariant = curBoatString.variant;
                 curBoatString.colors = colors;
@@ -268,8 +263,7 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
                     if (lr != null) {
                         String dest = lr.getDestinationAndVariantName();
                         if (dest != null && dest.length() > 0) {
-                            curBoatString.name += STR_DESTINATION_DELIMITER + dest;
-                            
+                            curBoatString.name += STR_DESTINATION_DELIMITER  + dest;
                         }
                     }
                 }
@@ -364,7 +358,7 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
             BoatListItem bi=(BoatListItem) boatStringArray[i].record;
 
             vv.add(new ItemTypeListData(boatStringArray[i].name, 
-            		(buildToolTips ? buildToolTipText(boatStringArray[i],todaysReservations, showReservation) : ""), 
+            		(buildToolTips ? buildToolTipText(boatStringArray[i],todaysReservations,showReservation) : ""), 
             		getSecondaryItem(bi.boatStatus, todaysReservations, showDestination, showReservation), 
             		boatStringArray[i].record, false, -1, null, boatStringArray[i].colors));
         }
@@ -373,42 +367,43 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
         	Logger.logdebug(ee);
     		return null;
     	}
-    	
     }
     
+    
 
-    /*
-     * Creates a tooltip for either
-     * - boatlist
-     * - boats on water list
-     * 
-     * Where are the attributes obtained from?
-     * 
-     * Boat list
-     * ---------
-     * Boat name    - BoatString->BoatStatus->BoatName  or BoatString.name if boat is not in the boat list
-     * Boat variant - BoatString->Boat->getDetailedBoatType
-     * Boat groups  - BoatString->Boat->getAllowedGroupsAsNameString
-     * 
-     * 
-     * Boats on water list/Trip
-     * ---------
-     * Boat name    - If boat on the water, split BoatString->Name into Boat name and destination using the unique delimiter
-     * Destination  - If boat on the water, split BoatString->Name into Boat name and destination using the unique delimiter
-     * 				  (works flawlessly)
-     * lastmodified - BoatString->BoatStatus->getLastModified
-     * Start time,
-     * Cox & Crew	- BoatString->BoatStatus->Comment
-     * 					- remove from comment: boat name, boat destination,  boat status text.
-     * 					- replace all ; by , with a line break, so that the crew/cox are shown one per line
-     * 				  works flawlessly with any international representation of Boatstatus.comment (built by BoatStatusRecord.createStatusString).
-     * 				  works even after changing EFA language from de to en to any other language and starting new trips in each language.
-     * 
-     * The creation of tooltip text is somewhat prone to nullpointer exceptions, as it is not guaranteed that all of the attributes
-     * are set with a content. To avoid those nullpointers to pop up and create an empty boat on water list, a general try-catch statement
-     * gets these exceptions, logs them as warning and returns an empty tooltip string.
-     * 
-     */
+    
+/*
+ * Creates a tooltip for either
+ * - boatlist
+ * - boats on water list
+ * 
+ * Where are the attributes obtained from?
+ * 
+ * Boat list
+ * ---------
+ * Boat name    - BoatString->BoatStatus->BoatName  or BoatString.name if boat is not in the boat list
+ * Boat variant - BoatString->Boat->getDetailedBoatType
+ * Boat groups  - BoatString->Boat->getAllowedGroupsAsNameString
+ * 
+ * 
+ * Boats on water list/Trip
+ * ---------
+ * Boat name    - If boat on the water, split BoatString->Name into Boat name and destination using the unique delimiter
+ * Destination  - If boat on the water, split BoatString->Name into Boat name and destination using the unique delimiter
+ * 				  (works flawlessly)
+ * lastmodified - BoatString->BoatStatus->getLastModified
+ * Start time,
+ * Cox & Crew	- BoatString->BoatStatus->Comment
+ * 					- remove from comment: boat name, boat destination,  boat status text.
+ * 					- replace all ; by , with a line break, so that the crew/cox are shown one per line
+ * 				  works flawlessly with any international representation of Boatstatus.comment (built by BoatStatusRecord.createStatusString).
+ * 				  works even after changing EFA language from de to en to any other language and starting new trips in each language.
+ * 
+ * The creation of tooltip text is somewhat prone to nullpointer exceptions, as it is not guaranteed that all of the attributes
+ * are set with a content. To avoid those nullpointers to pop up and create an empty boat on water list, a general try-catch statement
+ * gets these exceptions, logs them as warning and returns an empty tooltip string.
+ * 
+ */
     private String buildToolTipText(BoatString bs, Vector <BoatReservationRecord> rTodayCache, Boolean showReservation) {
 
    		try {
@@ -462,11 +457,17 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
    	    		}
 
    	    		//concat is the fastest way to build strings
-   	    		String result = "<html><body><table border=\"0\"><tr><td align=\"left\"><b>"
+   	    		String result = "<html><body><table border=\"0\"><tr "+this.cacheToolTipBgColorText+"><td align=\"left\"><b>"
+   	    				.concat(this.cacheToolTipFontColorOpeningTag)
    	    				.concat(EfaUtil.escapeHtml(boatName))
+   	    				.concat(this.cacheToolTipFontColorClosingTag)
    	    				.concat("</b></td><td align=\"right\">")
+   	    				.concat(this.cacheToolTipFontColorOpeningTag)
    	    				.concat(EfaUtil.escapeHtml(boatTimeEntry))
-   	    				.concat("</td></tr><tr><td colspan=2><hr></td></tr>");
+   	    				.concat(this.cacheToolTipFontColorClosingTag)
+   	    				.concat("</td></tr>"); 
+//   				.concat("</td></tr><tr><td colspan=2><hr></td></tr>");
+
    	    		if (!boatReservation.isEmpty()) {
    	    			result=result.concat("<tr><td align=\"left\" colspan=2>")
    	    				.concat(EfaUtil.escapeHtml(boatReservation))
@@ -532,123 +533,123 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
 		}    
 
     }
+    // is the current comment beginning with "Bootsschaden" in the corresponding locale? 
+    private boolean isCommentBoatDamage(String s) {
+        return (s != null && s.startsWith(STR_BOOTSSCHADEN + ": "));
+    }
+
+    // is the current comment beginning with "Reserviert für" in the corresponding locale? 
+    private boolean isCommentBoardReservation(String s) {
+    	return (s != null && s.toLowerCase().startsWith(STR_RESERVIERT_FUER));	
+    }
     
-        // is the current comment beginning with "Bootsschaden" in the corresponding locale? 
-        private boolean isCommentBoatDamage(String s) {
-            return (s != null && s.startsWith(STR_BOOTSSCHADEN + ": "));
-        }
+    /*
+     * Bestimmt die nächste mögliche Reservierung für das genannte Boot.
+     * Dabei wird eine gerade aktive Reservierung ebenfalls gewählt, so dass die ermittelte Reservierung nicht zwingend   
+     * in der Zukunft liegen muss.
+     * 
+     * Damit die Methode funktioniert, muss rTodayCache aufsteigend nach dem nächsten Auftreten der Reservierung sortiert sein.
+     * 
+     */
+    private BoatReservationRecord getCurrentOrNextUpcomingReservation(UUID boatID, Vector <BoatReservationRecord> rTodayCache) {
+    	BoatReservationRecord curRes = null;
+    	
+    	Iterator iRes= rTodayCache.iterator();
+    	while (iRes.hasNext()) {
+    		curRes = (BoatReservationRecord) iRes.next();
+    		if (curRes.getBoatId().equals(boatID)) {
+    			//boot gefunden. wegen der aufsteigenden sortierung wissen wir:
+    			//das ist die nächstmögliche Reservierung für das genannte Boot.
+    			return curRes;
+    		}
+    	}
+    	return null;
+    }
+    
+    private String getBoatReservationString(UUID boatID, Vector <BoatReservationRecord> rTodayCache, long lookAheadMinutes, Boolean buildForTooltip) {
 
-        // is the current comment beginning with "Reserviert für" in the corresponding locale? 
-        private boolean isCommentBoardReservation(String s) {
-        	return (s != null && s.toLowerCase().startsWith(STR_RESERVIERT_FUER));	
-        }
+    	//ab hier bauen wir die Reservierungsinfo auf.
+        DataTypeDate today = new DataTypeDate(System.currentTimeMillis());
         
-        /*
-         * Bestimmt die nächste mögliche Reservierung für das genannte Boot.
-         * Dabei wird eine gerade aktive Reservierung ebenfalls gewählt, so dass die ermittelte Reservierung nicht zwingend   
-         * in der Zukunft liegen muss.
-         * 
-         * Damit die Methode funktioniert, muss rTodayCache aufsteigend nach dem nächsten Auftreten der Reservierung sortiert sein.
-         * 
-         */
-        private BoatReservationRecord getCurrentOrNextUpcomingReservation(UUID boatID, Vector <BoatReservationRecord> rTodayCache) {
-        	BoatReservationRecord curRes = null;
+        BoatReservationRecord res = getCurrentOrNextUpcomingReservation(boatID, rTodayCache);
+        if (res == null) { 
+        	return null; // es gibt keine passende Reservierung für das Boot
+        } else {
+        	String prefix = "";
         	
-        	Iterator iRes= rTodayCache.iterator();
-        	while (iRes.hasNext()) {
-        		curRes = (BoatReservationRecord) iRes.next();
-        		if (curRes.getBoatId().equals(boatID)) {
-        			//boot gefunden. wegen der aufsteigenden sortierung wissen wir:
-        			//das ist die nächstmögliche Reservierung für das genannte Boot.
-        			return curRes;
-        		}
-        	}
+        	if(buildForTooltip) {
+	        	if (lookAheadMinutes>0) {
+	        		prefix=International.getString("Reserviert von") + " ";
+	            	return prefix + res.getPersonAsName() + " " + International.getMessage("ab {timestamp}", res.getDateTimeFromDescription()) + " ("+ res.getReason()+ ")";
+	        	} else {
+	        		prefix = International.getString("Reserviert von") + " ";
+	            	return prefix + res.getPersonAsName() + " " + International.getMessage("bis {timestamp}", res.getDateTimeToDescription())+ " ("+ res.getReason()+ ")";
+	        	}
+        	} else { // build for secondary Item in List
+        		//search for Reservations in the future
+        		if (res.getType().equals(BoatReservationRecord.TYPE_ONETIME)) {
+        		
+	        		//if (lookAheadMinutes<=0) {//aktuell laufende Reservierungen?
+        			if (res.getReservationValidInMinutes()<=0) {
+	        			if ((res.getDateTo().compareTo(today)==0) && (res.getTimeTo() != null)) {
+	        				//Reservierung endet heute? dann nur noch Uhrzeit anzeigen
+	        				return International.getMessage("Reserviert(r)_bis_{timestamp}", res.getTimeTo().toString(false)).trim();
+	        			} else {
+	        				//sonst das vollständige Datum.
+	        				return International.getMessage("Reserviert(r)_bis_{timestamp}", res.getDateTimeToDescription()).trim();
+	        			}
+	        		} else {
+	            		return International.getMessage("Reserviert(r)_ab_{timestamp}", res.getTimeFrom().toString(false)).trim();
+	        		}
+	        	} else if (res.getType().equals(BoatReservationRecord.TYPE_WEEKLY) 
+	        			  || res.getType().equals(BoatReservationRecord.TYPE_WEEKLY_LIMITED)){
+	        		if (res.getReservationValidInMinutes()<=0) {//aktuell laufende Reservierungen? //weekly ist immer am aktuellen Tag..
+	        			return International.getMessage("Reserviert(r)_bis_{timestamp}", res.getTimeTo().toString(false)).trim();
+	        		} else {
+	            		return International.getMessage("Reserviert(r)_ab_{timestamp}", res.getTimeFrom().toString(false)).trim();	
+	        		}
+	        	} 
+	        }
         	return null;
-        }        
-        
-        private String getBoatReservationString(UUID boatID, Vector <BoatReservationRecord> rTodayCache, long lookAheadMinutes, Boolean buildForTooltip) {
-        	//ab hier bauen wir die Reservierungsinfo auf.
-            DataTypeDate today = new DataTypeDate(System.currentTimeMillis());
-            
-            BoatReservationRecord res = getCurrentOrNextUpcomingReservation(boatID, rTodayCache);
-            if (res == null) { 
-            	return null; // es gibt keine passende Reservierung für das Boot
-            } else {
-            	String prefix = "";
-            	
-            	if(buildForTooltip) {
-    	        	if (lookAheadMinutes>0) {
-    	        		prefix=International.getString("Reserviert von") + " ";
-    	            	return prefix + res.getPersonAsName() + " " + International.getMessage("ab {timestamp}", res.getDateTimeFromDescription()) + " ("+ res.getReason()+ ")";
-    	        	} else {
-    	        		prefix = International.getString("Reserviert von") + " ";
-    	            	return prefix + res.getPersonAsName() + " " + International.getMessage("bis {timestamp}", res.getDateTimeToDescription())+ " ("+ res.getReason()+ ")";
-    	        	}
-            	} else { // build for secondary Item in List
-            		//search for Reservations in the future
-            		if (res.getType().equals(BoatReservationRecord.TYPE_ONETIME)) {
-            		
-    	        		//if (lookAheadMinutes<=0) {//aktuell laufende Reservierungen?
-            			if (res.getReservationValidInMinutes()<=0) {
-    	        			if ((res.getDateTo().compareTo(today)==0) && (res.getTimeTo() != null)) {
-    	        				//Reservierung endet heute? dann nur noch Uhrzeit anzeigen
-    	        				return International.getMessage("Reserviert(r)_bis_{timestamp}", res.getTimeTo().toString(false)).trim();
-    	        			} else {
-    	        				//sonst das vollständige Datum.
-    	        				return International.getMessage("Reserviert(r)_bis_{timestamp}", res.getDateTimeToDescription()).trim();
-    	        			}
-    	        		} else {
-    	            		return International.getMessage("Reserviert(r)_ab_{timestamp}", res.getTimeFrom().toString(false)).trim();
-    	        		}
-    	        	} else if ((res.getType().equals(BoatReservationRecord.TYPE_WEEKLY)) || (res.getType().equals(BoatReservationRecord.TYPE_WEEKLY_LIMITED))){
-    	        		if (res.getReservationValidInMinutes()<=0) {//aktuell laufende Reservierungen? //weekly ist immer am aktuellen Tag..
-    	        			return International.getMessage("Reserviert(r)_bis_{timestamp}", res.getTimeTo().toString(false)).trim();
-    	        		} else {
-    	            		return International.getMessage("Reserviert(r)_ab_{timestamp}", res.getTimeFrom().toString(false)).trim();	
-    	        		}
-    	        	} 
-    	        }
-            	return null;
 
-            }
-            
-        }                
-        
-        private String getSecondaryItem(BoatStatusRecord bs, Vector <BoatReservationRecord> rTodayCache, Boolean showDestination, Boolean showReservationInfo) {
-        	String showInList = bs.getShowInList();
-
-        	if (showReservationInfo && showInList.equals(BoatStatusRecord.STATUS_AVAILABLE)) {
-    	    		//available list: show next reservation within 8 hours as secondary item
-    	    		return getBoatReservationString(bs.getBoatId(), rTodayCache, EfaUtil.getRemainingMinutesToday(), false);
-
-        	} else if (showDestination && showInList.equals(BoatStatusRecord.STATUS_ONTHEWATER) ) {
-        		//Boat is on the water: we show the destination as secondary item
-        			return bs.getDestination();
-
-        	} else if (showInList.equals(BoatStatusRecord.STATUS_NOTAVAILABLE)) {
-        		//not available list: show "Bootsschaden" for defect boats,
-        		//or the end of the current reservation
-        		if (isCommentBoatDamage(bs.getComment())) {
-        			return STR_BOOTSSCHADEN;
-        			
-        		} else if (showReservationInfo && isCommentBoardReservation(bs.getComment())) {
-        				return getBoatReservationString(bs.getBoatId(), rTodayCache, 0, false);
-        		} else {
-        			
-        			if (showDestination) { 
-    	    			//Boat is not available, but neither damage nor reservation.
-    	    			//so maybe it's a boat on a multi-day tour, regatta or whatsoever.
-    	    			//if the current BoatStatus has a destination set, show the destination.
-    	        		 return bs.getDestination();
-        			} else { 
-        				return null;
-        			}
-        		}
-
-        	}
-        	return null;
         }
         
+    }        
+    private String getSecondaryItem(BoatStatusRecord bs, Vector <BoatReservationRecord> rTodayCache, Boolean showDestination, Boolean showReservation) {
+    	String showInList = bs.getShowInList();
+
+    	if (showReservation && showInList.equals(BoatStatusRecord.STATUS_AVAILABLE)) {
+	    		//available list: show next reservation today as secondary item
+	    		return getBoatReservationString(bs.getBoatId(), rTodayCache, EfaUtil.getRemainingMinutesToday(), false);
+
+    	} else if (showDestination && showInList.equals(BoatStatusRecord.STATUS_ONTHEWATER) ) {
+    		//Boat is on the water: we show the destination as secondary item
+    			return bs.getDestination();
+
+    	} else if (showInList.equals(BoatStatusRecord.STATUS_NOTAVAILABLE)) {
+    		//not available list: show "Bootsschaden" for defect boats,
+    		//or the end of the current reservation
+    		if (isCommentBoatDamage(bs.getComment())) {
+    			return International.getString("Bootsschaden");
+    			
+    		} else if (showReservation && isCommentBoardReservation(bs.getComment())) {
+    				return getBoatReservationString(bs.getBoatId(), rTodayCache, 0, false);
+    		} else {
+    			
+    			if (showDestination) { 
+	    			//Boat is not available, but neither damage nor reservation.
+	    			//so maybe it's a boat on a multi-day tour, regatta or whatsoever.
+	    			//if the current BoatStatus has a destination set, show the destination.
+	        		 return bs.getDestination();
+    			} else { 
+    				return null;
+    			}
+    		}
+
+    	}
+    	return null;
+    }
+    
     public void setPersonStatusData(Vector<PersonRecord> v, String other) {
         Vector<ItemTypeListData> vdata = sortMemberList(v);
         if (other != null) {
@@ -665,10 +666,8 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
         if (v == null || v.size() == 0) {
             return v;
         }
-
-        BoatString[] a = new BoatString[v.size()];
         Boolean buildToolTips = Daten.efaConfig.getValueEfaBoathouseExtdToolTips();
-
+        BoatString[] a = new BoatString[v.size()];
         for (int i = 0; i < v.size(); i++) {
             PersonRecord pr = v.get(i);
             a[i] = new BoatString();
@@ -681,7 +680,7 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
             item.person = pr;
             a[i].record = item;
         }
-        Arrays.sort(a); // a is a BoatString which has its own comparator which handles umlauts etc.
+        Arrays.sort(a);
 
         Vector<ItemTypeListData> vv = new Vector<ItemTypeListData>();
         char lastChar = ' ';
@@ -692,10 +691,9 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
                     lastChar = name.toUpperCase().charAt(0);
                     vv.add(new ItemTypeListData("---------- " + lastChar + " ----------", null, null, null, true, SEATS_OTHER));
                 }
-                //Build tooltips only if wanted
                 vv.add(new ItemTypeListData(name, 
-					    					(buildToolTips ? getPersonToolTip(name, (BoatString) a[i]) : ""), 
-					    					null, a[i].record,  false, SEATS_OTHER));
+					    (buildToolTips ? getPersonToolTip(name, (BoatString) a[i]) : ""), 
+					    null, a[i].record,  false, SEATS_OTHER));
             }
         }
         return vv;
@@ -768,10 +766,11 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
          * @return
          */
         private String normalizeString(String s) {
-            if (s == null) {
+        	if (s == null) {
                 return "";
             }
-            return EfaUtil.replaceAllUmlautsLowerCaseFast(s);          
+            return EfaUtil.replaceAllUmlautsLowerCaseFast(s);
+  
         }
 
         public int compareTo(Object o) {
@@ -793,6 +792,7 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
         this.color = c;
         if (label!=null) {
             label.setForeground(color);
+            label.repaint();
 	    }
     }
     
@@ -808,7 +808,10 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
 	        } else {
 	        	label.setOpaque(false);
 	        }
+	        label.repaint();
         }
     }    
 
 }
+
+
