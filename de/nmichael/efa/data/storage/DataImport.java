@@ -428,6 +428,7 @@ public class DataImport extends ProgressTask {
     }
 
     public void run() {
+    	this.setName("DataImport");
         setRunning(true);
         this.logInfo(International.getString("Importiere Datensätze ..."));
         if (isXmlFile(filename)) {

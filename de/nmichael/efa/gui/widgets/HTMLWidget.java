@@ -138,6 +138,7 @@ public class HTMLWidget extends Widget {
         private volatile int updateIntervalInSeconds = 24*3600;
 
         public void run() {
+        	this.setName("HTMLUpdater(HTMLWidget)");
             while (keepRunning) {
                 try {
                     try {

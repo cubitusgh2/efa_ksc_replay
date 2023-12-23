@@ -121,6 +121,7 @@ public class EfaErrorPrintStream extends PrintStream {
         }
 
         public void run() {
+        	this.setName("ErrorThread");
             Dialog.exceptionError(message, stacktrace);
         }
     }

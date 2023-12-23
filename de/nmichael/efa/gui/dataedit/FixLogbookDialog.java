@@ -718,6 +718,7 @@ public class FixLogbookDialog extends BaseDialog implements IItemListener {
 
             public void run() {
                 setRunning(true);
+                this.setName("ProgressTask(Inner)");
                 this.logInfo(International.getString("Korrekturen werden durchgeführt ..."));
                 int cnt = 0;
                 if (step <= LAST_STEP) {

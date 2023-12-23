@@ -279,6 +279,8 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         iniGuiHeaderColors();
         iniGuiTooltipDelays();
         prepareEfaBaseFrame();
+        Logger.log(Logger.INFO, Logger.MSG_EVT_EFAREADY, International.getString("BEREIT")+" GUI");
+        
     }
 
     private void iniGuiBase() {
@@ -340,6 +342,8 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     }
 
     private void iniGuiMain() {
+        Logger.log(Logger.DEBUG, "Initializing efaBths main window");
+
         iniGuiBoatLists();
         iniGuiCenterPanel();
         iniGuiNorthPanel();
@@ -389,10 +393,11 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     }
 
     private void iniApplication() {
-        openProject((AdminRecord)null);
+        Logger.log(Logger.DEBUG, "Opening Project");
+    	openProject((AdminRecord)null);
         openProjectLogbookClubwork();
 
-        updateBoatLists(true, false);
+        //updateBoatLists(true, false); // braucht man das hier?
 
         EfaExitFrame.initExitFrame(this);
 
@@ -418,6 +423,8 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     }
 
     private void iniGuiRemaining() {
+        Logger.log(Logger.DEBUG, "Initializing main window maximized look");
+
         // Fenster nicht verschiebbar
         if (Daten.efaConfig.getValueEfaDirekt_fensterNichtVerschiebbar()) {
             try {
@@ -2267,6 +2274,8 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     }
 
     void prepareEfaBaseFrame() {
+        Logger.log(Logger.DEBUG, "Initializing efaBaseFrame for session start/end");
+
         efaBaseFrame = new EfaBaseFrame(this, EfaBaseFrame.MODE_BOATHOUSE);
         efaBaseFrame.prepareDialog();
         efaBaseFrame.setFixedLocationAndSize();

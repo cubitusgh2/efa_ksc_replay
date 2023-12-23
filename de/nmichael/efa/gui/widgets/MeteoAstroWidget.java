@@ -466,6 +466,7 @@ public class MeteoAstroWidget extends Widget {
         }
 
         public void run() {
+        	this.setName("HTMLUpdater(MeteoAstroWidget)");
             String bgcolor = EfaUtil.getColor(myPanel.getBackground());
 
             int weatherCnt = 0;

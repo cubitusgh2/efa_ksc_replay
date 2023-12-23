@@ -65,6 +65,7 @@ public class NewsMiniWidget {
         private int maxWidth = 600;
 
         public void run() {
+        	this.setName("NewsUpdater");
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {

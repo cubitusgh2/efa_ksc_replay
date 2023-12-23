@@ -11,6 +11,9 @@
 package de.nmichael.efa.base;
 
 import de.nmichael.efa.gui.*;
+
+import javax.swing.SwingUtilities;
+
 import de.nmichael.efa.*;
 import de.nmichael.efa.core.config.AdminRecord;
 import de.nmichael.efa.util.*;
@@ -33,7 +36,17 @@ public class Main extends Program {
         if (admin != null) {
             frame.setAdmin(admin);
         }
-        frame.showMe();
+
+        try {
+        	SwingUtilities.invokeAndWait(new Runnable() {
+      	      public void run() {
+      	        frame.showMe();
+      	      }
+        	});            
+        } catch (Exception e) {
+        	Logger.logdebug(e);
+        }       
+ 
         Daten.iniSplashScreen(false);
     }
 

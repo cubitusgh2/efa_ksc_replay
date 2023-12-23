@@ -326,6 +326,7 @@ public class EmailSenderThread extends Thread {
 
     public void run() {
         int errorCount = 0;
+        this.setName("EmailSenderThread");
         while(true) {
             try {
                 if (Daten.efaConfig != null && Daten.project != null && Daten.admins != null &&

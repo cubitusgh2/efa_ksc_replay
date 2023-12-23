@@ -13,6 +13,8 @@ package de.nmichael.efa.boathouse;
 import de.nmichael.efa.util.*;
 import de.nmichael.efa.util.Dialog;
 import de.nmichael.efa.gui.*;
+
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import java.awt.*;
 import de.nmichael.efa.*;
@@ -29,7 +31,19 @@ public class Main extends Program {
         super(Daten.APPL_EFABH, args);
 
         EfaBoathouseFrame frame = new EfaBoathouseFrame();
-        frame.showFrame();
+
+        Logger.log(Logger.DEBUG, "main.beforeShowFrame");   
+        try {
+        	SwingUtilities.invokeAndWait(new Runnable() {
+      	      public void run() {
+      	        frame.showFrame();
+      	      }
+        	});            
+        } catch (Exception e) {
+        	Logger.logdebug(e);
+        }        
+        Logger.log(Logger.DEBUG, "main.afterShowFrame");   
+
         Daten.iniSplashScreen(false);
     }
 

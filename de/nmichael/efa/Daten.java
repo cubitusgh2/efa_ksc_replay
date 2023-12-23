@@ -27,6 +27,7 @@ import java.util.Enumeration;
 import java.util.Vector;
 import java.util.jar.JarFile;
 
+import javax.swing.SwingUtilities;
 import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 import javax.swing.plaf.ColorUIResource;
@@ -71,9 +72,9 @@ import de.nmichael.efa.util.Logger;
 // @i18n complete
 public class Daten {
 
-    public final static String VERSION            = "2.3.4_00_0_dev_ListFix2_CSVExport,clubwrkexpV3,clearfilterfix,csvfix,EFA_057_LAF_6_1423"; // Version für die Ausgabe (z.B. 2.1.0, kann aber auch Zusätze wie "alpha" o.ä. enthalten)
+    public final static String VERSION            = "2.3.4_00_0_dev_ListFix2_CSVExport,clubwrkexpV3,clearfilterfix,csvfix,EFA_057_LAF_6_1423_startupfix2"; // Version für die Ausgabe (z.B. 2.1.0, kann aber auch Zusätze wie "alpha" o.ä. enthalten)
     public final static String VERSIONID          = "2.3.4_00";   // VersionsID: Format: "X.Y.Z_MM"; final-Version z.B. 1.4.0_00; beta-Version z.B. 1.4.0_#1
-    public final static String VERSIONRELEASEDATE = "21.12.2023";  // Release Date: TT.MM.JJJJ
+    public final static String VERSIONRELEASEDATE = "23.12.2023";  // Release Date: TT.MM.JJJJ
     public final static String MAJORVERSION       = "2";
     public final static String PROGRAMMID         = "EFA.233"; // Versions-ID für Wettbewerbsmeldungen
     public final static String PROGRAMMID_DRV     = "EFADRV.233"; // Versions-ID für Wettbewerbsmeldungen
@@ -713,8 +714,17 @@ public class Daten {
         }
         if (show) {
             splashScreen = new StartLogo(IMAGEPATH + "efaIntro.png");
-            splashScreen.show();
             try {
+	        	SwingUtilities.invokeAndWait(new Runnable() {
+	      	      public void run() {
+	                  splashScreen.show();
+	      	      }
+	        	});            
+            } catch (Exception e) {
+            	Logger.logdebug(e);
+            }
+	        	
+        	try {
                 Thread.sleep(1000); // Damit nach automatischem Restart genügend Zeit vergeht
             } catch (InterruptedException e) {
             }
@@ -1034,6 +1044,7 @@ public class Daten {
         if (!isGuiAppl()) {
             return;
         }
+
         iniScreenSize();
 
         // Look&Feel

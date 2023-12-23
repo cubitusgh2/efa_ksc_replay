@@ -62,6 +62,7 @@ public class ClockMiniWidget {
         };
         
         public void run() {
+        	this.setName("ClockUpdater");
             while (keepRunning) {
                 try {
                 	// simply setting label text is not thread safe with swing.
