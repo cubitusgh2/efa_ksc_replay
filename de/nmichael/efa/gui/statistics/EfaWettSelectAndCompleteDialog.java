@@ -1076,7 +1076,7 @@ public class EfaWettSelectAndCompleteDialog extends BaseDialog implements Action
     class WarningWindow extends Thread {
 
         public void run() {
-        	this.setName("EfaWettWarningWindow");
+        	this.setName("EfaWettSelectAndCompleteDialog.WarningWindowThread");
             try {
                 JTextArea t = new JTextArea();
                 t.setEditable(false);

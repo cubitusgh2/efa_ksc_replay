@@ -129,7 +129,7 @@ public class Project extends StorageObject {
         if (Logger.isTraceOn(Logger.TT_CORE, 1)) {
             Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_DATA, "Opening Project " + projectName + " ...");
         }
-        Audit watchme=null;
+
         try {
             p._inOpeningProject = true;
             p.isRemoteOpen = false;
@@ -140,8 +140,9 @@ public class Project extends StorageObject {
             p.convertInternal();
             Daten.project = p;
             p.openAllData();
+            Audit auditTask = null;
             if (p.getProjectStorageType() == IDataAccess.TYPE_FILE_XML && runAudit) {
-                watchme=new Audit(p);
+                auditTask = new Audit(p);
             }
             if (p.getProjectStorageType() == IDataAccess.TYPE_EFA_REMOTE) {
                 p.remoteDataAccess = DataAccess.createDataAccess(p, IDataAccess.TYPE_EFA_REMOTE,
@@ -159,10 +160,11 @@ public class Project extends StorageObject {
                 p.isRemoteOpen = (p.getClubRecord() != null);
             }
             p._inOpeningProject = false;
-            if (watchme!=null) {
-            	//Start the Audit task AFTER setting p._inOpeningProject=false, otherwise Audit Task will do nothing.
-                watchme.start();
-                //watchme.join(); // wait for completion
+            if (auditTask!=null) {
+	            // Audit checks for p._inOpeningProject=false. So to be sure, 
+	            // Audit can only be started after p._inOpeningProject is set to false.
+            	auditTask.start(); // AuditTask is a thread that runs in background.
+            	auditTask.join(); // this would wait for audit task to complete, before we can proceed.
             }
         } catch (Exception ee) {
             if (!silent) {

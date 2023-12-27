@@ -199,7 +199,7 @@ public class EfaRunning {
         }
 
         public void run() {
-            setName("EfaRunningThread");        	
+        	this.setName("EfaRunningThread");
             while (true) {
                 try {
                     // Auf Verbindung warten

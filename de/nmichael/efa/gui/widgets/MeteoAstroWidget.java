@@ -466,7 +466,7 @@ public class MeteoAstroWidget extends Widget {
         }
 
         public void run() {
-        	this.setName("HTMLUpdater(MeteoAstroWidget)");
+        	this.setName("MeteoAstroWidget.HTMLUpdater");
             String bgcolor = EfaUtil.getColor(myPanel.getBackground());
 
             int weatherCnt = 0;
@@ -771,7 +771,7 @@ public class MeteoAstroWidget extends Widget {
                     //htmlPane.setText(htmlDoc.toString());
 
                     // Use Swing thread-safe update method instead
-                    SwingUtilities.invokeLater(new UpdateHtmlPaneRunner(htmlPane,htmlDoc.toString()));
+                    SwingUtilities.invokeLater(new UpdateHtmlMeteoPaneRunner(htmlPane,htmlDoc.toString()));
                 } catch(Exception e) {
                     Logger.logdebug(e);
                 }
@@ -1017,12 +1017,12 @@ public class MeteoAstroWidget extends Widget {
 
     }
 
-    class UpdateHtmlPaneRunner implements Runnable {
+    private class UpdateHtmlMeteoPaneRunner implements Runnable {
         
     	private JEditorPane htmlPane=null;
     	private String value = null;
     	
-    	public UpdateHtmlPaneRunner(JEditorPane theHtmlPane, String data) {
+    	public UpdateHtmlMeteoPaneRunner(JEditorPane theHtmlPane, String data) {
     		htmlPane = theHtmlPane;
     		value = data;
     	}

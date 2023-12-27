@@ -53,7 +53,6 @@ public abstract class BaseFrame extends JFrame implements ActionListener {
             iniDialogCommon(_title);
             iniDialog();
             iniDialogCommonFinish();
-
             EfaUtil.pack(this);
             _prepared = true;
             return true;
@@ -81,6 +80,7 @@ public abstract class BaseFrame extends JFrame implements ActionListener {
             focusItem.requestFocus();
         }
         this.setVisible(true);
+        Logger.log(Logger.INFO, Logger.MSG_EVT_EFAREADY, International.getString("BEREIT"));        
     }
 
     public void setRequestFocus(IItemType item) {

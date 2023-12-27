@@ -32,7 +32,7 @@ public class DataFileWriter extends Thread {
     }
 
     public void run() {
-    	this.setName("DataFileWriterThread");
+    	this.setName("DataFileWriter: "+dataFile.filename);
         if (Logger.isTraceOn(Logger.TT_FILEIO)) {
             Logger.log(Logger.DEBUG, Logger.MSG_FILE_WRITETHREAD_RUNNING, "DataFileWriter["+dataFile.filename+"] running.");
         }

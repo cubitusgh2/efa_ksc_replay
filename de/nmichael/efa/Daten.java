@@ -72,9 +72,9 @@ import de.nmichael.efa.util.Logger;
 // @i18n complete
 public class Daten {
 
-    public final static String VERSION            = "2.3.4_00_0_dev_ListFix2_CSVExport,clubwrkexpV3,clearfilterfix,csvfix,EFA_057_LAF_6_1423_startupfix2"; // Version für die Ausgabe (z.B. 2.1.0, kann aber auch Zusätze wie "alpha" o.ä. enthalten)
+    public final static String VERSION            = "2.3.4_00_0_dev_ListFix2_CSVExport,clubwrkexpV3,clearfilterfix,csvfix,EFA_057_LAF_6_1423_startupfix2_ellipsisfix"; // Version für die Ausgabe (z.B. 2.1.0, kann aber auch Zusätze wie "alpha" o.ä. enthalten)
     public final static String VERSIONID          = "2.3.4_00";   // VersionsID: Format: "X.Y.Z_MM"; final-Version z.B. 1.4.0_00; beta-Version z.B. 1.4.0_#1
-    public final static String VERSIONRELEASEDATE = "23.12.2023";  // Release Date: TT.MM.JJJJ
+    public final static String VERSIONRELEASEDATE = "27.12.2023";  // Release Date: TT.MM.JJJJ
     public final static String MAJORVERSION       = "2";
     public final static String PROGRAMMID         = "EFA.233"; // Versions-ID für Wettbewerbsmeldungen
     public final static String PROGRAMMID_DRV     = "EFADRV.233"; // Versions-ID für Wettbewerbsmeldungen
@@ -714,24 +714,30 @@ public class Daten {
         }
         if (show) {
             splashScreen = new StartLogo(IMAGEPATH + "efaIntro.png");
+
+            // also showing the splash screen needs to be run thread-safe for swing.
+            // this function "iniSplashScreen" is called from outside the AWT main thread.
+            SwingUtilities.invokeLater(new Runnable() {
+      	      public void run() {
+      	    	  splashScreen.show();
+      	      }
+        	});
             try {
-	        	SwingUtilities.invokeAndWait(new Runnable() {
-	      	      public void run() {
-	                  splashScreen.show();
-	      	      }
-	        	});            
-            } catch (Exception e) {
-            	Logger.logdebug(e);
-            }
-	        	
-        	try {
                 Thread.sleep(1000); // Damit nach automatischem Restart genügend Zeit vergeht
             } catch (InterruptedException e) {
             }
         } else {
             if (splashScreen != null) {
-                splashScreen.remove();
-                splashScreen = null;
+                SwingUtilities.invokeLater(new Runnable() {
+            	      public void run() {
+            	    	  // splashScreen can be set to null by another thread, so check at 
+            	    	  // actual execution time.
+            	    	  if (splashScreen!=null) {
+	                          splashScreen.remove();
+	                          splashScreen = null;
+            	    	  }
+            	      }
+              	});            	
             }
         }
     }
@@ -1044,7 +1050,6 @@ public class Daten {
         if (!isGuiAppl()) {
             return;
         }
-
         iniScreenSize();
 
         // Look&Feel
@@ -1078,10 +1083,6 @@ public class Daten {
             	Dialog.getUiDefaults().put("ToolTip.background", new ColorUIResource(efaConfig.getToolTipBackgroundColor()));
             	Dialog.getUiDefaults().put("ToolTip.foreground", new ColorUIResource(efaConfig.getToolTipForegroundColor()));
             }
-            
-            EfaUtil.handleEfaFlatLafDefaults();
-            
-
             
             if (!lookAndFeel.endsWith(Daten.LAF_METAL)) {
                 // to make PopupMenu's work properly and not swallow the next MousePressed Event, see: http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6753637
@@ -1119,8 +1120,8 @@ public class Daten {
         // Font Size
         if (applID == APPL_EFABH) {
             try {
-                Dialog.setGlobalFontSize(Daten.efaConfig.getValueEfaDirekt_BthsFontSize(), Daten.efaConfig.getValueEfaDirekt_BthsFontStyle());
-                Dialog.setGlobalTableFontSize(Daten.efaConfig.getValueEfaDirekt_BthsTableFontSize());
+                Dialog.setGlobalFontSize(Daten.efaConfig.getValueEfaDirekt_BthsFontName(), Daten.efaConfig.getValueEfaDirekt_BthsFontSize(), Daten.efaConfig.getValueEfaDirekt_BthsFontStyle());
+                Dialog.setGlobalTableFontSize(Daten.efaConfig.getValueEfaDirekt_BthsFontName(), Daten.efaConfig.getValueEfaDirekt_BthsTableFontSize());
             } catch (Exception e) {
                 Logger.log(Logger.WARNING, Logger.MSG_WARN_CANTSETFONTSIZE,
                         International.getString("Schriftgröße konnte nicht geändert werden") + ": " + e.toString());
@@ -1129,13 +1130,17 @@ public class Daten {
         
         if (applID == APPL_EFABASE) {
             try {
-            	Dialog.setGlobalFontSize(Daten.efaConfig.getValueEfaDirekt_OtherFontSize(), Daten.efaConfig.getValueEfaDirekt_OtherFontStyle());
-                Dialog.setGlobalTableFontSize(Daten.efaConfig.getValueEfaDirekt_OtherTableFontSize());
+            	Dialog.setGlobalFontSize(Daten.efaConfig.getValue_OtherFontName(), Daten.efaConfig.getValue_OtherFontSize(), Daten.efaConfig.getValue_OtherFontStyle());
+                Dialog.setGlobalTableFontSize(Daten.efaConfig.getValue_OtherFontName(), Daten.efaConfig.getValue_OtherTableFontSize());
             } catch (Exception e) {
                 Logger.log(Logger.WARNING, Logger.MSG_WARN_CANTSETFONTSIZE,
                         International.getString("Schriftgröße konnte nicht geändert werden") + ": " + e.toString());
             }        	
         }
+        
+        // Needs to be placed here for adequate font scalings
+        EfaUtil.handleEfaFlatLafDefaults();
+        
     }
 
     public static void iniChecks() {

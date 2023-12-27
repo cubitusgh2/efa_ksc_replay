@@ -78,7 +78,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     int iconWidth = 0;
     int iconHeight = 0;
 
-    protected static final String LIST_SECTION_STRING = "-----";
+    protected static final String LIST_SECTION_STRING = "----";
     //Spacings for pretty rendering
     private static final int SPACING_BOATNAME_SECONDPART  = 60; //60 pixels
 	private static final int HORZ_SINGLE_BORDER=5;
@@ -88,6 +88,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     private boolean showFilterField = false;
   	private boolean showTwoColumnList=false;
     protected String other_item_text=""; //item text of the element for <other boat> or <other person>
+    private ImageIcon defaultIconForCellRenderer;
     
     class ListDataCellRenderer extends DefaultListCellRenderer {
         public Component getListCellRendererComponent(JList list, Object value,
@@ -98,7 +99,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
                 try {
                 	BuildIcon(value);
                 } catch(Exception eignore) {
-                		Logger.log(eignore);
+                	Logger.log(eignore);
                 }
             }
 
@@ -182,11 +183,11 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
             icon = BaseDialog.getIcon(item.image);
         }
         if (icon == null) {
-            BufferedImage image = new BufferedImage(iconWidth, iconHeight,
-                    BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g = image.createGraphics();
             if (item.colors != null && item.colors.length > 0) {
-                if (item.colors.length == 1) {
+                BufferedImage image = new BufferedImage(iconWidth, iconHeight,
+                        BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g = image.createGraphics();
+            	if (item.colors.length == 1) {
                     g.setColor(item.colors[0]);
                     g.fillOval(0, 0, iconWidth, iconHeight);
                 } else {
@@ -199,16 +200,18 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
                         currentAngle += anglePerColor;
                     }
                 }
+                icon = new ImageIcon(image);
+            	
             } else {
                 if (!item.separator) {
-                    g.setColor(new Color (230,230,230));
-                    g.fillOval(0, 0, iconWidth, iconHeight);
+
+                	icon=buildDefaultIcon(iconWidth, iconHeight);
+
                 }
             }
-            icon = new ImageIcon(image);
         }
-        if (icon.getIconWidth() > iconWidth
-                || icon.getIconHeight() > iconHeight) {
+        
+        if (icon != null && (icon.getIconWidth() > iconWidth || icon.getIconHeight() > iconHeight)) {
             icon = new ImageIcon(icon.getImage().getScaledInstance(iconWidth, iconHeight,
                     Image.SCALE_SMOOTH));
         }
@@ -219,6 +222,18 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         }
     }
     
+    private synchronized ImageIcon buildDefaultIcon(int iconWidth, int iconHeight) {
+    	if (defaultIconForCellRenderer==null) {
+            ImageIcon icon = null;
+            BufferedImage image = new BufferedImage(iconWidth, iconHeight, BufferedImage.TYPE_INT_ARGB);
+
+            Graphics2D g = image.createGraphics();
+            g.setColor(new Color (230,230,230));
+    	    g.fillOval(0, 0, iconWidth, iconHeight);
+            defaultIconForCellRenderer= new ImageIcon(image);    		
+    	}
+    	return defaultIconForCellRenderer;
+    }
 
     /*
      * Creates a HTML table consisting of two rows.
@@ -226,13 +241,11 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
      * - right row gets remaining space and is truncated on the right side, if contents do not fit.
      *   also, right row contents are rendered in grey text color.
      */
-    private String getHTMLTableFor(String firstPart, String secondPart, boolean isSelected) {
+private String getHTMLTableFor(String firstPart, String secondPart, boolean isSelected) {
     	
-    	// der Aufbau der HTML-Tabelle ist wegen dem Kürzen des secondPart performancelastig,
-    	// wenn es eine volle Bootstabelle gibt. Bei ~200 Booten und einem Raspi3
-    	// braucht das Aufbauen der Liste der verfügbaren Boote 400-800 Millisekunden mit HTML-Tabelle,
-    	// statt 20-40 Millisekunden ohne. Das merkt man schon sehr.
-    	// Daher wird eine HTML-Tabelle nur dann aufgebaut, wenn es einen secondPart gibt.
+		// we only build an HTML table, if there is a secondPart to be displayed.
+	    // building html tables takes a lot of time on a raspberry pi 3b with a boat list
+		// of around 200 Boats. So skipping html tables saves a lot of performance.
     	
     	if (secondPart== null) {
     		return firstPart;
@@ -240,48 +253,68 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     		return firstPart;
     	}
 
+    	try {
     	//es gibt einen Secondpart, jetzt lohnt sich eine HTML-Tabelle
-    	boolean cutText = false;
     	
-		long listWidth=Math.max(80,list.getParent().getWidth()-2*HORZ_SINGLE_BORDER-2);
-		FontMetrics myFontMetrics = label.getFontMetrics(label.getFont());
-		
-		long firstPartLength= myFontMetrics.stringWidth(firstPart);
-		long maxStringWidth = listWidth-SPACING_BOATNAME_SECONDPART-firstPartLength-4;
-		long characterWidth = myFontMetrics.stringWidth("X");
-		
-		if (iconWidth >0 ) {
-			maxStringWidth= listWidth-SPACING_BOATNAME_SECONDPART-(iconWidth)-firstPartLength-4;
-		}
-		
-        int stringWidth = myFontMetrics.stringWidth(secondPart);
-        
-        //listWidth can be zero directly after start of efaBoatHouse, so we stop under this condition.
-        while (listWidth>0 &&(stringWidth>maxStringWidth) && (secondPart.length()>0)) {
-        	// Performance: Strings which are very much longer than maxStringWitdh must be reduced faster than just
-        	//one character per iteration.
-        	int cutChars=(int)Math.abs((int)(maxStringWidth-stringWidth)/characterWidth); 
-        	cutChars=(int)Math.min(secondPart.length(), cutChars); // limit cut items to length of second part
-        	
-        	secondPart=secondPart.substring(0,secondPart.length()-(int)Math.max(((cutChars)),1)).trim();
-        	stringWidth = myFontMetrics.stringWidth(secondPart);
-        	cutText=true;
-        }
-
-        if (cutText &&secondPart.length()>0) {secondPart+="\u2026";} //append an ellipsis
-        Integer tableWidth =new Integer((int)listWidth-Math.max(iconWidth,0)-4);
-        
-        String fontColorTag="color=#888888>";
-        if (isSelected) {fontColorTag=">";}
-        
-        return  "<html><table border=0 cellpadding=0 cellspacing=0 width='"
-        		.concat(tableWidth.toString())
-        		.concat("'><tr><td align=left>")
-        		.concat(EfaUtil.escapeHtml(firstPart))
-        		.concat("</td><td align=right><font ").concat(fontColorTag)
-        		.concat(EfaUtil.escapeHtml(secondPart))
-        		.concat("</font></td></tr></table></html>");
-		
+			long listWidth=Math.max(80,list.getParent().getWidth()-2*HORZ_SINGLE_BORDER-2);
+			FontMetrics myFontMetrics = label.getFontMetrics(label.getFont());
+			
+			long firstPartLength= myFontMetrics.stringWidth(firstPart);
+			long maxStringWidth = listWidth-SPACING_BOATNAME_SECONDPART-(iconWidth)-firstPartLength-4;
+	
+			if (maxStringWidth>0) {
+				// determine the maximum string length of the secondPart to be displayed...
+		        int stringWidth = 0;
+		        char[] readText = secondPart.toCharArray();
+		        int stringLength= secondPart.length();
+		    	boolean cutText = false;
+		        
+		        for (int currentChar=0; currentChar< stringLength; currentChar++) {
+		        	stringWidth += myFontMetrics.charWidth(readText[currentChar]);
+		        	if (stringWidth > maxStringWidth) {
+		        		cutText=true;
+		        		if (currentChar>0) {
+		        			secondPart=secondPart.substring(0,currentChar)+("\u2026");
+		        		} else {
+		        			secondPart="\u2026";
+		        		}
+		        		break;
+		        	}
+		        }
+			} else {
+				secondPart="";
+				}	        
+	       /* old code
+	        //listWidth can be zero directly after start of efaBoatHouse, so we stop under this condition.
+	        while (listWidth>0 &&(stringWidth>maxStringWidth) && (secondPart.length()>0)) {
+	        	// Performance: Strings which are very much longer than maxStringWitdh must be reduced faster than just
+	        	//one character per iteration.
+	        	int cutChars=(int)Math.abs((int)(maxStringWidth-stringWidth)/characterWidth); 
+	        	cutChars=(int)Math.min(secondPart.length(), cutChars); // limit cut items to length of second part
+	        	
+	        	secondPart=secondPart.substring(0,secondPart.length()-(int)Math.max(((cutChars)),1)).trim();
+	        	stringWidth = myFontMetrics.stringWidth(secondPart);
+	        	cutText=true;
+	        }
+	        
+	*/
+	        Integer tableWidth =new Integer((int)listWidth-Math.max(iconWidth,0)-6);
+	       
+	        // font color only shall apply if the item is not selected.
+	        String fontColorTag="color=#888888>";
+	        if (isSelected) {fontColorTag=">";}
+	        
+	        return  "<html><table border=0 cellpadding=0 cellspacing=0 width='"
+	        		.concat(tableWidth.toString())
+	        		.concat("'><tr><td align=left>")
+	        		.concat(EfaUtil.escapeHtml(firstPart))
+	        		.concat("</td><td align=right><font ").concat(fontColorTag)
+	        		.concat(EfaUtil.escapeHtml(secondPart))
+	        		.concat("</font></td></tr></table></html>");
+    	} catch (Exception e) {
+    		Logger.logdebug(e);
+    		return firstPart;
+    	}
     }
 }
 

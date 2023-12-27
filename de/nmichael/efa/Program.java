@@ -25,16 +25,12 @@ public class Program {
 
     public Program(int applId, String[] args) {
         Daten.program = this;
-        
-        // Look&Feel needs to be installed before initializing the rest of the program, 
-        // in special before initializing efaConfig.
         UIManager.installLookAndFeel("efaFlatLightLaf", "de.nmichael.efa.themes.EfaFlatLightLookAndFeel");
         //Dark LAF is prepared but not yet ready.
         //UIManager.installLookAndFeel("efaFlatDarkLaf", "de.nmichael.efa.themes.EfaFlatDarkLookAndFeel");
         
         Daten.iniBase(applId);
         checkArgs(args);
-
         newlyCreatedAdminRecord = Daten.initialize();
     }
 

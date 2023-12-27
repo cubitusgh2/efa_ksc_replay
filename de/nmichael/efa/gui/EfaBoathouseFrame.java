@@ -279,8 +279,6 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         iniGuiHeaderColors();
         iniGuiTooltipDelays();
         prepareEfaBaseFrame();
-        Logger.log(Logger.INFO, Logger.MSG_EVT_EFAREADY, International.getString("BEREIT")+" GUI");
-        
     }
 
     private void iniGuiBase() {
@@ -342,8 +340,6 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     }
 
     private void iniGuiMain() {
-        Logger.log(Logger.DEBUG, "Initializing efaBths main window");
-
         iniGuiBoatLists();
         iniGuiCenterPanel();
         iniGuiNorthPanel();
@@ -393,11 +389,10 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     }
 
     private void iniApplication() {
-        Logger.log(Logger.DEBUG, "Opening Project");
-    	openProject((AdminRecord)null);
+        openProject((AdminRecord)null);
         openProjectLogbookClubwork();
 
-        //updateBoatLists(true, false); // braucht man das hier?
+        updateBoatLists(true, false);
 
         EfaExitFrame.initExitFrame(this);
 
@@ -419,12 +414,10 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         crontabThread.start();
 
         alive();
-        Logger.log(Logger.INFO, Logger.MSG_EVT_EFAREADY, International.getString("BEREIT"));
+        Logger.log(Logger.INFO, Logger.MSG_EVT_EFAREADY, International.getString("PROJEKT_GELADEN"));
     }
 
     private void iniGuiRemaining() {
-        Logger.log(Logger.DEBUG, "Initializing main window maximized look");
-
         // Fenster nicht verschiebbar
         if (Daten.efaConfig.getValueEfaDirekt_fensterNichtVerschiebbar()) {
             try {
@@ -1146,6 +1139,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             case EFA_EXIT_REASON_ONLINEUPDATE:
                 who = International.getString("Online-Update");
                 break;
+
         }
         if (restart) {
             exitCode = Daten.program.restart();
@@ -1167,7 +1161,8 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         final boolean _restart = restart;
         new Thread() {
             public void run() {
-                try {
+                this.setName("EfaBoathouseFrame.cancelRunInThreadWithDelay");
+            	try {
                     Thread.sleep(1000);
                 } catch (Exception e) {
                 }
@@ -2274,8 +2269,6 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     }
 
     void prepareEfaBaseFrame() {
-        Logger.log(Logger.DEBUG, "Initializing efaBaseFrame for session start/end");
-
         efaBaseFrame = new EfaBaseFrame(this, EfaBaseFrame.MODE_BOATHOUSE);
         efaBaseFrame.prepareDialog();
         efaBaseFrame.setFixedLocationAndSize();
@@ -2817,6 +2810,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             new Thread() {
 
                 public void run() {
+                	this.setName("EfaBoathouseFrame.lockEfaThread");
                     try {
                         Thread.sleep(1000);
                     } catch (Exception e) {
