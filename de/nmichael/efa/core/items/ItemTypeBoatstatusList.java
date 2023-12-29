@@ -26,6 +26,8 @@ import de.nmichael.efa.data.types.DataTypeDate;
 import java.awt.Color;
 import java.util.UUID;
 
+import javax.swing.SwingUtilities;
+
 public class ItemTypeBoatstatusList extends ItemTypeList {
 
     public static final int SEATS_OTHER = 99;
@@ -68,7 +70,12 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
         list.setSelectedIndex(-1);
         setItems(vdata);
         showValue();
-        //list.repaint();  //do not call list.repaint here. this can cause nullpointerexceptions in jLabel.setIcon() for some reason... 
+        //update the list sometime when the current event is over
+        SwingUtilities.invokeLater(new Runnable() {
+  	      public void run() {
+                list.repaint();
+  	      }
+    	});
     }
 
     /**
