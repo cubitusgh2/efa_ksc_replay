@@ -11,14 +11,18 @@
 package de.nmichael.efa.gui;
 
 import de.nmichael.efa.*;
+import de.nmichael.efa.data.efacloud.TxRequestQueue;
+import de.nmichael.efa.data.storage.IDataAccess;
 import de.nmichael.efa.util.*;
 import de.nmichael.efa.util.Dialog;
 import de.nmichael.efa.core.items.*;
+import de.nmichael.efa.gui.ImagesAndIcons;
 import de.nmichael.efa.gui.util.AutoCompletePopupWindow;
 
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
+import javax.swing.border.*;
 
 // @i18n complete
 public abstract class BaseDialog extends JDialog implements ActionListener {
@@ -360,23 +364,8 @@ public abstract class BaseDialog extends JDialog implements ActionListener {
     public JScrollPane getScrollPane() {
         return mainScrollPane;
     }
-
     public static ImageIcon getIcon(String name) {
-        try {
-            if (name.indexOf("/") < 0) {
-                name = Daten.IMAGEPATH + name;
-            }
-            if (Logger.isTraceOn(Logger.TT_GUI, 9)) {
-                Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_GUI_ICONS, "getIcon("+name+")");
-            }
-            return new ImageIcon(BaseDialog.class.getResource(name));
-        } catch(Exception e) {
-            if (Logger.isTraceOn(Logger.TT_GUI, 9)) {
-                Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_GUI_ICONS, "getIcon("+name+"): no icon found!");
-            }
-            Logger.logdebug(e);
-            return null;
-        }
+    	return ImagesAndIcons.getIcon(name); // use a central function instead of redundant code.
     }
 
     public static ImageIcon getScaledImage(String name) {

@@ -18,10 +18,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.KeyEvent;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Vector;
 
-import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -253,7 +251,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
         if (useAutocompleteList) {
         	if (Daten.efaConfig.getValuePopupContainsMode()) {
         		this.autoComplete(new KeyEvent(e.getComponent(),e.getID(), System.currentTimeMillis(), 0, KeyEvent.VK_TAB));
-        	}        	
+        	}
             AutoCompletePopupWindow.hideWindow();
         }
         if (isCheckSpelling && Daten.efaConfig != null && Daten.efaConfig.getValueCorrectMisspelledNames()) {
@@ -324,8 +322,8 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
             return;
         } else {
             list.update();
-	    list.setFilterText(null); // todo there may be some magic in here? // das hier ist ein Code aus kscRelease, wo im offiziellen Zweig fehlt.
-	    // warum ist der da?
+    	    list.setFilterText(null); // todo there may be some magic in here? // das hier ist ein Code aus kscRelease, wo im offiziellen Zweig fehlt.
+    	    // warum ist der da?
         }
 
         if (e != null && e.getKeyCode() == -23) {
@@ -341,8 +339,9 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
         String base = null;
 
         Mode mode = Mode.none; // 0
-        if (e == null || (EfaUtil.isRealChar(e) && e.getKeyCode() != KeyEvent.VK_ENTER) || e.getKeyCode() == KeyEvent.VK_DOWN) {
-            mode = Mode.normal; // 1
+        if (e == null || ((EfaUtil.isRealChar(e) && (e.getKeyCode() != KeyEvent.VK_ENTER) && (e.getKeyCode() != KeyEvent.VK_TAB)) 
+        		|| (e.getKeyCode() == KeyEvent.VK_DOWN))){ 
+        	mode = Mode.normal; // 1
         } else if (e.getKeyCode() == KeyEvent.VK_UP) {
             mode = Mode.up; // 2
         } else if (e.getKeyCode() == KeyEvent.VK_DELETE || e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
@@ -641,14 +640,14 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
     	if (field == null) {
             return;
         }
-        JTextField field = (JTextField)this.field;
+        JTextField field = (JTextField)this.field;	
 
         AutoCompleteList list = getAutoCompleteList();
         if (list == null) {
             setButtonColor(null);
             return;
         } else {
-        	list.update();
+        	list.update(); 
         	list.setFilterText(field.getText().trim());
         }
 
@@ -674,7 +673,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
             mode = Mode.enter; // 4
         } else if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
             mode = Mode.escape; // 5
-        }
+        } 
 
         if (e == null || mode == Mode.enter || mode == Mode.escape) {
         	field.setText(field.getText().trim());
@@ -685,7 +684,6 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
         String complete="";
 
         if (mode == Mode.normal || ((mode == Mode.enter || mode == Mode.escape || mode == Mode.none))) {
-
 
 
         	// Down Arrow or STRG+F opens the poup list.
