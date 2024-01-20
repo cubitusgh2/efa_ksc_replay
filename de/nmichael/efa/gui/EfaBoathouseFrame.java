@@ -36,6 +36,7 @@ import java.util.Stack;
 import java.util.UUID;
 import java.util.Vector;
 
+import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -150,8 +151,10 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     // Center Panel GUI Items
     JLabel logoLabel = new JLabel();
     JButton startSessionButton = new JButton();
+    JButton startSessionButtonMultiple = new JButton();
     JButton finishSessionButton = new JButton();
     JButton lateEntryButton = new JButton();
+    JButton lateEntryButtonMultiple = new JButton();
     JButton abortSessionButton = new JButton();
     JButton boatReservationButton = new JButton();
     JButton messageToAdminButton = new JButton();
@@ -674,10 +677,41 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         }
         centerPanel.add(logoLabel, new GridBagConstraints(1, 0, 1, 2, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(logoTop, 0, logoBottom, 0), 0, 0));
         int fahrtbeginnTop = (int) (10.0f * (Dialog.getFontSize() < 10 ? 12 : Dialog.getFontSize()) / Dialog.getDefaultFontSize());
-        centerPanel.add(startSessionButton, new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(fahrtbeginnTop, 0, 0, 0), 0, 0));
-        centerPanel.add(finishSessionButton, new GridBagConstraints(1, 3, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
+
+    	JPanel myPanel=new JPanel();
+    	myPanel.setBorder(BorderFactory.createEmptyBorder(0,0,0,0));
+    	myPanel.setLayout(new GridBagLayout());
+    	// StartSession takes 8/9th of width and grows horizontally, multissessionbutton grows vertically as the icon alone makes the button to look smallish
+    	myPanel.add(startSessionButton,      new GridBagConstraints(1, 1, 8, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
+    	myPanel.add(startSessionButtonMultiple, new GridBagConstraints(9, 1, 1, 1, 0.0, 1.0, GridBagConstraints.WEST, GridBagConstraints.VERTICAL, new Insets(0, 2, 0, 0), 0, 0));
+    	startSessionButtonMultiple.setVisible(Daten.efaConfig.getValueEfaDirekt_MultisessionSupportLateEntry());    
+       
+    	centerPanel.add(myPanel, new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(fahrtbeginnTop, 0, 0, 0), 0, 0));
+
+/*        } else {
+        	centerPanel.add(startSessionButton, new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(fahrtbeginnTop, 0, 0, 0), 0, 0));
+        	startSessionButtonMultiple.setVisible(false);
+        }
+*/
+        centerPanel.add(finishSessionButton, new GridBagConstraints(1, 3, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 0, 0, 0), 0, 0));
         centerPanel.add(abortSessionButton, new GridBagConstraints(1, 4, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(10, 0, 0, 0), 0, 0));
-        centerPanel.add(lateEntryButton, new GridBagConstraints(1, 5, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(10, 0, 0, 0), 0, 0));
+        
+    	myPanel=new JPanel();
+    	myPanel.setBorder(BorderFactory.createEmptyBorder(0,0,0,0));
+    	myPanel.setLayout(new GridBagLayout());
+    	// StartSession takes 8/9th of width and grows horizontally, multissessionbutton grows vertically as the icon alone makes the button to look smallish
+    	myPanel.add(lateEntryButton,      new GridBagConstraints(1, 1, 8, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
+    	myPanel.add(lateEntryButtonMultiple, new GridBagConstraints(9, 1, 1, 1, 0.0, 1.0, GridBagConstraints.WEST, GridBagConstraints.VERTICAL, new Insets(0, 2, 0, 0), 0, 0));
+    	lateEntryButtonMultiple.setVisible(Daten.efaConfig.getValueEfaDirekt_MultisessionSupportLateEntry());    
+       
+    	centerPanel.add(myPanel, new GridBagConstraints(1, 5, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(10, 0, 0, 0), 0, 0));
+
+/*        } else {
+        	  centerPanel.add(lateEntryButton, new GridBagConstraints(1, 5, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(10, 0, 0, 0), 0, 0));
+        	  lateEntryButtonMultiple.setVisible(false);
+        }
+ */       
+        //centerPanel.add(lateEntryButton, new GridBagConstraints(1, 5, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(10, 0, 0, 0), 0, 0));
         centerPanel.add(clubworkButton, new GridBagConstraints(1, 6, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(10, 0, 0, 0), 0, 0));
         centerPanel.add(boatReservationButton, new GridBagConstraints(1, 7, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(10, 0, 0, 0), 0, 0));
         centerPanel.add(showLogbookButton, new GridBagConstraints(1, 8, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(10, 0, 0, 0), 0, 0));
@@ -690,9 +724,11 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         centerPanel.add(clock.getGuiComponent(), new GridBagConstraints(1, 15, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(10, 10, 10, 10), 0, 0));
         
         EfaUtil.handleButtonOpaqueForLookAndFeels(startSessionButton);
+        EfaUtil.handleButtonOpaqueForLookAndFeels(startSessionButtonMultiple);
         EfaUtil.handleButtonOpaqueForLookAndFeels(finishSessionButton);
         EfaUtil.handleButtonOpaqueForLookAndFeels(abortSessionButton);
         EfaUtil.handleButtonOpaqueForLookAndFeels(lateEntryButton);
+        EfaUtil.handleButtonOpaqueForLookAndFeels(lateEntryButtonMultiple);        
         EfaUtil.handleButtonOpaqueForLookAndFeels(clubworkButton);
         EfaUtil.handleButtonOpaqueForLookAndFeels(boatReservationButton);
         EfaUtil.handleButtonOpaqueForLookAndFeels(showLogbookButton);
@@ -729,6 +765,13 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             }
         });
 
+    	startSessionButtonMultiple.setToolTipText(International.getString("Mehrere Fahrten beginnen"));
+    	startSessionButtonMultiple.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                actionStartSessionMultiple();
+            }
+        });        	
+        
         Mnemonics.setButton(this, finishSessionButton, International.getStringWithMnemonic("Fahrt beenden"));
         finishSessionButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -749,6 +792,13 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
                 actionLateEntry();
             }
         });
+        
+    	lateEntryButtonMultiple.setToolTipText(International.getString("Mehrere Fahrten beginnen"));
+    	lateEntryButtonMultiple.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                actionLateEntryMultiple();
+            }
+        });        	
 
         Mnemonics.setButton(this, boatReservationButton, International.getStringWithMnemonic("Bootsreservierungen"));
         boatReservationButton.addActionListener(new java.awt.event.ActionListener() {
@@ -831,7 +881,10 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     }
 
     private void updateGuiButtonLAF() {
-        this.boatReservationButton.setVisible(Daten.efaConfig.getValueEfaDirekt_butBootsreservierungen().getValueShow());
+    	this.startSessionButtonMultiple.setVisible(Daten.efaConfig.getValueEfaDirekt_MultisessionSupportStartSession());
+    	this.lateEntryButtonMultiple.setVisible(Daten.efaConfig.getValueEfaDirekt_MultisessionSupportLateEntry());
+    	
+    	this.boatReservationButton.setVisible(Daten.efaConfig.getValueEfaDirekt_butBootsreservierungen().getValueShow());
         this.showLogbookButton.setVisible(Daten.efaConfig.getValueEfaDirekt_butFahrtenbuchAnzeigen().getValueShow());
         this.statisticsButton.setVisible(Daten.efaConfig.getValueEfaDirekt_butStatistikErstellen().getValueShow());
         this.clubworkButton.setVisible(Daten.efaConfig.getValueEfaDirekt_butVereinsarbeit().getValueShow() && clubwork != null && clubwork.isOpen());
@@ -841,9 +894,11 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         this.helpButton.setVisible(Daten.efaConfig.getValueEfaDirekt_butHelp().getValueShow());
 
         setButtonLAF(startSessionButton, Daten.efaConfig.getValueEfaDirekt_butFahrtBeginnen(), ImagesAndIcons.IMAGE_ACTION_START_SESSION);
+        setButtonLAF(startSessionButtonMultiple, Daten.efaConfig.getValueEfaDirekt_butFahrtBeginnen(), ImagesAndIcons.IMAGE_ACTION_START_SESSION_MULTI);
         setButtonLAF(finishSessionButton, Daten.efaConfig.getValueEfaDirekt_butFahrtBeenden(), ImagesAndIcons.IMAGE_ACTION_FINISH_SESSION);
         setButtonLAF(abortSessionButton, Daten.efaConfig.getValueEfaDirekt_butFahrtAbbrechen(), ImagesAndIcons.IMAGE_ACTION_ABORT_SESSION);
         setButtonLAF(lateEntryButton, Daten.efaConfig.getValueEfaDirekt_butNachtrag(), ImagesAndIcons.IMAGE_ACTION_LATE_ENTRY);
+        setButtonLAF(lateEntryButtonMultiple, Daten.efaConfig.getValueEfaDirekt_butNachtrag(),ImagesAndIcons.IMAGE_ACTION_LATE_ENTRY_MULTI);
         setButtonLAF(boatReservationButton, Daten.efaConfig.getValueEfaDirekt_butBootsreservierungen(), ImagesAndIcons.IMAGE_ACTION_BOAT_RESERVATIONS);
         setButtonLAF(showLogbookButton, Daten.efaConfig.getValueEfaDirekt_butFahrtenbuchAnzeigen(), ImagesAndIcons.IMAGE_ACTION_LOGBOOK);
         setButtonLAF(statisticsButton, Daten.efaConfig.getValueEfaDirekt_butStatistikErstellen(), ImagesAndIcons.IMAGE_ACTION_STATISTICS);
@@ -2383,6 +2438,16 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         showEfaBaseFrame(EfaBaseFrame.MODE_BOATHOUSE_START, item);
         clearFilterFieldsIfConfigured();        
     }
+    
+    void actionStartSessionMultiple() {
+    	alive();
+    	clearAllPopups();
+        if (Daten.project == null) {
+            return;
+        }    	
+
+        clearFilterFieldsIfConfigured();        
+    }
 
     void actionStartSessionCorrect() {
         alive();
@@ -2478,6 +2543,16 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         clearFilterFieldsIfConfigured();        
     }
 
+    void actionLateEntryMultiple() {
+    	alive();
+    	clearAllPopups();
+        if (Daten.project == null) {
+            return;
+        }    	
+
+        clearFilterFieldsIfConfigured();        
+    }
+    
     void actionBoatReservations() {
         if (!Daten.efaConfig.getValueEfaDirekt_butBootsreservierungen().getValueShow()) {
             return;
