@@ -162,3 +162,4 @@ public class ItemTypeButton extends ItemType {
     	this.boldfont=value;
     }
 }
+

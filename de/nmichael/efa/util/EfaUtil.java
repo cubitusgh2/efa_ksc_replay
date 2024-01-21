@@ -1,5 +1,5 @@
 /**
- * Title:        efa - elektronisches Fahrtenbuch für Ruderer
+g * Title:        efa - elektronisches Fahrtenbuch für Ruderer
  * Copyright:    Copyright (c) 2001-2011 by Nicolas Michael
  * Website:      http://efa.nmichael.de/
  * License:      GNU General Public License v2
@@ -64,7 +64,7 @@ import de.nmichael.efa.core.config.EfaTypes;
 import de.nmichael.efa.data.types.DataTypeTime;
 import de.nmichael.efa.efa1.DatenFelder;
 import de.nmichael.efa.efa1.Synonyme;
-
+import javax.swing.SwingUtilities;
 
 // @i18n complete
 public class EfaUtil {
@@ -74,6 +74,8 @@ public class EfaUtil {
 
 	private static String UMLAUTS 		= "åàáâăäāąćçčèéêęëėěēìíîįīïďđģķĺļłńňñņòóôőõöōøřŕůùúûűüųūýÿšśşťţżžź";
 	private static String REPLACEMENT 	= "aaaaaaaaccceeeeeeeeiiiiiiddgklllnnnnoooooooorruuuuuuuuyysssttzzz"; 
+
+    private static String UMLAUTSEXTEND = UMLAUTS + "ßæœ";// those umlauts get translated to two characters
 
     public static String escapeXml(String str) {
         str = replaceString(str, "&", "&amp;");
@@ -230,7 +232,7 @@ public class EfaUtil {
     }    
     
     public static boolean containsUmlaut(String data) {
-    	return data.toLowerCase().matches(".*["+UMLAUTS+"]+.*");
+    	return data.toLowerCase().matches(".*["+UMLAUTSEXTEND+"]+.*");
     }
     
     public static String getString(String s, int length) {
@@ -2200,30 +2202,6 @@ public class EfaUtil {
     	return value;
     	
     }    
-    
-    /**
-     * Helper class to display a notification message.
-     * If this is a GUI application, we asynchronously display a dialog through
-     * SwingUtilities.invokeLater in a separate thread. If this is not a GUI application,
-     * we will synchronously in the calling thread invoke the logging method.
-     */
-    public static abstract class UserMessage {
-
-        public abstract void run();
-
-        public static void show(UserMessage m) {
-            if (Daten.isGuiAppl()) {
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        m.run();
-                    }
-                });
-            } else {
-                m.run();
-            }
-        }
-    }
-
 
     /**
      * Efa uses buttons which are filled with a color. 
@@ -2289,7 +2267,7 @@ public class EfaUtil {
 	public static Vector <String>makeFontFamilyVector (Boolean showAllFonts, String DEFAULT_FONT_NAME) {
         GraphicsEnvironment graphicsEnvironment = GraphicsEnvironment.getLocalGraphicsEnvironment();
         Font[] allFonts = graphicsEnvironment.getAllFonts();
-        String guiFontRegexp=".*arial.*|.*dialog|.*roboto.*|.*tahoma.*|.*trebuchet.*|.*verdana.*|.*inter.*|.*sansserif|.*segoe.ui.*|.*verdana.*|.*cantarell.*|.*dejavu.*|.*liberation.*|.*piboto.*|.*quicksand.*|.*helvetic.*";        
+        String guiFontRegexp="arial.*|dialog|roboto.*|tahoma.*|trebuchet.*|.*inter.*|.*sansserif|segoe.ui.*|verdana.*|cantarell.*|dejavu.*|liberation.*|.*piboto.*|noto.sans|noto.sans.display.*|quicksand.*";        
         Vector <String>fontFamilies = new Vector<String>();
         
         for (Font font : allFonts) {
@@ -2311,6 +2289,30 @@ public class EfaUtil {
     	Collections.sort(fontFamilies,new EfaSortStringComparator());
     	return fontFamilies;
 	}
+    
+    /**
+     * Helper class to display a notification message.
+     * If this is a GUI application, we asynchronously display a dialog through
+     * SwingUtilities.invokeLater in a separate thread. If this is not a GUI application,
+     * we will synchronously in the calling thread invoke the logging method.
+     */
+    public static abstract class UserMessage {
+
+        public abstract void run();
+
+        public static void show(UserMessage m) {
+            if (Daten.isGuiAppl()) {
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        m.run();
+                    }
+                });
+            } else {
+                m.run();
+            }
+        }
+
+    }	
     
     public static void main(String args[]) {
         String text = "abc & def";

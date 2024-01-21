@@ -529,7 +529,7 @@ public class Project extends StorageObject {
                                     description.append((j > 0 ? ", " : "") + clubworkNames[j]);
                                 }
                             }
-                            items.put(name, description.toString());
+                            items.put(name, "<html>"+description.toString()+"</html>");
                         } catch (Exception e1) {
                         }
                     }
@@ -549,7 +549,7 @@ public class Project extends StorageObject {
                 String name = "<b>" + International.getString("Fahrtenbuch") + ":</b> <b style=\"color:blue\">" + logbooks[i] + "</b><br>";
                 String description = (r.getDescription() != null && r.getDescription().length() > 0 ? r.getDescription() + " " : "");
                 description += "(" + r.getStartDate().toString() + " - " + r.getEndDate() + ")";
-                items.put(logbooks[i], name + description);
+                items.put(logbooks[i], "<html>"+name + description+"</html>");
             }
         }
         return items;
@@ -564,7 +564,7 @@ public class Project extends StorageObject {
                 String name = "<b>" + International.getString("Vereinsarbeit") + ":</b> <b style=\"color:blue\">" + clubworks[i] + "</b><br>";
                 String description = (r.getDescription() != null && r.getDescription().length() > 0 ? r.getDescription() + " " : "");
                 description += "(" + r.getStartDate().toString() + " - " + r.getEndDate() + ")";
-                items.put(clubworks[i], name + description);
+                items.put(clubworks[i], "<html>"+name + description+"</html>");
             }
         }
         return items;

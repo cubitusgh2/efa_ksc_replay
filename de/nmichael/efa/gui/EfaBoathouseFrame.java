@@ -44,6 +44,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
 
@@ -181,10 +182,12 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     JPanel centerPanel = new JPanel();
     JPanel northPanel = new JPanel();
     JPanel southPanel = new JPanel();
+    
 
     // Window GUI Items
     JLabel titleLabel = new JLabel();
-
+    JButton closeButton;
+    
     // Data
     EfaBoathouseBackgroundTask efaBoathouseBackgroundTask;
     CrontabThread crontabThread;
@@ -286,6 +289,10 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         setIconImage(Toolkit.getDefaultToolkit().createImage(EfaBaseFrame.class.getResource("/de/nmichael/efa/img/efa_icon.png")));
         mainPanel.setLayout(new BorderLayout());
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+        //setting resizable to true would enable resizing the boathouse window.
+        //but as the boatlists on the left and the right are on east and west, 
+        //they do not scale horizontally with screen width.
+        //so setResizable(true) would be useless.
         setResizable(false);
         this.addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowClosing(WindowEvent e) {
@@ -442,11 +449,12 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
                 efaLabel.setIcon(getIcon(ImagesAndIcons.IMAGE_EFA_ICON_SMALL ));
                 titleLabel.setText(Daten.EFA_LONGNAME);
                 titleLabel.setForeground(Color.white);
-                titleLabel.setFont(titleLabel.getFont().deriveFont(12f));
+                titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD,12f));
                 titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
-                titleLabel.setHorizontalTextPosition(SwingConstants.CENTER);
+                titleLabel.setHorizontalTextPosition(SwingConstants.LEFT);
+                titleLabel.setIconTextGap(20);
                 titleLabel.setBackground(bgColor);
-                JButton closeButton = new JButton();
+                closeButton = new JButton();
                 closeButton.setIcon(getIcon(ImagesAndIcons.IMAGE_FRAME_CLOSE ));
                 closeButton.setBackground(bgColor);
                 closeButton.setForeground(Color.white);
@@ -870,7 +878,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         if (clock == null) {
             clock = new ClockMiniWidget();
         }
-        clock.getGuiComponent().setVisible(Daten.efaConfig.getValueEfaDirekt_showUhr());
+        clock.setVisible(Daten.efaConfig.getValueEfaDirekt_showUhr());
     }
 
     private void updateGuiNews() {
@@ -879,7 +887,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         }
         news.setText(Daten.efaConfig.getValueEfaDirekt_newsText());
         news.setScrollSpeed(Daten.efaConfig.getValueEfaDirekt_newsScrollSpeed());
-        news.getGuiComponent().setVisible(Daten.efaConfig.getValueEfaDirekt_showNews());
+        news.setVisible(Daten.efaConfig.getValueEfaDirekt_showNews());
         if (isDisplayable()) {
             packFrame("updateGuiNews()");
         }
@@ -964,7 +972,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     }
 
     private void statusLabelSetText(String s) {
-        statusLabel.setText(s);
+        statusLabel.setText(" "+ s);
         // wenn Text zu lang, dann PreferredSize verringern, damit bei pack() die zu große Label-Breite nicht
         // zum Vergrößern des Fensters führt!
         if (statusLabel.getPreferredSize().getWidth() > this.getSize().getWidth()) {
@@ -1282,8 +1290,16 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             TxRequestQueue txq = TxRequestQueue.getInstance();
             if (txq != null)
                 txq.setEfaGUIrootContainer(this);   // is relevant only at startup
-            String efaCloudStatus = (txq != null) ? txq.getStateForDisplay() : "";
+            String efaCloudStatus = (txq != null) ? txq.getStateForDisplay(false) : "";
             titleLabel.setText(Daten.EFA_LONGNAME + " [" + Daten.project.getProjectName() +
+                    (logbook != null && logbook.isOpen() ? ": " + logbook.getName() : "") + 
+                    (Daten.project.getMyBoathouseName() != null ? " - " + Daten.project.getMyBoathouseName() : "") +
+                    "] " + efaCloudStatus);
+            
+            titleLabel.setIcon((txq != null) ? txq.getStateIconForDisplay(): null);
+            
+            efaCloudStatus = (txq != null) ? txq.getStateForDisplay(true) : "";
+            this.setTitle(Daten.EFA_LONGNAME + " [" + Daten.project.getProjectName() +
                     (logbook != null && logbook.isOpen() ? ": " + logbook.getName() : "") + 
                     (Daten.project.getMyBoathouseName() != null ? " - " + Daten.project.getMyBoathouseName() : "") +
                     "]" + efaCloudStatus);
@@ -1332,7 +1348,11 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             }
             return Daten.project;
         } finally {
-            updateProjectLogbookInfo();
+        	SwingUtilities.invokeLater(new Runnable() {
+        		public void run() {
+                    updateProjectLogbookInfo();
+        		}
+        	});             	
         }
     }
     
@@ -1400,7 +1420,11 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             }
             return logbook;
         } finally {
-            updateProjectLogbookInfo();
+        	SwingUtilities.invokeLater(new Runnable() {
+        		public void run() {
+                    updateProjectLogbookInfo();
+        		}
+        	});             	
         }
     }
 
@@ -1493,7 +1517,12 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             }
             return false;
         } finally {
-            updateProjectLogbookInfo();
+        	//openLogBook can also be called from efaBoatHouseBackgroundTask, so it is secure to call this swing-thread-safe.
+        	SwingUtilities.invokeLater(new Runnable() {
+        		public void run() {
+                    updateProjectLogbookInfo();
+        		}
+        	});        	
         }
     }
 
@@ -1902,7 +1931,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     }
 
     void boatListDoubleClick(int listnr, ItemTypeBoatstatusList list) {
-        if (list == null || list.getSelectedIndex() < 0) {
+    	if (list == null || list.getSelectedIndex() < 0) {
             return;
         }
         clearAllPopups();
@@ -2059,6 +2088,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         if (!Daten.efaConfig.getValueEfaDirekt_listAllowToggleBoatsPersons()) {
             return;
         }
+        alive(); // set last user interaction time
         iniGuiListNames();
         if (Logger.isTraceOn(Logger.TT_GUI, 8)) {
             Logger.log(Logger.DEBUG, Logger.MSG_GUI_DEBUGGUI, "toggleAvailableBoats_actionPerformed()");
@@ -2628,6 +2658,13 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             updateGuiElements();
             iniGuiHeaderColors();
             iniGuiTooltipDelays();
+            if (Daten.isApplEfaBoathouse() && Daten.isEfaFlatLafActive() && (closeButton!=null)) {
+                //EfaFlatLaf gets renitialized when efaConfig Dialog gets closed. 
+            	//this makes the closebutton in the blue header to get a border, and thus it grows.
+            	//we revoke the border when closing admin mode, then.
+                closeButton.setFont(closeButton.getFont().deriveFont(10f));
+                closeButton.setBorder(null);
+            }
         } finally {
             Daten.applMode = Daten.APPL_MODE_NORMAL;
         }
@@ -2792,6 +2829,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     }
 
     void hilfeButton_actionPerformed(ActionEvent e) {
+    	alive();
         clearAllPopups();
         Help.showHelp(getHelpTopics());
     }

@@ -24,7 +24,7 @@ public class Table extends JTable {
 
     BaseDialog dlg;
     TableSorter sorter;
-    TableCellRenderer renderer;
+    EfaTableCellRenderer renderer;
     TableItemHeader[] header;
     TableItem[][] data;
     private boolean dontResize = false;
@@ -35,7 +35,7 @@ public class Table extends JTable {
     private int minColumnWidth = 50;
     private int[] minColumnWidths = null;
 
-    public Table(BaseDialog dlg, TableSorter sorter, TableCellRenderer renderer, 
+    public Table(BaseDialog dlg, TableSorter sorter, EfaTableCellRenderer renderer, 
             TableItemHeader[] header, TableItem[][] data, boolean allowSorting) {
         super(sorter);
         this.dlg = dlg;
@@ -43,7 +43,8 @@ public class Table extends JTable {
         this.renderer = renderer;
         this.header = header;
         this.data = data;
-
+        this.setTableHeader(new TableHeaderWithTooltips(this.getColumnModel()));
+        
         if (Daten.efaConfig.getValueEfaDirekt_tabelleAlternierendeZeilenFarben()) {
         	// Update for standard tables: Update for standard inverted cursor
         	// only applied when using alternating row colors - otherwise the standard of the lookandfeel is used.
@@ -57,7 +58,7 @@ public class Table extends JTable {
         this.setRowHeight(fm.getHeight()+4);
 
         if (renderer == null) {
-            renderer = new TableCellRenderer();
+            renderer = new EfaTableCellRenderer();
             renderer.setAlternatingRowColor(Daten.efaConfig.getTableAlternatingRowColor());
         }
         setDefaultRenderer(Object.class, renderer);
@@ -215,11 +216,11 @@ public class Table extends JTable {
         return createTable(dlg, null, header, data);
     }
 
-    public static Table createTable(BaseDialog dlg, TableCellRenderer renderer, TableItemHeader[] header, TableItem[][] data) {
+    public static Table createTable(BaseDialog dlg, EfaTableCellRenderer renderer, TableItemHeader[] header, TableItem[][] data) {
         return createTable(dlg, renderer, header, data, true);
     }
 
-    public static Table createTable(BaseDialog dlg, TableCellRenderer renderer, TableItemHeader[] header,
+    public static Table createTable(BaseDialog dlg, EfaTableCellRenderer renderer, TableItemHeader[] header,
             TableItem[][] data, boolean allowSorting) {
         for (int i=0; i<data.length; i++) {
             for (int j=0; j<data[i].length; j++) {
@@ -247,7 +248,7 @@ public class Table extends JTable {
         return sorter.getSortingAscending();
     }
 
-    public TableCellRenderer getRenderer() {
+    public EfaTableCellRenderer getRenderer() {
         return renderer;
     }
 
@@ -313,4 +314,25 @@ public class Table extends JTable {
     public void setMinColumnWidths(int[] minColumnWidths) {
         this.minColumnWidths = minColumnWidths;
     }
+    
+    private class TableHeaderWithTooltips extends JTableHeader {
+
+		private static final long serialVersionUID = -7345224027810977124L;
+
+		TableHeaderWithTooltips(TableColumnModel columnModel) {
+          super(columnModel);//do everything a normal JTableHeader does
+        }
+
+		/**
+		 * return the caption of the clumn the mouse is hovering.
+		 * do not check wether a tooltip is neccessary or not
+		 */
+        public String getToolTipText(MouseEvent e) {
+            java.awt.Point p = e.getPoint();
+            int index = columnModel.getColumnIndexAtX(p.x);
+            //int realIndex = columnModel.getColumn(index).getModelIndex();
+			
+            return this.getColumnModel().getColumn(index).getHeaderValue().toString();
+        }
+    }    
 }
