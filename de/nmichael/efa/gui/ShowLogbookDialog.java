@@ -40,7 +40,9 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumnModel;
 
 import de.nmichael.efa.Daten;
 import de.nmichael.efa.core.items.IItemListener;
@@ -59,7 +61,6 @@ import de.nmichael.efa.data.types.DataTypeIntString;
 import de.nmichael.efa.gui.util.AutoCompleteList;
 import de.nmichael.efa.gui.util.EfaTableCellRenderer;
 import de.nmichael.efa.gui.util.TableHeaderCellRendererBold;
-import de.nmichael.efa.gui.util.TableItem;
 import de.nmichael.efa.gui.util.TableSorter;
 import de.nmichael.efa.util.Dialog;
 import de.nmichael.efa.util.EfaUtil;
@@ -267,6 +268,7 @@ public class ShowLogbookDialog extends BaseDialog implements IItemListener {
 
         sorter = new TableSorter(new DefaultTableModel(fahrten, title));
         table = new MyJTable(sorter, Daten.efaConfig.getValueEfaDirekt_tabelleShowTooltip());
+        table.setTableHeader(new TableHeaderWithTooltips(table.getColumnModel()));
         
         HighlightTableCellRenderer mySteuermannRenderer = new HighlightTableCellRenderer();
         if (Daten.efaConfig.getValueEfaDirekt_tabelleAlternierendeZeilenFarben()) {
@@ -333,26 +335,26 @@ public class ShowLogbookDialog extends BaseDialog implements IItemListener {
                     break;
                 case 1:
                     widths[i] = 10 * width / 100; // Datum
-                    if (widths[i] > 90) {
-                        widths[i] = 90;
+                    if (widths[i] > 110) {
+                        widths[i] = 110;
                     }
                     break;
                 case 5:
-                    widths[i] = 5 * width / 100; // Abfahrt
-                    if (widths[i] > 50) {
-                        widths[i] = 50;
+                    widths[i] = 6 * width / 100; // Abfahrt
+                    if (widths[i] > 65) {
+                        widths[i] = 65;
                     }
                     break;
                 case 6:
-                    widths[i] = 5 * width / 100; // Ankunft
-                    if (widths[i] > 50) {
-                        widths[i] = 50;
+                    widths[i] = 6 * width / 100; // Ankunft
+                    if (widths[i] > 65) {
+                        widths[i] = 65;
                     }
                     break;
                 case 8:
-                    widths[i] = 6 * width / 100; // Boots-Km
-                    if (widths[i] > 50) {
-                        widths[i] = 50;
+                    widths[i] = 7 * width / 100; // Boots-Km
+                    if (widths[i] > 70) {
+                        widths[i] = 70;
                     }
                     break;
                 case 10:
@@ -447,7 +449,7 @@ public class ShowLogbookDialog extends BaseDialog implements IItemListener {
         }
     }
 
-    class MyJTable extends JTable {
+    private class MyJTable extends JTable {
 
 		private static final long serialVersionUID = 7627514043061724774L;
 
@@ -478,6 +480,7 @@ public class ShowLogbookDialog extends BaseDialog implements IItemListener {
                     }
                 }
             } catch (Exception ee) {
+            	Logger.logdebug(ee);
             }
             super.valueChanged(e);
         }
@@ -509,12 +512,20 @@ public class ShowLogbookDialog extends BaseDialog implements IItemListener {
 					}
 	            }            
 	        } catch (Exception eignore) {
+	        	Logger.logdebug(eignore);
 	        }
 	        return null;
 	    }
         
     }
 
+    /** 
+     * MyNestedJTable is a table which is placed into a single cell.
+     * It is used for the "Crew" column. 
+     * 
+     * For it's inner cells, it uses the background color of the row it is currently used.
+     * 
+     */
     private class MyNestedJTable extends JTable {
 
 		private static final long serialVersionUID = -1632568401117917149L;
@@ -578,6 +589,7 @@ public class ShowLogbookDialog extends BaseDialog implements IItemListener {
 					}
 	            }            
 	        } catch (Exception eignore) {
+	        	Logger.logdebug(eignore);
 	        }
 	        return null;
 	    }        
@@ -604,7 +616,7 @@ public class ShowLogbookDialog extends BaseDialog implements IItemListener {
 
     }
 
-    class TableInTableRenderer implements TableCellRenderer {
+    private class TableInTableRenderer implements TableCellRenderer {
 
         public Component getTableCellRendererComponent(JTable table, Object value,
                 boolean isSelected, boolean hasFocus, int row, int column) {
@@ -617,12 +629,13 @@ public class ShowLogbookDialog extends BaseDialog implements IItemListener {
                 ((MyNestedJTable) value).setStartWithOddRow(row % 2 == 1);
                 return (Component) value;
             } catch (Exception e) {
+            	Logger.logdebug(e);
                 return null;
             }
         }
     }
 
-    class HighlightTableCellRenderer extends DefaultTableCellRenderer {
+    private class HighlightTableCellRenderer extends DefaultTableCellRenderer {
     	
 		private static final long serialVersionUID = -1661015873516314571L;
 		
@@ -638,18 +651,17 @@ public class ShowLogbookDialog extends BaseDialog implements IItemListener {
 	            Color bkgColor = null;
 	            Color fgColor = null;
 	            
-                if (((TableItem) value).isBold()) {
+                if (value !=null && ((TableItem) value).isBold()) {
                     c.setFont(c.getFont().deriveFont(Font.BOLD));
                 }
 
                 if (this.useAlternatingColor) {
-    	            
                 	if (table instanceof MyNestedJTable) {
                 		Boolean startsWithOdd=((MyNestedJTable) table).getStartWithOddRow();
                 		if (startsWithOdd) {
-                			bkgColor = (row % 2 == 0 ? null : alternateColor);
+                			bkgColor = null; //(row % 2 == 0 ? null : alternateColor);
                 		} else {
-            	            bkgColor = (row % 2 == 0 ? alternateColor : null);
+            	            bkgColor = alternateColor; // (row % 2 == 0 ? alternateColor : null);
                 		}
                 	} else {
                 		bkgColor = (row % 2 == 0 ? alternateColor : null);
@@ -671,6 +683,7 @@ public class ShowLogbookDialog extends BaseDialog implements IItemListener {
 	            c.setForeground(fgColor);
                 return this;
             } catch (Exception e) {
+            	Logger.logdebug(e);
                 return null;
             }
         }
@@ -681,7 +694,7 @@ public class ShowLogbookDialog extends BaseDialog implements IItemListener {
 	    }
     }
 
-    class ButtonRenderer extends JButton implements TableCellRenderer {
+    private class ButtonRenderer extends JButton implements TableCellRenderer {
 
 		private static final long serialVersionUID = -4274374186561493972L;
 
@@ -697,7 +710,7 @@ public class ShowLogbookDialog extends BaseDialog implements IItemListener {
 
     }
 
-    class ButtonEditor extends DefaultCellEditor {
+    private class ButtonEditor extends DefaultCellEditor {
 
 		private static final long serialVersionUID = -2250457297780802588L;
 
@@ -735,5 +748,26 @@ public class ShowLogbookDialog extends BaseDialog implements IItemListener {
             super.fireEditingStopped();
         }
     }
+    
+    private class TableHeaderWithTooltips extends JTableHeader {
+
+		private static final long serialVersionUID = 6995328318883617447L;
+
+		TableHeaderWithTooltips(TableColumnModel columnModel) {
+          super(columnModel);//do everything a normal JTableHeader does
+        }
+
+		/**
+		 * return the caption of the clumn the mouse is hovering.
+		 * do not check wether a tooltip is neccessary or not
+		 */
+        public String getToolTipText(MouseEvent e) {
+            java.awt.Point p = e.getPoint();
+            int index = columnModel.getColumnIndexAtX(p.x);
+            //int realIndex = columnModel.getColumn(index).getModelIndex();
+			
+            return this.getColumnModel().getColumn(index).getHeaderValue().toString();
+        }
+    }        
 
 }

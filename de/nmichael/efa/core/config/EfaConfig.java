@@ -835,11 +835,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					International.getString("Look & Feel")));
 			addParameter(lafButtonFocusColor = new ItemTypeColor("LookAndFeel_ButtonFocusColor", "", "",
 					IItemType.TYPE_EXPERT, BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_GUI),
-					"Look & Feel ButtonFocusColor", true));
-
-			/*addHeader("efaGuiFlatLafColors", IItemType.TYPE_PUBLIC,
-					BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_GUI),
-					International.getString("EFA Flat Look&Feel Basisfarben"), 3);*/
+					"LookAndFeel ButtonFocusColor", true));
 
 			addHint("efaGuiFlatLafColorsHint", IItemType.TYPE_PUBLIC,
 					BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_GUI),
@@ -1344,7 +1340,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),
 					International.getString("Sonstiges"), 3);
 
-			addParameter(efaDirekt_vereinsLogo = new ItemTypeImage("ClubLogo", "", 192, 64, IItemType.TYPE_PUBLIC,
+			addParameter(efaDirekt_vereinsLogo = new ItemTypeImage("ClubLogo", "", 320, 200, IItemType.TYPE_PUBLIC,
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI ),
 					International.getString("Vereinslogo")));
 
@@ -3356,20 +3352,28 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 		
 		String uiFontsString=uiFonts.toString().toLowerCase();
 		
+		/* the order is optimized for common operating systems:
+		 * - Arial, Segoe: -> Windows
+		 * - Piboto -> Raspian, efaLive for Raspberry Pi
+		 * - Liberation Sans -> Debian, efaLive for x86
+		 * - Roboto -> Linux systems like Ubuntu
+		 * - Noto Sans Display -> Linux systems like Ubuntu
+		 */
+		
 		if (uiFontsString.matches(".*arial.*")) {
 			return "Arial";
 		} else if (uiFontsString.matches(".*segoe.ui.*")){
 			return "Segoe UI";
 		} else if (uiFontsString.matches(".*piboto.*")) {
 			return "Piboto";		
+		} else if (uiFontsString.matches(".*liberation.sans.*")) {
+			return "Liberation Sans";
+		} else if (uiFontsString.matches(".*roboto.*")) {
+			return "Roboto";				
 		} else if (uiFontsString.matches(".*noto.sans.display.*")) {
 			return "Noto Sans Display";			
 		} else if (uiFontsString.matches(".*noto.sans.*")) {
 			return "Noto Sans";		
-		} else if (uiFontsString.matches(".*roboto.*")) {
-			return "Roboto";				
-		} else if (uiFontsString.matches(".*liberation.sans*")) {
-			return "Liberation Sans";
 		}
 		return "Dialog";
 	}
