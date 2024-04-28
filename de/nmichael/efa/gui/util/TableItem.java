@@ -17,9 +17,10 @@ public class TableItem {
     private boolean marked = false;
     private boolean disabled = false;
     private boolean invisible = false;
-
+    private Class dataType;
     public TableItem(String txt) {
         this.txt = (txt != null ? txt : "");
+        this.dataType= String.class;
     }
 
     public TableItem(String txt, boolean marked) {
@@ -29,6 +30,7 @@ public class TableItem {
 
     public TableItem(Object o) {
         this.txt = (o != null && o.toString() != null ? o.toString() : "");
+        this.dataType = (o!= null ? o.getClass() : null);
     }
 
     public String toString() {
@@ -71,4 +73,7 @@ public class TableItem {
     	this.invisible = invisible;
     }
 
+    public Class getType() {
+    	return this.dataType;
+    }
 }
