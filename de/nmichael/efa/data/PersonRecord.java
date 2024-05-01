@@ -874,25 +874,18 @@ public class PersonRecord extends DataRecord implements IItemFactory {
             items[2] = new TableItem(getBirthday());
             items[3] = new TableItem(getStatusName());
         }
-        setIconAndTooltipForEFBSync(items[0]);
-        setIconAndTooltipForGroups(items[0]);
+        setIconAndTooltipForEFBSyncAndGroups(items[0]);
         return items;
     }
     
-    private void setIconAndTooltipForEFBSync(TableItem theEntry) {
+    private void setIconAndTooltipForEFBSyncAndGroups(TableItem theEntry) {
+    	String result = null;
     	String efbID = getString(PersonRecord.EFBID);
     	if (efbID!=null) {
     		theEntry.addIcon(ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_MENU_EFBSYNC));
-    		theEntry.setToolTipText("EFB Sync mit ID: "+efbID);
+    		result = "EFB Sync mit ID: "+efbID;
     	}
-    }
 
-    /**
-     * Add a pie chart icon containing all colors of the groups the person is currently assigned to.
-     * Also, provide the group names as addendum to the current tooltiptext. 
-     * @param theEntry current table record item 
-     */
-    private void setIconAndTooltipForGroups(TableItem theEntry) {
     	GroupRecord[] personGroups = getGroupList();
     	
     	if (personGroups != null && personGroups.length>0) {
@@ -902,12 +895,24 @@ public class PersonRecord extends DataRecord implements IItemFactory {
     		for (int i=0; i<personGroups.length; i++) {
     			addendum = addendum + (count++ == 0 ? "   " : "\n   ") + personGroups[i].getName();
     		}
-    		if (theEntry.getToolTipText()!=null) {
-    			theEntry.setToolTipText(theEntry.getToolTipText()+"\n"+addendum);
+    		if (result!=null) {
+    			result = result +"\n"+addendum;
     		} else  {
-    			theEntry.setToolTipText(addendum);
+    			result = addendum;
     		}
     	}
+    
+		theEntry.setToolTipText(result);
+    
+    }
+
+    /**
+     * Add a pie chart icon containing all colors of the groups the person is currently assigned to.
+     * Also, provide the group names as addendum to the current tooltiptext. 
+     * @param theEntry current table record item 
+     */
+    private void setIconAndTooltipForGroups(TableItem theEntry) {
+
     	
     }
     
