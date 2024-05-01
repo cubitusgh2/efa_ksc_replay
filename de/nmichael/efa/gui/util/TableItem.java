@@ -56,10 +56,13 @@ public class TableItem {
     
     public String getToolTipText() {
     	if (!this.invisible) {
+    		if (this.getIcons()!=null && this.getIcons().size()>0) {
+    			return this.txt +(this.toolTipText==null ? "" : "\n"+this.toolTipText);
+    		}
     		return this.toolTipText;
     	} else {
     		// Automatically add a prefix for the actual tooltip, if the record has invisible status.
-    		return International.getString("Verstecken")+": "+this.txt + (this.toolTipText==null ? "" : "\n"+this.toolTipText);
+    		return this.txt + " ("+International.getString("Verstecken")+") "+ (this.toolTipText==null ? "" : "\n"+this.toolTipText);
     	}
     }
     
