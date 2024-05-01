@@ -1240,12 +1240,23 @@ public class BoatRecord extends DataRecord implements IItemFactory, IItemListene
         items[1] = new TableItem(type);
         items[2] = new TableItem(getOwner());
         items[0].addIcon(this.createGroupPieIcon(16,16));
+        items[0].setToolTipText(this.createTooltipForGroups());
         return items;
     }
 
     private ImageIcon createGroupPieIcon(int iconWidth, int iconHeight) {
     	 Color[] colors = this.getBoatGroupsPieColors(null); 
     	 return (colors !=null ? EfaUtil.createColorPieIcon(colors, iconWidth, iconHeight) : null);
+    }
+    
+    private String createTooltipForGroups() {
+    	String result = this.getAllowedGroupsAsNameString(System.currentTimeMillis());
+    	if (result!=null && !result.isEmpty()) {
+    		return International.getString("Gruppen")+":\n   "+result;
+    	} else {
+    		return null;
+    	}
+    		
     }
     
     /**
