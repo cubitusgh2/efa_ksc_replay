@@ -24,6 +24,8 @@ import de.nmichael.efa.util.International;
  * - multiple Icons (should be of same dimensions)
  * - toolTipText
  */
+
+
 public class TableItem {
 
     private String txt;
@@ -32,9 +34,10 @@ public class TableItem {
     private boolean invisible = false;
     private Vector <ImageIcon> icons = null;
     private String toolTipText=null;
-
+    private Class dataType;
     public TableItem(String txt) {
         this.txt = (txt != null ? txt : "");
+        this.dataType= String.class;
     }
 
     public TableItem(String txt, boolean marked) {
@@ -44,6 +47,7 @@ public class TableItem {
 
     public TableItem(Object o) {
         this.txt = (o != null && o.toString() != null ? o.toString() : "");
+        this.dataType = (o!= null ? o.getClass() : null);
     }
 
     public String toString() {
@@ -104,4 +108,8 @@ public class TableItem {
     	this.toolTipText=value;
     }
     
+    public Class getType() {
+    	return this.dataType;
+    }
+
 }
