@@ -9,15 +9,37 @@
  */
 package de.nmichael.efa.gui.util;
 
-import java.awt.*;
-import javax.swing.*;
-import javax.swing.table.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Font;
+import java.util.Vector;
+
+import javax.swing.BorderFactory;
+import javax.swing.Icon;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTable;
+import javax.swing.SwingConstants;
+import javax.swing.table.TableCellRenderer;
+
 import de.nmichael.efa.Daten;
 import de.nmichael.efa.gui.ImagesAndIcons;
+import de.nmichael.efa.util.Logger;
 
-public class EfaTableCellRenderer extends DefaultTableCellRenderer {
 
-	private static final long serialVersionUID = 4970624188985566921L;
+/**
+ * EfaTableCellRenderer 
+ * 
+ * This renderer uses a panel consisting of two labels:
+ * - textlabel (left-aligned) for the text
+ * - iconLabel (right-aligned) for icons.
+ * 
+ * The iconlabel can show multiple icons, which can be specified with addIcon() method.
+ * Icons are displayed in the order they are added.
+ *   
+ */
+public class EfaTableCellRenderer implements TableCellRenderer {
 
 	private boolean markedBold = true;
     private Color markedBkgColor = new Color(0xff,0xff,0xaa);
@@ -28,19 +50,33 @@ public class EfaTableCellRenderer extends DefaultTableCellRenderer {
     private int fontSize = -1;
     private Icon hiddenIcon = ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_BUTTON_HIDE);
     private boolean useAlternatingColor= false;
+    
+    private JPanel c;
+    private JLabel textLabel;
+    private JLabel iconLabel;
+    
     public Component getTableCellRendererComponent(JTable table, Object value,
             boolean isSelected, boolean hasFocus, int row, int column) {
         try {
 
-            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            boolean isMarked = value instanceof TableItem && ((TableItem)value).isMarked();
-            boolean isDisabled = value instanceof TableItem && ((TableItem)value).isDisabled();
-            boolean isInvisible = value instanceof TableItem && ((TableItem)value).isInvisible();
+            c = new JPanel();
+            c.setLayout(new BorderLayout());
+            textLabel = new JLabel();
+            textLabel.setHorizontalAlignment(SwingConstants.LEFT);
+            c.add(textLabel, BorderLayout.WEST);
+
+            Vector <Icon> iconList = new Vector<Icon>();
+            
+            TableItem myItem = (value instanceof TableItem ? ((TableItem) value) : null);
+            
+            boolean isMarked = myItem != null && myItem.isMarked();
+            boolean isDisabled = myItem != null && myItem.isDisabled();
+            boolean isInvisible = myItem != null && myItem.isInvisible();
+
+            textLabel.setText(myItem!=null ? myItem.toString() : "");
             
             //Update for standard tables: indent cell content for better readability
-            if (c instanceof JComponent) {
-      	 		((JComponent) c).setBorder(BorderFactory.createEmptyBorder(0,6,0,6));
-       	 	}
+            c.setBorder(BorderFactory.createEmptyBorder(0,6,0,6));
             
             if (isMarked && markedBold) {
                 c.setFont(c.getFont().deriveFont(Font.BOLD));
@@ -57,7 +93,7 @@ public class EfaTableCellRenderer extends DefaultTableCellRenderer {
                 bkgColor = table.getSelectionBackground();
                 // Update for standard tables: when selected, we should always use the selection foreground.
                 fgColor= table.getSelectionForeground();
-                if (this.getFont().isBold()) {
+                if (c.getFont().isBold()) {
                 	c.setFont(c.getFont().deriveFont(Font.BOLD | Font.ITALIC));
                 } else {
                 	c.setFont(c.getFont().deriveFont(Font.BOLD));
@@ -74,11 +110,23 @@ public class EfaTableCellRenderer extends DefaultTableCellRenderer {
         	// Set Icon for first column only if item is hidden.
             // So users get an idea why this entry is displayed in disabled color.
             // The tooltip is set in TableItem.java and shown in Table.java
-            if (column==0 && isInvisible) {
-            	this.setIcon(hiddenIcon);
-            } else {
-            	this.setIcon(null);
+
+            if (column==0 && (isInvisible)) {
+            	iconList.add(hiddenIcon);
             }
+            
+            if (column==0 && myItem!=null && myItem.getIcons()!=null) {
+            	iconList.addAll(myItem.getIcons());
+            }
+            
+            if (iconList.size()>0) {
+            	CompoundIcon myIcon=  new CompoundIcon(CompoundIcon.Axis.X_AXIS,2,CompoundIcon.RIGHT, CompoundIcon.CENTER,iconList);
+                iconLabel = new JLabel();            
+                iconLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+            	iconLabel.setIcon(myIcon);
+            	c.add(iconLabel, BorderLayout.EAST);
+            }
+            
 
             if (isDisabled && disabledFgColor != null) {
             	// disabled fgColor only to be used when col is not selected
@@ -110,9 +158,14 @@ public class EfaTableCellRenderer extends DefaultTableCellRenderer {
 
             c.setBackground(bkgColor);
             c.setForeground(fgColor);
-            return this;
+            textLabel.setBackground(c.getBackground());
+            textLabel.setForeground(c.getForeground());
+            textLabel.setFont(c.getFont());
+            
+            return c;
         } catch (Exception e) {
-            return null;
+            Logger.logdebug(e);
+        	return null;
         }
     }
 
@@ -143,5 +196,6 @@ public class EfaTableCellRenderer extends DefaultTableCellRenderer {
     public void setFontSize(int size) {
         this.fontSize = size;
     }
+
 }
 
