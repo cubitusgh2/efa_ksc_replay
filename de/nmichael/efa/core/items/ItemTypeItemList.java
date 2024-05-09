@@ -240,7 +240,7 @@ public class ItemTypeItemList extends ItemType {
             public void actionPerformed(ActionEvent e) { addButtonHit(e); }
         });
 
-        panel.add(titlelabel, new GridBagConstraints(x, y, 2, 1, 0.0, 0.0,
+        panel.add(titlelabel, new GridBagConstraints(x, y, 3, 1, 0.0, 0.0,
                   GridBagConstraints.WEST, GridBagConstraints.BOTH, new Insets(padYbefore, padXbefore, (items.size() == 0 ? padYafter : 0), 0), 0, 0));
         panel.add(addButton, new GridBagConstraints(x+xForAddDelButtons, y, 2, 1, 0.0, 0.0,
                   GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(padYbefore, 2, (items.size() == 0 ? padYafter : 0), padXafter), 0, 0));
@@ -297,7 +297,12 @@ public class ItemTypeItemList extends ItemType {
                             myY += plusY;
                             break;
                         case horizontal:
-                            myX++;
+                            myX+=2;
+                            if (item instanceof ItemTypeStringAutoComplete) {
+                            	if (((ItemTypeStringAutoComplete) item).getShowButton()) {
+                            		myX++;
+                            	}
+                            }
                             break;
                     }
                 }

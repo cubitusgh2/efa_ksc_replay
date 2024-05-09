@@ -59,6 +59,7 @@ import de.nmichael.efa.core.items.ItemTypeBoatstatusList;
 import de.nmichael.efa.core.items.ItemTypeBoolean;
 import de.nmichael.efa.core.items.ItemTypeConfigButton;
 import de.nmichael.efa.core.items.ItemTypeList;
+
 import de.nmichael.efa.data.BoatDamageRecord;
 import de.nmichael.efa.data.BoatDamages;
 import de.nmichael.efa.data.BoatRecord;
@@ -100,6 +101,8 @@ import de.nmichael.efa.util.Logger;
 import de.nmichael.efa.util.Mnemonics;
 
 public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
+
+	private static final long serialVersionUID = -382107679365085355L;
 
 	public static EfaBoathouseFrame efaBoathouseFrame;
 
@@ -772,7 +775,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             }
         });
 
-    	startSessionButtonMultiple.setToolTipText(International.getString("Mehrere Fahrten beginnen"));
+    	startSessionButtonMultiple.setToolTipText(International.getString("Mehrere Einzelfahrten beginnen"));
     	startSessionButtonMultiple.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 actionStartSessionMultiple();
@@ -800,7 +803,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             }
         });
         
-    	lateEntryButtonMultiple.setToolTipText(International.getString("Mehrere Fahrten beginnen"));
+    	lateEntryButtonMultiple.setToolTipText(International.getString("Mehrere Einzelfahrten nachtragen"));
     	lateEntryButtonMultiple.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 actionLateEntryMultiple();
@@ -2103,7 +2106,8 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
                             : (status != null ? status.getBoatText() : International.getString("anderes oder fremdes Boot")));
                     String text = "";
                     if (status != null) {
-                        String s = status.getStatusDescription(status.getCurrentStatus());
+                        @SuppressWarnings("static-access")
+						String s = status.getStatusDescription(status.getCurrentStatus());
                         if (s != null) {
                             text = s;
                         }
@@ -2452,6 +2456,8 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         if (Daten.project == null) {
             return;
         }    	
+        
+        showStartSessionMultipleDialog(false);
 
         clearFilterFieldsIfConfigured();        
     }
@@ -2556,7 +2562,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         if (Daten.project == null) {
             return;
         }    	
-
+        showStartSessionMultipleDialog(true);
         clearFilterFieldsIfConfigured();        
     }
     
@@ -2986,6 +2992,39 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         isLocked = false;
     }
 
+    private void showStartSessionMultipleDialog(Boolean isLateEntry) {
+    	
+    	EfaBaseFrameMultisession myFrame = new EfaBaseFrameMultisession(this,
+    			(isLateEntry ? efaBaseFrame.MODE_BOATHOUSE_LATEENTRY_MULTISESSION : efaBaseFrame.MODE_BOATHOUSE_START_MULTISESSION)
+    			);
+    	
+    	myFrame.showDialog();
+    	
+    	/*
+        if (Daten.project == null || logbook == null) {
+        	return;
+        }    	
+    	EfaMultisessionDialog dlg = new EfaMultisessionDialog(this, 
+    			(isLateEntry ? International.getString("Nachtrag mehrerer Einzelfahrten") : International.getString("Mehrere Einzelfahrten beginnen")), 
+    			(isLateEntry ? International.getStringWithMnemonic("Nachträge speichern") : International.getStringWithMnemonic("Fahrten beginnen")), 
+    			isLateEntry);
+    	
+    	dlg.showMe();
+		
+
+		
+*/
+/*
+        
+        if (SimpleInputDialog.showInputDialog(this, "blah!", dialogElements)) {
+        	EfaUtil.foo();
+        }*/
+        alive();
+    }
+    
+
+    
+    
 }
 class BoatReservationComparatorByNextOccurrence implements Comparator<BoatReservationRecord> {
 	public int compare(BoatReservationRecord brr1, BoatReservationRecord brr2) {

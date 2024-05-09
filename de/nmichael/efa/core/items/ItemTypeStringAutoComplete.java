@@ -877,4 +877,8 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
     	return false;
     			
     }
+    
+    public boolean getShowButton() {
+    	return this.showButton;
+    }
 }

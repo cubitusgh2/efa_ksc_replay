@@ -86,6 +86,7 @@ public class AutoCompleteList {
     private String _foundValue;
     private boolean filterDataOnlyForThisBoathouse = false;
     private boolean postfixNamesWithBoathouseName = true;
+    private boolean filterDataOnlyOneSeaterBoats = false;
     private String filterText=null;
 
     public AutoCompleteList() {
@@ -139,6 +140,10 @@ public class AutoCompleteList {
         this.filterDataOnlyForThisBoathouse = filterDataOnlyForThisBoathouse;
     }
 
+    public void setFilterDataOnlyOneSeaterBoats(boolean value) {
+    	this.filterDataOnlyOneSeaterBoats=value;
+    }
+    
     public void setPostfixNamesWithBoathouseName(boolean postfixNamesWithBoathouseName) {
         this.postfixNamesWithBoathouseName = postfixNamesWithBoathouseName;
     }
@@ -271,6 +276,10 @@ public class AutoCompleteList {
 
                         }
 
+                        if (filterDataOnlyOneSeaterBoats && r instanceof BoatRecord) {
+                        	if (!isOneSeaterBoat((BoatRecord)r)) {continue;}
+                        }
+
                         if (!r.getDeleted()) {
                             if (s.length() > 0) {
                                 ValidInfo vi = null;
@@ -296,6 +305,24 @@ public class AutoCompleteList {
         updateVisibleFilteredList();
     }
 
+    /**
+     * Determine if a boat has at least a variant as a one-seater.
+     * Does not check if the BoatRecord is valid at the current time.
+     * 
+     * @param boatRec BoatRecord (not null)
+     * @return true if Boat has at least one variant as a One-Seater
+     */
+    private boolean isOneSeaterBoat(BoatRecord boatRec) {
+    	
+        for (int boatVariant=0; boatVariant<boatRec.getNumberOfVariants(); boatVariant++) {
+            if (boatRec.getNumberOfSeats(boatVariant)==1) {
+            	return true;
+            }
+        }
+        //none of the variants is a OneSeater
+        return false;
+    }
+    
     public synchronized String getValueForId(String id) {
         _searchId = id;
         update();

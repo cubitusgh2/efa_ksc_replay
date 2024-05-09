@@ -18,7 +18,6 @@ import de.nmichael.efa.data.efacloud.TxRequestQueue;
 import de.nmichael.efa.data.types.*;
 import de.nmichael.efa.data.storage.*;
 import de.nmichael.efa.data.*;
-import static de.nmichael.efa.gui.BaseDialog.getIcon;
 import de.nmichael.efa.gui.util.*;
 import de.nmichael.efa.gui.dataedit.*;
 import de.nmichael.efa.util.*;
@@ -29,9 +28,28 @@ import javax.swing.*;
 import java.util.*;
 import java.util.regex.Pattern;
 
+/**
+ * This is the efaBaseFrame.
+ * It displays all fields for a session. It is used for
+ * - efaBase 
+ * 	 - main screen, 
+ * 	 - with toolbar and menu bar (for all other admin options) 
+ *   - for showing/editing sessions)
+ * - efaBoatHouse 
+ *   - in Main mode (Kiosk): separate dialog screen
+ *   	- starting/correcting/finishing/lateentry and aborting sessions
+ *   - in admin mode : 
+ *   	- separate dialog screen
+ *    	- with toolbar
+ *      
+ * 
+ */
+
 public class EfaBaseFrame extends BaseDialog implements IItemListener {
 
-    public static final int MODE_BASE = 0;
+	private static final long serialVersionUID = -2347795960441110254L;
+
+	public static final int MODE_BASE = 0;
     public static final int MODE_BOATHOUSE = 1;
     public static final int MODE_BOATHOUSE_START = 2;
     public static final int MODE_BOATHOUSE_START_CORRECT = 3;
@@ -40,10 +58,12 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
     public static final int MODE_BOATHOUSE_ABORT = 6;
     public static final int MODE_ADMIN = 7;
     public static final int MODE_ADMIN_SESSIONS = 8;
-    private int mode;
-    private static final int VERTICAL_WHITESPACE_PADDING_GROUPS=26;
+    public static final int MODE_BOATHOUSE_START_MULTISESSION=9;
+    public static final int MODE_BOATHOUSE_LATEENTRY_MULTISESSION=10;
+    protected int mode;
+    protected static final int VERTICAL_WHITESPACE_PADDING_GROUPS=26;
 
-    private static final int FIELD_HEIGHT=21;
+    protected static final int FIELD_HEIGHT=21;
     // =========================================================================
     // GUI Elements
     // =========================================================================
@@ -184,8 +204,10 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return getMode() == MODE_BOATHOUSE ||
                getMode() == MODE_BOATHOUSE_START ||
                getMode() == MODE_BOATHOUSE_START_CORRECT ||
+               getMode() == MODE_BOATHOUSE_START_MULTISESSION ||
                getMode() == MODE_BOATHOUSE_FINISH ||
                getMode() == MODE_BOATHOUSE_LATEENTRY ||
+               getMode() == MODE_BOATHOUSE_LATEENTRY_MULTISESSION ||
                getMode() == MODE_BOATHOUSE_ABORT;
     }
 
@@ -490,7 +512,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
 
 
 
-    private void iniGuiMain() {
+    protected void iniGuiMain() {
         JPanel mainInputPanel = new JPanel();
         mainInputPanel.setLayout(new GridBagLayout());
         mainPanel.add(mainInputPanel, BorderLayout.CENTER);
@@ -815,7 +837,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         destination.setValidAt(date, starttime);
     }
 
-    void iniGuiRemaining() {
+    protected void iniGuiRemaining() {
         efaBaseFrameFocusManager = new EfaBaseFrameFocusManager(this,FocusManager.getCurrentManager());
         FocusManager.setCurrentManager(efaBaseFrameFocusManager);
         if (isModeBoathouse()) {
@@ -929,7 +951,6 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
     }
 
     PersonRecord findPerson(ItemTypeString item, long validAt) {
-        PersonRecord p = null;
         try {
             String s = item.getValueFromField().trim();
             if (Daten.efaConfig.getValuePostfixPersonsWithClubName()) {
@@ -1514,7 +1535,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return r;
     }
     
-    private void autocompleteAllFields() {
+    protected void autocompleteAllFields() {
         try {
             if (boat.isVisible()) {
                 boat.acpwCallback(null);
@@ -1536,7 +1557,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
 
     // Datensatz speichern
     // liefert "true", wenn erfolgreich
-    boolean saveEntry() {
+    protected boolean saveEntry() {
         if (!isLogbookReady()) {
             return false;
         }
@@ -1606,7 +1627,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
     }
 
     // den Datensatz nun wirklich speichern;
-    boolean saveEntryInLogbook() {
+    protected boolean saveEntryInLogbook() {
         if (!isLogbookReady()) {
             return false;
         }
@@ -2094,7 +2115,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
                 entryno.getValueFromField());
     }
 
-    private boolean checkMisspelledInput() {
+    protected boolean checkMisspelledInput() {
         PersonRecord r;
         for (int i = 0; i <= LogbookRecord.CREW_MAX; i++) {
             ItemTypeStringAutoComplete field = this.getCrewItem(i);
@@ -2114,10 +2135,9 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return true;
     }
 
-    private boolean checkDuplicatePersons() {
+    protected boolean checkDuplicatePersons() {
         // Ruderer auf doppelte prüfen
-        Hashtable h = new Hashtable();
-        String s;
+        Hashtable<UUID,String> h = new Hashtable<UUID,String>();
         String doppelt = null; // Ergebnis doppelt==null heißt ok, doppelt!=null heißt Fehler! ;-)
         while (true) { // Unsauber; aber die Alternative wäre ein goto; dies ist keine Schleife!!
             PersonRecord r;
@@ -2142,7 +2162,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return true;
     }
 
-    private boolean checkPersonsForBoatType() {
+    protected boolean checkPersonsForBoatType() {
         // bei steuermannslosen Booten keinen Steuermann eingeben
         if (cox.getValueFromField().trim().length() > 0 && currentBoatTypeCoxing != null) {
             if (currentBoatTypeCoxing.equals(EfaTypes.TYPE_COXING_COXLESS)) {
@@ -2169,7 +2189,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return true;
     }
 
-    private boolean checkDuplicateEntry() {
+    protected boolean checkDuplicateEntry() {
         // Prüfen, ob ein Doppeleintrag vorliegt
         if (isModeBoathouse()) {
             LogbookRecord duplicate = logbook.findDuplicateEntry(getFields(), 25); // search last 25 logbook entries for potential duplicates
@@ -2211,7 +2231,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return true;
     }
 
-    private boolean checkEntryNo() {
+    protected boolean checkEntryNo() {
         DataTypeIntString newEntryNo = DataTypeIntString.parseString(entryno.getValue());
         while ((logbook.getLogbookRecord(newEntryNo) != null && (isNewRecord || !newEntryNo.equals(currentRecord.getEntryId())))
                 || newEntryNo.length() == 0) {
@@ -2271,7 +2291,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return true;
     }
 
-    private boolean checkBoatCaptain() {
+    protected boolean checkBoatCaptain() {
         // falls noch nicht geschehen, ggf. automatisch Obmann auswählen
         if (Daten.efaConfig.getValueAutoObmann() && getBoatCaptain() < 0) {
             autoSelectBoatCaptain();
@@ -2317,7 +2337,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return true;
     }
 
-    private boolean checkBoatStatus() {
+    protected boolean checkBoatStatus() {
         if (getMode() == MODE_BOATHOUSE_START || getMode() == MODE_BOATHOUSE_START_CORRECT) {
             int checkMode = 3;
             // checkFahrtbeginnFuerBoot nur bei direkt_boot==null machen, da ansonsten der Check schon in EfaDirektFrame gemacht wurde
@@ -2343,7 +2363,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return true;
     }
 
-    private boolean checkMultiDayTours() {
+    protected boolean checkMultiDayTours() {
         // Prüfen, ob Eintrag einer Mehrtagesfahrt vorliegt und das Datum in den Zeitraum der Mehrtagesfahrt fällt
         if (isModeBoathouse()) {
             return true;
@@ -2369,7 +2389,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return true;
     }
     
-    private boolean checkSessionType() {
+    protected boolean checkSessionType() {
         if (!isNewRecord && !isModeBoathouse() && !sessiontype.isChanged()) {
             return true;
         }
@@ -2458,7 +2478,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return true;
     }
 
-    private boolean checkDate() {
+    protected boolean checkDate() {
         if (date.isSet() && enddate.isSet() && !date.getDate().isBefore(enddate.getDate())) {
             String msg = International.getString("Das Enddatum muß nach dem Startdatum liegen.");
             Dialog.error(msg);
@@ -2468,7 +2488,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return true;
     }
 
-    private boolean checkTime() {
+    protected boolean checkTime() {
         if (isModeBoathouse()) {
             if (starttime.isVisible() && !starttime.isSet()) {
                 setTime(starttime, Daten.efaConfig.getValueEfaDirekt_plusMinutenAbfahrt(), null);
@@ -2524,7 +2544,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return true;
     }
 
-    private boolean checkAllowedDateForLogbook() {
+    protected boolean checkAllowedDateForLogbook() {
         long tRec = getValidAtTimestamp(null);
         if (tRec < logbookValidFrom || tRec >= logbookInvalidFrom) {
             if (getMode() != MODE_BOATHOUSE_LATEENTRY) {
@@ -2580,7 +2600,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return true;
     }
 
-    private boolean checkAllDataEntered() {
+    protected boolean checkAllDataEntered() {
         if (isModeBoathouse()) {
             if (boat.getValue().length() == 0) {
                 Dialog.error(International.getString("Bitte gib einen Bootsnamen ein!"));
@@ -2668,7 +2688,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         }
     }
 
-    private boolean checkNamesValid() {
+    protected boolean checkNamesValid() {
         // Prüfen, ocb ein eingetragener Datensatz zum angegebenen Zeitpunkt ungültig ist
         long preferredValidAt = getValidAtTimestamp(null);
 
@@ -2719,7 +2739,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return true;
     }
 
-    private boolean checkUnknownNames() {
+    protected boolean checkUnknownNames() {
         // Prüfen, ob ggf. nur bekannte Boote/Ruderer/Ziele eingetragen wurden
         if (isModeBoathouse()) {
             if (Daten.efaConfig.getValueEfaDirekt_eintragNurBekannteBoote()) {
@@ -2765,7 +2785,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return true;
     }
     
-    private boolean checkProperUnknownNames() {
+    protected boolean checkProperUnknownNames() {
         // check whether all names of unkown persons are proper and allowed names
         if (isModeBoathouse()) {
             String slist = Daten.efaConfig.getValueBoathouseNonAllowedUnknownPersonNames();
@@ -2840,7 +2860,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return true;
     }
 
-    private boolean checkAllowedPersons() {
+    protected boolean checkAllowedPersons() {
         if (mode == MODE_BOATHOUSE_START || mode == MODE_BOATHOUSE_START_CORRECT) {
             if (currentBoat == null) {
                 return true;
