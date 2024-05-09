@@ -388,6 +388,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 	private ItemTypeString kanuEfb_urlRequest;
 	private ItemTypeDate kanuEfb_SyncTripsAfterDate;
 	private ItemTypeBoolean kanuEfb_Fullsync;
+	private ItemTypeBoolean kanuEfb_AlwaysShowKanuEFBFields;
 	private ItemTypeMultiSelectList<String> kanuEfb_boatTypes;
 	private ItemTypeBoolean kanuEfb_SyncUnknownBoats;
 	private ItemTypeBoolean kanuEfb_TidyXML;
@@ -1643,6 +1644,9 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					International.getString("email") + ": " + International.getString("Sicherheit")));
 
 			// ============================= SYNC =============================
+			addParameter(kanuEfb_AlwaysShowKanuEFBFields = new ItemTypeBoolean("kanuEfb_AlwaysShowKanueEFBFields", false, IItemType.TYPE_PUBLIC,
+					BaseTabbedDialog.makeCategory(CATEGORY_SYNC, CATEGORY_KANUEFB), "KanuEFB-Felder in efa immer einblenden"));
+			
 			addParameter(kanuEfb_urlLogin = new ItemTypeString("KanuEfbUrlLogin",
 					"https://efb.kanu-efb.de/services/login", IItemType.TYPE_EXPERT,
 					BaseTabbedDialog.makeCategory(CATEGORY_SYNC, CATEGORY_KANUEFB), "Login URL"));
@@ -2889,6 +2893,10 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 		return kanuEfb_Fullsync.getValue();
 	}
 
+	public Boolean getValueKanuEfb_AlwaysShowKanuEFBFields() {
+		return kanuEfb_AlwaysShowKanuEFBFields.getValue();
+	}
+	
 	public Boolean getValueKanuEfb_SyncUnknownBoats() {
 		return kanuEfb_SyncUnknownBoats.getValue();
 	}
