@@ -746,10 +746,12 @@ public class PersonRecord extends DataRecord implements IItemFactory {
                     International.getString("Standard-Boot")));
             item.setFieldSize(300, -1);
             v.add(item = new ItemTypeString(PersonRecord.EXTERNALID, getExternalId(),
-                    IItemType.TYPE_EXPERT, CAT_MOREDATA, International.getString("Externe ID")));
+            		(Daten.efaConfig.getValueKanuEfb_AlwaysShowKanuEFBFields() ? IItemType.TYPE_PUBLIC : IItemType.TYPE_EXPERT), 
+            		CAT_MOREDATA, International.getString("Externe ID")));
             if (Daten.efaConfig.getValueUseFunctionalityCanoeingGermany()) {
                 v.add(item = new ItemTypeString(PersonRecord.EFBID, getEfbId(),
-                        IItemType.TYPE_EXPERT, CAT_MOREDATA, International.onlyFor("Kanu-eFB ID", "de")));
+                		(Daten.efaConfig.getValueKanuEfb_AlwaysShowKanuEFBFields() ? IItemType.TYPE_PUBLIC : IItemType.TYPE_EXPERT), 
+                		CAT_MOREDATA, International.onlyFor("Kanu-eFB ID", "de")));
             }
 
             v.add(item = new ItemTypeString(PersonRecord.ADDRESSSTREET, getAddressStreet(),
