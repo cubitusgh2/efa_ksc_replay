@@ -2999,6 +2999,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     			);
     	
     	myFrame.showDialog();
+  
     	
     	/*
         if (Daten.project == null || logbook == null) {

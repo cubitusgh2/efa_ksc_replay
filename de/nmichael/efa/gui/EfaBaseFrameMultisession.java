@@ -6,10 +6,12 @@ import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.WindowEvent;
 import java.util.UUID;
 import java.util.Vector;
 
 import javax.swing.BorderFactory;
+import javax.swing.FocusManager;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
@@ -17,6 +19,7 @@ import javax.swing.SwingConstants;
 import org.apache.batik.ext.swing.GridBagConstants;
 
 import de.nmichael.efa.Daten;
+import de.nmichael.efa.core.AdminTask;
 import de.nmichael.efa.core.config.AdminRecord;
 import de.nmichael.efa.core.config.EfaTypes;
 import de.nmichael.efa.core.items.IItemFactory;
@@ -40,13 +43,16 @@ import de.nmichael.efa.data.storage.StorageObject;
 import de.nmichael.efa.data.types.DataTypeDate;
 import de.nmichael.efa.data.types.DataTypeDistance;
 import de.nmichael.efa.data.types.DataTypeTime;
+import de.nmichael.efa.gui.EfaBaseFrame.EfaBaseFrameFocusManager;
 import de.nmichael.efa.gui.util.AutoCompleteList;
 import de.nmichael.efa.util.Dialog;
+import de.nmichael.efa.util.EfaUtil;
 import de.nmichael.efa.util.International;
 
 public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListener, IItemFactory {
 
 	private final static String  NOT_STORED_ITEM_PREFIX = "_";
+	private final static String  STR_SPACER = "   ";
 	private ItemTypeItemList nameAndBoat;
     private AutoCompleteList autoCompleteListSingleBoats = new AutoCompleteList();
     private JPanel teilnehmerUndBoot;
@@ -190,17 +196,18 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         yPos++;
         //---------------------------------------------------------------------
         
-        header = createHeader("CREATE_CREW_BOAT", 0, null, International.getString("Teilnehmer und Boot"),HEADER_WIDTH);
+       /* header = createHeader("CREATE_CREW_BOAT", 0, null, International.getString("Teilnehmer und Boot"),HEADER_WIDTH);
         header.displayOnGui(this,  mainInputPanel, 0, yPos);
         yPos++;        
+        */ 
         
         teilnehmerUndBoot=new JPanel();
         teilnehmerUndBoot.setLayout(new GridBagLayout());
         teilnehmerUndBoot.removeAll();
-		teilnehmerUndBoot.setBorder(BorderFactory.createEtchedBorder());
+		teilnehmerUndBoot.setBorder(BorderFactory.createEmptyBorder(0,0,0,0));
 
-        mainInputPanel.add(teilnehmerUndBoot, new GridBagConstraints(0, yPos, HEADER_WIDTH, 1, 1.0, 1.0,
-                GridBagConstants.WEST, GridBagConstants.BOTH, new Insets(0,0,0,0), 0, 0));
+        mainInputPanel.add(teilnehmerUndBoot, new GridBagConstraints(0, yPos, HEADER_WIDTH, 1, 0, 0,
+                GridBagConstants.WEST, GridBagConstants.HORIZONTAL, new Insets(0,0,0,0), 0, 0));
         
         
        // mainInputPanel.ad
@@ -210,13 +217,17 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 		//crontab.setScrollPane(1000, 400);
 		nameAndBoat.setRepeatTitle(false);        
 		nameAndBoat.setAppendPositionToEachElement(true);
-		nameAndBoat.setXForAddDelButtons(3);
+		nameAndBoat.setXForAddDelButtons(6); // two columns, both with name, edit field, autocomplete button
 		nameAndBoat.setPadYbetween(0);	
 		nameAndBoat.setItemsOrientation(ItemTypeItemList.Orientation.horizontal);
-		nameAndBoat.setFieldGrid(8, GridBagConstraints.WEST, GridBagConstraints.BOTH);
-		nameAndBoat.displayOnGui(this, teilnehmerUndBoot, 0, 1);
-		nameAndBoat.setBorder(BorderFactory.createEtchedBorder());
-
+		nameAndBoat.setFieldGrid(8, GridBagConstraints.EAST, GridBagConstraints.BOTH);
+		nameAndBoat.setFirstColumnMinWidth(getLongestLabelTextWidth(mainInputPanel));
+		//nameAndBoat.setFirstColumnMinWidth(mainInputPanelGrid.getLayoutDimensions()[0][0]);
+		// Multisession means at least two persons with an individual boat are to go
+		addTwoItems(nameAndBoat);
+		nameAndBoat.displayOnGui(this, teilnehmerUndBoot, 0, 0);
+		nameAndBoat.setBorder(BorderFactory.createEmptyBorder(0,0,0,0));
+		
         // Name (crew) and Boat (single boat items only)
                 
         yPos++;
@@ -361,6 +372,23 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
     }    
 	
     
+    protected void iniDialog() {
+
+    	iniGuiBase();
+        iniGuiMain();
+    }    
+    
+    private int getLongestLabelTextWidth(JPanel panel) {
+    	
+    	int lBemerk = panel.getFontMetrics(panel.getFont()).stringWidth(International.getString("Bemerkungen")+": ");
+    	int lSessType = panel.getFontMetrics(panel.getFont()).stringWidth(International.getString("Fahrtart")+": ");
+    	int lDest = panel.getFontMetrics(panel.getFont()).stringWidth(International.getStringWithMnemonic("Ziel") + " / " + International.getStringWithMnemonic("Strecke")+": ");
+    	
+    	return Math.max(lBemerk, Math.max(lSessType, lDest));
+    	
+    	
+    }
+    
     
 	/**
 	 * Adds a header item in an efa GUI. This header value is not safed within
@@ -398,17 +426,22 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 	 */
     public IItemType[] getDefaultItems(String itemName) {
 
-        IItemType[] items = new IItemType[2];
+    	ItemTypeStringAutoComplete[] items = new ItemTypeStringAutoComplete[2];
         //Name
         	items[0] = getGuiNameAutoComplete(itemName+"NAME_LOOKUP", International.getString("Name"));
 	        items[0].setFieldSize(200, -1);
 	        
-	    // BOot
-        	items[1] = getGuiBoatAutoComplete(itemName+"BOAT_LOOKUP", International.getString("Boot"));
+	    // Boat
+        	items[1] = getGuiBoatAutoComplete(itemName+"BOAT_LOOKUP", STR_SPACER+International.getString("Boot"));
 	        items[1].setFieldSize(200, -1);
 	        
         return items;
         
+    }
+    
+    private void addTwoItems(ItemTypeItemList target) {
+	    target.addItems(this.getDefaultItems(target.getName()));
+	    target.addItems(this.getDefaultItems(target.getName()));
     }
     
     /*
@@ -424,7 +457,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
     public void updateGui() {
     	teilnehmerUndBoot.removeAll();
 		nameAndBoat.displayOnGui(this, teilnehmerUndBoot, 0, 1);
-
+		this.pack();
     }
 	
     protected ItemTypeStringAutoComplete getGuiNameAutoComplete(String name, String description) {

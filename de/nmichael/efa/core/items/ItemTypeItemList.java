@@ -23,6 +23,7 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -63,6 +64,7 @@ public class ItemTypeItemList extends ItemType {
     private String shortDescription = null;
     private int scrollX = -1;
     private int scrollY = -1;
+    private int firstColumnMinWidth=0;
     private boolean appendPositionToEachElement = false;
     private Orientation orientation = Orientation.vertical;
 
@@ -178,6 +180,14 @@ public class ItemTypeItemList extends ItemType {
         scrollX = width;
         scrollY = height;
     }
+    
+    public void setFirstColumnMinWidth(int width) {
+        firstColumnMinWidth=width;
+    }
+    
+    public int getFirstColumnMinWidth() {
+    	return firstColumnMinWidth;
+    }
 
     public boolean isChanged() {
         if (changed) {
@@ -240,12 +250,18 @@ public class ItemTypeItemList extends ItemType {
             public void actionPerformed(ActionEvent e) { addButtonHit(e); }
         });
 
-        panel.add(titlelabel, new GridBagConstraints(x, y, 3, 1, 0.0, 0.0,
+        panel.add(titlelabel, new GridBagConstraints(x, y, xForAddDelButtons, 1, 0.0, 0.0,
                   GridBagConstraints.WEST, GridBagConstraints.BOTH, new Insets(padYbefore, padXbefore, (items.size() == 0 ? padYafter : 0), 0), 0, 0));
         panel.add(addButton, new GridBagConstraints(x+xForAddDelButtons, y, 2, 1, 0.0, 0.0,
                   GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(padYbefore, 2, (items.size() == 0 ? padYafter : 0), padXafter), 0, 0));
         myY++;
 
+        if (orientation == Orientation.horizontal) {
+        	ensureFirstColumnMinWidth(panel, myY, firstColumnMinWidth);
+            myY++;
+        }
+
+        
         delButtons = new Hashtable<JButton,Integer>();
         for (int i=0; i<items.size(); i++) {
             JLabel label = null;
@@ -297,10 +313,10 @@ public class ItemTypeItemList extends ItemType {
                             myY += plusY;
                             break;
                         case horizontal:
-                            myX+=2;
+                            myX+=2; // a label plus the edit field.
                             if (item instanceof ItemTypeStringAutoComplete) {
                             	if (((ItemTypeStringAutoComplete) item).getShowButton()) {
-                            		myX++;
+                            		myX++; // additional space for autocomplete button
                             	}
                             }
                             break;
@@ -315,6 +331,17 @@ public class ItemTypeItemList extends ItemType {
         return myY;
     }
 
+    private void ensureFirstColumnMinWidth(JPanel panel, int yPos, int minWidth) {
+    	if (minWidth>0) {
+	    	JPanel spacer = new JPanel();
+	    	Dimension dim = new Dimension(minWidth, 0);
+	    	spacer.setMinimumSize(dim);
+	    	spacer.setPreferredSize(dim);
+	    	panel.add(spacer, new GridBagConstraints(0, yPos, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(0,0,0,0),0,0));
+    	}
+    }
+
+    
     private void addButtonHit(ActionEvent e) {
         IItemType[] items = itemFactory.getDefaultItems(getName());
         addItems(items);

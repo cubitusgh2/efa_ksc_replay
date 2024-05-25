@@ -318,7 +318,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         Daten.checkRegister();
     }
 
-    private void iniGuiBase() {
+    protected void iniGuiBase() {
         setIconImage(Toolkit.getDefaultToolkit().createImage(EfaBaseFrame.class.getResource("/de/nmichael/efa/img/efa_icon.png")));
         mainPanel.setLayout(new BorderLayout());
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
