@@ -8,6 +8,7 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.util.Vector;
 
@@ -18,6 +19,7 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 
 import org.apache.batik.ext.swing.GridBagConstants;
 
@@ -51,15 +53,37 @@ import de.nmichael.efa.util.Dialog;
 import de.nmichael.efa.util.International;
 import de.nmichael.efa.util.Logger;
 
+
+/*
+ * If a group of persons goes on a trip together, most of the group members go with an individual boat.
+ * But the other data stays the same for the group members.
+ *
+ * This dialog is created to support this style of trips with an efficient way of entering the same
+ * data for multiple group members.
+ * A user can enter start date/time, type of session  and a set of name/boat pairs.  
+ * Also destination, water and comment can be entered.
+ * 
+ * When saving the item, efa creates a single session entry for each name/boat pair.
+ * 
+ * The number of automatically added empty name/boat pairs can be configured in efaConfig. 
+ * 
+ * The dialog takes care for several constraints
+ * - a known boat name may only occur once in the name/boat pairs.
+ * - a known person name may only occur once in the name/boat pairs.
+ * - the autocompletes of names and boats are automatically cleared of items which are already entered on this dialog
+ * - if you enter a person's name, and the person has a standard boat, the boat field is automatically filled
+ *   (if the boat is not yet taken by another person)
+ * 
+ * 
+ */
 public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListener, IItemFactory {
 
 	private final static String  NOT_STORED_ITEM_PREFIX = "_";
 	private final static String  STR_SPACER = "   ";
 	private final static String  STR_NAME_LOOKUP = "NAME_LOOKUP";
 	private final static String  STR_BOAT_LOOKUP = "BOOT_LOOKUP";
-	private ItemTypeItemList nameAndBoat;
-    private AutoCompleteList autoCompleteListSingleBoats = new AutoCompleteList();
     private JPanel teilnehmerUndBoot;
+	private ItemTypeItemList nameAndBoat;
     
 
     public EfaBaseFrameMultisession(int mode) {
@@ -90,7 +114,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
     	
         JPanel mainInputPanel = new JPanel();
         mainInputPanel.setLayout(new GridBagLayout());
-        mainPanel.add(mainInputPanel, BorderLayout.CENTER);
+        mainPanel.add(mainInputPanel, BorderLayout.NORTH);
 
         ItemTypeLabelHeader header = createHeader("CREATE_MULTISESSION", 0, null, 
         		(mode == EfaBaseFrame.MODE_BOATHOUSE_START_MULTISESSION ? International.getString("Multi-Fahrt anlegen") : International.getString("Multi-Nachtrag erfassen")),
@@ -224,7 +248,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 		nameAndBoat.setPadding(0, 0, 10, 10);
 		//nameAndBoat.setFirstColumnMinWidth(mainInputPanelGrid.getLayoutDimensions()[0][0]);
 		// Multisession means at least two persons with an individual boat are to go
-		addTwoItems(nameAndBoat);
+		addStandardItems(nameAndBoat,4);
 		nameAndBoat.displayOnGui(this, teilnehmerUndBoot, 0, 0);
 		nameAndBoat.setBorder(BorderFactory.createEmptyBorder(0,0,0,0));
 		
@@ -327,6 +351,9 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         mainPanel.setMinimumSize(dim);        
     }    
 	
+    // elements in efaBaseFrame which are not used by this dialog.
+    // but unfortunately, as a subclass of efaBaseFrame needs to instantiate these fields. :-/
+    
     private void createAllUnusedElements() {
     
     	entryno = new ItemTypeString(LogbookRecord.ENTRYID, "", IItemType.TYPE_PUBLIC, null, International.getStringWithMnemonic("Lfd. Nr."));
@@ -378,14 +405,21 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         
     }
     
-    
+    /**
+     * Initialization of the Dialog
+     */
     protected void iniDialog() {
-
     	iniData();
     	iniGuiBase();
         iniGuiMain();
     }    
     
+    /**
+     * Initialize the EfaBaseFrameMultisession dialog.
+     * The base class efaBaseFrame is instantiated ONCE in efaBoatHouse and re-used for several cases. Maybe due to performance issues.
+     * The EfaBaseFrameMultisession dialog is instantiated every time it is opened.
+     * So it needs an initialisation for the respective autocomplete lists and such. 
+     */
     private void iniData() {
 
         if (Daten.project == null) {
@@ -415,7 +449,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         if (isModeBoathouse()) {
             autoCompleteListDestinations.setFilterDataOnlyForThisBoathouse(true);
             autoCompleteListDestinations.setPostfixNamesWithBoathouseName(false);
-            autoCompleteListBoats.setFilterDataOnlyOneSeaterBoats(true);
+            autoCompleteListBoats.setFilterDataOnlyOneSeaterBoats(true); //we only want boats for a single person.
         }
         autoCompleteListBoats.update();
         autoCompleteListPersons.update();
@@ -426,8 +460,11 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
     
 	/**
 	 * Creates an Item consisting of Name and Boat for "Teilnehmer und Boot" section
-	 * Where boat only contains single person boats
+	 * Where boat only contains single person boats.
 	 * 
+	 * The Name field knows the Boat field as "other" field. 
+	 * This is neccesary for the feature "auto fill in the person's standard boat, if available".
+	 * And it is used by the itemListenerAction()
 	 */
     public IItemType[] getDefaultItems(String itemName) {
 
@@ -451,40 +488,59 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         
     }    
     
+    /*
+     * When leaving the name field, check if a known name is entered.
+     * If yes, try to find out the person's standard boat and fill its fully qualified name in the second field,
+     * if the boat is not yet assigned to another person in this dialog, and it is not on the water (when starting a new session)
+     *
+     */
 	public void itemListenerAction(IItemType item, AWTEvent event) {
         int id = event.getID();
-        // TODO
-        // jetzt nur noch: wenn der Name sich geändert hat, dann müssen wir schauen.
-        // sonst behalten wir den wert.	
-		if (id == FocusEvent.FOCUS_LOST) {
-			if ((item instanceof ItemTypeStringAutoComplete) && (item.getName().contains(STR_NAME_LOOKUP))){
-				//ein Name-Feld wurde gefüllt.
-				//nun wollen wir für den Namen das Standard-Boot setzen
-				ItemTypeStringAutoComplete field = (ItemTypeStringAutoComplete) item;
-				
-				if (field.isValidInput()) {
-                	String val = field.getOtherField().getValue();
-                	if (val != null && val.isEmpty()) {
 
-						PersonRecord person = Daten.project.getPersons(false).getPerson(field.getValue(), System.currentTimeMillis());
-						if (person!=null) {
-			                BoatRecord r = Daten.project.getBoats(false).getBoat(
-			                        person.getDefaultBoatId(), System.currentTimeMillis());	
-			                if (r!=null) {
-			                	if (field.getOtherField().getAutoCompleteData().getDataVisible().contains(r.getQualifiedName())) {
-			                		field.getOtherField().setValue(r.getQualifiedName());
+        if (id == FocusEvent.FOCUS_LOST) {
+        	try {
+				if ((item instanceof ItemTypeStringAutoComplete) && (item.getName().contains(STR_NAME_LOOKUP))){
+					// focus lost for name field, we want to automatically fill the boat field with the
+					// person's standard boat.
+	
+					ItemTypeStringAutoComplete field = (ItemTypeStringAutoComplete) item;
+					
+					if (field.isValidInput()) {//field has a known person's name
+	                	String assignedBoatNameForThisEntry = field.getOtherField().getValue(); 
+	                	if (assignedBoatNameForThisEntry != null && assignedBoatNameForThisEntry.isEmpty()) {
+	
+							//Obtain the person's standard boat
+	                		PersonRecord person = Daten.project.getPersons(false).getPerson(field.getValue(), System.currentTimeMillis());
+							if (person!=null) {
+				                BoatRecord r = Daten.project.getBoats(false).getBoat(
+				                        person.getDefaultBoatId(), System.currentTimeMillis());	
+				                if (r!=null) {
+				                	if (field.getOtherField().getAutoCompleteData().getDataVisible().contains(r.getQualifiedName())) {
+				                		field.getOtherField().setValue(r.getQualifiedName());
+				                	}
 			                	}
-		                	}
-		                }
+			                }
+	                	}
 					}
-				}
-				return;
+				} 
+        	} catch (Exception e) {
+				Logger.log(e);
 			}
-		}			
+        	return;
+        }
 
-		super.itemListenerAction(item, event);
+	//otherwise use other Action handler
+    super.itemListenerAction(item, event);
+	
 	}	    
     
+	/**
+	 * Create an ItemTypeAutoComplete 
+	 * @param name Name of the field
+	 * @param description Caption of the field
+	 * @param list AutoCompleteList for the field
+	 * @return ItemTypeAutoComplete field
+	 */
     protected ItemTypeStringAutoComplete getGuiAutoComplete(String name, String description, AutoCompleteList list) {
         ItemTypeStringAutoComplete item = new ItemTypeStringAutoComplete(name, "", IItemType.TYPE_PUBLIC , null, description, true);
         item.setFieldSize(200, FIELD_HEIGHT); // 21 pixels high for new flatlaf, otherwise chars y and p get cut off 
@@ -496,15 +552,18 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         return item;
     }        
     
+    /**
+     * Return the width (in pixels) for the longest caption of some labels.
+     * This is used to try to align the name/boatname fields in the dialog with the other fields for better layout
+     * @param panel  This panel is used to get font metrics
+     * @return maximum withs of the label captions 
+     */
     private int getLongestLabelTextWidth(JPanel panel) {
-    	
     	int lBemerk = panel.getFontMetrics(panel.getFont()).stringWidth(International.getString("Bemerkungen")+": ");
     	int lSessType = panel.getFontMetrics(panel.getFont()).stringWidth(International.getString("Fahrtart")+": ");
     	int lDest = panel.getFontMetrics(panel.getFont()).stringWidth(International.getStringWithMnemonic("Ziel") + " / " + International.getStringWithMnemonic("Strecke")+": ");
     	
     	return Math.max(lBemerk, Math.max(lSessType, lDest));
-    	
-    	
     }
     
     
@@ -537,9 +596,10 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 
 
     
-    private void addTwoItems(ItemTypeItemList target) {
-	    target.addItems(this.getDefaultItems(target.getName()));
-	    target.addItems(this.getDefaultItems(target.getName()));
+    private void addStandardItems(ItemTypeItemList target, int numberOfItems) {
+	    for (int i = 0; i<numberOfItems; i++) {
+	    	target.addItems(this.getDefaultItems(target.getName()));
+	    }
     }
     
     /*
@@ -564,6 +624,13 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 			row[1].removeFromVisible(row[1].getValue());
 		}
 
+		SwingUtilities.invokeLater(new Runnable() {
+	        public void run() {
+	    		mainPanel.repaint();
+	    		teilnehmerUndBoot.repaint();
+	        }
+			}
+				);
     }
 	
 
@@ -1004,5 +1071,13 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
             }
         }
     }    
+    
+    public void keyAction(ActionEvent evt) {
+        _keyAction(evt);
+    }    
+    
+    public void _keyAction(ActionEvent evt) {
+        super._keyAction(evt);
+    }
     
 }
