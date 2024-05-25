@@ -3,6 +3,7 @@ package de.nmichael.efa.gui;
 import java.awt.AWTEvent;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -11,7 +12,9 @@ import java.util.UUID;
 import java.util.Vector;
 
 import javax.swing.BorderFactory;
+import javax.swing.DefaultFocusManager;
 import javax.swing.FocusManager;
+import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
@@ -19,7 +22,6 @@ import javax.swing.SwingConstants;
 import org.apache.batik.ext.swing.GridBagConstants;
 
 import de.nmichael.efa.Daten;
-import de.nmichael.efa.core.AdminTask;
 import de.nmichael.efa.core.config.AdminRecord;
 import de.nmichael.efa.core.config.EfaTypes;
 import de.nmichael.efa.core.items.IItemFactory;
@@ -38,16 +40,14 @@ import de.nmichael.efa.core.items.ItemTypeTime;
 import de.nmichael.efa.data.DestinationRecord;
 import de.nmichael.efa.data.Logbook;
 import de.nmichael.efa.data.LogbookRecord;
-import de.nmichael.efa.data.Persons;
-import de.nmichael.efa.data.storage.StorageObject;
+import de.nmichael.efa.data.ProjectRecord;
 import de.nmichael.efa.data.types.DataTypeDate;
 import de.nmichael.efa.data.types.DataTypeDistance;
 import de.nmichael.efa.data.types.DataTypeTime;
-import de.nmichael.efa.gui.EfaBaseFrame.EfaBaseFrameFocusManager;
 import de.nmichael.efa.gui.util.AutoCompleteList;
 import de.nmichael.efa.util.Dialog;
-import de.nmichael.efa.util.EfaUtil;
 import de.nmichael.efa.util.International;
+import de.nmichael.efa.util.Logger;
 
 public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListener, IItemFactory {
 
@@ -84,10 +84,6 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
     	int yPos=0;
     	int HEADER_WIDTH=9;
     	
-        autoCompleteListSingleBoats.setDataAccess(Daten.project.getBoats(false).data(), logbookValidFrom, logbookInvalidFrom - 1);
-    	autoCompleteListSingleBoats.setFilterDataOnlyOneSeaterBoats(true);
-    	
-    	
         JPanel mainInputPanel = new JPanel();
         mainInputPanel.setLayout(new GridBagLayout());
         mainPanel.add(mainInputPanel, BorderLayout.CENTER);
@@ -108,7 +104,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         date.setBackgroundColorWhenFocused(Daten.efaConfig.getValueEfaDirekt_colorizeInputField() ? Color.yellow : null);
         date.displayOnGui(this, mainInputPanel, 0, yPos);
         date.registerItemListener(this);
-
+        
         // End Date
         enddate = new ItemTypeDate(LogbookRecord.ENDDATE, new DataTypeDate(), IItemType.TYPE_PUBLIC, null, International.getStringWithMnemonic("bis"));
         enddate.setMustBeAfter(date, false);
@@ -302,50 +298,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         
         //---------------- old *-----------------------
         
-        
-        // Boat
-        boat = new ItemTypeStringAutoComplete(LogbookRecord.BOATNAME, "", IItemType.TYPE_PUBLIC, null, International.getStringWithMnemonic("Boot"), true);
-        boat.setFieldSize(200, FIELD_HEIGHT);
-        boat.setLabelGrid(1, GridBagConstraints.EAST, GridBagConstraints.NONE);
-        boat.setFieldGrid(2, GridBagConstraints.WEST, GridBagConstraints.BOTH);
-        boat.setAutoCompleteData(autoCompleteListBoats);
-        boat.setChecks(true, true);
-        boat.setBackgroundColorWhenFocused(Daten.efaConfig.getValueEfaDirekt_colorizeInputField() ? Color.yellow : null);
-        boat.displayOnGui(this, mainInputPanel, 0, yPos);
-        boat.registerItemListener(this);
-
-        yPos++;
-
-
-        // Crew
-        crew = new ItemTypeStringAutoComplete[LogbookRecord.CREW_MAX];
-        for (int i=1; i<=crew.length; i++) {
-            int j = i-1;
-            boolean left = ((j/4) % 2) == 0;
-            crew[j] = new ItemTypeStringAutoComplete(LogbookRecord.getCrewFieldNameName(i), "", IItemType.TYPE_PUBLIC, null,
-                    (i == 1 ? International.getString("Mannschaft") + " " : (i < 10 ? "  " :"")) + Integer.toString(i), true);
-            crew[j].setPadding( (left ? 0 : 10), 0, 0, 0);
-            crew[j].setFieldSize(200, FIELD_HEIGHT);
-            crew[j].setLabelGrid(1, GridBagConstraints.EAST, GridBagConstraints.NONE);
-            crew[j].setFieldGrid((left ? 2 : 3), GridBagConstraints.WEST, GridBagConstraints.NONE);
-            crew[j].setAutoCompleteData(autoCompleteListPersons, true);
-            crew[j].setChecks(true, true);
-            crew[j].setBackgroundColorWhenFocused(Daten.efaConfig.getValueEfaDirekt_colorizeInputField() ? Color.yellow : null);
-            crew[j].displayOnGui(this, mainInputPanel, (left ? 0 : 4), yPos + j%4);
-            crew[j].setVisible(j < 8);
-            crew[j].registerItemListener(this);
-        }
-        crew1defaultText = crew[0].getDescription();
-
-        //----------------------------
-
-
-        yPos=yPos+4;
-
-
-
- 
-        // Info Label
+           // Info Label
         infoLabel.setForeground(Color.blue);
         infoLabel.setHorizontalTextPosition(SwingConstants.LEFT);
         infoLabel.setText(" ");
@@ -361,21 +314,78 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         saveButton.displayOnGui(this, mainPanel, BorderLayout.SOUTH);
         saveButton.registerItemListener(this);
 
-        // Set Valid Date and Time Fields for Autocomplete Lists
-        boat.setValidAt(date, starttime);
-
-        for (int i=0; i<crew.length; i++) {
-            crew[i].setValidAt(date, starttime);
-        }
         destination.setValidAt(date, starttime);
-
+        waters.setValidAt(date, starttime);
     }    
 	
     
     protected void iniDialog() {
 
+    	iniData();
     	iniGuiBase();
         iniGuiMain();
+    }    
+    
+    private void iniData() {
+
+        if (Daten.project == null) {
+            return;
+        } else {
+        	this.logbook = Daten.project.getCurrentLogbook();
+        	if (!logbook.isOpen()) {
+        		return;
+        	}
+        }
+      
+        ProjectRecord pr = Daten.project.getLoogbookRecord(logbook.getName());
+        if (pr != null) {
+            logbookValidFrom = logbook.getValidFrom();
+            logbookInvalidFrom = logbook.getInvalidFrom();
+        }
+        try {
+            iterator = logbook.data().getDynamicIterator();
+            autoCompleteListBoats.setDataAccess(Daten.project.getBoats(false).data(), logbookValidFrom, logbookInvalidFrom - 1);
+            autoCompleteListPersons.setDataAccess(Daten.project.getPersons(false).data(), logbookValidFrom, logbookInvalidFrom - 1);
+            autoCompleteListDestinations.setDataAccess(Daten.project.getDestinations(false).data(), logbookValidFrom, logbookInvalidFrom - 1);
+            autoCompleteListWaters.setDataAccess(Daten.project.getWaters(false).data(), logbookValidFrom, logbookInvalidFrom - 1);
+        } catch (Exception e) {
+            Logger.logdebug(e);
+            iterator = null;
+        }
+        if (isModeBoathouse()) {
+            autoCompleteListDestinations.setFilterDataOnlyForThisBoathouse(true);
+            autoCompleteListDestinations.setPostfixNamesWithBoathouseName(false);
+            autoCompleteListBoats.setFilterDataOnlyOneSeaterBoats(true);
+        }
+        autoCompleteListBoats.update();
+        autoCompleteListPersons.update();
+        autoCompleteListDestinations.update();
+        autoCompleteListWaters.update();
+        
+    }
+    
+	/**
+	 * Creates an Item consisting of Name and Boat for "Teilnehmer und Boot" section
+	 * Where boat only contains single person boats
+	 * 
+	 */
+    public IItemType[] getDefaultItems(String itemName) {
+
+    	ItemTypeStringAutoComplete[] items = new ItemTypeStringAutoComplete[2];
+        //Name
+        	items[0] = getGuiAutoComplete(itemName+"NAME_LOOKUP", International.getString("Name"), this.autoCompleteListPersons);
+	        items[0].setFieldSize(200, -1);
+	        items[0].setBackgroundColorWhenFocused(Daten.efaConfig.getValueEfaDirekt_colorizeInputField() ? Color.yellow : null);
+	        items[0].setValidAt(date, starttime);
+	        
+	    // Boat
+        	items[1] = getGuiAutoComplete(itemName+"BOAT_LOOKUP", STR_SPACER+International.getString("Boot"), this.autoCompleteListBoats);
+	        items[1].setFieldSize(200, -1);
+	        items[1].setBackgroundColorWhenFocused(Daten.efaConfig.getValueEfaDirekt_colorizeInputField() ? Color.yellow : null);
+	        items[1].setValidAt(date, starttime);
+	        
+        return items;
+        
     }    
     
     private int getLongestLabelTextWidth(JPanel panel) {
@@ -419,25 +429,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 		super.itemListenerAction(item, event);
 	}	
 
-	/**
-	 * Creates an Item consisting of Name and Boat
-	 * Where boat only contains single person boats
-	 * 
-	 */
-    public IItemType[] getDefaultItems(String itemName) {
 
-    	ItemTypeStringAutoComplete[] items = new ItemTypeStringAutoComplete[2];
-        //Name
-        	items[0] = getGuiNameAutoComplete(itemName+"NAME_LOOKUP", International.getString("Name"));
-	        items[0].setFieldSize(200, -1);
-	        
-	    // Boat
-        	items[1] = getGuiBoatAutoComplete(itemName+"BOAT_LOOKUP", STR_SPACER+International.getString("Boot"));
-	        items[1].setFieldSize(200, -1);
-	        
-        return items;
-        
-    }
     
     private void addTwoItems(ItemTypeItemList target) {
 	    target.addItems(this.getDefaultItems(target.getName()));
@@ -460,23 +452,15 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 		this.pack();
     }
 	
-    protected ItemTypeStringAutoComplete getGuiNameAutoComplete(String name, String description) {
-        AutoCompleteList list = this.autoCompleteListPersons;
+    protected ItemTypeStringAutoComplete getGuiAutoComplete(String name, String description, AutoCompleteList list) {
         ItemTypeStringAutoComplete item = new ItemTypeStringAutoComplete(name, "", IItemType.TYPE_PUBLIC , null, description, true);
         item.setFieldSize(200, FIELD_HEIGHT); // 21 pixels high for new flatlaf, otherwise chars y and p get cut off 
-        item.setAutoCompleteData(list);
+        //true= automatically remove items from the list, if it is chosen by the user.
+        //so that a name or a person cannot be chosen twice in this dialog
+        item.setAutoCompleteData(list,true); //automatically remove already chosen items from the list
         item.setChecks(true, true);
         return item;
     }    
-    
-    protected ItemTypeStringAutoComplete getGuiBoatAutoComplete(String name, String description) {
-        AutoCompleteList list = this.autoCompleteListSingleBoats;
-        ItemTypeStringAutoComplete item = new ItemTypeStringAutoComplete(name, "", IItemType.TYPE_PUBLIC , null, description, true);
-        item.setFieldSize(200, FIELD_HEIGHT); // 21 pixels high for new flatlaf, otherwise chars y and p get cut off 
-        item.setAutoCompleteData(list);
-        item.setChecks(true, true);
-        return item;
-    }        
     
     // Datensatz speichern
     // liefert "true", wenn erfolgreich
@@ -604,4 +588,315 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         return true;*/
     }	
 	
+    // =========================================================================
+    // FocusManager
+    // =========================================================================
+
+    class EfaBaseFrameFocusManager extends DefaultFocusManager {
+
+        private EfaBaseFrame efaBaseFrame;
+        private FocusManager fm;
+        private int focusItemCnt;
+
+        public EfaBaseFrameFocusManager(EfaBaseFrame efaBaseFrame, FocusManager fm) {
+            this.efaBaseFrame = efaBaseFrame;
+            this.fm = fm;
+        }
+
+        private IItemType getItem(Component c) {
+            if (c == null) {
+                return null;
+            }
+            if (c == efaBaseFrame.entryno.getComponent()) {
+                return efaBaseFrame.entryno;
+            }
+            if (c == efaBaseFrame.date.getComponent()) {
+                return efaBaseFrame.date;
+            }
+            if (c == efaBaseFrame.enddate.getComponent()) {
+                return efaBaseFrame.enddate;
+            }
+            if (c == efaBaseFrame.boat.getComponent() ||
+                c == efaBaseFrame.boat.getButton()) {
+                return efaBaseFrame.boat;
+            }
+            if (c == efaBaseFrame.boatvariant.getComponent()) {
+                return efaBaseFrame.boatvariant;
+            }
+            if (c == efaBaseFrame.cox.getComponent() ||
+                c == efaBaseFrame.cox.getButton()) {
+                return efaBaseFrame.cox;
+            }
+            for (int i=0; i<efaBaseFrame.crew.length; i++) {
+                if (c == efaBaseFrame.crew[i].getComponent() ||
+                    c == efaBaseFrame.crew[i].getButton()) {
+                    return efaBaseFrame.crew[i];
+                }
+            }
+            if (c == efaBaseFrame.boatcaptain.getComponent()) {
+                return efaBaseFrame.boatcaptain;
+            }
+            if (c == efaBaseFrame.starttime.getComponent()) {
+                return efaBaseFrame.starttime;
+            }
+            if (c == efaBaseFrame.endtime.getComponent()) {
+                return efaBaseFrame.endtime;
+            }
+            if (c == efaBaseFrame.destination.getComponent() ||
+                c == efaBaseFrame.destination.getButton()) {
+                return efaBaseFrame.destination;
+            }
+            if (c == efaBaseFrame.waters.getComponent() ||
+                c == efaBaseFrame.waters.getButton()) {
+                return efaBaseFrame.waters;
+            }
+            if (c == efaBaseFrame.distance.getComponent()) {
+                return efaBaseFrame.distance;
+            }
+            if (c == efaBaseFrame.comments.getComponent()) {
+                return efaBaseFrame.comments;
+            }
+            if (c == efaBaseFrame.sessiontype.getComponent()) {
+                return efaBaseFrame.sessiontype;
+            }
+            if (c == efaBaseFrame.remainingCrewUpButton.getComponent()) {
+                return efaBaseFrame.remainingCrewUpButton;
+            }
+            if (c == efaBaseFrame.remainingCrewDownButton.getComponent()) {
+                return efaBaseFrame.remainingCrewDownButton;
+            }
+            if (c == efaBaseFrame.boatDamageButton.getComponent()) {
+                return efaBaseFrame.boatDamageButton;
+            }
+            if (c == efaBaseFrame.boatNotCleanedButton.getComponent()) {
+                return efaBaseFrame.boatNotCleanedButton;
+            }
+            if (c == efaBaseFrame.saveButton.getComponent()) {
+                return efaBaseFrame.saveButton;
+            }
+            return null;
+        }
+
+        private void focusItem(IItemType item, Component cur, int direction) {
+            if (focusItemCnt++ == 100) {
+                return; // oops, recursion
+            }
+            // fSystem.out.println("focusItem(" + item.getName() + ")");
+            if (item == efaBaseFrame.starttime && Daten.efaConfig.getValueSkipUhrzeit()) {
+                focusItem(efaBaseFrame.destination, cur, direction);
+            } else if (item == efaBaseFrame.endtime && Daten.efaConfig.getValueSkipUhrzeit()) {
+                focusItem(efaBaseFrame.destination, cur, direction);
+            } else if (item == efaBaseFrame.destination && Daten.efaConfig.getValueSkipZiel()) {
+                focusItem(efaBaseFrame.distance, cur, direction);
+            } else if (item == efaBaseFrame.comments && Daten.efaConfig.getValueSkipBemerk()) {
+                focusItem(efaBaseFrame.saveButton, cur, direction);
+            } else if (item.isEnabled() && item.isVisible() && item.isEditable()) {
+                item.requestFocus();
+            } else {
+                if (direction > 0) {
+                    focusNextItem(item, cur);
+                } else {
+                    focusPreviousItem(item, cur);
+                }
+            }
+        }
+
+        public void focusNextItem(IItemType item, Component cur) {
+            //System.out.println("focusNextItem(" + item.getName() + ")");
+            focusItemCnt = 0;
+
+            // LFDNR
+            if (item == efaBaseFrame.entryno) {
+                focusItem(efaBaseFrame.date, cur, 1);
+                return;
+            }
+
+            // DATUM
+            if (item == efaBaseFrame.date) {
+                focusItem(efaBaseFrame.boat, cur, 1);
+                return;
+            }
+
+            // BOOT
+            if (item == efaBaseFrame.boat) {
+                efaBaseFrame.boat.getValueFromGui();
+                efaBaseFrame.currentBoatUpdateGui();
+                if (!(cur instanceof JButton) && efaBaseFrame.boat.getValue().length()>0 && !efaBaseFrame.boat.isKnown() && !efaBaseFrame.isModeBoathouse()) {
+                    efaBaseFrame.boat.requestButtonFocus();
+                } else if (efaBaseFrame.boatvariant.isVisible()) {
+                    focusItem(efaBaseFrame.boatvariant, cur, 1);
+                } else {
+                    if (efaBaseFrame.currentBoatTypeCoxing != null && efaBaseFrame.currentBoatTypeCoxing.equals(EfaTypes.TYPE_COXING_COXLESS)) {
+                        focusItem(efaBaseFrame.crew[0], cur, 1);
+                    } else {
+                        focusItem(efaBaseFrame.cox, cur, 1);
+                    }
+                }
+                return;
+            }
+
+            // BOOTVARIANT
+            if (item == efaBaseFrame.boatvariant) {
+                efaBaseFrame.boatvariant.getValueFromGui();
+                efaBaseFrame.currentBoatUpdateGui();
+                if (efaBaseFrame.currentBoatTypeCoxing != null && efaBaseFrame.currentBoatTypeCoxing.equals(EfaTypes.TYPE_COXING_COXLESS)) {
+                    focusItem(efaBaseFrame.crew[0], cur, 1);
+                } else {
+                    focusItem(efaBaseFrame.cox, cur, 1);
+                }
+                return;
+            }
+
+            // STEUERMANN
+            if (item == efaBaseFrame.cox) {
+                efaBaseFrame.cox.getValueFromGui();
+                if (!(cur instanceof JButton) && efaBaseFrame.cox.getValue().length()>0 && !efaBaseFrame.cox.isKnown() && !efaBaseFrame.isModeBoathouse()) {
+                    efaBaseFrame.cox.requestButtonFocus();
+                } else {
+                    focusItem(efaBaseFrame.crew[efaBaseFrame.crewRangeSelection * 8], cur, 1);
+                }
+                return;
+            }
+
+            // MANNSCHAFT
+            for (int i = 0; i < efaBaseFrame.crew.length; i++) {
+                if (item == efaBaseFrame.crew[i]) {
+                    efaBaseFrame.crew[i].getValueFromGui();
+                    if (!(cur instanceof JButton) && efaBaseFrame.crew[i].getValue().length()>0 && !efaBaseFrame.crew[i].isKnown() && !efaBaseFrame.isModeBoathouse()) {
+                        efaBaseFrame.crew[i].requestButtonFocus();
+                    } else if (efaBaseFrame.crew[i].getValueFromField().trim().length() == 0) {
+                        focusItem(efaBaseFrame.starttime, cur, 1);
+                    } else if (efaBaseFrame.currentBoatTypeSeats != null && i+1 < efaBaseFrame.crew.length &&
+                            i+1 == EfaTypes.getNumberOfRowers(efaBaseFrame.currentBoatTypeSeats) &&
+                            efaBaseFrame.crew[i+1].getValueFromField().trim().length() == 0) {
+                        focusItem(efaBaseFrame.starttime, cur, 1);
+                    } else if (i+1 < efaBaseFrame.crew.length) {
+                        focusItem(efaBaseFrame.crew[i + 1], cur, 1);
+                    } else {
+                        focusItem(efaBaseFrame.starttime, cur, 1);
+                    }
+                    return;
+                }
+            }
+
+            // ABFAHRT
+            if (item == efaBaseFrame.starttime) {
+                focusItem(efaBaseFrame.endtime, cur, 1);
+                return;
+            }
+
+            // ANKUNFT
+            if (item == efaBaseFrame.endtime) {
+                focusItem(efaBaseFrame.destination, cur, 1);
+                return;
+            }
+
+            // ZIEL
+            if (item == efaBaseFrame.destination) {
+                if (!(cur instanceof JButton) && efaBaseFrame.destination.getValue().length()>0 && !efaBaseFrame.destination.isKnown() && !efaBaseFrame.isModeBoathouse()) {
+                    efaBaseFrame.destination.requestButtonFocus();
+                } else {
+                    focusItem(efaBaseFrame.waters, cur, 1);
+                }
+                return;
+            }
+
+            // WATERS
+            if (item == efaBaseFrame.waters) {
+                if (!(cur instanceof JButton) && efaBaseFrame.waters.getValue().length()>0 && !efaBaseFrame.waters.isKnown() && !efaBaseFrame.isModeBoathouse()) {
+                    efaBaseFrame.waters.requestButtonFocus();
+                } else {
+                    focusItem(efaBaseFrame.distance, cur, 1);
+                }
+                return;
+            }
+
+            // BOOTS-KM
+            if (item == efaBaseFrame.distance) {
+                focusItem(efaBaseFrame.comments, cur, 1);
+                return;
+            }
+
+            // COMMENTS
+            if (item == efaBaseFrame.comments) {
+                focusItem(efaBaseFrame.saveButton, cur, 1);
+                return;
+            }
+
+            // ADD-BUTTON
+            if (item == efaBaseFrame.saveButton) {
+                focusItem(efaBaseFrame.entryno, cur, 1);
+                return;
+            }
+
+            // other
+            fm.focusNextComponent(cur);
+        }
+
+        public void focusPreviousItem(IItemType item, Component cur) {
+            focusItemCnt = 0;
+            if (item == efaBaseFrame.entryno) {
+                focusItem(efaBaseFrame.saveButton, cur, -1);
+                return;
+            }
+            if (item == efaBaseFrame.cox) {
+                focusItem(efaBaseFrame.boat, cur, -1);
+                return;
+            }
+            for (int i = 0; i < efaBaseFrame.crew.length; i++) {
+                if (item == efaBaseFrame.crew[i]) {
+                    focusItem((i == 0 ? efaBaseFrame.cox : efaBaseFrame.crew[i - 1]), cur, -1);
+                    return;
+                }
+            }
+            if (item == efaBaseFrame.starttime) {
+                for (int i = 0; i < 8; i++) {
+                    if (efaBaseFrame.crew[i + efaBaseFrame.crewRangeSelection * 8].getValueFromField().trim().length() == 0 || i == 7) {
+                        focusItem(efaBaseFrame.crew[i + efaBaseFrame.crewRangeSelection * 8], cur, -1);
+                        return;
+                    }
+                }
+            }
+            if (item == efaBaseFrame.waters) {
+                focusItem(efaBaseFrame.destination, cur, -1);
+                return;
+            }
+            if (item == efaBaseFrame.distance) {
+                focusItem(efaBaseFrame.waters, cur, -1);
+                return;
+            }
+            if (item == efaBaseFrame.comments) {
+                focusItem(efaBaseFrame.distance, cur, -1);
+                return;
+            }
+            if (item == efaBaseFrame.saveButton) {
+                focusItem(efaBaseFrame.comments, cur, -1);
+                return;
+            }
+
+            // other
+            fm.focusPreviousComponent(cur);
+        }
+
+        public void focusNextComponent(Component cur) {
+            //System.out.println("focusNextComponent("+cur+")");
+            IItemType item = getItem(cur);
+            if (item != null) {
+                focusNextItem(item, cur);
+            } else {
+                fm.focusNextComponent(cur);
+            }
+        }
+
+        public void focusPreviousComponent(Component cur) {
+            //System.out.println("focusPreviousComponent("+cur+")");
+            IItemType item = getItem(cur);
+            if (item != null) {
+                focusPreviousItem(item, cur);
+            } else {
+                fm.focusPreviousComponent(cur);
+            }
+        }
+    }    
+    
 }
