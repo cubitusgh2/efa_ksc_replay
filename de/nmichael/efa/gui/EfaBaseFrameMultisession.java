@@ -4,11 +4,11 @@ import java.awt.AWTEvent;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.event.WindowEvent;
-import java.util.UUID;
+import java.awt.event.FocusEvent;
 import java.util.Vector;
 
 import javax.swing.BorderFactory;
@@ -37,9 +37,11 @@ import de.nmichael.efa.core.items.ItemTypeString;
 import de.nmichael.efa.core.items.ItemTypeStringAutoComplete;
 import de.nmichael.efa.core.items.ItemTypeStringList;
 import de.nmichael.efa.core.items.ItemTypeTime;
+import de.nmichael.efa.data.BoatRecord;
 import de.nmichael.efa.data.DestinationRecord;
 import de.nmichael.efa.data.Logbook;
 import de.nmichael.efa.data.LogbookRecord;
+import de.nmichael.efa.data.PersonRecord;
 import de.nmichael.efa.data.ProjectRecord;
 import de.nmichael.efa.data.types.DataTypeDate;
 import de.nmichael.efa.data.types.DataTypeDistance;
@@ -53,6 +55,8 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 
 	private final static String  NOT_STORED_ITEM_PREFIX = "_";
 	private final static String  STR_SPACER = "   ";
+	private final static String  STR_NAME_LOOKUP = "NAME_LOOKUP";
+	private final static String  STR_BOAT_LOOKUP = "BOOT_LOOKUP";
 	private ItemTypeItemList nameAndBoat;
     private AutoCompleteList autoCompleteListSingleBoats = new AutoCompleteList();
     private JPanel teilnehmerUndBoot;
@@ -136,7 +140,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         starttime.setFieldGrid(2, GridBagConstraints.WEST, GridBagConstraints.NONE);
         starttime.enableSeconds(false);
         starttime.setBackgroundColorWhenFocused(Daten.efaConfig.getValueEfaDirekt_colorizeInputField() ? Color.yellow : null);
-        starttime.setPadding(0, 0, VERTICAL_WHITESPACE_PADDING_GROUPS, 0);
+        //starttime.setPadding(0, 0, VERTICAL_WHITESPACE_PADDING_GROUPS, 0);
         starttime.displayOnGui(this, mainInputPanel, 0, yPos);
         starttime.registerItemListener(this);
 
@@ -144,7 +148,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
                 IItemType.TYPE_PUBLIC, null, "");
         starttimeInfoLabel.setFieldGrid(5, GridBagConstraints.WEST, GridBagConstraints.NONE);
         starttimeInfoLabel.setVisible(false);
-        starttimeInfoLabel.setPadding(0, 0, VERTICAL_WHITESPACE_PADDING_GROUPS, 0);        
+        //starttimeInfoLabel.setPadding(0, 0, VERTICAL_WHITESPACE_PADDING_GROUPS, 0);        
         starttimeInfoLabel.displayOnGui(this, mainInputPanel, 3, yPos);
         
         yPos++;
@@ -214,10 +218,10 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 		nameAndBoat.setRepeatTitle(false);        
 		nameAndBoat.setAppendPositionToEachElement(true);
 		nameAndBoat.setXForAddDelButtons(6); // two columns, both with name, edit field, autocomplete button
-		nameAndBoat.setPadYbetween(0);	
 		nameAndBoat.setItemsOrientation(ItemTypeItemList.Orientation.horizontal);
 		nameAndBoat.setFieldGrid(8, GridBagConstraints.EAST, GridBagConstraints.BOTH);
 		nameAndBoat.setFirstColumnMinWidth(getLongestLabelTextWidth(mainInputPanel));
+		nameAndBoat.setPadding(0, 0, 10, 10);
 		//nameAndBoat.setFirstColumnMinWidth(mainInputPanelGrid.getLayoutDimensions()[0][0]);
 		// Multisession means at least two persons with an individual boat are to go
 		addTwoItems(nameAndBoat);
@@ -238,7 +242,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
                 International.getStringWithMnemonic("Strecke"), true);
         destination.setFieldSize(400, FIELD_HEIGHT);
         destination.setLabelGrid(1, GridBagConstraints.EAST, GridBagConstraints.NONE);
-        destination.setFieldGrid(7, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL);
+        destination.setFieldGrid(8, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL);
         destination.setAutoCompleteData(autoCompleteListDestinations);
         destination.setChecks(true, false);
         destination.setIgnoreEverythingAfter(DestinationRecord.DESTINATION_VARIANT_SEPARATOR);
@@ -251,7 +255,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
                 IItemType.TYPE_PUBLIC, null, International.getString("Gewässer"));
         destinationInfo.setFieldSize(400, FIELD_HEIGHT);
         destinationInfo.setLabelGrid(1, GridBagConstraints.EAST, GridBagConstraints.NONE);
-        destinationInfo.setFieldGrid(7, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL);
+        destinationInfo.setFieldGrid(8, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL);
         destinationInfo.displayOnGui(this, mainInputPanel, 0, yPos);
         destinationInfo.setEditable(false);
         destinationInfo.setVisible(false);
@@ -262,7 +266,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
                 International.getStringWithMnemonic("Gewässer"), true);
         waters.setFieldSize(400, FIELD_HEIGHT);
         waters.setLabelGrid(1, GridBagConstraints.EAST, GridBagConstraints.NONE);
-        waters.setFieldGrid(7, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL);
+        waters.setFieldGrid(8, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL);
         waters.setAutoCompleteData(autoCompleteListWaters);
         waters.setChecks(true, false);
         waters.setIgnoreEverythingAfter(LogbookRecord.WATERS_SEPARATORS);
@@ -289,7 +293,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         comments = new ItemTypeString(LogbookRecord.COMMENTS, null, IItemType.TYPE_PUBLIC, null, International.getStringWithMnemonic("Bemerkungen"));
         comments.setFieldSize(400, FIELD_HEIGHT);
         comments.setLabelGrid(1, GridBagConstraints.EAST, GridBagConstraints.NONE);
-        comments.setFieldGrid(7, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL);
+        comments.setFieldGrid(8, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL);
         comments.setBackgroundColorWhenFocused(Daten.efaConfig.getValueEfaDirekt_colorizeInputField() ? Color.yellow : null);
         comments.setPadding(0, 0, VERTICAL_WHITESPACE_PADDING_GROUPS, 0);
         comments.displayOnGui(this, mainInputPanel, 0, yPos);
@@ -305,7 +309,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         mainInputPanel.add(infoLabel,
                 new GridBagConstraints(0, yPos, 8, 1, 0.0, 0.0,
                 GridBagConstraints.WEST, GridBagConstraints.NONE,
-                new Insets(10, 20, 10, 20), 0, 0));
+                new Insets(10, 20, 10, 0), 0, 0));
  
         // Save Button
         saveButton = new ItemTypeButton("SAVE", IItemType.TYPE_PUBLIC, null, International.getString("Eintrag speichern"));
@@ -314,10 +318,66 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         saveButton.displayOnGui(this, mainPanel, BorderLayout.SOUTH);
         saveButton.registerItemListener(this);
 
+        createAllUnusedElements();
+        
         destination.setValidAt(date, starttime);
-        waters.setValidAt(date, starttime);
+        
+        Dimension dim = mainPanel.getMinimumSize();
+        dim.height = dim.height + 260;
+        mainPanel.setMinimumSize(dim);        
     }    
 	
+    private void createAllUnusedElements() {
+    
+    	entryno = new ItemTypeString(LogbookRecord.ENTRYID, "", IItemType.TYPE_PUBLIC, null, International.getStringWithMnemonic("Lfd. Nr."));
+    	entryno.setVisible(false);
+        
+    	opensession = new ItemTypeLabel(LogbookRecord.OPEN, IItemType.TYPE_PUBLIC, null, International.getStringWithMnemonic("Fahrt offen"));
+        opensession.setVisible(false);
+        
+        closesessionButton = new ItemTypeButton("CloseSessionButton", IItemType.TYPE_PUBLIC, null, 
+                International.getStringWithMnemonic("Fahrt offen") + " - " +
+                International.getStringWithMnemonic("jetzt beenden"));
+        closesessionButton.setVisible(false);
+        
+        boat = new ItemTypeStringAutoComplete(LogbookRecord.BOATNAME, "", IItemType.TYPE_PUBLIC, null, International.getStringWithMnemonic("Boot"), true);
+        boat.setVisible(false);
+        boatvariant = new ItemTypeStringList(LogbookRecord.BOATVARIANT, "",
+                null, null,
+                IItemType.TYPE_PUBLIC, null, International.getString("Variante"));
+        boatvariant.setVisible(false);
+        
+        cox = new ItemTypeStringAutoComplete(LogbookRecord.COXNAME, "", IItemType.TYPE_PUBLIC, null, International.getStringWithMnemonic("Steuermann"), true);
+        cox.setVisible(false);
+        
+        crew = new ItemTypeStringAutoComplete[LogbookRecord.CREW_MAX];
+        for (int i=1; i<=crew.length; i++) {
+         	 crew[i-1] = new ItemTypeStringAutoComplete(LogbookRecord.getCrewFieldNameName(i), "", IItemType.TYPE_PUBLIC, null,
+                     (i == 1 ? International.getString("Mannschaft") + " " : (i < 10 ? "  " :"")) + Integer.toString(i), true);
+        	crew[i-1].setVisible(false);
+        }
+        boatcaptain = new ItemTypeStringList(LogbookRecord.BOATCAPTAIN, "",
+                LogbookRecord.getBoatCaptainValues(), LogbookRecord.getBoatCaptainDisplay(),
+                IItemType.TYPE_PUBLIC, null, International.getString("Obmann"));
+        boatcaptain.setVisible(false);   
+        
+        sessiongroup = new ItemTypeStringAutoComplete(LogbookRecord.SESSIONGROUPID,
+                "", IItemType.TYPE_PUBLIC, null,
+                International.getStringWithMnemonic("Fahrtgruppe"), true);
+        sessiongroup.setVisible(false);      
+        
+        remainingCrewUpButton = new ItemTypeButton("REMAININGCREWUP", IItemType.TYPE_PUBLIC, null, "");
+        remainingCrewDownButton = new ItemTypeButton("REMAININGCREWDOWN", IItemType.TYPE_PUBLIC, null, "");
+        remainingCrewUpButton.setVisible(false);  
+        remainingCrewDownButton.setVisible(false);  
+        
+        boatDamageButton = new ItemTypeButton("BOATDAMAGE", IItemType.TYPE_PUBLIC, null, International.getString("Bootsschaden melden"));
+        boatNotCleanedButton = new ItemTypeButton("BOATNOTCLEANED", IItemType.TYPE_PUBLIC, null, International.getString("Boot war nicht geputzt"));
+        boatDamageButton.setVisible(false);  
+        boatNotCleanedButton.setVisible(false);     
+        
+    }
+    
     
     protected void iniDialog() {
 
@@ -373,20 +433,68 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 
     	ItemTypeStringAutoComplete[] items = new ItemTypeStringAutoComplete[2];
         //Name
-        	items[0] = getGuiAutoComplete(itemName+"NAME_LOOKUP", International.getString("Name"), this.autoCompleteListPersons);
+        	items[0] = getGuiAutoComplete(itemName+STR_NAME_LOOKUP, International.getString("Name"), this.autoCompleteListPersons);
 	        items[0].setFieldSize(200, -1);
 	        items[0].setBackgroundColorWhenFocused(Daten.efaConfig.getValueEfaDirekt_colorizeInputField() ? Color.yellow : null);
 	        items[0].setValidAt(date, starttime);
+	        items[0].registerItemListener(this);
 	        
 	    // Boat
-        	items[1] = getGuiAutoComplete(itemName+"BOAT_LOOKUP", STR_SPACER+International.getString("Boot"), this.autoCompleteListBoats);
+        	items[1] = getGuiAutoComplete(itemName+STR_BOAT_LOOKUP, STR_SPACER+International.getString("Boot"), this.autoCompleteListBoats);
 	        items[1].setFieldSize(200, -1);
 	        items[1].setBackgroundColorWhenFocused(Daten.efaConfig.getValueEfaDirekt_colorizeInputField() ? Color.yellow : null);
 	        items[1].setValidAt(date, starttime);
+
+	        items[0].setOtherField(items[1]);
 	        
         return items;
         
     }    
+    
+	public void itemListenerAction(IItemType item, AWTEvent event) {
+        int id = event.getID();
+        // TODO
+        // jetzt nur noch: wenn der Name sich geändert hat, dann müssen wir schauen.
+        // sonst behalten wir den wert.	
+		if (id == FocusEvent.FOCUS_LOST) {
+			if ((item instanceof ItemTypeStringAutoComplete) && (item.getName().contains(STR_NAME_LOOKUP))){
+				//ein Name-Feld wurde gefüllt.
+				//nun wollen wir für den Namen das Standard-Boot setzen
+				ItemTypeStringAutoComplete field = (ItemTypeStringAutoComplete) item;
+				
+				if (field.isValidInput()) {
+                	String val = field.getOtherField().getValue();
+                	if (val != null && val.isEmpty()) {
+
+						PersonRecord person = Daten.project.getPersons(false).getPerson(field.getValue(), System.currentTimeMillis());
+						if (person!=null) {
+			                BoatRecord r = Daten.project.getBoats(false).getBoat(
+			                        person.getDefaultBoatId(), System.currentTimeMillis());	
+			                if (r!=null) {
+			                	if (field.getOtherField().getAutoCompleteData().getDataVisible().contains(r.getQualifiedName())) {
+			                		field.getOtherField().setValue(r.getQualifiedName());
+			                	}
+		                	}
+		                }
+					}
+				}
+				return;
+			}
+		}			
+
+		super.itemListenerAction(item, event);
+	}	    
+    
+    protected ItemTypeStringAutoComplete getGuiAutoComplete(String name, String description, AutoCompleteList list) {
+        ItemTypeStringAutoComplete item = new ItemTypeStringAutoComplete(name, "", IItemType.TYPE_PUBLIC , null, description, true);
+        item.setFieldSize(200, FIELD_HEIGHT); // 21 pixels high for new flatlaf, otherwise chars y and p get cut off 
+        //true= automatically remove items from the list, if it is chosen by the user.
+        //so that a name or a person cannot be chosen twice in this dialog
+        item.setAutoCompleteData(list,true); //automatically remove already chosen items from the list
+        item.setChecks(true, true);
+        item.setShowButtonFocusable(false);
+        return item;
+    }        
     
     private int getLongestLabelTextWidth(JPanel panel) {
     	
@@ -425,9 +533,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 		return item;
 	}    
 
-	public void itemListenerAction(IItemType item, AWTEvent event) {
-		super.itemListenerAction(item, event);
-	}	
+
 
 
     
@@ -448,19 +554,19 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
      */
     public void updateGui() {
     	teilnehmerUndBoot.removeAll();
+		autoCompleteListBoats.reset();
+		autoCompleteListPersons.reset();
 		nameAndBoat.displayOnGui(this, teilnehmerUndBoot, 0, 1);
-		this.pack();
+	
+		for (int i=0; i<nameAndBoat.getItemCount(); i++) {
+			ItemTypeStringAutoComplete [] row = (ItemTypeStringAutoComplete []) nameAndBoat.getItems(i);
+			row[0].removeFromVisible(row[0].getValue());
+			row[1].removeFromVisible(row[1].getValue());
+		}
+
     }
 	
-    protected ItemTypeStringAutoComplete getGuiAutoComplete(String name, String description, AutoCompleteList list) {
-        ItemTypeStringAutoComplete item = new ItemTypeStringAutoComplete(name, "", IItemType.TYPE_PUBLIC , null, description, true);
-        item.setFieldSize(200, FIELD_HEIGHT); // 21 pixels high for new flatlaf, otherwise chars y and p get cut off 
-        //true= automatically remove items from the list, if it is chosen by the user.
-        //so that a name or a person cannot be chosen twice in this dialog
-        item.setAutoCompleteData(list,true); //automatically remove already chosen items from the list
-        item.setChecks(true, true);
-        return item;
-    }    
+
     
     // Datensatz speichern
     // liefert "true", wenn erfolgreich
@@ -489,15 +595,15 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
             !checkDuplicatePersons() ||
             !checkPersonsForBoatType() ||
             !checkDuplicateEntry() ||
-            !checkEntryNo() ||
-            !checkBoatCaptain() ||
+            //!checkEntryNo() ||
+            //!checkBoatCaptain() ||
             !checkBoatStatus() ||
             !checkMultiDayTours() ||
             !checkSessionType() ||
             !checkDate() ||
             !checkTime() ||
             !checkAllowedDateForLogbook() ||
-            !checkAllDataEntered() ||
+            //!checkAllDataEntered() ||
             !checkNamesValid() ||
             !checkUnknownNames() ||
             !checkProperUnknownNames() ||

@@ -2998,7 +2998,11 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     			(isLateEntry ? efaBaseFrame.MODE_BOATHOUSE_LATEENTRY_MULTISESSION : efaBaseFrame.MODE_BOATHOUSE_START_MULTISESSION)
     			);
     	
-    	myFrame.showDialog();
+    	try {
+    		myFrame.showDialog();
+    	} catch (Exception e) {
+    		Logger.log(e);
+    	}
   
     	
     	/*

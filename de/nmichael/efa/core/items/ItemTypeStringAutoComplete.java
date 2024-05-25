@@ -83,6 +83,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
     }
 
     protected boolean showButton;
+    protected boolean showButtonFocusable;
     protected boolean useAutocompleteList;
     protected JButton button;
     protected Color originalButtonColor;
@@ -99,7 +100,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
     protected ItemTypeDate validAtDateItem;
     protected ItemTypeTime validAtTimeItem;
     protected boolean onChoosenDeleteFromList = false; // @todo - added by Velten
-
+    protected ItemTypeStringAutoComplete otherField;
 
     public ItemTypeStringAutoComplete(String name, String value, int type,
             String category, String description, boolean showButton) {
@@ -126,6 +127,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
         if (showButton) {
             button = new JButton();
             originalButtonColor = button.getBackground();
+            button.setFocusable(showButtonFocusable);
             Dialog.setPreferredSize(button, fieldHeight-4, fieldHeight-8);
             button.addActionListener(new java.awt.event.ActionListener() {
                 public void actionPerformed(ActionEvent e) { 
@@ -241,6 +243,12 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
         return rememberedId;
     }
 
+    public void setShowButtonFocusable(Boolean value) {
+    	this.showButtonFocusable=value;
+    	if (button != null) {
+    		button.setFocusable(value);
+    	}
+    }
 
 
     protected void field_focusLost(FocusEvent e) {
@@ -880,5 +888,23 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
     
     public boolean getShowButton() {
     	return this.showButton;
+    }
+    
+    public ItemTypeStringAutoComplete getOtherField() {
+    	return this.otherField;
+    }
+    
+    public void setOtherField(ItemTypeStringAutoComplete other) {
+    	this.otherField=other;
+    }
+    
+    public void removeFromVisible(String value) {
+    	
+        if(onChoosenDeleteFromList && !value.isEmpty()) {
+            Vector<String> vis = autoCompleteList.getDataVisible();
+            if(vis.remove(value)) {
+                autoCompleteList.setDataVisible(vis);
+            }
+        }    	
     }
 }

@@ -100,12 +100,15 @@ public class ItemTypeItemList extends ItemType {
 
     public void addItems(IItemType[] items) {
         int idx = this.items.size();
+        lastItemFocus = null;
         for (IItemType item : items) {
             String internalName = getName() + "_" + idx + "_" + item.getName();
             itemNameMapping.put(internalName, item.getName());
             item.setName(internalName);
             if (item.isVisible() && item.isEnabled() && item.isEditable()) {
-                lastItemFocus = item;
+                if (lastItemFocus == null) {
+                	lastItemFocus = item;
+                }
             }
         }
         this.items.add(items);
@@ -117,6 +120,10 @@ public class ItemTypeItemList extends ItemType {
 
     public IItemType[] getItems(int idx) {
         return items.get(idx);
+    }
+    
+    public int getItemCount() {
+    	return items.size();
     }
 
     public IItemType getItem(int idx, String name) {
@@ -251,9 +258,9 @@ public class ItemTypeItemList extends ItemType {
         });
 
         panel.add(titlelabel, new GridBagConstraints(x, y, xForAddDelButtons, 1, 0.0, 0.0,
-                  GridBagConstraints.WEST, GridBagConstraints.BOTH, new Insets(padYbefore, padXbefore, (items.size() == 0 ? padYafter : 0), 0), 0, 0));
+                  GridBagConstraints.WEST, GridBagConstraints.BOTH, new Insets(padYbefore, padXbefore, padYafter , 0), 0, 0));
         panel.add(addButton, new GridBagConstraints(x+xForAddDelButtons, y, 2, 1, 0.0, 0.0,
-                  GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(padYbefore, 2, (items.size() == 0 ? padYafter : 0), padXafter), 0, 0));
+                  GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(padYbefore, 2, padYafter, padXafter), 0, 0));
         myY++;
 
         if (orientation == Orientation.horizontal) {
@@ -288,7 +295,7 @@ public class ItemTypeItemList extends ItemType {
                         GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(padYbetween, padXbefore, 0, 0), 0, 0));
             }
             panel.add(delButton, new GridBagConstraints(x+xForAddDelButtons, y+myY, 1, 1, 0.0, 0.0,
-                    GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(padYbetween, 2, 0, 0), 0, 0));
+                    GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0, 2, 0, 0), 0, 0));
             delButtons.put(delButton, i);
             lastItemStart = (label != null ? label : delButton);
             if (repeatTitle) {
@@ -308,6 +315,9 @@ public class ItemTypeItemList extends ItemType {
                         item.setDescription(descr + " " + (i+1));
                     }
                     int plusY = item.displayOnGui(dlg, panel, myX, y+myY);
+                    if (item instanceof ItemTypeLabelTextfield) {
+                    	((ItemTypeLabelTextfield) item).restoreBackgroundColor();
+                    }
                     switch (orientation) {
                         case vertical:
                             myY += plusY;
