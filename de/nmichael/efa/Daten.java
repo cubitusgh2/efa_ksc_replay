@@ -73,7 +73,7 @@ public class Daten {
 	public final static String VERSION = "2.4.0"; // Version für die Ausgabe (z.B. 2.1.0, kann aber
 																	// auch Zusätze wie "alpha" o.ä. enthalten)
 	public final static String VERSIONID = "2.4.0_00"; // VersionsID: Format: "X.Y.Z_MM"; final-Version z.B. 1.4.0_00;
-														// beta-Version z.B. 1.4.0_#1  //# is not good, is used in efa.data.Waters 
+														// beta-Version z.B. 1.4.0_#1  
 	public final static String VERSIONRELEASEDATE = "05.04.2024"; // Release Date: TT.MM.JJJJ
 	public final static String MAJORVERSION = "2";
 	public final static String PROGRAMMID = "EFA.240"; // Versions-ID für Wettbewerbsmeldungen
