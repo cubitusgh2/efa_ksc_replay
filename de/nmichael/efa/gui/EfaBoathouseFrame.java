@@ -2457,7 +2457,15 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             return;
         }    	
         
-        showStartSessionMultipleDialog(false);
+        ItemTypeBoatstatusList.BoatListItem item = getSelectedListItem();
+        if (item == null) {
+            Dialog.error(International.getString("Bitte wähle zuerst ein Boot aus!"));
+            boatListRequestFocus(1);
+            efaBoathouseBackgroundTask.interrupt(); // Falls requestFocus nicht funktioniert hat, setzt der Thread ihn richtig!
+            return;
+        }        
+        
+        showStartSessionMultipleDialog(false, item);
 
         clearFilterFieldsIfConfigured();        
     }
@@ -2562,7 +2570,16 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         if (Daten.project == null) {
             return;
         }    	
-        showStartSessionMultipleDialog(true);
+
+        ItemTypeBoatstatusList.BoatListItem item = getSelectedListItem();
+        if (item == null) {
+            Dialog.error(International.getString("Bitte wähle zuerst ein Boot aus!"));
+            boatListRequestFocus(1);
+            efaBoathouseBackgroundTask.interrupt(); // Falls requestFocus nicht funktioniert hat, setzt der Thread ihn richtig!
+            return;
+        }
+        
+        showStartSessionMultipleDialog(true, item);
         clearFilterFieldsIfConfigured();        
     }
     
@@ -2992,33 +3009,36 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         isLocked = false;
     }
 
-    private void showStartSessionMultipleDialog(Boolean isLateEntry) {
+    private void showStartSessionMultipleDialog(Boolean isLateEntry, ItemTypeBoatstatusList.BoatListItem item) {
     	
     	EfaBaseFrameMultisession myFrame = new EfaBaseFrameMultisession(this,
     			(isLateEntry ? efaBaseFrame.MODE_BOATHOUSE_LATEENTRY_MULTISESSION : efaBaseFrame.MODE_BOATHOUSE_START_MULTISESSION)
     			);
     	
     	try {
+            myFrame.efaBoathouseAction=item;
     		myFrame.showDialog();
     	} catch (Exception e) {
     		Logger.log(e);
     	}
-  
+
+
+
+        clearFilterFieldsIfConfigured();            	
     	
-    	/*
+  /*  	
         if (Daten.project == null || logbook == null) {
         	return;
         }    	
     	EfaMultisessionDialog dlg = new EfaMultisessionDialog(this, 
     			(isLateEntry ? International.getString("Nachtrag mehrerer Einzelfahrten") : International.getString("Mehrere Einzelfahrten beginnen")), 
     			(isLateEntry ? International.getStringWithMnemonic("Nachträge speichern") : International.getStringWithMnemonic("Fahrten beginnen")), 
-    			isLateEntry);
+    			isLateEntry,
+    			this.logbook);
     	
     	dlg.showMe();
-		
+	*/	
 
-		
-*/
 /*
         
         if (SimpleInputDialog.showInputDialog(this, "blah!", dialogElements)) {

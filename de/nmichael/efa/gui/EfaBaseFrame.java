@@ -983,9 +983,9 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return null;
     }
 
-    BoatRecord findBoat(long validAt) {
+    BoatRecord findBoat(ItemTypeString item, long validAt) {
         try {
-            String s = boat.getValueFromField().trim();
+            String s = item.getValueFromField().trim();
             if (s.length() > 0) {
                 BoatRecord r = Daten.project.getBoats(false).getBoat(s, validAt);
 
@@ -1443,7 +1443,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         }
 
         // Boat & Boat Variant
-        BoatRecord b = findBoat(getValidAtTimestamp(r));
+        BoatRecord b = findBoat(boat, getValidAtTimestamp(r));
         if (b != null) {
             r.setBoatId(b.getId());
             r.setBoatVariant(EfaUtil.stringFindInt(boatvariant.getValue(), b.getTypeVariant(0)));
@@ -1591,7 +1591,9 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
             !checkTime() ||
             !checkAllowedDateForLogbook() ||
             !checkAllDataEntered() ||
-            !checkNamesValid() ||
+            !checkBoatNameValid(boat)||
+            !checkCrewNamesValid() ||
+            !checkDestinationNameValid(destination) ||
             !checkUnknownNames() ||
             !checkProperUnknownNames() ||
             !checkAllowedPersons()) {
@@ -1949,9 +1951,9 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         if (s.length() == 0) {
             return;
         }
-        BoatRecord r = findBoat(getValidAtTimestamp(null));
+        BoatRecord r = findBoat(boat, getValidAtTimestamp(null));
         if (r == null) {
-            r = findBoat(-1);
+            r = findBoat(boat, -1);
         }
         if (isModeBoathouse() || getMode() == MODE_ADMIN_SESSIONS) {
             if (!Daten.efaConfig.getValueEfaDirekt_mitgliederDuerfenNamenHinzufuegen() || r != null) {
@@ -2162,7 +2164,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return true;
     }
 
-    protected boolean checkPersonsForBoatType() {
+    private boolean checkPersonsForBoatType() {
         // bei steuermannslosen Booten keinen Steuermann eingeben
         if (cox.getValueFromField().trim().length() > 0 && currentBoatTypeCoxing != null) {
             if (currentBoatTypeCoxing.equals(EfaTypes.TYPE_COXING_COXLESS)) {
@@ -2189,7 +2191,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return true;
     }
 
-    protected boolean checkDuplicateEntry() {
+    private boolean checkDuplicateEntry() {
         // Prüfen, ob ein Doppeleintrag vorliegt
         if (isModeBoathouse()) {
             LogbookRecord duplicate = logbook.findDuplicateEntry(getFields(), 25); // search last 25 logbook entries for potential duplicates
@@ -2337,7 +2339,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return true;
     }
 
-    protected boolean checkBoatStatus() {
+    private boolean checkBoatStatus() {
         if (getMode() == MODE_BOATHOUSE_START || getMode() == MODE_BOATHOUSE_START_CORRECT) {
             int checkMode = 3;
             // checkFahrtbeginnFuerBoot nur bei direkt_boot==null machen, da ansonsten der Check schon in EfaDirektFrame gemacht wurde
@@ -2665,7 +2667,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return true;
     }
 
-    private boolean ingoreNameInvalid(String name, long validAt, String type, IItemType field) {
+    protected boolean ingoreNameInvalid(String name, long validAt, String type, IItemType field) {
         String msg = International.getMessage("{type} '{name}' ist zum Zeitpunkt {dateandtime} ungültig.",
                 type, name, EfaUtil.getTimeStamp(validAt));
         if (this.isModeBoathouse()) {
@@ -2688,25 +2690,31 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         }
     }
 
-    protected boolean checkNamesValid() {
+    protected boolean checkBoatNameValid(ItemTypeStringAutoComplete boatItem) {
         // Prüfen, ocb ein eingetragener Datensatz zum angegebenen Zeitpunkt ungültig ist
         long preferredValidAt = getValidAtTimestamp(null);
 
-        String name = boat.getValueFromField();
+        String name = boatItem.getValueFromField();
         if (name != null && name.length() > 0) {
-            BoatRecord r = findBoat(preferredValidAt);
+            BoatRecord r = findBoat(boatItem, preferredValidAt);
             if (r == null) {
-                r = findBoat(-1);
+                r = findBoat(boatItem, -1);
             }
             if (preferredValidAt > 0 && r != null && !r.isValidAt(preferredValidAt)) {
                 if (!ingoreNameInvalid(r.getQualifiedName(), preferredValidAt,
-                                       International.getString("Boot"), boat)) {
+                                       International.getString("Boot"), boatItem)) {
                     return false;
                 }
             }
         }
+        return true;
+    }
 
-        for (int i = 0; i <= LogbookRecord.CREW_MAX; i++) {
+    private boolean checkCrewNamesValid() {
+        long preferredValidAt = getValidAtTimestamp(null);
+    	String name;
+
+    	for (int i = 0; i <= LogbookRecord.CREW_MAX; i++) {
             name = (i == 0 ? cox : crew[i - 1]).getValueFromField();
             if (name != null && name.length() > 0) {
                 PersonRecord r = findPerson(i, preferredValidAt);
@@ -2721,8 +2729,12 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
                 }
             }
         }
-
-        name = destination.getValueFromField();
+    	return true;
+    }
+    
+    protected boolean checkDestinationNameValid(ItemTypeStringAutoComplete destinationItem) {
+        long preferredValidAt = getValidAtTimestamp(null);
+    	String name = destinationItem.getValueFromField();
         if (name != null && name.length() > 0) {
             DestinationRecord r = findDestination(preferredValidAt);
             if (r == null) {
@@ -2730,7 +2742,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
             }
             if (preferredValidAt > 0 && r != null && !r.isValidAt(preferredValidAt)) {
                 if (!ingoreNameInvalid(r.getQualifiedName(), preferredValidAt,
-                                       International.getString("Ziel"), destination)) {
+                                       International.getString("Ziel"), destinationItem)) {
                     return false;
                 }
             }
@@ -2744,7 +2756,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         if (isModeBoathouse()) {
             if (Daten.efaConfig.getValueEfaDirekt_eintragNurBekannteBoote()) {
                 String name = boat.getValueFromField();
-                if (name != null && name.length() > 0 && findBoat(getValidAtTimestamp(null)) == null) {
+                if (name != null && name.length() > 0 && findBoat(boat, getValidAtTimestamp(null)) == null) {
                     Dialog.error(LogString.itemIsUnknown(name, International.getString("Boot")));
                     boat.requestFocus();
                     return false;
@@ -3827,7 +3839,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         }
 
         try {
-            BoatRecord b = findBoat(getValidAtTimestamp(null));
+            BoatRecord b = findBoat(boat, getValidAtTimestamp(null));
             if (b != null) {
                 currentBoat = b;
                 if (Logger.isTraceOn(Logger.TT_GUI, 7)) {

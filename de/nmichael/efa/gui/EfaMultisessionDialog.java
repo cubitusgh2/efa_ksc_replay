@@ -82,7 +82,7 @@ public class EfaMultisessionDialog extends BaseTabbedDialog implements IItemFact
     }	
 	
     private void iniItems() {
-
+    	final  String CATEGORY="BASE";
 	    logbookValidFrom = logbook.getValidFrom();
 	    logbookInvalidFrom = logbook.getInvalidFrom();
             	
@@ -95,13 +95,13 @@ public class EfaMultisessionDialog extends BaseTabbedDialog implements IItemFact
         autoCompleteListWaters.setDataAccess(Daten.project.getWaters(false).data(), logbookValidFrom, logbookInvalidFrom - 1);
         
         //Caption
-        captionMultisession = new ItemTypeLabelHeader("_GUIITEM_MULTISESSION_CAPTION", IItemType.TYPE_PUBLIC, null, 
+        captionMultisession = new ItemTypeLabelHeader("_GUIITEM_MULTISESSION_CAPTION", IItemType.TYPE_PUBLIC, CATEGORY, 
         		" "+International.getString("Multi-Fahrt anlegen"));
         captionMultisession.setPadding(0, 0, 0, 10);
         captionMultisession.setFieldGrid(9,GridBagConstraints.EAST, GridBagConstraints.BOTH);
 
         // Date
-        date = new ItemTypeDate(LogbookRecord.DATE, new DataTypeDate(), IItemType.TYPE_PUBLIC, null, International.getStringWithMnemonic("Datum"));
+        date = new ItemTypeDate(LogbookRecord.DATE, new DataTypeDate(), IItemType.TYPE_PUBLIC, CATEGORY, International.getStringWithMnemonic("Datum"));
         date.showWeekday(true);
         date.setFieldSize(100, FIELD_HEIGHT);
         date.setLabelGrid(1, GridBagConstraints.EAST, GridBagConstraints.NONE);
@@ -111,7 +111,7 @@ public class EfaMultisessionDialog extends BaseTabbedDialog implements IItemFact
         date.registerItemListener(this);
 
         // End Date
-        enddate = new ItemTypeDate(LogbookRecord.ENDDATE, new DataTypeDate(), IItemType.TYPE_PUBLIC, null, International.getStringWithMnemonic("bis"));
+        enddate = new ItemTypeDate(LogbookRecord.ENDDATE, new DataTypeDate(), IItemType.TYPE_PUBLIC, CATEGORY, International.getStringWithMnemonic("bis"));
         enddate.setMustBeAfter(date, false);
         enddate.showWeekday(true);
         enddate.setFieldSize(100, FIELD_HEIGHT);
@@ -128,7 +128,7 @@ public class EfaMultisessionDialog extends BaseTabbedDialog implements IItemFact
         }
         
         // StartTime
-        starttime = new ItemTypeTime(LogbookRecord.STARTTIME, new DataTypeTime(), IItemType.TYPE_PUBLIC, null, International.getStringWithMnemonic("Abfahrt"));
+        starttime = new ItemTypeTime(LogbookRecord.STARTTIME, new DataTypeTime(), IItemType.TYPE_PUBLIC, CATEGORY, International.getStringWithMnemonic("Abfahrt"));
         starttime.setFieldSize(200, FIELD_HEIGHT);
         starttime.setLabelGrid(1, GridBagConstraints.EAST, GridBagConstraints.NONE);
         starttime.setFieldGrid(2, GridBagConstraints.WEST, GridBagConstraints.NONE);
@@ -139,7 +139,7 @@ public class EfaMultisessionDialog extends BaseTabbedDialog implements IItemFact
 
 
         // EndTime
-        endtime = new ItemTypeTime(LogbookRecord.ENDTIME, new DataTypeTime(), IItemType.TYPE_PUBLIC, null, International.getStringWithMnemonic("Ankunft"));
+        endtime = new ItemTypeTime(LogbookRecord.ENDTIME, new DataTypeTime(), IItemType.TYPE_PUBLIC, CATEGORY, International.getStringWithMnemonic("Ankunft"));
         endtime.setFieldSize(200, FIELD_HEIGHT);
         endtime.setLabelGrid(1, GridBagConstraints.EAST, GridBagConstraints.NONE);
         endtime.setFieldGrid(2, GridBagConstraints.WEST, GridBagConstraints.NONE);
@@ -150,7 +150,7 @@ public class EfaMultisessionDialog extends BaseTabbedDialog implements IItemFact
         // Session Type
         sessiontype = new ItemTypeStringList(LogbookRecord.SESSIONTYPE, EfaTypes.TYPE_SESSION_NORMAL,
                 EfaTypes.makeSessionTypeArray(EfaTypes.ARRAY_STRINGLIST_VALUES), EfaTypes.makeSessionTypeArray(EfaTypes.ARRAY_STRINGLIST_DISPLAY),
-                IItemType.TYPE_PUBLIC, null, International.getString("Fahrtart"));
+                IItemType.TYPE_PUBLIC, CATEGORY, International.getString("Fahrtart"));
         sessiontype.setFieldSize(200, FIELD_HEIGHT);
         sessiontype.setLabelGrid(1, GridBagConstraints.EAST, GridBagConstraints.NONE);
         sessiontype.setFieldGrid(2, GridBagConstraints.WEST, GridBagConstraints.NONE);
@@ -159,29 +159,30 @@ public class EfaMultisessionDialog extends BaseTabbedDialog implements IItemFact
         sessiontype.setReplaceValues(Daten.efaTypes.getSessionTypeReplaceValues());
 
         // Session Type Info
-        sessionTypeInfo = new ItemTypeLabel("SESSIONTYPE_LABEL", IItemType.TYPE_PUBLIC, null, "");
+        sessionTypeInfo = new ItemTypeLabel("SESSIONTYPE_LABEL", IItemType.TYPE_PUBLIC, CATEGORY, "");
         sessionTypeInfo.setFieldGrid(5, GridBagConstraints.WEST, GridBagConstraints.NONE);
         sessionTypeInfo.registerItemListener(this);
         sessionTypeInfo.activateMouseClickListener();
 
         Vector<IItemType[]> participantWithBoatList = new Vector<IItemType[]>();
         participantWithBoat = new ItemTypeItemList("GUIITEM_PARTICIPANTBOATLIST", participantWithBoatList, this,
-                IItemType.TYPE_PUBLIC, "", International.getString("Teilnehmer und Boote"));
+                IItemType.TYPE_PUBLIC, CATEGORY, International.getString("Teilnehmer und Boote"));
         participantWithBoat.setAppendPositionToEachElement(true);
         participantWithBoat.setRepeatTitle(false);
-        participantWithBoat.setXForAddDelButtons(3);
+        participantWithBoat.setXForAddDelButtons(6);
+        participantWithBoat.setFieldGrid(9, GridBagConstraints.EAST, GridBagConstraints.BOTH);
         participantWithBoat.setPadYbetween(0);
         participantWithBoat.setItemsOrientation(Orientation.horizontal);
         //participantWithBoat.setFieldGrid(11,GridBagConstraints.EAST, GridBagConstraints.BOTH);
         
         //Caption
-        captionTargetAndMore = new ItemTypeLabelHeader("_GUIITEM_TARGET_CAPTION", IItemType.TYPE_PUBLIC, null, 
+        captionTargetAndMore = new ItemTypeLabelHeader("_GUIITEM_TARGET_CAPTION", IItemType.TYPE_PUBLIC, CATEGORY, 
         		" "+International.getString("Ziel und weitere Angaben"));
         captionTargetAndMore.setPadding(0, 0, 0, 10);
         captionTargetAndMore.setFieldGrid(9,GridBagConstraints.EAST, GridBagConstraints.BOTH);
 
         // Destination
-        destination = new ItemTypeStringAutoComplete(LogbookRecord.DESTINATIONNAME, "", IItemType.TYPE_PUBLIC, null, 
+        destination = new ItemTypeStringAutoComplete(LogbookRecord.DESTINATIONNAME, "", IItemType.TYPE_PUBLIC, CATEGORY, 
                 International.getStringWithMnemonic("Ziel") + " / " +
                 International.getStringWithMnemonic("Strecke"), true);
         destination.setFieldSize(400, FIELD_HEIGHT);
@@ -194,7 +195,7 @@ public class EfaMultisessionDialog extends BaseTabbedDialog implements IItemFact
 
         destination.registerItemListener(this);
         destinationInfo = new ItemTypeString("GUIITEM_DESTINATIONINFO", "",
-                IItemType.TYPE_PUBLIC, null, International.getString("Gewässer"));
+                IItemType.TYPE_PUBLIC, CATEGORY, International.getString("Gewässer"));
         destinationInfo.setFieldSize(400, FIELD_HEIGHT);
         destinationInfo.setLabelGrid(1, GridBagConstraints.EAST, GridBagConstraints.NONE);
         destinationInfo.setFieldGrid(7, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL);
@@ -202,7 +203,7 @@ public class EfaMultisessionDialog extends BaseTabbedDialog implements IItemFact
         destinationInfo.setVisible(false);
 
         // Waters
-        waters = new ItemTypeStringAutoComplete("GUIITEM_ADDITIONALWATERS", "", IItemType.TYPE_PUBLIC, null,
+        waters = new ItemTypeStringAutoComplete("GUIITEM_ADDITIONALWATERS", "", IItemType.TYPE_PUBLIC, CATEGORY,
                 International.getStringWithMnemonic("Gewässer"), true);
         waters.setFieldSize(400, FIELD_HEIGHT);
         waters.setLabelGrid(1, GridBagConstraints.EAST, GridBagConstraints.NONE);
@@ -215,7 +216,7 @@ public class EfaMultisessionDialog extends BaseTabbedDialog implements IItemFact
         waters.setVisible(true);
 
         // Distance
-        distance = new ItemTypeDistance(LogbookRecord.DISTANCE, null, IItemType.TYPE_PUBLIC, null,
+        distance = new ItemTypeDistance(LogbookRecord.DISTANCE, null, IItemType.TYPE_PUBLIC, CATEGORY,
                 DataTypeDistance.getDefaultUnitName());
         distance.setFieldSize(200, FIELD_HEIGHT);
         distance.setLabelGrid(1, GridBagConstraints.EAST, GridBagConstraints.NONE);
@@ -224,7 +225,7 @@ public class EfaMultisessionDialog extends BaseTabbedDialog implements IItemFact
         distance.registerItemListener(this);
 
         // Comments
-        comments = new ItemTypeString(LogbookRecord.COMMENTS, null, IItemType.TYPE_PUBLIC, null, International.getStringWithMnemonic("Bemerkungen"));
+        comments = new ItemTypeString(LogbookRecord.COMMENTS, null, IItemType.TYPE_PUBLIC, CATEGORY, International.getStringWithMnemonic("Bemerkungen"));
         comments.setFieldSize(400, FIELD_HEIGHT);
         comments.setLabelGrid(1, GridBagConstraints.EAST, GridBagConstraints.NONE);
         comments.setFieldGrid(7, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL);

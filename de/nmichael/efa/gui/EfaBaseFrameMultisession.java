@@ -3,23 +3,20 @@ package de.nmichael.efa.gui;
 import java.awt.AWTEvent;
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
+import java.util.Hashtable;
+import java.util.UUID;
 import java.util.Vector;
 
 import javax.swing.BorderFactory;
-import javax.swing.DefaultFocusManager;
-import javax.swing.FocusManager;
-import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
 
 import org.apache.batik.ext.swing.GridBagConstants;
 
@@ -29,6 +26,7 @@ import de.nmichael.efa.core.config.EfaTypes;
 import de.nmichael.efa.core.items.IItemFactory;
 import de.nmichael.efa.core.items.IItemListener;
 import de.nmichael.efa.core.items.IItemType;
+import de.nmichael.efa.core.items.ItemTypeBoatstatusList;
 import de.nmichael.efa.core.items.ItemTypeButton;
 import de.nmichael.efa.core.items.ItemTypeDate;
 import de.nmichael.efa.core.items.ItemTypeDistance;
@@ -74,6 +72,10 @@ import de.nmichael.efa.util.Logger;
  * - if you enter a person's name, and the person has a standard boat, the boat field is automatically filled
  *   (if the boat is not yet taken by another person)
  * 
+ * 
+ * Design decisions
+ * ------------------
+ * It was a question how to implement this. Should it be put directly to efaBaseFrame (where all Elements are put)
  * 
  */
 public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListener, IItemFactory {
@@ -493,10 +495,13 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
      * If yes, try to find out the person's standard boat and fill its fully qualified name in the second field,
      * if the boat is not yet assigned to another person in this dialog, and it is not on the water (when starting a new session)
      *
+     * Otherwise, use itemListener of efaBaseFrame super class.
+     *
      */
 	public void itemListenerAction(IItemType item, AWTEvent event) {
         int id = event.getID();
-
+        boolean done = false;
+        
         if (id == FocusEvent.FOCUS_LOST) {
         	try {
 				if ((item instanceof ItemTypeStringAutoComplete) && (item.getName().contains(STR_NAME_LOOKUP))){
@@ -504,7 +509,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 					// person's standard boat.
 	
 					ItemTypeStringAutoComplete field = (ItemTypeStringAutoComplete) item;
-					
+					done = true;
 					if (field.isValidInput()) {//field has a known person's name
 	                	String assignedBoatNameForThisEntry = field.getOtherField().getValue(); 
 	                	if (assignedBoatNameForThisEntry != null && assignedBoatNameForThisEntry.isEmpty()) {
@@ -526,12 +531,12 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         	} catch (Exception e) {
 				Logger.log(e);
 			}
-        	return;
+        	
         }
-
-	//otherwise use other Action handler
-    super.itemListenerAction(item, event);
-	
+        if (!done) {
+			//otherwise use other Action handler
+		    super.itemListenerAction(item, event);
+        }
 	}	    
     
 	/**
@@ -591,10 +596,6 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 		item.setFieldGrid(gridWidth, GridBagConstraints.EAST, GridBagConstraints.BOTH);
 		return item;
 	}    
-
-
-
-
     
     private void addStandardItems(ItemTypeItemList target, int numberOfItems) {
 	    for (int i = 0; i<numberOfItems; i++) {
@@ -613,25 +614,23 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
      * This leads to a screen refresh.
      */
     public void updateGui() {
+    	
     	teilnehmerUndBoot.removeAll();
-		autoCompleteListBoats.reset();
+
+    	// reset the autocomplete lists, as items are removed automatically to avoid duplicate persons/boats in the total list.
+    	autoCompleteListBoats.reset();
 		autoCompleteListPersons.reset();
+		// put the remaining list on the GUI
 		nameAndBoat.displayOnGui(this, teilnehmerUndBoot, 0, 1);
-		this.revalidate();// without this, update problems in gui when removing items.
+		this.revalidate();// without this, there will be repainting problems in the gui when removing lines
 		
+		// remove the already selected items from the autocomplete list, to avoid duplicate entries
 		for (int i=0; i<nameAndBoat.getItemCount(); i++) {
 			ItemTypeStringAutoComplete [] row = (ItemTypeStringAutoComplete []) nameAndBoat.getItems(i);
 			row[0].removeFromVisible(row[0].getValue());
 			row[1].removeFromVisible(row[1].getValue());
 		}
 
-		SwingUtilities.invokeLater(new Runnable() {
-	        public void run() {
-	    		mainPanel.repaint();
-	    		teilnehmerUndBoot.repaint();
-	        }
-			}
-				);
     }
 	
 
@@ -659,20 +658,17 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         autocompleteAllFields();
 
         // run all checks before saving this entry
-        if (!checkMisspelledInput() ||
-            !checkDuplicatePersons() ||
-            !checkPersonsForBoatType() ||
-            !checkDuplicateEntry() ||
-            //!checkEntryNo() ||
-            //!checkBoatCaptain() ||
-            !checkBoatStatus() ||
+        if (!checkMultiSessionMisspelledPersons() ||
+            !checkMultiSessionDuplicatePersonsAndBoats() ||
+            !checkMultiSessionBoatStatus() ||
             !checkMultiDayTours() ||
             !checkSessionType() ||
             !checkDate() ||
             !checkTime() ||
             !checkAllowedDateForLogbook() ||
             //!checkAllDataEntered() ||
-            !checkNamesValid() ||
+            !checkMultiSessionNameAndBoatValuesValid()||
+            !checkDestinationNameValid(destination) ||
             !checkUnknownNames() ||
             !checkProperUnknownNames() ||
             !checkAllowedPersons()) {
@@ -703,7 +699,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         } else {
             finishBoathouseAction(success);
         }
-        autoCompleteListPersons.reset();
+        
         return success;
     }
 
@@ -761,317 +757,6 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         }
         return true;*/
     }	
-	
-    // =========================================================================
-    // FocusManager
-    // =========================================================================
-
-    class EfaBaseFrameFocusManager extends DefaultFocusManager {
-
-        private EfaBaseFrame efaBaseFrame;
-        private FocusManager fm;
-        private int focusItemCnt;
-
-        public EfaBaseFrameFocusManager(EfaBaseFrame efaBaseFrame, FocusManager fm) {
-            this.efaBaseFrame = efaBaseFrame;
-            this.fm = fm;
-        }
-
-        private IItemType getItem(Component c) {
-            if (c == null) {
-                return null;
-            }
-            if (c == efaBaseFrame.entryno.getComponent()) {
-                return efaBaseFrame.entryno;
-            }
-            if (c == efaBaseFrame.date.getComponent()) {
-                return efaBaseFrame.date;
-            }
-            if (c == efaBaseFrame.enddate.getComponent()) {
-                return efaBaseFrame.enddate;
-            }
-            if (c == efaBaseFrame.boat.getComponent() ||
-                c == efaBaseFrame.boat.getButton()) {
-                return efaBaseFrame.boat;
-            }
-            if (c == efaBaseFrame.boatvariant.getComponent()) {
-                return efaBaseFrame.boatvariant;
-            }
-            if (c == efaBaseFrame.cox.getComponent() ||
-                c == efaBaseFrame.cox.getButton()) {
-                return efaBaseFrame.cox;
-            }
-            for (int i=0; i<efaBaseFrame.crew.length; i++) {
-                if (c == efaBaseFrame.crew[i].getComponent() ||
-                    c == efaBaseFrame.crew[i].getButton()) {
-                    return efaBaseFrame.crew[i];
-                }
-            }
-            if (c == efaBaseFrame.boatcaptain.getComponent()) {
-                return efaBaseFrame.boatcaptain;
-            }
-            if (c == efaBaseFrame.starttime.getComponent()) {
-                return efaBaseFrame.starttime;
-            }
-            if (c == efaBaseFrame.endtime.getComponent()) {
-                return efaBaseFrame.endtime;
-            }
-            if (c == efaBaseFrame.destination.getComponent() ||
-                c == efaBaseFrame.destination.getButton()) {
-                return efaBaseFrame.destination;
-            }
-            if (c == efaBaseFrame.waters.getComponent() ||
-                c == efaBaseFrame.waters.getButton()) {
-                return efaBaseFrame.waters;
-            }
-            if (c == efaBaseFrame.distance.getComponent()) {
-                return efaBaseFrame.distance;
-            }
-            if (c == efaBaseFrame.comments.getComponent()) {
-                return efaBaseFrame.comments;
-            }
-            if (c == efaBaseFrame.sessiontype.getComponent()) {
-                return efaBaseFrame.sessiontype;
-            }
-            if (c == efaBaseFrame.remainingCrewUpButton.getComponent()) {
-                return efaBaseFrame.remainingCrewUpButton;
-            }
-            if (c == efaBaseFrame.remainingCrewDownButton.getComponent()) {
-                return efaBaseFrame.remainingCrewDownButton;
-            }
-            if (c == efaBaseFrame.boatDamageButton.getComponent()) {
-                return efaBaseFrame.boatDamageButton;
-            }
-            if (c == efaBaseFrame.boatNotCleanedButton.getComponent()) {
-                return efaBaseFrame.boatNotCleanedButton;
-            }
-            if (c == efaBaseFrame.saveButton.getComponent()) {
-                return efaBaseFrame.saveButton;
-            }
-            return null;
-        }
-
-        private void focusItem(IItemType item, Component cur, int direction) {
-            if (focusItemCnt++ == 100) {
-                return; // oops, recursion
-            }
-            // fSystem.out.println("focusItem(" + item.getName() + ")");
-            if (item == efaBaseFrame.starttime && Daten.efaConfig.getValueSkipUhrzeit()) {
-                focusItem(efaBaseFrame.destination, cur, direction);
-            } else if (item == efaBaseFrame.endtime && Daten.efaConfig.getValueSkipUhrzeit()) {
-                focusItem(efaBaseFrame.destination, cur, direction);
-            } else if (item == efaBaseFrame.destination && Daten.efaConfig.getValueSkipZiel()) {
-                focusItem(efaBaseFrame.distance, cur, direction);
-            } else if (item == efaBaseFrame.comments && Daten.efaConfig.getValueSkipBemerk()) {
-                focusItem(efaBaseFrame.saveButton, cur, direction);
-            } else if (item.isEnabled() && item.isVisible() && item.isEditable()) {
-                item.requestFocus();
-            } else {
-                if (direction > 0) {
-                    focusNextItem(item, cur);
-                } else {
-                    focusPreviousItem(item, cur);
-                }
-            }
-        }
-
-        public void focusNextItem(IItemType item, Component cur) {
-            //System.out.println("focusNextItem(" + item.getName() + ")");
-            focusItemCnt = 0;
-
-            // LFDNR
-            if (item == efaBaseFrame.entryno) {
-                focusItem(efaBaseFrame.date, cur, 1);
-                return;
-            }
-
-            // DATUM
-            if (item == efaBaseFrame.date) {
-                focusItem(efaBaseFrame.boat, cur, 1);
-                return;
-            }
-
-            // BOOT
-            if (item == efaBaseFrame.boat) {
-                efaBaseFrame.boat.getValueFromGui();
-                efaBaseFrame.currentBoatUpdateGui();
-                if (!(cur instanceof JButton) && efaBaseFrame.boat.getValue().length()>0 && !efaBaseFrame.boat.isKnown() && !efaBaseFrame.isModeBoathouse()) {
-                    efaBaseFrame.boat.requestButtonFocus();
-                } else if (efaBaseFrame.boatvariant.isVisible()) {
-                    focusItem(efaBaseFrame.boatvariant, cur, 1);
-                } else {
-                    if (efaBaseFrame.currentBoatTypeCoxing != null && efaBaseFrame.currentBoatTypeCoxing.equals(EfaTypes.TYPE_COXING_COXLESS)) {
-                        focusItem(efaBaseFrame.crew[0], cur, 1);
-                    } else {
-                        focusItem(efaBaseFrame.cox, cur, 1);
-                    }
-                }
-                return;
-            }
-
-            // BOOTVARIANT
-            if (item == efaBaseFrame.boatvariant) {
-                efaBaseFrame.boatvariant.getValueFromGui();
-                efaBaseFrame.currentBoatUpdateGui();
-                if (efaBaseFrame.currentBoatTypeCoxing != null && efaBaseFrame.currentBoatTypeCoxing.equals(EfaTypes.TYPE_COXING_COXLESS)) {
-                    focusItem(efaBaseFrame.crew[0], cur, 1);
-                } else {
-                    focusItem(efaBaseFrame.cox, cur, 1);
-                }
-                return;
-            }
-
-            // STEUERMANN
-            if (item == efaBaseFrame.cox) {
-                efaBaseFrame.cox.getValueFromGui();
-                if (!(cur instanceof JButton) && efaBaseFrame.cox.getValue().length()>0 && !efaBaseFrame.cox.isKnown() && !efaBaseFrame.isModeBoathouse()) {
-                    efaBaseFrame.cox.requestButtonFocus();
-                } else {
-                    focusItem(efaBaseFrame.crew[efaBaseFrame.crewRangeSelection * 8], cur, 1);
-                }
-                return;
-            }
-
-            // MANNSCHAFT
-            for (int i = 0; i < efaBaseFrame.crew.length; i++) {
-                if (item == efaBaseFrame.crew[i]) {
-                    efaBaseFrame.crew[i].getValueFromGui();
-                    if (!(cur instanceof JButton) && efaBaseFrame.crew[i].getValue().length()>0 && !efaBaseFrame.crew[i].isKnown() && !efaBaseFrame.isModeBoathouse()) {
-                        efaBaseFrame.crew[i].requestButtonFocus();
-                    } else if (efaBaseFrame.crew[i].getValueFromField().trim().length() == 0) {
-                        focusItem(efaBaseFrame.starttime, cur, 1);
-                    } else if (efaBaseFrame.currentBoatTypeSeats != null && i+1 < efaBaseFrame.crew.length &&
-                            i+1 == EfaTypes.getNumberOfRowers(efaBaseFrame.currentBoatTypeSeats) &&
-                            efaBaseFrame.crew[i+1].getValueFromField().trim().length() == 0) {
-                        focusItem(efaBaseFrame.starttime, cur, 1);
-                    } else if (i+1 < efaBaseFrame.crew.length) {
-                        focusItem(efaBaseFrame.crew[i + 1], cur, 1);
-                    } else {
-                        focusItem(efaBaseFrame.starttime, cur, 1);
-                    }
-                    return;
-                }
-            }
-
-            // ABFAHRT
-            if (item == efaBaseFrame.starttime) {
-                focusItem(efaBaseFrame.endtime, cur, 1);
-                return;
-            }
-
-            // ANKUNFT
-            if (item == efaBaseFrame.endtime) {
-                focusItem(efaBaseFrame.destination, cur, 1);
-                return;
-            }
-
-            // ZIEL
-            if (item == efaBaseFrame.destination) {
-                if (!(cur instanceof JButton) && efaBaseFrame.destination.getValue().length()>0 && !efaBaseFrame.destination.isKnown() && !efaBaseFrame.isModeBoathouse()) {
-                    efaBaseFrame.destination.requestButtonFocus();
-                } else {
-                    focusItem(efaBaseFrame.waters, cur, 1);
-                }
-                return;
-            }
-
-            // WATERS
-            if (item == efaBaseFrame.waters) {
-                if (!(cur instanceof JButton) && efaBaseFrame.waters.getValue().length()>0 && !efaBaseFrame.waters.isKnown() && !efaBaseFrame.isModeBoathouse()) {
-                    efaBaseFrame.waters.requestButtonFocus();
-                } else {
-                    focusItem(efaBaseFrame.distance, cur, 1);
-                }
-                return;
-            }
-
-            // BOOTS-KM
-            if (item == efaBaseFrame.distance) {
-                focusItem(efaBaseFrame.comments, cur, 1);
-                return;
-            }
-
-            // COMMENTS
-            if (item == efaBaseFrame.comments) {
-                focusItem(efaBaseFrame.saveButton, cur, 1);
-                return;
-            }
-
-            // ADD-BUTTON
-            if (item == efaBaseFrame.saveButton) {
-                focusItem(efaBaseFrame.entryno, cur, 1);
-                return;
-            }
-
-            // other
-            fm.focusNextComponent(cur);
-        }
-
-        public void focusPreviousItem(IItemType item, Component cur) {
-            focusItemCnt = 0;
-            if (item == efaBaseFrame.entryno) {
-                focusItem(efaBaseFrame.saveButton, cur, -1);
-                return;
-            }
-            if (item == efaBaseFrame.cox) {
-                focusItem(efaBaseFrame.boat, cur, -1);
-                return;
-            }
-            for (int i = 0; i < efaBaseFrame.crew.length; i++) {
-                if (item == efaBaseFrame.crew[i]) {
-                    focusItem((i == 0 ? efaBaseFrame.cox : efaBaseFrame.crew[i - 1]), cur, -1);
-                    return;
-                }
-            }
-            if (item == efaBaseFrame.starttime) {
-                for (int i = 0; i < 8; i++) {
-                    if (efaBaseFrame.crew[i + efaBaseFrame.crewRangeSelection * 8].getValueFromField().trim().length() == 0 || i == 7) {
-                        focusItem(efaBaseFrame.crew[i + efaBaseFrame.crewRangeSelection * 8], cur, -1);
-                        return;
-                    }
-                }
-            }
-            if (item == efaBaseFrame.waters) {
-                focusItem(efaBaseFrame.destination, cur, -1);
-                return;
-            }
-            if (item == efaBaseFrame.distance) {
-                focusItem(efaBaseFrame.waters, cur, -1);
-                return;
-            }
-            if (item == efaBaseFrame.comments) {
-                focusItem(efaBaseFrame.distance, cur, -1);
-                return;
-            }
-            if (item == efaBaseFrame.saveButton) {
-                focusItem(efaBaseFrame.comments, cur, -1);
-                return;
-            }
-
-            // other
-            fm.focusPreviousComponent(cur);
-        }
-
-        public void focusNextComponent(Component cur) {
-            //System.out.println("focusNextComponent("+cur+")");
-            IItemType item = getItem(cur);
-            if (item != null) {
-                focusNextItem(item, cur);
-            } else {
-                fm.focusNextComponent(cur);
-            }
-        }
-
-        public void focusPreviousComponent(Component cur) {
-            //System.out.println("focusPreviousComponent("+cur+")");
-            IItemType item = getItem(cur);
-            if (item != null) {
-                focusPreviousItem(item, cur);
-            } else {
-                fm.focusPreviousComponent(cur);
-            }
-        }
-    }    
     
     public void keyAction(ActionEvent evt) {
         _keyAction(evt);
@@ -1081,4 +766,195 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         super._keyAction(evt);
     }
     
+    /*
+     * AutoComplete fields which are visible: try to autocomplete the item based on the data entered.
+     */
+    protected void autocompleteAllFields() {
+        try {
+        	
+			if (destination.isVisible()) {
+			    destination.acpwCallback(null);
+			}
+			
+			if (waters.isVisible() ) {
+				waters.acpwCallback(null);
+			}
+			
+			for (int iCurNameAndBoat =0; iCurNameAndBoat<nameAndBoat.getItemCount(); iCurNameAndBoat++) {
+				ItemTypeStringAutoComplete[] acItem= (ItemTypeStringAutoComplete[])nameAndBoat.getItems(iCurNameAndBoat);
+				if (acItem[0].isVisible()) {
+					acItem[0].acpwCallback(null);
+					acItem[1].acpwCallback(null);
+				}
+			}
+        } catch(Exception e) {       
+        	Logger.log(e);
+        }
+    }
+
+    /**
+     * Checks all person names for correct naming.
+     * @return true if all person Names ok
+     */
+    protected boolean checkMultiSessionMisspelledPersons() {
+	    PersonRecord r;
+	    // we go for all items 
+	    for (int iCurNameAndBoat =0; iCurNameAndBoat<nameAndBoat.getItemCount(); iCurNameAndBoat++) {
+	    	ItemTypeStringAutoComplete[] acItem= (ItemTypeStringAutoComplete[])nameAndBoat.getItems(iCurNameAndBoat);
+	    	ItemTypeStringAutoComplete curName= acItem[0];
+	    	
+	        String s = curName.getValueFromField().trim();
+	        if (s.length() == 0) {
+	            continue;
+	        }
+	        r = findPerson(curName, getValidAtTimestamp(null));
+	        if (r == null) {
+	            // check for comma without blank
+	            int pos = s.indexOf(",");
+	            if (pos > 0 && pos+1 < s.length() && s.charAt(pos+1) != ' ') {
+	                curName.parseAndShowValue(s.substring(0, pos) + ", " + s.substring(pos+1));
+	            }
+	        }
+	    }
+	    return true;
+    }
+    
+    /**
+     * Check if there are no duplicate Persons or Boats mentioned in the names/boat list.
+     * 
+     * Problem: does only work good if the boat names are identified correctly by the autocomplete lists.
+     * 
+     * @return true, if no duplicate boats/names are present.
+     */
+    protected boolean checkMultiSessionDuplicatePersonsAndBoats() {
+        // Ruderer auf doppelte prüfen
+        Hashtable<UUID,String> personHash = new Hashtable<UUID,String>();
+        Hashtable<UUID,String> boatHash = new Hashtable<UUID,String>();
+        
+        String doppelt = null; // Ergebnis doppelt==null heißt ok, doppelt!=null heißt Fehler! ;-)
+        Boolean isPersonDoppelt = false;
+        while (true) { // Unsauber; aber die Alternative wäre ein goto; dies ist keine Schleife!!
+            
+    	    for (int iCurNameAndBoat =0; iCurNameAndBoat<nameAndBoat.getItemCount(); iCurNameAndBoat++) {
+    	    	ItemTypeStringAutoComplete[] acItem= (ItemTypeStringAutoComplete[])nameAndBoat.getItems(iCurNameAndBoat);
+    	    	ItemTypeStringAutoComplete curName= acItem[0];
+    	    	ItemTypeStringAutoComplete curBoat = acItem[1];
+    	    	
+    	    	//check for duplicate entry for person's name
+    	        String s = curName.getValueFromField().trim();
+    	        if (s.length() == 0) {
+    	            continue;
+    	        }
+    	        PersonRecord pr = findPerson(curName, getValidAtTimestamp(null));
+    	        if (pr != null) {
+                    UUID id = pr.getId();
+                    if (personHash.get(id) == null) {
+                    	personHash.put(id, "");
+                    } else {
+                        doppelt = pr.getQualifiedName();
+                        isPersonDoppelt=true;
+                        break;
+                    }
+                }
+    	        
+    	        //check for duplicate Entry for boat's name
+    	        s=curBoat.getValueFromField().trim();
+    	        if (s.length() == 0) {
+    	            continue;
+    	        }
+    	        //TODO: Boat name can only be found if entered in correct spelling, including uppercase/lowercase letters.
+    	        BoatRecord br = findBoat(curBoat, getValidAtTimestamp(null));
+    	        if (br != null) {
+                    UUID id = br.getId();
+                    if (boatHash.get(id) == null) {
+                        boatHash.put(id, "");
+                    } else {
+                        doppelt = br.getQualifiedName();
+                        isPersonDoppelt=false;
+                        break;
+                    }
+                }
+            }
+            break; // alles ok, keine doppelten --> Pseudoschleife abbrechen
+        }
+        if (doppelt != null) {
+            if (isPersonDoppelt) {
+            	Dialog.error(International.getMessage("Die Person '{name}' wurde mehrfach eingegeben!", doppelt));
+            } else {
+            	Dialog.error(International.getMessage("Das Boot '{name}' wurde mehrfach eingegeben!", doppelt));
+            }
+            return false;
+        }
+        return true;
+    }    
+    
+    
+    /**
+     * Checks if any of the boats mentioned are on the water, are not available or have an active reservation.
+     * Most of the checks are done by efaBoathouseFrame.getStartSessionForBoat().
+     * 
+     * @return true if all checks were successful
+     */
+    private boolean checkMultiSessionBoatStatus() {
+    	
+	    for (int iCurNameAndBoat =0; iCurNameAndBoat<nameAndBoat.getItemCount(); iCurNameAndBoat++) {
+	    	ItemTypeStringAutoComplete[] acItem= (ItemTypeStringAutoComplete[])nameAndBoat.getItems(iCurNameAndBoat);
+	    	ItemTypeStringAutoComplete curBoat = acItem[1];    	
+    	
+	        if (getMode() == MODE_BOATHOUSE_START_MULTISESSION ) { // avoid if mode lateentry
+	            int checkMode = 2;
+
+    	        BoatRecord br = findBoat(curBoat, getValidAtTimestamp(null));
+    	        if (br != null) {	            
+	            
+    	        	efaBoathouseAction.boat = br;
+	
+	                if (efaBoathouseAction.boat != null) {
+		                // update boat status (may have changed since we opened the dialog)
+		                efaBoathouseAction.boatStatus = efaBoathouseAction.boat.getBoatStatus();
+		            }
+		            boolean success = efaBoathouseFrame.checkStartSessionForBoat(efaBoathouseAction, entryno.getValueFromField(), checkMode);
+		            if (!success) {
+		                efaBoathouseAction.boat = null; // otherwise next check would fail
+		                return false;
+		            }
+		            
+    	        }
+	        }
+
+	    }
+	    return true;
+ 
+    }
+    
+    private boolean checkMultiSessionNameAndBoatValuesValid() {
+    	
+        long preferredValidAt = getValidAtTimestamp(null);
+    	
+        for (int iCurNameAndBoat =0; iCurNameAndBoat<nameAndBoat.getItemCount(); iCurNameAndBoat++) {
+	    	ItemTypeStringAutoComplete[] acItem= (ItemTypeStringAutoComplete[])nameAndBoat.getItems(iCurNameAndBoat);
+	    	ItemTypeStringAutoComplete curName = acItem[0];
+	    	ItemTypeStringAutoComplete curBoat = acItem[1];
+	    	
+	    	if (!checkBoatNameValid(curBoat)){
+	    		return false;
+	    	}
+	    	
+            String name = curName.getValueFromField();
+            
+            if (name != null && name.length() > 0) {
+                PersonRecord r = findPerson(curName, preferredValidAt);
+                if (r == null) {
+                    r = findPerson(curName, -1);
+                }
+                if (preferredValidAt > 0 && r != null && !r.isValidAt(preferredValidAt)) {
+                    if (!ingoreNameInvalid(r.getQualifiedName(), preferredValidAt,
+                            International.getString("Person"), curName)) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
 }
