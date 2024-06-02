@@ -617,7 +617,8 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 		autoCompleteListBoats.reset();
 		autoCompleteListPersons.reset();
 		nameAndBoat.displayOnGui(this, teilnehmerUndBoot, 0, 1);
-	
+		this.revalidate();// without this, update problems in gui when removing items.
+		
 		for (int i=0; i<nameAndBoat.getItemCount(); i++) {
 			ItemTypeStringAutoComplete [] row = (ItemTypeStringAutoComplete []) nameAndBoat.getItems(i);
 			row[0].removeFromVisible(row[0].getValue());
