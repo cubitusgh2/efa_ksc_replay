@@ -669,7 +669,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
             //!checkAllDataEntered() ||
             !checkMultiSessionNameAndBoatValuesValid()||
             !checkDestinationNameValid(destination) ||
-            !checkUnknownNames() ||
+            !checkUnknownNames() || // still todo
             !checkProperUnknownNames() ||
             !checkAllowedPersons()) {
             return false;
