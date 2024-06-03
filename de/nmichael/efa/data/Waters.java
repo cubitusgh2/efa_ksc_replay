@@ -27,7 +27,6 @@ import java.util.*;
 public class Waters extends StorageObject {
 
     public static final String DATATYPE = "efa2waters";
-    private static final String HASH_DELIMITER = "|"; // shall not be # as it conflicts with version field in Daten.java
 
     public Waters(int storageType, 
             String storageLocation,
@@ -197,17 +196,17 @@ public class Waters extends StorageObject {
         if (oldHash == null || oldHash.length() == 0) {
             return true; // never checked
         }
-        String oldv = oldHash.indexOf(HASH_DELIMITER) > 0 ? oldHash.substring(0, oldHash.indexOf(HASH_DELIMITER)) : oldHash;
+        String oldv = oldHash.indexOf("#") > 0 ? oldHash.substring(0, oldHash.indexOf("#")) : oldHash;
         if (Daten.VERSIONID.compareTo(oldv) <= 0) {
             return false; // already checked for this version, don't check again
         }
         String newh = getWatersTemplateHash(countryCode);
-        String oldh = oldHash.indexOf(HASH_DELIMITER) > 0 ? oldHash.substring(oldHash.indexOf(HASH_DELIMITER)+1) : oldHash;
+        String oldh = oldHash.indexOf("#") > 0 ? oldHash.substring(oldHash.indexOf("#")+1) : oldHash;
         return !oldh.equals(newh);
     }
     
     public static void setWaterTemplateUnchanged(String countryCode) {
-        Daten.project.setLastWatersTemplateHash(Daten.VERSIONID + HASH_DELIMITER + getWatersTemplateHash(countryCode));
+        Daten.project.setLastWatersTemplateHash(Daten.VERSIONID + "#" + getWatersTemplateHash(countryCode));
     }
 
     public synchronized int addAllWatersFromTemplate(String countryCode) {
@@ -221,7 +220,7 @@ public class Waters extends StorageObject {
             String water = null;
             while ( (s = f.readLine()) != null) {
                 s = s.trim();
-                if (s.length() == 0 || s.startsWith("#")) { //# in this code is used for delimiting multiple items for a water.
+                if (s.length() == 0 || s.startsWith("#")) {
                     continue;
                 }
                 

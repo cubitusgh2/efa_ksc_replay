@@ -9,6 +9,7 @@
  */
 package de.nmichael.efa.data.types;
 
+import java.util.*;
 import de.nmichael.efa.util.*;
 
 public class DataTypeIntString implements Cloneable, Comparable<DataTypeIntString> {

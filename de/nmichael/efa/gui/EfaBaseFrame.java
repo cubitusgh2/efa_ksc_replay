@@ -2191,7 +2191,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         }
 
         // disabled functionality: for unknown boats: If only one person entered as cox, change to crew1
-        if (Daten.efaConfig.getValueFixCoxForCoxlessUnknownBoats() &&
+        if (false &&
              (getMode() == MODE_BOATHOUSE_START ||
               getMode() == MODE_BOATHOUSE_START_MULTISESSION ||
               getMode() == MODE_BOATHOUSE_START_CORRECT ||

@@ -11,6 +11,7 @@
 package de.nmichael.efa.core.items;
 
 import de.nmichael.efa.data.storage.IDataAccess;
+import de.nmichael.efa.core.items.ItemTypeLabelValue;
 import de.nmichael.efa.util.*;
 
 // @i18n complete

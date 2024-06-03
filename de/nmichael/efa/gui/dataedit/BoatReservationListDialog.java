@@ -43,6 +43,7 @@ package de.nmichael.efa.gui.dataedit;
 
 import de.nmichael.efa.*;
 import de.nmichael.efa.core.config.AdminRecord;
+import de.nmichael.efa.core.config.EfaConfig;
 import de.nmichael.efa.core.items.*;
 import de.nmichael.efa.data.*;
 import de.nmichael.efa.data.storage.*;
@@ -61,9 +62,7 @@ import javax.swing.*;
 // @i18n complete
 public class BoatReservationListDialog extends DataListDialog {
 
-	private static final long serialVersionUID = 5648707256342719384L;
-	
-	public static final int ACTION_CHANGE_BOATNAME = 310;
+    public static final int ACTION_CHANGE_BOATNAME = 310;
     public static final int ACTION_COPY_RESERVATION = 311;
     public static final String ACTIONTEXT_CHANGE_BOATNAME = International.getString("Boot ändern");
     public static final String ACTIONTEXT_COPY_RESERVATION = International.getString("Kopie anlegen");
@@ -157,8 +156,7 @@ public class BoatReservationListDialog extends DataListDialog {
         this.allowNewReservationsWeekly = allowNewReservationsWeekly;
         
 		//From and to columns should be wider than default
-		this.minColumnWidths = new int[] {150,150,150,120,12,-1};   
-
+		this.minColumnWidths = new int[] {150,150,150,120,12};   
     }
 
 
@@ -233,16 +231,12 @@ public class BoatReservationListDialog extends DataListDialog {
                 actionText, actionType, actionImage, // default actions: new, edit, delete
                 this,
                 IItemType.TYPE_PUBLIC, "BASE_CAT", getTitle());
-		table.addPermanentSecondarySortingColumn(BoatReservationRecord.COLUMN_ID_START);        
-		table.addPermanentSecondarySortingColumn(BoatReservationRecord.COLUMN_ID_NAME);
-
 	}
 	
 	protected void iniDialog() throws Exception {
 		super.iniDialog();
 		//show only matching items by default in BoatDamageListDialog 
 		table.setIsFilterSet(true);
-		
 	}
 	
     protected void iniControlPanel() {
