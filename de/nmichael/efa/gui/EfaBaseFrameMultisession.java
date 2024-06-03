@@ -12,6 +12,7 @@ import java.awt.event.FocusEvent;
 import java.util.Hashtable;
 import java.util.UUID;
 import java.util.Vector;
+import java.util.regex.Pattern;
 
 import javax.swing.BorderFactory;
 import javax.swing.JDialog;
@@ -43,12 +44,15 @@ import de.nmichael.efa.data.Logbook;
 import de.nmichael.efa.data.LogbookRecord;
 import de.nmichael.efa.data.PersonRecord;
 import de.nmichael.efa.data.ProjectRecord;
+import de.nmichael.efa.data.storage.IDataAccess;
 import de.nmichael.efa.data.types.DataTypeDate;
 import de.nmichael.efa.data.types.DataTypeDistance;
 import de.nmichael.efa.data.types.DataTypeTime;
 import de.nmichael.efa.gui.util.AutoCompleteList;
 import de.nmichael.efa.util.Dialog;
+import de.nmichael.efa.util.EfaUtil;
 import de.nmichael.efa.util.International;
+import de.nmichael.efa.util.LogString;
 import de.nmichael.efa.util.Logger;
 
 
@@ -84,6 +88,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 	private final static String  STR_SPACER = "   ";
 	private final static String  STR_NAME_LOOKUP = "NAME_LOOKUP";
 	private final static String  STR_BOAT_LOOKUP = "BOOT_LOOKUP";
+	private final static int 	 ADD_HEIGHT_TO_DIALOG = 200; // amount of pixels of free space in the dialog to grow (for additional participants/boats)
     private JPanel teilnehmerUndBoot;
 	private ItemTypeItemList nameAndBoat;
     
@@ -222,11 +227,6 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         yPos++;
         //---------------------------------------------------------------------
         
-       /* header = createHeader("CREATE_CREW_BOAT", 0, null, International.getString("Teilnehmer und Boot"),HEADER_WIDTH);
-        header.displayOnGui(this,  mainInputPanel, 0, yPos);
-        yPos++;        
-        */ 
-        
         teilnehmerUndBoot=new JPanel();
         teilnehmerUndBoot.setLayout(new GridBagLayout());
         teilnehmerUndBoot.removeAll();
@@ -349,7 +349,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         destination.setValidAt(date, starttime);
         
         Dimension dim = mainPanel.getMinimumSize();
-        dim.height = dim.height + 260;
+        dim.height = dim.height + ADD_HEIGHT_TO_DIALOG;
         mainPanel.setMinimumSize(dim);        
     }    
 	
@@ -360,7 +360,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
     
     	entryno = new ItemTypeString(LogbookRecord.ENTRYID, "", IItemType.TYPE_PUBLIC, null, International.getStringWithMnemonic("Lfd. Nr."));
     	entryno.setVisible(false);
-        
+       /* 
     	opensession = new ItemTypeLabel(LogbookRecord.OPEN, IItemType.TYPE_PUBLIC, null, International.getStringWithMnemonic("Fahrt offen"));
         opensession.setVisible(false);
         
@@ -378,13 +378,15 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         
         cox = new ItemTypeStringAutoComplete(LogbookRecord.COXNAME, "", IItemType.TYPE_PUBLIC, null, International.getStringWithMnemonic("Steuermann"), true);
         cox.setVisible(false);
-        
+     */   
         crew = new ItemTypeStringAutoComplete[LogbookRecord.CREW_MAX];
+        /*
         for (int i=1; i<=crew.length; i++) {
          	 crew[i-1] = new ItemTypeStringAutoComplete(LogbookRecord.getCrewFieldNameName(i), "", IItemType.TYPE_PUBLIC, null,
                      (i == 1 ? International.getString("Mannschaft") + " " : (i < 10 ? "  " :"")) + Integer.toString(i), true);
         	crew[i-1].setVisible(false);
         }
+        
         boatcaptain = new ItemTypeStringList(LogbookRecord.BOATCAPTAIN, "",
                 LogbookRecord.getBoatCaptainValues(), LogbookRecord.getBoatCaptainDisplay(),
                 IItemType.TYPE_PUBLIC, null, International.getString("Obmann"));
@@ -404,7 +406,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         boatNotCleanedButton = new ItemTypeButton("BOATNOTCLEANED", IItemType.TYPE_PUBLIC, null, International.getString("Boot war nicht geputzt"));
         boatDamageButton.setVisible(false);  
         boatNotCleanedButton.setVisible(false);     
-        
+        */
     }
     
     /**
@@ -414,7 +416,61 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
     	iniData();
     	iniGuiBase();
         iniGuiMain();
+        iniGuiFieldDefaultValues();
     }    
+    
+    private void iniGuiFieldDefaultValues() {
+
+        /*public static final int MODE_BOATHOUSE_START_MULTISESSION=9;
+        public static final int MODE_BOATHOUSE_LATEENTRY_MULTISESSION=10;
+        */
+    	
+    	if (mode == MODE_BOATHOUSE_START_MULTISESSION) {
+	    	// set Date
+	        String d = EfaUtil.getCurrentTimeStampDD_MM_YYYY();
+	        date.parseAndShowValue(d);
+	        updateTimeInfoFields();
+	        date.setUnchanged();
+	        if (isModeFull()) {
+	            date.setSelection(0, Integer.MAX_VALUE);
+	        }
+	        
+	        setTime(starttime, Daten.efaConfig.getValueEfaDirekt_plusMinutenAbfahrt(), null);
+	        
+	        if (Daten.efaConfig.getValueEfaDirekt_eintragNichtAenderbarUhrzeit()) {
+	            setFieldEnabled(false, true, starttime);
+	            setFieldEnabled(false, false, endtime);
+	        } else {
+	            setFieldEnabled(true, true, starttime);
+	            setFieldEnabled(false, false, endtime);
+	        }
+	        
+	        setFieldEnabled(true, true, destination);
+	        setFieldEnabled(false, false, distance);
+	        setFieldEnabled(true, true, comments);
+	        
+	        updateTimeInfoFields();
+    	} else if (mode == MODE_BOATHOUSE_LATEENTRY_MULTISESSION) {
+            date.parseAndShowValue(EfaUtil.getCurrentTimeStampDD_MM_YYYY());
+            updateTimeInfoFields();
+	        if (isModeFull()) {
+	            date.setSelection(0, Integer.MAX_VALUE);
+	        }
+            
+            setFieldEnabled(true, true, date);
+            setFieldEnabled(true, true, starttime);
+            setFieldEnabled(true, true, endtime);
+            setFieldEnabled(true, true, destination);
+            setFieldEnabled(true, true, distance);
+            setFieldEnabled(true, true, comments);
+
+	        updateTimeInfoFields();
+            
+    	}
+
+        setRequestFocus(date);
+    }
+    
     
     /**
      * Initialize the EfaBaseFrameMultisession dialog.
@@ -658,20 +714,20 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         autocompleteAllFields();
 
         // run all checks before saving this entry
-        if (!checkMultiSessionMisspelledPersons() ||
-            !checkMultiSessionDuplicatePersonsAndBoats() ||
-            !checkMultiSessionBoatStatus() ||
-            !checkMultiDayTours() ||
-            !checkSessionType() ||
-            !checkDate() ||
+        if (!checkDate() ||
             !checkTime() ||
             !checkAllowedDateForLogbook() ||
-            //!checkAllDataEntered() ||
+            !checkMultiDayTours() ||
+        	!checkMultiSessionMisspelledPersons() ||
+            !checkMultiSessionDuplicatePersonsAndBoats() ||
+            !checkMultiSessionBoatStatus() ||
             !checkMultiSessionNameAndBoatValuesValid()||
-            !checkDestinationNameValid(destination) ||
-            !checkUnknownNames() || // still todo
+            !checkUnknownNames() || 
             !checkProperUnknownNames() ||
-            !checkAllowedPersons()) {
+            !checkAllowedPersons() ||
+            !checkDestinationNameValid(destination) ||
+            !checkAllDataEntered() ||
+            !checkSessionType()) {
             return false;
         }
 
@@ -703,41 +759,56 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         return success;
     }
 
+    private boolean isValidBoatNamePair(int iRow) {
+    	try {
+	    	ItemTypeStringAutoComplete[] acItem= (ItemTypeStringAutoComplete[])nameAndBoat.getItems(iRow);
+	    	ItemTypeStringAutoComplete curName= acItem[0];
+	    	ItemTypeStringAutoComplete curBoat = acItem[1];    	
+	    	return (!(curName.getValue().trim().isEmpty() && curBoat.getValue().trim().isEmpty()));
+    	} catch (Exception e) {
+    		Logger.logdebug(e);
+    		return false;
+    	}
+    }
+    
     // den Datensatz nun wirklich speichern;
     protected boolean saveEntriesInLogbook() {
-    	return false;
-    	/*
         if (!isLogbookReady()) {
             return false;
         }
-
         long lock = 0;
         Exception myE = null;
-        try {
-            boolean changeEntryNo = false;
-            if (!isNewRecord && currentRecord != null && !currentRecord.getEntryId().toString().equals(entryno.toString())) {
-                // Datensatz mit geänderter LfdNr: Der alte Datensatz muß gelöscht werden!
-                lock = logbook.data().acquireGlobalLock();
-                logbook.data().delete(currentRecord.getKey(), lock);
-                changeEntryNo = true;
-            }
-            currentRecord = getFields();
-            
-            if (mode == MODE_BOATHOUSE_START || mode == MODE_BOATHOUSE_START_CORRECT) {
-                currentRecord.setSessionIsOpen(true);
-            } else {
-                currentRecord.setSessionIsOpen(false); // all other updates to an open entry (incl. Admin Mode) will mark it as finished
-            }
 
-            if (isNewRecord || changeEntryNo) {
-                logbook.data().add(currentRecord, lock);
-            } else {
-                DataRecord newRecord = logbook.data().update(currentRecord, lock);
-                if (newRecord != null && newRecord instanceof LogbookRecord) {
-                    currentRecord = (LogbookRecord)newRecord;
-                }
-            }
-            isNewRecord = false;
+        try {
+            
+        	for (int iCurBoatNamePair=0; iCurBoatNamePair<nameAndBoat.getItemCount(); iCurBoatNamePair++) {
+        		if (isValidBoatNamePair(iCurBoatNamePair)) {
+
+                    LogbookRecord rlast = (LogbookRecord) logbook.data().getLast();
+                    int nextEntry = rlast.getEntryId().intValue()+1;
+
+                    entryno.setValue(""+nextEntry); // convert incremented last ID to string
+                    isNewRecord = true; // always create new records
+                    currentRecord = getFields();
+                    
+                    addBoatNamePair(currentRecord, iCurBoatNamePair);
+                    
+                    if (mode == MODE_BOATHOUSE_START || mode == MODE_BOATHOUSE_START_CORRECT || mode == MODE_BOATHOUSE_START_MULTISESSION ) {
+                        currentRecord.setSessionIsOpen(true);
+                    } else {
+                        currentRecord.setSessionIsOpen(false); // all other updates to an open entry (incl. Admin Mode) will mark it as finished
+                    }
+
+                    logbook.data().add(currentRecord, lock);
+
+                    if (isModeFull()) {
+                        logAdminEvent(Logger.INFO, Logger.MSG_ADMIN_LOGBOOK_ENTRYADDED, International.getString("Eintrag hinzugefügt"), currentRecord);
+                    }
+                    // we need to do this here for any new session
+                    updateBoatStatus(true, mode);
+        		}
+        	}
+        	
         } catch (Exception e) {
             Logger.log(e);
             myE = e;
@@ -746,17 +817,70 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
                 logbook.data().releaseGlobalLock(lock);
             }
         }
+
+        currentRecord = null; // this is neccessary so that the updateBoatStatus invoked later does not try to add new boatstatus 
+        
         if (myE != null) {
             Dialog.error(International.getString("Fahrtenbucheintrag konnte nicht gespeichert werden.") + "\n" + myE.toString());
             return false;
         }
 
-        if (isModeFull()) {
-            logAdminEvent(Logger.INFO, (isNewRecord ? Logger.MSG_ADMIN_LOGBOOK_ENTRYADDED : Logger.MSG_ADMIN_LOGBOOK_ENTRYMODIFIED),
-                    (isNewRecord ? International.getString("Eintrag hinzugefügt") : International.getString("Eintrag geändert")) , currentRecord);
-        }
-        return true;*/
+        return true;
     }	
+    
+    private void addBoatNamePair (LogbookRecord theRecord, int iRow) {
+    	try {
+	    	ItemTypeStringAutoComplete[] acItem= (ItemTypeStringAutoComplete[])nameAndBoat.getItems(iRow);
+	    	ItemTypeStringAutoComplete curName= acItem[0];
+	    	ItemTypeStringAutoComplete curBoat = acItem[1];    	
+
+	    	// handle Person
+	    	PersonRecord p = findPerson(curName, getValidAtTimestamp(theRecord));
+
+            if (p != null) {
+            	theRecord.setCrewId(1, p.getId());
+            	theRecord.setCrewName(1, null);
+            } else {
+                String s = curName.getValue().toString().trim();
+            	theRecord.setCrewName(1, (s.length() == 0 ? null : s) );
+            	theRecord.setCrewId(1, null);
+            }	    	
+	    	
+            // handle Boat & Boat Variant
+            BoatRecord b = findBoat(curBoat, getValidAtTimestamp(theRecord));
+            if (b != null) {
+            	theRecord.setBoatId(b.getId());
+            	theRecord.setBoatVariant(getOneSeaterBoatVariant(b));
+            	theRecord.setBoatName(null);
+            } else {
+                String s = curBoat.toString().trim();
+                theRecord.setBoatName( (s.length() == 0 ? null : s) );
+                theRecord.setBoatId(null);
+                theRecord.setBoatVariant(IDataAccess.UNDEFINED_INT);
+            }    	            
+    	} catch (Exception e) {
+    		Logger.logdebug(e);
+    		return;
+    	}    	
+    }
+    
+    /**
+     * Determine if a boat has at least a variant as a one-seater.
+     * Does not check if the BoatRecord is valid at the current time.
+     * 
+     * @param boatRec BoatRecord (not null)
+     * @return true if Boat has at least one variant as a One-Seater
+     */
+    private int getOneSeaterBoatVariant(BoatRecord boatRec) {
+    	
+        for (int iboatVariant=0; iboatVariant<boatRec.getNumberOfVariants(); iboatVariant++) {
+            if (boatRec.getNumberOfSeats(iboatVariant)==1) {
+            	return boatRec.getTypeVariant(iboatVariant);
+            }
+        }
+        //none of the variants is a OneSeater
+        return 0;
+    }    
     
     public void keyAction(ActionEvent evt) {
         _keyAction(evt);
@@ -833,12 +957,15 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         
         String doppelt = null; // Ergebnis doppelt==null heißt ok, doppelt!=null heißt Fehler! ;-)
         Boolean isPersonDoppelt = false;
+    	ItemTypeStringAutoComplete curName= null;
+    	ItemTypeStringAutoComplete curBoat = null;
+    	
         while (true) { // Unsauber; aber die Alternative wäre ein goto; dies ist keine Schleife!!
-            
+
     	    for (int iCurNameAndBoat =0; iCurNameAndBoat<nameAndBoat.getItemCount(); iCurNameAndBoat++) {
     	    	ItemTypeStringAutoComplete[] acItem= (ItemTypeStringAutoComplete[])nameAndBoat.getItems(iCurNameAndBoat);
-    	    	ItemTypeStringAutoComplete curName= acItem[0];
-    	    	ItemTypeStringAutoComplete curBoat = acItem[1];
+    	    	curName= acItem[0];
+    	    	curBoat = acItem[1];
     	    	
     	    	//check for duplicate entry for person's name
     	        String s = curName.getValueFromField().trim();
@@ -880,8 +1007,10 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         if (doppelt != null) {
             if (isPersonDoppelt) {
             	Dialog.error(International.getMessage("Die Person '{name}' wurde mehrfach eingegeben!", doppelt));
+            	if (curName!= null) { curName.requestFocus(); }
             } else {
             	Dialog.error(International.getMessage("Das Boot '{name}' wurde mehrfach eingegeben!", doppelt));
+            	if (curBoat!=null) { curBoat.requestFocus(); }
             }
             return false;
         }
@@ -913,9 +1042,10 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 		                // update boat status (may have changed since we opened the dialog)
 		                efaBoathouseAction.boatStatus = efaBoathouseAction.boat.getBoatStatus();
 		            }
-		            boolean success = efaBoathouseFrame.checkStartSessionForBoat(efaBoathouseAction, entryno.getValueFromField(), checkMode);
+		            boolean success = efaBoathouseFrame.checkStartSessionForBoat(efaBoathouseAction, "0", checkMode);
 		            if (!success) {
 		                efaBoathouseAction.boat = null; // otherwise next check would fail
+		                curBoat.requestFocus();
 		                return false;
 		            }
 		            
@@ -937,6 +1067,12 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 	    	ItemTypeStringAutoComplete curBoat = acItem[1];
 	    	
 	    	if (!checkBoatNameValid(curBoat)){
+	    		curBoat.requestFocus();
+	    		return false;
+	    	}
+	    	
+	    	if (!checkUnknownNamesBoatDetail(curBoat)) {
+	    		curBoat.requestFocus();
 	    		return false;
 	    	}
 	    	
@@ -950,11 +1086,158 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
                 if (preferredValidAt > 0 && r != null && !r.isValidAt(preferredValidAt)) {
                     if (!ingoreNameInvalid(r.getQualifiedName(), preferredValidAt,
                             International.getString("Person"), curName)) {
+                    	curName.requestFocus();
                         return false;
+                    }
+                }
+            }
+            
+            if (!checkUnknownNamesPersonDetail(curName)) {
+            	return false;
+            }
+        }
+        return true;
+    }
+    
+    protected boolean checkUnknownNamesBoat() {
+    	// this state is always true as it gets checked earlier 
+    	// see checkUnknownNamesBoatDetail / checkMultiSessionNameAndBoatValuesValid
+    	return true;
+    }
+
+    protected boolean checkUnknownNamesPerson() {
+    	// this state is always true as it gets checked earlier 
+    	// see checkUnknownNamesPersonDetail / checkMultiSessionNameAndBoatValuesValid
+    	return true;
+    }
+    
+    
+    private boolean checkUnknownNamesBoatDetail(ItemTypeStringAutoComplete boatItem) {
+        if (isModeBoathouse()) {
+            if (Daten.efaConfig.getValueEfaDirekt_eintragNurBekannteBoote()) {
+                String name = boatItem.getValueFromField();
+                if (name != null && name.length() > 0 && findBoat(boatItem, getValidAtTimestamp(null)) == null) {
+                    Dialog.error(LogString.itemIsUnknown(name, International.getString("Boot")));
+                    boatItem.requestFocus();
+                    return false;
+                }
+            }
+        }
+        return true;
+    	
+    }
+
+    private boolean checkUnknownNamesPersonDetail(ItemTypeStringAutoComplete personItem) {
+        // Prüfen, ob ggf. nur bekannte Boote/Ruderer/Ziele eingetragen wurden
+        if (isModeBoathouse()) {
+
+            if (Daten.efaConfig.getValueEfaDirekt_eintragNurBekannteRuderer()) {
+                String name = personItem.getValueFromField();
+                if (name != null && name.length() > 0 && findPerson(personItem, getValidAtTimestamp(null)) == null) {
+                	Dialog.error(LogString.itemIsUnknown(name, International.getString("Person")));
+                	personItem.requestFocus();
+                	return false;
+                }
+            }
+        }
+        return true;
+    }    
+    
+    /**
+     * Checks all cox and crew fields for
+     * * correct format of a name
+     * * invalid content
+     * @return true if all checks were successfully run.
+     */
+    protected boolean checkProperUnknownNames() {
+        // check whether all names of unkown persons are proper and allowed names
+        if (isModeBoathouse()) {
+            String[] list = createListOfInvalidContent();
+            Pattern pname = createPNamePattern();
+            Pattern pnameadd = createPNameAddPattern(); 
+            Pattern pnameclub = createPNameClubPattern();
+            Pattern pnameaddclub = createPNameAddClubPattern();
+            
+            for (int iCurNameAndBoat =0; iCurNameAndBoat<nameAndBoat.getItemCount(); iCurNameAndBoat++) {
+    	    	ItemTypeStringAutoComplete[] acItem= (ItemTypeStringAutoComplete[])nameAndBoat.getItems(iCurNameAndBoat);
+    	    	ItemTypeStringAutoComplete curName = acItem[0];
+    	    	
+                String name = curName.getValueFromField();
+                if (name != null && name.length() > 0 && findPerson(curName, getValidAtTimestamp(null)) == null) {
+                    if (Daten.efaConfig.getValueBoathouseStrictUnknownPersons()) {
+                        String _name = name;
+                        name = beautifyNameField(name);
+                        if (!name.equals(_name)) {
+                            curName.parseAndShowValue(name);
+                        }
+                        if (!checkNameFormat(name, pname, pnameadd,pnameclub, pnameaddclub, curName)) {
+                        	curName.requestFocus();
+                        	return false;
+                        };
+                    }
+                    if (!checkNameForInvalidContent(name, list, curName)) {
+                    	return false;
                     }
                 }
             }
         }
         return true;
+    }
+    
+    protected boolean checkAllDataEnteredBoatAndCrew() {
+        if (isModeBoathouse()) {
+        	// check if for each line either name AND boat are set.
+
+            for (int iCurNameAndBoat =0; iCurNameAndBoat<nameAndBoat.getItemCount(); iCurNameAndBoat++) {
+    	    	ItemTypeStringAutoComplete[] acItem= (ItemTypeStringAutoComplete[])nameAndBoat.getItems(iCurNameAndBoat);
+    	    	ItemTypeStringAutoComplete curName = acItem[0];
+    	    	ItemTypeStringAutoComplete curBoat = acItem[1];
+    	    	
+    	    	if (!(curName.getValue().trim().isEmpty() && curBoat.getValue().trim().isEmpty())) { 
+    	    		// both fields are not empty?
+    	    		if (curName.getValue().trim().isEmpty()) {
+    	                Dialog.error(International.getString("Bitte trage mindestens eine Person ein!"));
+    	                curName.requestFocus();
+    	                return false;
+    	    		}
+
+    	    		if (curBoat.getValue().trim().isEmpty()) {
+    	                Dialog.error(International.getString("Bitte gib einen Bootsnamen ein!"));
+    	                curBoat.requestFocus();
+    	                return false;
+    	    		}
+    	    	}
+            }
+        }
+        return true;
+    }
+    
+    /**
+     * this method is called from EfaBaseFrame.getfields()
+     * for multisession items, we simply set the boat to empty, because
+     * it is set to the actual name/boat pair later.
+     */
+    protected void getFieldsForBoats(LogbookRecord theRecord) {
+    	theRecord.setBoatId(null);
+    	theRecord.setBoatName(null);
+        theRecord.setBoatVariant(IDataAccess.UNDEFINED_INT);
+    }
+    
+    protected void getFieldsForCrew(LogbookRecord theRecord) {
+        // Cox and Crew
+        for (int i=0; i<=LogbookRecord.CREW_MAX; i++) {
+            if (i == 0) {
+            	theRecord.setCoxName(null);
+            	theRecord.setCoxId(null);
+            } else {
+            	theRecord.setCrewName(i, null);
+            	theRecord.setCrewId(i, null);
+            }
+        }
+      	theRecord.setBoatCaptainPosition(IDataAccess.UNDEFINED_INT);
+    }
+    
+    protected void getSessionGroupID(LogbookRecord theRecord) {
+    	// do nothing
     }
 }

@@ -937,7 +937,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
     // Data-related methods
     // =========================================================================
 
-    long getValidAtTimestamp(LogbookRecord r) {
+    protected long getValidAtTimestamp(LogbookRecord r) {
         long t = 0;
         if (r != null) {
             t = r.getValidAtTimestamp();
@@ -950,7 +950,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return t;
     }
 
-    PersonRecord findPerson(ItemTypeString item, long validAt) {
+    protected PersonRecord findPerson(ItemTypeString item, long validAt) {
         try {
             String s = item.getValueFromField().trim();
             if (Daten.efaConfig.getValuePostfixPersonsWithClubName()) {
@@ -983,7 +983,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return null;
     }
 
-    BoatRecord findBoat(ItemTypeString item, long validAt) {
+    protected BoatRecord findBoat(ItemTypeString item, long validAt) {
         try {
             String s = item.getValueFromField().trim();
             if (s.length() > 0) {
@@ -1013,11 +1013,11 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return null;
     }
 
-    PersonRecord findPerson(int pos, long validAt) {
+    protected PersonRecord findPerson(int pos, long validAt) {
         return findPerson(getCrewItem(pos), validAt);
     }
 
-    DestinationRecord findDestinationFromString(String s, long validAt) {
+    protected DestinationRecord findDestinationFromString(String s, long validAt) {
         return findDestinationFromString(s, null, validAt);
     }
 
@@ -1278,7 +1278,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return Daten.project != null && Daten.project.isOpen() && logbook != null && logbook.isOpen();
     }
 
-    String getFieldValue(ItemTypeLabelValue field, LogbookRecord r) {
+    private String getFieldValue(ItemTypeLabelValue field, LogbookRecord r) {
         try {
             if (field == entryno) {
                 return (r != null && r.getEntryId() != null ? r.getEntryId().toString() : "");
@@ -1404,7 +1404,59 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         updateTimeInfoFields();
     }
 
-    LogbookRecord getFields() {
+    protected void getFieldsForBoats(LogbookRecord theRecord) {
+        // Boat & Boat Variant
+        BoatRecord b = findBoat(boat, getValidAtTimestamp(theRecord));
+        if (b != null) {
+        	theRecord.setBoatId(b.getId());
+        	theRecord.setBoatVariant(EfaUtil.stringFindInt(boatvariant.getValue(), b.getTypeVariant(0)));
+        	theRecord.setBoatName(null);
+        } else {
+            String s = boat.toString().trim();
+            theRecord.setBoatName( (s.length() == 0 ? null : s) );
+            theRecord.setBoatId(null);
+            theRecord.setBoatVariant(IDataAccess.UNDEFINED_INT);
+        }    	
+    }
+    
+    protected void getFieldsForCrew(LogbookRecord theRecord) {
+        // Cox and Crew
+        for (int i=0; i<=LogbookRecord.CREW_MAX; i++) {
+            PersonRecord p = findPerson(i, getValidAtTimestamp(theRecord));
+            if (p != null) {
+                if (i == 0) {
+                	theRecord.setCoxId(p.getId());
+                	theRecord.setCoxName(null);
+                } else {
+                	theRecord.setCrewId(i, p.getId());
+                	theRecord.setCrewName(i, null);
+                }
+            } else {
+                String s = getCrewItem(i).toString().trim();
+                if (i == 0) {
+                	theRecord.setCoxName( (s.length() == 0 ? null : s) );
+                	theRecord.setCoxId(null);
+                } else {
+                	theRecord.setCrewName(i, (s.length() == 0 ? null : s) );
+                	theRecord.setCrewId(i, null);
+                }
+            }
+        }
+
+        // Boat Captain
+        if (boatcaptain.getValue().length() > 0) {
+        	theRecord.setBoatCaptainPosition(EfaUtil.stringFindInt(boatcaptain.getValue(), 0));
+        } else {
+        	theRecord.setBoatCaptainPosition(IDataAccess.UNDEFINED_INT);
+        }
+    }
+    
+    protected void getSessionGroupID(LogbookRecord theRecord) {
+        // Session Group
+        theRecord.setSessionGroupId((UUID)sessiongroup.getRememberedId());    	
+    }
+    
+    protected LogbookRecord getFields() {
         String s;
         if (!isLogbookReady()) {
             return null;
@@ -1442,48 +1494,9 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
             r.setEndTime(null);
         }
 
-        // Boat & Boat Variant
-        BoatRecord b = findBoat(boat, getValidAtTimestamp(r));
-        if (b != null) {
-            r.setBoatId(b.getId());
-            r.setBoatVariant(EfaUtil.stringFindInt(boatvariant.getValue(), b.getTypeVariant(0)));
-            r.setBoatName(null);
-        } else {
-            s = boat.toString().trim();
-            r.setBoatName( (s.length() == 0 ? null : s) );
-            r.setBoatId(null);
-            r.setBoatVariant(IDataAccess.UNDEFINED_INT);
-        }
+        getFieldsForBoats(r);
 
-        // Cox and Crew
-        for (int i=0; i<=LogbookRecord.CREW_MAX; i++) {
-            PersonRecord p = findPerson(i, getValidAtTimestamp(r));
-            if (p != null) {
-                if (i == 0) {
-                    r.setCoxId(p.getId());
-                    r.setCoxName(null);
-                } else {
-                    r.setCrewId(i, p.getId());
-                    r.setCrewName(i, null);
-                }
-            } else {
-                s = getCrewItem(i).toString().trim();
-                if (i == 0) {
-                    r.setCoxName( (s.length() == 0 ? null : s) );
-                    r.setCoxId(null);
-                } else {
-                    r.setCrewName(i, (s.length() == 0 ? null : s) );
-                    r.setCrewId(i, null);
-                }
-            }
-        }
-
-        // Boat Captain
-        if (boatcaptain.getValue().length() > 0) {
-            r.setBoatCaptainPosition(EfaUtil.stringFindInt(boatcaptain.getValue(), 0));
-        } else {
-            r.setBoatCaptainPosition(IDataAccess.UNDEFINED_INT);
-        }
+        getFieldsForCrew(r);
 
         // Destination
         DestinationRecord d = findDestination(getValidAtTimestamp(r));
@@ -1529,8 +1542,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         // Session Type
         r.setSessionType(sessiontype.toString());
 
-        // Session Group
-        r.setSessionGroupId((UUID)sessiongroup.getRememberedId());
+
         
         return r;
     }
@@ -1646,7 +1658,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
             }
             currentRecord = getFields();
             
-            if (mode == MODE_BOATHOUSE_START || mode == MODE_BOATHOUSE_START_CORRECT) {
+            if (mode == MODE_BOATHOUSE_START || mode == MODE_BOATHOUSE_START_CORRECT || mode == MODE_BOATHOUSE_START_MULTISESSION) {
                 currentRecord.setSessionIsOpen(true);
             } else {
                 currentRecord.setSessionIsOpen(false); // all other updates to an open entry (incl. Admin Mode) will mark it as finished
@@ -1788,7 +1800,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
     void setTime(ItemTypeTime field, int addMinutes, DataTypeTime notBefore) {
         DataTypeTime now = DataTypeTime.now();
 
-        if (mode == MODE_BOATHOUSE_LATEENTRY && field == this.starttime) {
+        if ((mode == MODE_BOATHOUSE_LATEENTRY || mode == MODE_BOATHOUSE_LATEENTRY_MULTISESSION) && field == this.starttime) {
             // for Late Entries, we default to a start time about 100 minutes ago
             now.delete((100+addMinutes)*60);
         }
@@ -1904,7 +1916,8 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
                 // den unschönen Nebeneffekt, daß beim korrigieren von unbekannten Zielen die eingegeben Kilometer
                 // aus dem Feld verschwinden (ebenso nach der Suche nach unvollständigen Einträgen mit unbekannten
                 // Zielen).
-                if (this.isModeBoathouse() && (mode == MODE_BOATHOUSE_START || mode == MODE_BOATHOUSE_START_CORRECT || mode == MODE_BOATHOUSE_FINISH || mode == MODE_BOATHOUSE_LATEENTRY)) {
+                if (this.isModeBoathouse() && (mode == MODE_BOATHOUSE_START || mode == MODE_BOATHOUSE_START_CORRECT || mode == MODE_BOATHOUSE_START_MULTISESSION 
+                		|| mode == MODE_BOATHOUSE_FINISH || mode == MODE_BOATHOUSE_LATEENTRY || mode == MODE_BOATHOUSE_LATEENTRY_MULTISESSION)) {
                     distance.parseAndShowValue("");
                 }
                 lastDestination = "";
@@ -2180,8 +2193,10 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         // disabled functionality: for unknown boats: If only one person entered as cox, change to crew1
         if (false &&
              (getMode() == MODE_BOATHOUSE_START ||
+              getMode() == MODE_BOATHOUSE_START_MULTISESSION ||
               getMode() == MODE_BOATHOUSE_START_CORRECT ||
-              getMode() == MODE_BOATHOUSE_LATEENTRY) &&
+              getMode() == MODE_BOATHOUSE_LATEENTRY ||
+              getMode() == MODE_BOATHOUSE_LATEENTRY_MULTISESSION) &&
             currentBoat == null && cox.getValueFromField().trim().length() > 0 &&
             getNumberOfPersonsInBoat() == 1 && crew[0].isVisible()) {
             crew[0].parseAndShowValue(cox.getValueFromField().trim());
@@ -2340,7 +2355,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
     }
 
     private boolean checkBoatStatus() {
-        if (getMode() == MODE_BOATHOUSE_START || getMode() == MODE_BOATHOUSE_START_CORRECT) {
+        if (getMode() == MODE_BOATHOUSE_START || getMode() == MODE_BOATHOUSE_START_CORRECT || getMode() == MODE_BOATHOUSE_START_MULTISESSION) {
             int checkMode = 3;
             // checkFahrtbeginnFuerBoot nur bei direkt_boot==null machen, da ansonsten der Check schon in EfaDirektFrame gemacht wurde
             if (efaBoathouseAction != null) {
@@ -2496,7 +2511,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
                 setTime(starttime, Daten.efaConfig.getValueEfaDirekt_plusMinutenAbfahrt(), null);
             }
             if (endtime.isVisible() && !endtime.isSet() &&
-                (getMode() == MODE_BOATHOUSE_FINISH || getMode() == this.MODE_BOATHOUSE_LATEENTRY)) {
+                (getMode() == MODE_BOATHOUSE_FINISH || getMode() == this.MODE_BOATHOUSE_LATEENTRY || getMode() == MODE_BOATHOUSE_LATEENTRY_MULTISESSION)) {
                 setTime(endtime, -Daten.efaConfig.getValueEfaDirekt_minusMinutenAnkunft(), starttime.getTime());
             }
 
@@ -2549,8 +2564,9 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
     protected boolean checkAllowedDateForLogbook() {
         long tRec = getValidAtTimestamp(null);
         if (tRec < logbookValidFrom || tRec >= logbookInvalidFrom) {
-            if (getMode() != MODE_BOATHOUSE_LATEENTRY) {
-                String msg = getLogbookRecordStringWithEntryNo() + ": "
+            if ((getMode() != MODE_BOATHOUSE_LATEENTRY) ) {
+                // Multisession lateentries always request correct date, as we do not want to have multiple records the admin needs to take care of.
+            	String msg = getLogbookRecordStringWithEntryNo() + ": "
                         + International.getMessage("Der Eintrag kann nicht gespeichert werden, da er außerhalb des gültigen Zeitraums ({startdate} - {enddate}) "
                         + "für dieses Fahrtenbuch liegt.", logbook.getStartDate().toString(), logbook.getEndDate().toString());
                 Logger.log(Logger.WARNING, Logger.MSG_EVT_ERRORADDRECORDOUTOFRANGE, msg + " (" + getFields().toString() + ")");
@@ -2602,7 +2618,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return true;
     }
 
-    protected boolean checkAllDataEntered() {
+    protected boolean checkAllDataEnteredBoatAndCrew() {
         if (isModeBoathouse()) {
             if (boat.getValue().length() == 0) {
                 Dialog.error(International.getString("Bitte gib einen Bootsnamen ein!"));
@@ -2619,16 +2635,26 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
                 }
                 return false;
             }
+        }
+        return true;
+    }
+    
+    protected boolean checkAllDataEntered() {
+        if (isModeBoathouse()) {
+
+        	if (!checkAllDataEnteredBoatAndCrew()) {
+        		return false;
+        	}
 
             // Ziel vor Fahrtbeginn eintragen
-            if ((mode == MODE_BOATHOUSE_START || mode == MODE_BOATHOUSE_START_CORRECT)
+            if ((mode == MODE_BOATHOUSE_START || mode == MODE_BOATHOUSE_START_CORRECT || mode == MODE_BOATHOUSE_START_MULTISESSION)
                     && Daten.efaConfig.getValueEfaDirekt_zielBeiFahrtbeginnPflicht() && destination.getValue().length() == 0) {
                 Dialog.error(International.getString("Bitte trage ein voraussichtliches Fahrtziel/Strecke ein!"));
                 destination.requestFocus();
                 return false;
             }
 
-            if ((mode == MODE_BOATHOUSE_FINISH || mode == MODE_BOATHOUSE_LATEENTRY) &&
+            if ((mode == MODE_BOATHOUSE_FINISH || mode == MODE_BOATHOUSE_LATEENTRY || mode == MODE_BOATHOUSE_LATEENTRY_MULTISESSION) &&
                 destination.getValue().length() == 0) {
                 Dialog.error(International.getString("Bitte trage ein Fahrtziel/Strecke ein!"));
                 destination.requestFocus();
@@ -2636,7 +2662,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
             }
 
             // Waters
-            if ((mode == MODE_BOATHOUSE_FINISH || mode == MODE_BOATHOUSE_LATEENTRY) &&
+            if ((mode == MODE_BOATHOUSE_FINISH || mode == MODE_BOATHOUSE_LATEENTRY || mode == MODE_BOATHOUSE_LATEENTRY_MULTISESSION) &&
                 Daten.efaConfig.getValueEfaDirekt_gewaesserBeiUnbekanntenZielenPflicht() &&
                 waters.isVisible() && waters.getValue().length() == 0) {
                 Dialog.error(International.getString("Bitte trage ein Gewässer ein!"));
@@ -2646,7 +2672,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
 
             // Distance
             if ((!distance.isSet() || distance.getValue().getValueInDefaultUnit() == 0)) {
-                if (mode == MODE_BOATHOUSE_FINISH || mode == MODE_BOATHOUSE_LATEENTRY) {
+                if (mode == MODE_BOATHOUSE_FINISH || mode == MODE_BOATHOUSE_LATEENTRY || mode == MODE_BOATHOUSE_LATEENTRY_MULTISESSION) {
                     if (!Daten.efaConfig.getValueAllowSessionsWithoutDistance()) {
                         Dialog.error(International.getString("Bitte trage die gefahrenen Entfernung ein!"));
                         distance.requestFocus();
@@ -2751,7 +2777,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return true;
     }
 
-    protected boolean checkUnknownNames() {
+    protected boolean checkUnknownNamesBoat() {
         // Prüfen, ob ggf. nur bekannte Boote/Ruderer/Ziele eingetragen wurden
         if (isModeBoathouse()) {
             if (Daten.efaConfig.getValueEfaDirekt_eintragNurBekannteBoote()) {
@@ -2762,6 +2788,14 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
                     return false;
                 }
             }
+        }
+        return true;
+    }
+
+    protected boolean checkUnknownNamesPerson() {
+        // Prüfen, ob ggf. nur bekannte Boote/Ruderer/Ziele eingetragen wurden
+        if (isModeBoathouse()) {
+
             if (Daten.efaConfig.getValueEfaDirekt_eintragNurBekannteRuderer()) {
                 for (int i = 0; i <= LogbookRecord.CREW_MAX; i++) {
                     String name = (i == 0 ? cox : crew[i-1]).getValueFromField();
@@ -2776,6 +2810,13 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
                     }
                 }
             }
+        }
+        return true;
+    }
+    
+    protected boolean checkUnknownNamesDestination() {
+        // Prüfen, ob ggf. nur bekannte Boote/Ruderer/Ziele eingetragen wurden
+        if (isModeBoathouse()) {        
             if (Daten.efaConfig.getValueEfaDirekt_eintragNurBekannteZiele()) {
                 String name = destination.getValueFromField();
                 if (name != null && name.length() > 0 && findDestination(getValidAtTimestamp(null)) == null) {
@@ -2784,7 +2825,14 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
                     return false;
                 }
             }
+        }
+        return true;
+    }
 
+    protected boolean checkUnknownNamesWaters() {
+        // Prüfen, ob ggf. nur bekannte Boote/Ruderer/Ziele eingetragen wurden
+        if (isModeBoathouse()) {        
+    
             if (Daten.efaConfig.getValueEfaDirekt_eintragNurBekannteGewaesser() && waters.isVisible()) {
                 DataTypeList[] wlists = findWaters(waters);
                 if (wlists != null && wlists.length != 0 && wlists[1].length() > 0) {
@@ -2796,75 +2844,162 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         }
         return true;
     }
+
+    protected boolean checkUnknownNames() {
+
+    	return checkUnknownNamesBoat() ||
+    			checkUnknownNamesPerson() ||
+    			checkUnknownNamesDestination() ||
+    			checkUnknownNamesWaters();
+    }
     
+    protected Pattern createPNamePattern() {
+    	return Daten.efaConfig.getValueNameFormatIsFirstNameFirst() ?
+                Pattern.compile("[X ]+ [X ]+") : Pattern.compile("[X ]+, [X ]+");
+    }
+    
+    protected Pattern createPNameAddPattern() {
+    	return Daten.efaConfig.getValueNameFormatIsFirstNameFirst() ?
+                Pattern.compile("[X ]+ [X ]+ \\([X 0-9]+\\)") : Pattern.compile("[X ]+, [X ]+ \\([X 0-9]+\\)");
+    }
+    
+    protected Pattern createPNameClubPattern() {
+    	return Daten.efaConfig.getValueNameFormatIsFirstNameFirst() ?
+                Pattern.compile("[X ]+ [X ]+ \\[[X 0-9]+\\]") : Pattern.compile("[X ]+, [X ]+ \\[[X 0-9]+\\]");
+    }
+    
+    protected Pattern createPNameAddClubPattern() {
+    	return Daten.efaConfig.getValueNameFormatIsFirstNameFirst() ?
+                Pattern.compile("[X ]+ [X ]+ \\([X 0-9]+\\) \\[[X 0-9]+\\]") : Pattern.compile("[X ]+, [X ]+ \\([X 0-9]+\\) \\[[X 0-9]+\\]");
+    }
+    
+    /**
+     * 
+     * @param value Content of a Name field
+     * @return Beautified Name with proper spaces between elements
+     */
+    protected String beautifyNameField(String value) {
+        String name = value;
+    	name = EfaUtil.replace(name, ",", ", ", true);
+        name = EfaUtil.replace(name, " ,", ",", true);
+        name = EfaUtil.replace(name, "(", " (", true);
+        name = EfaUtil.replace(name, "( ", "(", true);
+        name = EfaUtil.replace(name, ")", ") ", true);
+        name = EfaUtil.replace(name, " )", ")", true);
+        name = EfaUtil.replace(name, "  ", " ", true).trim();
+        return name;        
+    }
+    
+    
+    /**
+     * Checks a name field for having the correct format/structure
+     * 
+     * @param value Content of the name field 
+     * @param pname Pattern for Name
+     * @param pnameadd Pattern for added Name
+     * @param pnameclub Pattern for Club
+     * @param pnameaddclub Pattern for added club
+     * @param item Item that shall get the focus if the check fails
+     * @return True if all checks were performed successfully.
+     * 
+     */
+    protected boolean checkNameFormat(String value, Pattern pname, Pattern pnameadd, Pattern pnameclub, Pattern pnameaddclub, ItemTypeStringAutoComplete item) {
+    	String xname = EfaUtil.transformNameParts(value);
+        if (!pname.matcher(xname).matches() &&
+            !pnameadd.matcher(xname).matches() &&
+            !pnameclub.matcher(xname).matches() &&
+            !pnameaddclub.matcher(xname).matches()
+            ) {
+            String nameformat = Daten.efaConfig.getValueNameFormatIsFirstNameFirst()
+                    ? International.getString("Vorname") + " "
+                    + International.getString("Nachname")
+                    : International.getString("Nachname") + ", "
+                    + International.getString("Vorname");
+            Dialog.error(International.getString("Ungültiger Name") + ": " + value + "\n"
+                    + International.getString("Personennamen müssen eines der folgenden Formate haben:") + "\n\n"
+                    + nameformat + "\n"
+                    + nameformat + " (" + International.getString("Namenszusatz") + ")\n"
+                    + nameformat + " [" + International.getString("Verein") + "]\n"
+                    + nameformat + " (" + International.getString("Namenszusatz") + ")" +
+                                   " [" + International.getString("Verein") + "]");
+            item.requestFocus();
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Checks a single name field value for invalid content.
+     * 
+     * @param value  Name field content
+     * @param invalidContent StringArray of items which present invalid content
+     * @param item The actual field which shall get the focus if the check was not okay. 
+     * @return false if check was not ok.
+     */
+    protected boolean checkNameForInvalidContent(String value, String[] invalidContent, ItemTypeStringAutoComplete item) {
+        if (invalidContent != null) {
+        	
+        	for (int j=0; j<invalidContent.length; j++) {
+                if (invalidContent[j] != null && invalidContent[j].trim().length() > 0 &&
+                		value.toLowerCase().indexOf(invalidContent[j].trim().toLowerCase()) >= 0) {
+                    Dialog.error(International.getString("Ungültiger Name") + ": " + value + "\n"
+                            + International.getMessage("'{string}' ist nicht erlaubt in Personennamen.",
+                            		invalidContent[j].trim().toUpperCase()));
+                    item.requestFocus();
+                    return false;
+                }
+            }
+        }
+        return true;
+    	
+    }
+    
+    /**
+     * Creates a StringArray of items which contain invalid content for names (retrieved from efaConfig) 
+     * @return 
+     */
+    protected String[] createListOfInvalidContent() {
+    	String slist = Daten.efaConfig.getValueBoathouseNonAllowedUnknownPersonNames();
+        String[] list = null;
+        if (slist != null && slist.length() > 0) {
+            list = slist.split(";");
+            for (int i=0; list != null && i<list.length; i++) {
+                list[i] = list[i] != null ? list[i].trim().toLowerCase() : null;
+            }
+        }
+        return list;
+    }
+    
+    /**
+     * Checks all cox and crew fields for
+     * * correct format of a name
+     * * invalid content
+     * @return true if all checks were successfully run.
+     */
     protected boolean checkProperUnknownNames() {
         // check whether all names of unkown persons are proper and allowed names
         if (isModeBoathouse()) {
-            String slist = Daten.efaConfig.getValueBoathouseNonAllowedUnknownPersonNames();
-            String[] list = null;
-            if (slist != null && slist.length() > 0) {
-                list = slist.split(";");
-                for (int i=0; list != null && i<list.length; i++) {
-                    list[i] = list[i] != null ? list[i].trim().toLowerCase() : null;
-                }
-            }
-            Pattern pname = Daten.efaConfig.getValueNameFormatIsFirstNameFirst() ?
-                    Pattern.compile("[X ]+ [X ]+") : Pattern.compile("[X ]+, [X ]+");
-            Pattern pnameadd = Daten.efaConfig.getValueNameFormatIsFirstNameFirst() ?
-                    Pattern.compile("[X ]+ [X ]+ \\([X 0-9]+\\)") : Pattern.compile("[X ]+, [X ]+ \\([X 0-9]+\\)");
-            Pattern pnameclub = Daten.efaConfig.getValueNameFormatIsFirstNameFirst() ?
-                    Pattern.compile("[X ]+ [X ]+ \\[[X 0-9]+\\]") : Pattern.compile("[X ]+, [X ]+ \\[[X 0-9]+\\]");
-            Pattern pnameaddclub = Daten.efaConfig.getValueNameFormatIsFirstNameFirst() ?
-                    Pattern.compile("[X ]+ [X ]+ \\([X 0-9]+\\) \\[[X 0-9]+\\]") : Pattern.compile("[X ]+, [X ]+ \\([X 0-9]+\\) \\[[X 0-9]+\\]");
+            String[] list = createListOfInvalidContent();
+            Pattern pname = createPNamePattern();
+            Pattern pnameadd = createPNameAddPattern(); 
+            Pattern pnameclub = createPNameClubPattern();
+            Pattern pnameaddclub = createPNameAddClubPattern();
+            
             for (int i = 0; i <= LogbookRecord.CREW_MAX; i++) {
                 String name = (i == 0 ? cox : crew[i - 1]).getValueFromField();
                 if (name != null && name.length() > 0 && findPerson(i, getValidAtTimestamp(null)) == null) {
                     if (Daten.efaConfig.getValueBoathouseStrictUnknownPersons()) {
                         String _name = name;
-                        name = EfaUtil.replace(name, ",", ", ", true);
-                        name = EfaUtil.replace(name, " ,", ",", true);
-                        name = EfaUtil.replace(name, "(", " (", true);
-                        name = EfaUtil.replace(name, "( ", "(", true);
-                        name = EfaUtil.replace(name, ")", ") ", true);
-                        name = EfaUtil.replace(name, " )", ")", true);
-                        name = EfaUtil.replace(name, "  ", " ", true);
-                        name = name.trim();
+                        name = beautifyNameField(name);
                         if (!name.equals(_name)) {
                             (i == 0 ? cox : crew[i - 1]).parseAndShowValue(name);
                         }
-                        String xname = EfaUtil.transformNameParts(name);
-                        if (!pname.matcher(xname).matches() &&
-                            !pnameadd.matcher(xname).matches() &&
-                            !pnameclub.matcher(xname).matches() &&
-                            !pnameaddclub.matcher(xname).matches()
-                            ) {
-                            String nameformat = Daten.efaConfig.getValueNameFormatIsFirstNameFirst()
-                                    ? International.getString("Vorname") + " "
-                                    + International.getString("Nachname")
-                                    : International.getString("Nachname") + ", "
-                                    + International.getString("Vorname");
-                            Dialog.error(International.getString("Ungültiger Name") + ": " + name + "\n"
-                                    + International.getString("Personennamen müssen eines der folgenden Formate haben:") + "\n\n"
-                                    + nameformat + "\n"
-                                    + nameformat + " (" + International.getString("Namenszusatz") + ")\n"
-                                    + nameformat + " [" + International.getString("Verein") + "]\n"
-                                    + nameformat + " (" + International.getString("Namenszusatz") + ")" +
-                                                   " [" + International.getString("Verein") + "]");
-                            (i == 0 ? cox : crew[i - 1]).requestFocus();
-                            return false;
+                        if (!checkNameFormat(name, pname, pnameadd,pnameclub, pnameaddclub, (i == 0 ? cox : crew[i - 1]))){
+                        	return false;
                         }
                     }
-                    if (list != null) {
-                        for (int j=0; j<list.length; j++) {
-                            if (list[j] != null && list[j].trim().length() > 0 &&
-                                name.toLowerCase().indexOf(list[j].trim().toLowerCase()) >= 0) {
-                                Dialog.error(International.getString("Ungültiger Name") + ": " + name + "\n"
-                                        + International.getMessage("'{string}' ist nicht erlaubt in Personennamen.",
-                                                list[j].trim().toUpperCase()));
-                                (i == 0 ? cox : crew[i - 1]).requestFocus();
-                                return false;
-                            }
-                        }
+                    if (!checkNameForInvalidContent(name, list, (i == 0 ? cox : crew[i - 1]))) {
+                    	return false;
                     }
                 }
             }
@@ -2873,7 +3008,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
     }
 
     protected boolean checkAllowedPersons() {
-        if (mode == MODE_BOATHOUSE_START || mode == MODE_BOATHOUSE_START_CORRECT) {
+        if (mode == MODE_BOATHOUSE_START || mode == MODE_BOATHOUSE_START_CORRECT || mode == MODE_BOATHOUSE_START_MULTISESSION) {
             if (currentBoat == null) {
                 return true;
             }
@@ -3491,7 +3626,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
                 autoSelectBoatCaptain();
             }
             if (item == date) {
-                if (isNewRecord && (isModeFull() || mode == MODE_BOATHOUSE_LATEENTRY)) {
+                if (isNewRecord && (isModeFull() || mode == MODE_BOATHOUSE_LATEENTRY || mode == MODE_BOATHOUSE_LATEENTRY_MULTISESSION)) {
                     date.setSelection(0, Integer.MAX_VALUE);
                 }
             }
@@ -3759,7 +3894,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         }
     }
 
-    private void setFieldEnabled(boolean enabled, boolean visible, IItemType item) {
+    protected void setFieldEnabled(boolean enabled, boolean visible, IItemType item) {
         if (Daten.efaConfig.getValueEfaDirekt_eintragHideUnnecessaryInputFields()) {
             if (item instanceof ItemTypeStringAutoComplete) {
                 ((ItemTypeStringAutoComplete)item).setVisibleSticky(visible);
@@ -3771,8 +3906,8 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         item.saveBackgroundColor(true);
     }
 
-    private void setFieldEnabledDistance() {
-        if (mode != MODE_BOATHOUSE_FINISH && mode != MODE_BOATHOUSE_LATEENTRY) {
+    protected void setFieldEnabledDistance() {
+        if (mode != MODE_BOATHOUSE_FINISH && mode != MODE_BOATHOUSE_LATEENTRY  && mode != MODE_BOATHOUSE_LATEENTRY_MULTISESSION) {
             return; // Zielabhängiges Enabled der BootsKm nur bei "Fahrt beenden" und "Nachtrag"
         }
         boolean enabled = !destination.isKnown()
@@ -4404,6 +4539,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         }
         this.efaBoathouseAction = action;
         clearAllBackgroundColors();
+        // we do not need to handle MODE_BOATHOUSE_START_MULTISESSION and MODE_BOATHOUSE_LATEENTRY_MULTISESSION here
         switch(mode) {
             case MODE_BOATHOUSE_START:
                 return efaBoathouseStartSession(action);
@@ -4670,6 +4806,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         if (success) {
             switch(mode) {
                 case MODE_BOATHOUSE_START:
+                case MODE_BOATHOUSE_START_MULTISESSION:
                     logBoathouseEvent(Logger.INFO, Logger.MSG_EVT_TRIPSTART,
                                       International.getString("Fahrtbeginn"),
                                       currentRecord);
@@ -4685,6 +4822,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
                                       currentRecord);
                     break;
                 case MODE_BOATHOUSE_LATEENTRY:
+                case MODE_BOATHOUSE_LATEENTRY_MULTISESSION:
                     logBoathouseEvent(Logger.INFO, Logger.MSG_EVT_TRIPLATEREC,
                                       International.getString("Nachtrag"),
                                       currentRecord);
@@ -4703,7 +4841,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
 
         // Update boat status
         if (success && currentRecord != null &&
-            mode != MODE_BOATHOUSE_LATEENTRY &&
+            mode != MODE_BOATHOUSE_LATEENTRY && mode != MODE_BOATHOUSE_LATEENTRY_MULTISESSION &&
             (efaBoathouseAction != null || this.isModeFull())) {
             long tstmp = currentRecord.getValidAtTimestamp();
             BoatStatus boatStatus = Daten.project.getBoatStatus(false);
@@ -4721,6 +4859,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
             switch(mode) {
                 case EfaBaseFrame.MODE_BOATHOUSE_START:
                 case EfaBaseFrame.MODE_BOATHOUSE_START_CORRECT:
+                case EfaBaseFrame.MODE_BOATHOUSE_START_MULTISESSION:
                     newStatus = BoatStatusRecord.STATUS_ONTHEWATER;
                     newEntryNo = currentRecord.getEntryId();
                     newComment = BoatStatusRecord.createStatusString(
@@ -4747,6 +4886,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
                     break;
 
                 case EfaBaseFrame.MODE_BOATHOUSE_LATEENTRY:
+                case EfaBaseFrame.MODE_BOATHOUSE_LATEENTRY_MULTISESSION:
                     break;
             }
 
@@ -4771,7 +4911,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
                     }
 
                     if (boatStatusRecord == null &&
-                        (mode == EfaBaseFrame.MODE_BOATHOUSE_START || mode == EfaBaseFrame.MODE_BOATHOUSE_START_CORRECT)) {
+                        (mode == EfaBaseFrame.MODE_BOATHOUSE_START || mode == EfaBaseFrame.MODE_BOATHOUSE_START_CORRECT || mode == EfaBaseFrame.MODE_BOATHOUSE_START_MULTISESSION)) {
                         // create new status record for unknown boat
                         boatStatusRecord = boatStatus.createBoatStatusRecord(UUID.randomUUID(), currentRecord.getBoatAsName());
                         newBoatStatusRecord = true;
