@@ -10,7 +10,6 @@
 
 package de.nmichael.efa.core.items;
 
-
 public interface IItemFactory {
 
     public IItemType[] getDefaultItems(String itemName);
