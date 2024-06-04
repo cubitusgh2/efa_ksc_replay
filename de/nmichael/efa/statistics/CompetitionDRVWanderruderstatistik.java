@@ -18,9 +18,11 @@ import de.nmichael.efa.data.*;
 import de.nmichael.efa.data.types.DataTypeDate;
 import de.nmichael.efa.data.types.DataTypeDistance;
 import de.nmichael.efa.data.types.DataTypeList;
+import de.nmichael.efa.util.EfaUtil;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.UUID;
+import java.util.Vector;
 
 public class CompetitionDRVWanderruderstatistik extends Competition {
 

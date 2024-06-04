@@ -27,11 +27,9 @@ import java.awt.event.MouseEvent;
 import java.util.Hashtable;
 import java.util.UUID;
 
-import javax.swing.BorderFactory;
 import javax.swing.DefaultCellEditor;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -683,7 +681,6 @@ public class ShowLogbookDialog extends BaseDialog implements IItemListener {
                 }
                 c.setBackground(bkgColor);    
 	            c.setForeground(fgColor);
-	            this.setBorder(BorderFactory.createEmptyBorder(0,6,0,6));
                 return this;
             } catch (Exception e) {
             	Logger.logdebug(e);

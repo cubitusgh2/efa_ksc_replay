@@ -7,6 +7,7 @@ import java.awt.Font;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 
+import de.nmichael.efa.Daten;
 
 public class TableHeaderCellRendererBold  extends DefaultTableCellRenderer{
 

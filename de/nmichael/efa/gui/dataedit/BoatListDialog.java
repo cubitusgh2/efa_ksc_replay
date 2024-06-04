@@ -15,6 +15,7 @@ import de.nmichael.efa.core.config.*;
 import de.nmichael.efa.data.*;
 import de.nmichael.efa.data.storage.*;
 import de.nmichael.efa.util.*;
+import de.nmichael.efa.util.Dialog;
 import java.util.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -56,14 +57,5 @@ public class BoatListDialog extends DataListDialog {
         Boats boats = (Boats)persistence;
         return boats.getMergeBoatsProgressTask(mainKey, mergeKeys);
     }
-    
-	protected void createSpecificItemTypeRecordTable() {
-		
-		super.createSpecificItemTypeRecordTable();
-    
-		table.addPermanentSecondarySortingColumn(BoatRecord.COLUMN_ID_BOAT_TYPE);
-		table.addPermanentSecondarySortingColumn(BoatRecord.COLUMN_ID_BOAT_OWNER);
-		table.addPermanentSecondarySortingColumn(BoatRecord.COLUMN_ID_BOAT_NAME);    
-	}        
 
 }

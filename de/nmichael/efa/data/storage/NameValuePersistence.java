@@ -10,6 +10,12 @@
 
 package de.nmichael.efa.data.storage;
 
+import de.nmichael.efa.*;
+import de.nmichael.efa.ex.*;
+import de.nmichael.efa.util.*;
+import de.nmichael.efa.data.storage.*;
+import java.util.*;
+
 // @i18n complete
 
 public class NameValuePersistence { /*extends Persistence {

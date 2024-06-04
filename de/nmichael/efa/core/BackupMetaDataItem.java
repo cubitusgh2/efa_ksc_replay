@@ -10,6 +10,9 @@
 
 package de.nmichael.efa.core;
 
+import de.nmichael.efa.core.config.Admins;
+import de.nmichael.efa.core.config.EfaConfig;
+import de.nmichael.efa.core.config.EfaTypes;
 import de.nmichael.efa.util.EfaUtil;
 
 public class BackupMetaDataItem {

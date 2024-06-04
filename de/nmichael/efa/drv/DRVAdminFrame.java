@@ -11,6 +11,7 @@
 package de.nmichael.efa.drv;
 
 import de.nmichael.efa.core.OnlineUpdate;
+import de.nmichael.efa.core.*;
 import de.nmichael.efa.util.*;
 import de.nmichael.efa.util.Dialog;
 import java.awt.*;
@@ -18,6 +19,7 @@ import java.awt.event.*;
 import javax.swing.*;
 import java.io.*;
 import de.nmichael.efa.*;
+import de.nmichael.efa.gui.OnlineUpdateDialog;
 import java.util.Vector;
 
 // @i18n complete (needs no internationalization -- only relevant for Germany)

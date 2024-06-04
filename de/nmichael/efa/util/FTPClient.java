@@ -11,6 +11,7 @@ package de.nmichael.efa.util;
 
 import javax.swing.JDialog;
 
+import com.enterprisedt.net.ftp.FTPException;
 import com.enterprisedt.net.ftp.FTPTransferType;
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelSftp;

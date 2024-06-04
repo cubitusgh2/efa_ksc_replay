@@ -9,22 +9,16 @@
  */
 package de.nmichael.efa.gui.util;
 
-import java.util.Vector;
-
-import javax.swing.ImageIcon;
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.event.*;
+import javax.swing.*;
+import javax.swing.border.*;
+import javax.swing.table.*;
 
 import de.nmichael.efa.util.International;
 
-
-/**
- * Used as container for Items to be displayed in *ListDialogs.
- * Usually created by DataRecord*.getGuiTableItems().
- * Can handle 
- * - status of an item (Visible, Disabled, Marked)
- * - multiple Icons (should be of same dimensions)
- * - toolTipText
- */
-
+import java.util.Vector;
 
 public class TableItem {
 
@@ -32,12 +26,9 @@ public class TableItem {
     private boolean marked = false;
     private boolean disabled = false;
     private boolean invisible = false;
-    private Vector <ImageIcon> icons = null;
-    private String toolTipText=null;
-    private Class dataType;
+
     public TableItem(String txt) {
         this.txt = (txt != null ? txt : "");
-        this.dataType= String.class;
     }
 
     public TableItem(String txt, boolean marked) {
@@ -47,7 +38,6 @@ public class TableItem {
 
     public TableItem(Object o) {
         this.txt = (o != null && o.toString() != null ? o.toString() : "");
-        this.dataType = (o!= null ? o.getClass() : null);
     }
 
     public String toString() {
@@ -56,13 +46,9 @@ public class TableItem {
     
     public String getToolTipText() {
     	if (!this.invisible) {
-    		if (this.getIcons()!=null && this.getIcons().size()>0) {
-    			return this.txt +(this.toolTipText==null ? "" : "\n"+this.toolTipText);
-    		}
-    		return this.toolTipText;
+    		return null;
     	} else {
-    		// Automatically add a prefix for the actual tooltip, if the record has invisible status.
-    		return this.txt + " ("+International.getString("Verstecken")+") "+ (this.toolTipText==null ? "" : "\n"+this.toolTipText);
+    		return International.getString("Verstecken")+": "+this.txt;
     	}
     }
     
@@ -92,27 +78,6 @@ public class TableItem {
     
     public void setInvisible(boolean invisible) {
     	this.invisible = invisible;
-    }
-
-    public void addIcon(ImageIcon value) {
-    	if (this.icons == null) {
-    		this.icons = new Vector<ImageIcon>();
-    	}
-    	if (value!=null) {
-    		this.icons.add(value);
-    	}
-    }
-    
-    public Vector<ImageIcon> getIcons() {
-    	return this.icons;
-    }
-    
-    public void setToolTipText(String value) {
-    	this.toolTipText=value;
-    }
-    
-    public Class getType() {
-    	return this.dataType;
     }
 
 }

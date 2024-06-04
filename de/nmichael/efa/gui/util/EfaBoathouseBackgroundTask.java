@@ -417,9 +417,7 @@ public class EfaBoathouseBackgroundTask extends Thread {
                             boatStatus.data().update(boatStatusRecord);
                             listChanged = true;
                         }
-                        // do not move to the next boatStatusRecord for hidden Boats. 
-                        // reservations and damages for hidden boats shall be taken care of as well.
-                        //continue; 
+                        continue;
                     }
                     if (boatStatusRecord.getUnknownBoat()) {
                         if (!boatStatusRecord.getCurrentStatus().equals(BoatStatusRecord.STATUS_ONTHEWATER)) {
@@ -437,7 +435,7 @@ public class EfaBoathouseBackgroundTask extends Thread {
                     if (reservations == null || reservations.length == 0) {
                         // no reservations at the moment - nothing to do
                         if (!boatStatusRecord.getCurrentStatus().equals(BoatStatusRecord.STATUS_ONTHEWATER)
-                                && boatStatusRecord.getShowInList() != null && !boatStatusRecord.getShowInList().equals(boatStatusRecord.getCurrentStatus())) {
+                                && !boatStatusRecord.getShowInList().equals(boatStatusRecord.getCurrentStatus())) {
                             boatStatusRecord.setShowInList(null);
                         }
 

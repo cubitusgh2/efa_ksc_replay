@@ -13,6 +13,7 @@ import java.io.*;
 import de.nmichael.efa.data.*;
 import de.nmichael.efa.util.*;
 import de.nmichael.efa.*;
+import de.nmichael.efa.ex.EfaException;
 
 public class StatisticCSVWriter extends StatisticWriter {
 
