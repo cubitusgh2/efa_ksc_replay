@@ -59,9 +59,7 @@ import de.nmichael.efa.util.Logger;
  * Filtered_List style
  * - user enters some text. this text is regarded as a filter which is applied to all entries in the dropdown list.
  * - dropdown list opens automatically when typing text, displaying only matching items.
- * - if an item in the list matches by prefix, it gets selected.
- *    - the user may choose other items of the list which are not matching by prefix using the arrow keys.
- * - user MUST use ENTER or TAB key to select the desired entry. 
+ * - user MUST use ENTER key to select the desired entry. 
  * - there is no auto completion by the system.
  * - User interaction
  * 		- KEY_DOWN	Select another item within the dropdownlist (next item). Item must apply to the filter entered by the user.
@@ -156,10 +154,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
         	//needed for dialogs where some button is the default button and reacts to ENTER.
         	//and if the autocomplete list is defined as filtered list.
         	public void keyPressed(KeyEvent e) { 
-            	if ((e!=null) && e.getKeyCode()==KeyEvent.VK_ENTER && Daten.efaConfig.getValuePopupContainsMode()) {
-            		autoComplete(e);
-        		}
-        	}
+            	if ((e!=null) && e.getKeyCode()==KeyEvent.VK_ENTER && Daten.efaConfig.getValuePopupContainsMode()) {autoComplete(e);}}
         });   
     }
 
@@ -719,14 +714,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
                 }
             } else {
                 if ((e != null) && e.getKeyCode() != KeyEvent.VK_DOWN) {
-                    if (Daten.efaConfig.getValuePopupContainsModeSelectPrefixItem()) {
-                		complete = list.getFirstByPrefix(textField.getText());
-                		if (complete==null) {
-                    		complete = list.getFirst(textField.getText()); // Taste gedrückt --> OK, Wortanfang genügt
-                		}
-                	} else {
-                		complete = list.getFirst(textField.getText()); // Taste gedrückt --> OK, Wortanfang genügt
-                	}         
+                    complete = list.getFirst(searchFor); // Taste gedrückt --> OK, Wortanfang genügt
                 }                	
             }
 
@@ -777,14 +765,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
 
        if (mode == Mode.delete) {
             if (withPopup && useAutocompleteList && e != null && mode != Mode.none) {
-                if (Daten.efaConfig.getValuePopupContainsModeSelectPrefixItem()) {
-            		complete = list.getFirstByPrefix(textField.getText());
-            		if (complete==null) {
-                		complete = list.getFirst(textField.getText()); // Taste gedrückt --> OK, Wortanfang genügt
-            		}
-            	} else {
-            		complete = list.getFirst(textField.getText()); // Taste gedrückt --> OK, Wortanfang genügt
-            	}            	
+            	complete = list.getFirst(textField.getText());
                 AutoCompletePopupWindow.showAndSelect(textField, list, (complete != null ? complete : textField.getText()), null);
             }
         }

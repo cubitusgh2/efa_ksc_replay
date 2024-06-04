@@ -10,6 +10,7 @@
 package de.nmichael.efa.util;
 
 import java.io.*;
+import de.nmichael.efa.util.Logger;
 
 // @i18n complete
 public class PDFWriter {

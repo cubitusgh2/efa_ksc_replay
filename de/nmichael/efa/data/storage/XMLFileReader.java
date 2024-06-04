@@ -12,7 +12,10 @@ package de.nmichael.efa.data.storage;
 
 import de.nmichael.efa.*;
 import de.nmichael.efa.util.*;
+import de.nmichael.efa.ex.*;
+import java.util.*;
 import org.xml.sax.*;
+import org.xml.sax.helpers.*;
 
 // @i18n complete
 

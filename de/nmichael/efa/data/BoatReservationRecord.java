@@ -70,9 +70,6 @@ public class BoatReservationRecord extends DataRecord {
     public static final String REASON              = "Reason";
     public static final String CONTACT             = "Contact";
 
-    public static final int COLUMN_ID_NAME = 0;
-    public static final int COLUMN_ID_START = 6;
-    
     public static final String[] IDX_BOATID = new String[] { BOATID };
 
     public static void initialize() {
@@ -225,7 +222,7 @@ public class BoatReservationRecord extends DataRecord {
             return "";
         }
         return (date != null ? date.toString() : Daten.efaTypes.getValueWeekday(weekday)) +
-                (time != null ? " " + time.toString(false) : "");
+                (time != null ? " " + time.toString() : "");
     }
     
     /* if date is empty, print weekday + time if provided. Extend with time period, if available.
@@ -236,7 +233,7 @@ public class BoatReservationRecord extends DataRecord {
             return "";
         }
         return (date != null ? date.toString() : Daten.efaTypes.getValueWeekday(weekday)) +
-                (time != null ? " " + time.toString(false) : "") +
+                (time != null ? " " + time.toString() : "") +
                 " ("+
                 (from != null ? from.toString() : "" ) + 
                 (to != null ? " - " + to.toString() : "") +
@@ -329,7 +326,7 @@ public class BoatReservationRecord extends DataRecord {
     }    
 
     private String getWeeklyTimeDescription(DataTypeTime from, DataTypeTime to, DataTypeDate fromDate, DataTypeDate toDate) {
-        String result = (from != null ? from.toString(false) : "") + " - " + (to != null ? to.toString(false) : "");
+        String result = (from != null ? from.toString() : "") + " - " + (to != null ? to.toString() : "");
         result = result + (fromDate!=null || toDate != null ? (
 	                " ("+
 	                		(fromDate != null ? fromDate.toString() : "" ) + 
@@ -340,7 +337,7 @@ public class BoatReservationRecord extends DataRecord {
     }
 
     private String getTimePeriodDescription (DataTypeTime fromTime, DataTypeTime toTime) {
-        return (fromTime != null ? fromTime.toString(false) : "") + " - " + (toTime != null ? toTime.toString(false) : ""); 	
+        return (fromTime != null ? fromTime.toString() : "") + " - " + (toTime != null ? toTime.toString() : ""); 	
     }
 
 
@@ -457,7 +454,7 @@ public class BoatReservationRecord extends DataRecord {
     *
     * @return milliseconds until this reservation has it's next occurrency.
     */
-   public long getReservationValidInMinutes(boolean respectTimeForTodaysWeeklyReservations) {
+   public long getReservationValidInMinutes() {
        try {
     	   
     	   long now = System.currentTimeMillis();
@@ -477,7 +474,7 @@ public class BoatReservationRecord extends DataRecord {
            }
            
            if (this.getType().equals(TYPE_WEEKLY)) {
-               int daysDifference = getWeeklyReservationDaysToNextOccurrence(now,respectTimeForTodaysWeeklyReservations);
+               int daysDifference = getDaysToNextOccurrence(now);
                dateFrom = new DataTypeDate(now);
                dateFrom.addDays(daysDifference); // suche das nächste Auftreten 
                dateTo   = new DataTypeDate(now);
@@ -504,15 +501,14 @@ public class BoatReservationRecord extends DataRecord {
         	   
         	   if (now>endTimeStamp) {
         		   // reservation is not valid any more
-      			   return -1;
-
+        		   return -1;
         	   } else if (now<startTimeStamp) {
         		   // reservation is not yet active.
         		   // the start date may be not start with the DAY of the weekly reservation
         		   // so to determine the actual date of the first occurrence by 
         		   // determining the gap between start date and first matching DAYOFWEEK
         		   
-        		   int daysDifference = getWeeklyReservationDaysToNextOccurrence(startTimeStamp,respectTimeForTodaysWeeklyReservations);
+        		   int daysDifference = getDaysToNextOccurrence(startTimeStamp);
 
         		   dateFrom=this.getDateFrom();
         		   dateFrom.addDays(daysDifference);
@@ -524,7 +520,7 @@ public class BoatReservationRecord extends DataRecord {
         		   
         	   } else {
         		   // Reservation start is due, so handle like a weekly reservation
-                   int daysDifference = getWeeklyReservationDaysToNextOccurrence(now,respectTimeForTodaysWeeklyReservations);
+                   int daysDifference = getDaysToNextOccurrence(now);
                    dateFrom = new DataTypeDate(now);
                    dateFrom.addDays(daysDifference); 
                    dateTo   = new DataTypeDate(now);
@@ -557,7 +553,7 @@ public class BoatReservationRecord extends DataRecord {
     * @return 0 if starting day of the current weekly reservation is the same day of week as the reference timestamp, 
     * 		  otherwise the positive number of days until the next occurence of the weekday
     */
-   private int getWeeklyReservationDaysToNextOccurrence(long starting_from_timestamp, boolean respectTime) {
+   private int getDaysToNextOccurrence(long starting_from_timestamp) {
 		GregorianCalendar cal = new GregorianCalendar();
 		   cal.setTimeInMillis(starting_from_timestamp);
 		   int this_weekday = cal.get(Calendar.DAY_OF_WEEK);
@@ -565,15 +561,6 @@ public class BoatReservationRecord extends DataRecord {
 		   int daysDifference = (reservation_weekday-this_weekday);
 		   if (daysDifference <0) {//reservierungstag liegt vorher
 			   daysDifference=daysDifference+7; //einfach 7 Tage draufzählen - dann sind das die Anzahl der Tage bis zum nächsten Auftreten
-		   } else if (daysDifference==0) {
-			   // it's on the same day. 
-			   // now, if end time of the reservation is not yet exceeded, daysDiffreence is still zero as it is an ongoing reservation.
-			   // otherwise, add seven days for the next weekly occurrence
-			   DataTypeTime currentTime = (respectTime==true ? DataTypeTime.now() : DataTypeTime.time000000());
-			   DataTypeTime resEndTime = this.getTimeTo();
-			   if (currentTime.compareTo(resEndTime)>=0) {
-				   daysDifference=daysDifference+7;
-			   }
 		   }
 		return daysDifference;
 	}
@@ -639,6 +626,7 @@ public class BoatReservationRecord extends DataRecord {
 
 
 	}	
+
 
 	/* returns true if today's day of week name equals the day of week name in current reservation record 
 	 * 
@@ -723,7 +711,7 @@ public class BoatReservationRecord extends DataRecord {
         }
         return false;
     }
-    
+
     public String getAsText(String fieldName) {
         if (fieldName.equals(BOATID)) {
             return getBoatName();
@@ -897,28 +885,24 @@ public class BoatReservationRecord extends DataRecord {
     }
 
     public TableItemHeader[] getGuiTableHeader() {
-        TableItemHeader[] header = new TableItemHeader[7];
-        header[COLUMN_ID_NAME] = new TableItemHeader(International.getString("Boot"));
+        TableItemHeader[] header = new TableItemHeader[6];
+        header[0] = new TableItemHeader(International.getString("Boot"));
         header[1] = new TableItemHeader(International.getString("Von"));
         header[2] = new TableItemHeader(International.getString("Bis"));
         header[3] = new TableItemHeader(International.getString("Reserviert für"));
         header[4] = new TableItemHeader(International.getString("Grund"));
         header[5] = new TableItemHeader(International.getString("Kontakt"));
-        header[COLUMN_ID_START] = new TableItemHeader(International.getString("Start")); // when is the next start date/Time of the entry?
-        header[COLUMN_ID_START].setMaxColumnWidth(0);//this column must stay invisible, but we need it to 
-        header[COLUMN_ID_START].setVisible(false);
         return header;
     }
 
     public TableItem[] getGuiTableItems() {
-        TableItem[] items = new TableItem[7];
-        items[COLUMN_ID_NAME] = new TableItem(getBoatName());
+        TableItem[] items = new TableItem[6];
+        items[0] = new TableItem(getBoatName());
         items[1] = new TableItem(getGuiDateTimeFromDescription());
         items[2] = new TableItem(getGuiDateTimeToDescription());
         items[3] = new TableItem(getPersonAsName());
         items[4] = new TableItem(getReason());
         items[5] = new TableItem(getContact());
-        items[COLUMN_ID_START] = new TableItem(getReservationValidInMinutes(false)); //0 for ongoing reservations, >0 for reservations in the future
         return items;
     }
 

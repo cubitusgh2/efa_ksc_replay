@@ -13,6 +13,7 @@ package de.nmichael.efa.util;
 import de.nmichael.efa.*;
 import java.awt.*;
 import java.awt.print.*;
+import java.io.*;
 import javax.swing.*;
 
 // @i18n complete

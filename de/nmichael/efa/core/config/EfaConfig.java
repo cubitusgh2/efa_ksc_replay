@@ -176,7 +176,6 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 	private ItemTypeBoolean showObmann;
 	private ItemTypeBoolean autoObmann;
 	private ItemTypeStringList defaultObmann;
-	private ItemTypeBoolean fixCoxForCoxlessUnknownBoats;
 	private ItemTypeStringList weeklyReservationConflictBehaviour;
 	private ItemTypeBoolean showDestinationInfoForInput;
 	private ItemTypeBoolean additionalWatersInput;
@@ -186,7 +185,6 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 	private ItemTypeBoolean popupComplete;
 	private ItemTypeBoolean popupContainsMode;
 	private ItemTypeBoolean popupContainsModeEasyFindEntriesWithSpecialCharacters;
-	private ItemTypeBoolean	popupContainsModeSelectPrefixItem;
 	private ItemTypeStringList nameFormat;
 	private ItemTypeBoolean correctMisspelledNames;
 	private ItemTypeBoolean skipUhrzeit;
@@ -393,11 +391,9 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 	private ItemTypeString kanuEfb_urlRequest;
 	private ItemTypeDate kanuEfb_SyncTripsAfterDate;
 	private ItemTypeBoolean kanuEfb_Fullsync;
-	private ItemTypeBoolean kanuEfb_AlwaysShowKanuEFBFields;
 	private ItemTypeMultiSelectList<String> kanuEfb_boatTypes;
 	private ItemTypeBoolean kanuEfb_SyncUnknownBoats;
 	private ItemTypeBoolean kanuEfb_TidyXML;
-	private ItemTypeBoolean kanuEfb_SyncTripTypePrefix;
 	private ItemTypeBoolean dataPreModifyRecordCallbackEnabled;
 	private ItemTypeBoolean dataAuditCorrectErrors;
 	private ItemTypeLong dataFileSaveInterval;
@@ -716,10 +712,6 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					"AutoCompleteContainsModeEasyFindEntriesWithSpecialCharacters", true, IItemType.TYPE_EXPERT,
 					BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_INPUT), International.getString(
 							"In Popup-Liste bei Suche nach Teilbegriff Einträge mit Sonderzeichen einfacher finden")));
-			addParameter(popupContainsModeSelectPrefixItem = new ItemTypeBoolean(
-					"AutoCompleteContainsModeSelectPrefixItem", true, IItemType.TYPE_EXPERT,
-					BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_INPUT), International.getString(
-							"In Popup-Liste bei Suche nach Teilbegriff den ersten nach Wortanfang passenen Eintrag selektieren")));			
 
 			addHeader("efaCommonInputDestination", IItemType.TYPE_PUBLIC,
 					BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_INPUT),
@@ -738,15 +730,10 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					IItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_INPUT),
 					International.getString("Gewässernamen in Zielliste anzeigen")));
 
-			addHeader("efaCommonInputPersons", IItemType.TYPE_PUBLIC,
+			addHeader("efaCommonInputPersons", IItemType.TYPE_EXPERT,
 					BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_INPUT),
 					International.getString("Besatzung"), 3);
 
-			addParameter(fixCoxForCoxlessUnknownBoats = new ItemTypeBoolean("fixCoxForCoxlessUnknownBoats", false, IItemType.TYPE_PUBLIC,
-					BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_INPUT),
-					International.getString("Ein-Personen-Fahrt mit unbekanntem Boot: Person als Crew eintragen (anstatt als Steuermann)")));
-			
-			
 			addParameter(showObmann = new ItemTypeBoolean("BoatCaptainShow", true, IItemType.TYPE_EXPERT,
 					BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_INPUT),
 					International.getString("Obmann-Auswahlliste anzeigen")));
@@ -1657,9 +1644,6 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					International.getString("email") + ": " + International.getString("Sicherheit")));
 
 			// ============================= SYNC =============================
-			addParameter(kanuEfb_AlwaysShowKanuEFBFields = new ItemTypeBoolean("kanuEfb_AlwaysShowKanueEFBFields", false, IItemType.TYPE_PUBLIC,
-					BaseTabbedDialog.makeCategory(CATEGORY_SYNC, CATEGORY_KANUEFB), "KanuEFB-Felder in efa immer einblenden"));
-			
 			addParameter(kanuEfb_urlLogin = new ItemTypeString("KanuEfbUrlLogin",
 					"https://efb.kanu-efb.de/services/login", IItemType.TYPE_EXPERT,
 					BaseTabbedDialog.makeCategory(CATEGORY_SYNC, CATEGORY_KANUEFB), "Login URL"));
@@ -1752,10 +1736,6 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					ItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_SYNC, CATEGORY_KANUEFB),
 					"Fahrten mit unbekannten Booten synchronisieren"));
 
-			addParameter(kanuEfb_SyncTripTypePrefix = new ItemTypeBoolean("KanuEfb_SyncTripTypePrefix", true,
-					ItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_SYNC, CATEGORY_KANUEFB),
-					"Fahrtbeschreibung für EFB um Fahrtart erweitern"));
-			
 			// ============================= WIDGETS =============================
 			addParameter(efaDirekt_showUhr = new ItemTypeBoolean("WidgetClockEnabled", true, IItemType.TYPE_PUBLIC,
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_WIDGETS, CATEGORY_WIDGET_CLOCK),
@@ -2119,10 +2099,6 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 		return defaultObmann.getValue();
 	}
 
-	public boolean getValueFixCoxForCoxlessUnknownBoats() {
-		return fixCoxForCoxlessUnknownBoats.getValue();
-	}
-	
 	public boolean getValueShowDestinationInfoForInput() {
 		return showDestinationInfoForInput.getValue();
 	}
@@ -2155,10 +2131,6 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 		return popupContainsModeEasyFindEntriesWithSpecialCharacters.getValue();
 	}
 
-	public boolean getValuePopupContainsModeSelectPrefixItem() {
-		return popupContainsModeSelectPrefixItem.getValue();
-	}
-	
 	public String getValueNameFormat() {
 		return nameFormat.getValue();
 	}
@@ -2913,20 +2885,12 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 		return kanuEfb_Fullsync.getValue();
 	}
 
-	public Boolean getValueKanuEfb_AlwaysShowKanuEFBFields() {
-		return kanuEfb_AlwaysShowKanuEFBFields.getValue();
-	}
-	
 	public Boolean getValueKanuEfb_SyncUnknownBoats() {
 		return kanuEfb_SyncUnknownBoats.getValue();
 	}
 
 	public Boolean getValueKanuEfb_TidyXML() {
 		return kanuEfb_TidyXML.getValue();
-	}
-	
-	public Boolean getValueKanuEfb_SyncTripTypePrefix() {
-		return kanuEfb_SyncTripTypePrefix.getValue();
 	}
 
 	public boolean getValueDataPreModifyRecordCallbackEnabled() {

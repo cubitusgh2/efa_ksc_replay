@@ -11,6 +11,7 @@
 package de.nmichael.efa.util;
 
 import org.xml.sax.*;
+import org.xml.sax.helpers.*;
 
 // @i18n complete
 
