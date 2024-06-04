@@ -960,7 +960,6 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
     }
 
     protected PersonRecord findPerson(ItemTypeString item, long validAt) {
-        PersonRecord p = null;
         try {
             String s = item.getValueFromField().trim();
             if (Daten.efaConfig.getValuePostfixPersonsWithClubName()) {
@@ -1547,25 +1546,27 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         autocompleteAllFields();
 
         // run all checks before saving this entry
+        // checks run in appropiate order so user is lead from top to bottom...
         if (!checkMisspelledInput() ||
-            !checkDuplicatePersons() ||
-            !checkPersonsForBoatType() ||
-            !checkDuplicateEntry() ||
-            !checkEntryNo() ||
-            !checkBoatCaptain() ||
-            !checkBoatStatus() ||
-            !checkMultiDayTours() ||
-            !checkSessionType() ||
             !checkDate() ||
+            !checkBoatNameValid(boat) ||
+            !checkBoatStatus() ||
+            !checkDuplicatePersons() ||
+            !checkCrewNamesValid() ||
+            !checkUnknownNames() || //check if unknown values are present and allowed in efaConfig
+            !checkProperUnknownNames() ||
+            !checkAllowedPersons() ||
+            !checkPersonsForBoatType() ||
+            !checkBoatCaptain() ||
+            !checkEntryNo() ||
+            !checkMultiDayTours() ||
             !checkTime() ||
             !checkAllowedDateForLogbook() ||
-            !checkAllDataEntered() ||
-            !checkBoatNameValid(boat) ||
-            !checkCrewNamesValid() ||
             !checkDestinationNameValid() ||
-            !checkUnknownNames() ||
-            !checkProperUnknownNames() ||
-            !checkAllowedPersons()) {
+            !checkAllDataEntered() ||
+            !checkSessionType() || 
+            !checkDuplicateEntry() 
+            ) {
             return false;
         }
 
@@ -2332,6 +2333,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
                         entryno.getValueFromField(), checkMode);
                 if (!success) {
                     efaBoathouseAction.boat = null; // otherwise next check would fail
+                    boat.requestFocus();
                 }
                 return success;
             }
@@ -5144,6 +5146,14 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return msg + (infoText != null ? ": " + infoText : "");
     }
     
+    static String logEventInfoText(String logType, String logKey, String msg, String boatName, String personName) {
+        String infoText; 
+        infoText = "#" + "MultiSession" + " - " + boatName + " " +
+                          International.getMessage("mit {crew}", personName);
+        return msg + (infoText != null ? ": " + infoText : "");
+    	
+    }
+    
     void logAdminEvent(String logType, String logKey, String msg, LogbookRecord r) {
         Logger.log(logType, logKey,
                 International.getString("Admin") + " " + (admin != null ? admin.getName() : "<none>") + ": " +
@@ -5152,6 +5162,10 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
 
     public static void logBoathouseEvent(String logType, String logKey, String msg, LogbookRecord r) {
         Logger.log(logType, logKey, logEventInfoText(logType, logKey, msg, r));
+    }
+    
+    public static void logBoathouseEvent(String logType, String logKey, String msg, String boatName, String personName) {
+        Logger.log(logType, logKey, logEventInfoText(logType, logKey, msg, boatName, personName));
     }
 
     void efaBoathouseSetFixedLocation(int x, int y) {
