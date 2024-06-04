@@ -905,16 +905,7 @@ public class PersonRecord extends DataRecord implements IItemFactory {
     
     }
 
-    /**
-     * Add a pie chart icon containing all colors of the groups the person is currently assigned to.
-     * Also, provide the group names as addendum to the current tooltiptext. 
-     * @param theEntry current table record item 
-     */
-    private void setIconAndTooltipForGroups(TableItem theEntry) {
-
-    	
-    }
-    
+   
     /**
      * Create a pie chart icon consisting of the colors of the groups the person is currently assigned to.
      * @param personGroups
