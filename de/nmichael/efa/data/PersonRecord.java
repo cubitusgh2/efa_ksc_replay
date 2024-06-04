@@ -751,13 +751,11 @@ public class PersonRecord extends DataRecord implements IItemFactory {
             v.add(item = new ItemTypeString(PersonRecord.EXTERNALID, getExternalId(),
             		(Daten.efaConfig.getValueKanuEfb_AlwaysShowKanuEFBFields() ? IItemType.TYPE_PUBLIC : IItemType.TYPE_EXPERT), 
             		CAT_MOREDATA, International.getString("Externe ID")));
-            
             if (Daten.efaConfig.getValueUseFunctionalityCanoeingGermany()) {
             	v.add(item = addHint("efbKanuIDHint", (Daten.efaConfig.getValueKanuEfb_AlwaysShowKanuEFBFields() ? IItemType.TYPE_PUBLIC : IItemType.TYPE_EXPERT),
             			CAT_MOREDATA,  International.onlyFor("Sie können die Kanu-eFB ID (numerisch) oder den Kanu-EFB Benutzernamen eingeben.","de"), 3, 20, 3));            	
                 v.add(item = new ItemTypeString(PersonRecord.EFBID, getEfbId(),
-                		(Daten.efaConfig.getValueKanuEfb_AlwaysShowKanuEFBFields() ? IItemType.TYPE_PUBLIC : IItemType.TYPE_EXPERT), 
-                		CAT_MOREDATA, International.onlyFor("Kanu-eFB ID", "de")));
+                        IItemType.TYPE_EXPERT, CAT_MOREDATA, International.onlyFor("Kanu-eFB ID", "de")));
             }
 
             v.add(item = new ItemTypeString(PersonRecord.ADDRESSSTREET, getAddressStreet(),
