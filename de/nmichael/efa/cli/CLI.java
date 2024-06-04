@@ -48,8 +48,6 @@ public class CLI {
     public static final String MENU_BACKUP           = "backup";
     public static final String MENU_EFACLOUD         = "efacloud";
     public static final String MENU_COMMAND          = "command";
-    public static final String MENU_CLUBWORK_BASE	 = "clubworkbase";
-    public static final String MENU_CLUBWORK_BOATHOUSE = "clubworkboathouse";
 
     public static final int RC_OK                            =  0;
     public static final int RC_ERROR_LOGIN                   =  1;
@@ -392,12 +390,6 @@ public class CLI {
         }
         if (mymenu.equals(MENU_COMMAND)) {
             return de.nmichael.efa.cli.MenuCommand.class;
-        }
-        if (mymenu.equals(MENU_CLUBWORK_BASE)) {
-        	return de.nmichael.efa.cli.MenuClubWorkBase.class;
-        }
-        if (mymenu.equals(MENU_CLUBWORK_BOATHOUSE)) {
-        	return de.nmichael.efa.cli.MenuClubWorkBoatHouse.class;
         }
         return null;
     }

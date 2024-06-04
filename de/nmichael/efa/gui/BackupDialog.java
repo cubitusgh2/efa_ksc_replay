@@ -38,7 +38,6 @@ public class BackupDialog extends BaseTabbedDialog implements IItemListener {
     private AdminRecord admin;
     private ItemTypeBoolean createSelectProject;
     private ItemTypeBoolean createSelectConfig;
-    private ItemTypeBoolean createSelectEfaLog;
     private ItemTypeFile createDirectory;
     private ItemTypeFile restoreZipFile;
     private ItemTypeString restoreInfoProject;
@@ -89,12 +88,6 @@ public class BackupDialog extends BaseTabbedDialog implements IItemListener {
             createSelectProject = (ItemTypeBoolean)item;
         }
 
-        guiItems.add(item = new ItemTypeBoolean("CREATE_SELECT_EFA_LOG", false,
-                IItemType.TYPE_PUBLIC, cat, International.getMessage("{typeOfData} sichern",
-                		International.getString("EFA Logdatei"))));
-
-        createSelectEfaLog= (ItemTypeBoolean)item;
-        
         guiItems.add(item = new ItemTypeFile("CREATE_DIRECTORY", Daten.efaBakDirectory,
                     International.getString("Verzeichnis"),
                     International.getString("Verzeichnisse"),
@@ -187,8 +180,7 @@ public class BackupDialog extends BaseTabbedDialog implements IItemListener {
             Backup.runCreateBackupTask(this,
                         createDirectory.getValue(), null,
                         (createSelectProject != null ? createSelectProject.getValue() : false),
-                        createSelectConfig.getValue(),
-                        createSelectEfaLog.getValue());
+                        createSelectConfig.getValue());
         }
 
         if (itemType.getName().equals(ZIPFILE_SELECT) && event instanceof ActionEvent) {

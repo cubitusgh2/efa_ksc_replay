@@ -389,7 +389,6 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 	private ItemTypeMultiSelectList<String> kanuEfb_boatTypes;
 	private ItemTypeBoolean kanuEfb_SyncUnknownBoats;
 	private ItemTypeBoolean kanuEfb_TidyXML;
-	private ItemTypeBoolean kanuEfb_SyncTripTypePrefix;
 	private ItemTypeBoolean dataPreModifyRecordCallbackEnabled;
 	private ItemTypeBoolean dataAuditCorrectErrors;
 	private ItemTypeLong dataFileSaveInterval;
@@ -1724,10 +1723,6 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					ItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_SYNC, CATEGORY_KANUEFB),
 					"Fahrten mit unbekannten Booten synchronisieren"));
 
-			addParameter(kanuEfb_SyncTripTypePrefix = new ItemTypeBoolean("KanuEfb_SyncTripTypePrefix", true,
-					ItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_SYNC, CATEGORY_KANUEFB),
-					"Fahrtbeschreibung für EFB um Fahrtart erweitern"));
-			
 			// ============================= WIDGETS =============================
 			addParameter(efaDirekt_showUhr = new ItemTypeBoolean("WidgetClockEnabled", true, IItemType.TYPE_PUBLIC,
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_WIDGETS, CATEGORY_WIDGET_CLOCK),
@@ -2876,10 +2871,6 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 
 	public Boolean getValueKanuEfb_TidyXML() {
 		return kanuEfb_TidyXML.getValue();
-	}
-	
-	public Boolean getValueKanuEfb_SyncTripTypePrefix() {
-		return kanuEfb_SyncTripTypePrefix.getValue();
 	}
 
 	public boolean getValueDataPreModifyRecordCallbackEnabled() {

@@ -57,8 +57,6 @@ public class MenuStatistics extends MenuData {
             case xml:
             case pdf:
                 outputOk = true;
-            default:
-            	outputOk = false;
         }
         if (!outputOk) {
             cli.logerr("Cannot create statistic with output type '"+sr.getOutputTypeDescription()+"' in CLI.");
