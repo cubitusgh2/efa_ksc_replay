@@ -16,10 +16,11 @@ import de.nmichael.efa.core.items.*;
 import de.nmichael.efa.gui.util.*;
 import de.nmichael.efa.util.*;
 
-import java.awt.AWTEvent;
-import java.awt.event.FocusEvent;
+import java.awt.GridBagConstraints;
 import java.util.*;
 import java.util.regex.*;
+
+import javax.swing.SwingConstants;
 
 // @i18n complete
 public class PersonRecord extends DataRecord implements IItemFactory {
@@ -745,10 +746,15 @@ public class PersonRecord extends DataRecord implements IItemFactory {
                     boats, getValidFrom(), getInvalidFrom() - 1,
                     International.getString("Standard-Boot")));
             item.setFieldSize(300, -1);
+            
+            //automatically put these items to PUBLIC=Visible if the corresponding setting in efaConfig is enabled.
             v.add(item = new ItemTypeString(PersonRecord.EXTERNALID, getExternalId(),
             		(Daten.efaConfig.getValueKanuEfb_AlwaysShowKanuEFBFields() ? IItemType.TYPE_PUBLIC : IItemType.TYPE_EXPERT), 
             		CAT_MOREDATA, International.getString("Externe ID")));
+            
             if (Daten.efaConfig.getValueUseFunctionalityCanoeingGermany()) {
+            	v.add(item = addHint("efbKanuIDHint", (Daten.efaConfig.getValueKanuEfb_AlwaysShowKanuEFBFields() ? IItemType.TYPE_PUBLIC : IItemType.TYPE_EXPERT),
+            			CAT_MOREDATA,  International.onlyFor("Sie können die Kanu-eFB ID (numerisch) oder den Kanu-EFB Benutzernamen eingeben.","de"), 3, 20, 3));            	
                 v.add(item = new ItemTypeString(PersonRecord.EFBID, getEfbId(),
                 		(Daten.efaConfig.getValueKanuEfb_AlwaysShowKanuEFBFields() ? IItemType.TYPE_PUBLIC : IItemType.TYPE_EXPERT), 
                 		CAT_MOREDATA, International.onlyFor("Kanu-eFB ID", "de")));
@@ -804,6 +810,28 @@ public class PersonRecord extends DataRecord implements IItemFactory {
 
         return v;
     }
+    
+	private IItemType addHint(String uniqueName, int type, String category, String caption, int gridWidth,
+			int padBefore, int padAfter) {
+		//if caption starts with html, do not have a blank as a prefix as this will disable html rendering.
+		ItemTypeLabel item = (ItemTypeLabel) addDescription(uniqueName, type, category, (caption.startsWith("<html>") ? caption : " "+caption), gridWidth,
+				padBefore, padAfter);
+		// item.setImage(BaseDialog.getIcon(ImagesAndIcons.IMAGE_MENU_ABOUT));
+		item.setBackgroundColor(Daten.efaConfig.hintBackgroundColor);
+		item.setHorizontalAlignment(SwingConstants.LEFT);
+		item.setRoundShape(false);
+		return item;
+	}
+	
+	private IItemType addDescription(String uniqueName, int type, String category, String caption, int gridWidth,
+			int padBefore, int padAfter) {
+		// ensure that the description value does not get saved in efaConfig file by
+		// adding a special prefix
+		IItemType item = new ItemTypeLabel("_" + uniqueName, type, category, caption);
+		item.setPadding(0, 0, padBefore, padAfter);
+		item.setFieldGrid(3, GridBagConstraints.EAST, GridBagConstraints.BOTH);
+		return item;
+	}
 
     public void saveGuiItems(Vector<IItemType> items) {
         for (IItemType item : items) {
