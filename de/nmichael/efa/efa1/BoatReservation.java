@@ -10,7 +10,10 @@
 
 package de.nmichael.efa.efa1;
 
+import de.nmichael.efa.core.*;
 import de.nmichael.efa.util.*;
+import de.nmichael.efa.*;
+import java.util.*;
 
 // @i18n complete
 

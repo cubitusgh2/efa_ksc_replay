@@ -9,18 +9,6 @@
  */
 package de.nmichael.efa.core;
 
-import java.io.BufferedOutputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Hashtable;
-import java.util.Vector;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-import java.util.zip.ZipOutputStream;
-
 import de.nmichael.efa.Daten;
 import de.nmichael.efa.core.config.Admins;
 import de.nmichael.efa.core.config.EfaConfig;
@@ -37,6 +25,14 @@ import de.nmichael.efa.util.International;
 import de.nmichael.efa.util.LogString;
 import de.nmichael.efa.util.Logger;
 import de.nmichael.efa.util.ProgressTask;
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.util.Hashtable;
+import java.util.Vector;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 public class Backup {
 
@@ -54,7 +50,6 @@ public class Backup {
     private String backupEmail;
     private boolean backupProject;
     private boolean backupConfig;
-    private boolean backupEfaLog;
     private String zipFile;
     private String lastErrorMsg;
     private BackupTask backupTask;
@@ -68,26 +63,22 @@ public class Backup {
 
     public Backup(String backupDir, String backupFile,
             boolean backupProject,
-            boolean backupConfig,
-            boolean backupEfaLog) {
+            boolean backupConfig) {
         this.backupDir = backupDir;
         this.backupFile = backupFile;
         this.backupProject = backupProject;
         this.backupConfig = backupConfig;
-        this.backupEfaLog = backupEfaLog;
         this.mode = Mode.create;
     }
 
     public Backup(String backupDir, String backupFile, String backupEmail,
             boolean backupProject,
-            boolean backupConfig,
-            boolean backupEfaLog) {
+            boolean backupConfig) {
         this.backupDir = backupDir;
         this.backupFile = backupFile;
         this.backupEmail = backupEmail;
         this.backupProject = backupProject;
         this.backupConfig = backupConfig;
-        this.backupEfaLog = backupEfaLog;
         this.mode = Mode.create;
     }
 
@@ -144,63 +135,6 @@ public class Backup {
         return successful;
     }
 
-    private boolean backupEfaLogFile(ZipOutputStream zipOut, String efaLogFileName) {
-
-	  	//	Entry within the zip file. Hard coded, as we only want to store a specific file here.  
-	  	String zipFileEntry = "log/efa.log"; 
-
-        try {
-            ZipEntry entry = new ZipEntry(zipFileEntry);
-            zipOut.putNextEntry(entry);
-
-            copyFileToZip(zipOut, efaLogFileName);
-
-            zipOut.closeEntry();
-
-            logMsg(Logger.INFO, Logger.MSG_BACKUP_BACKUPINFO, "EFA Log file "+ zipFileEntry);
-            logMsg(Logger.INFO, Logger.MSG_BACKUP_BACKUPINFO,
-                    LogString.fileSuccessfullyArchived(efaLogFileName, "EFA Log"));
-            return true;
-
-        } catch (Exception e) {
-        	logMsg(Logger.ERROR, Logger.MSG_BACKUP_BACKUPERROR,
-                     LogString.fileArchivingFailed(efaLogFileName, "EFA Log file", e.toString()));
-        	Logger.logdebug(e);
-        	return false;
-        }
-    }
-
-    /* 
-     * Copies the contents of a given file into the ZIP stream. 
-     * Requires there has already been created a ZIP entry, and that the zip entry is closed
-     * afterwards.
-     * 
-     * It's quite hacky because it does not handle the possible exceptions
-     * by itself, but it does the job for efa2.
-     * 
-     * if there is an error while opening or reading the file, an empty entry or an half-filled
-     * entry within the ZIP file is created. This does no harm to using the zip file afterwards.
-     * 
-     */
-    private void copyFileToZip(ZipOutputStream zipOut, String efaLogFileName) throws FileNotFoundException, IOException {
-
-    	FileInputStream in = new FileInputStream (efaLogFileName);
-
-    	byte[] buffer = new byte[65535]; //64k buffer for speed
-
- 	    int length;
- 	    /*copying the contents from input stream to
- 	     * output stream using read and write methods
- 	     */
-
- 	    while ((length = in.read(buffer)) > 0){
- 	    	zipOut.write(buffer, 0, length);
- 	    }
-
- 		in.close();
-
-    }
-    
     public static boolean isProjectDataAccess(String type) {
         return !type.equals(EfaConfig.DATATYPE) &&
                !type.equals(Admins.DATATYPE) &&
@@ -407,14 +341,6 @@ public class Backup {
                 errors += (dataAccesses.length - cnt);
             }
 
-            // add the efa log file to the zip.
-            if (backupEfaLog) {
-	            if (backupEfaLogFile(zipOut, Daten.efaLogfile)==true)
-	            	{successful+=1;}
-	            else
-	            	{errors+=1;}
-            }            
-            
             backupMetaData.write(zipOut);
             zipOut.close();
             
@@ -626,10 +552,9 @@ public class Backup {
             String backupDir,
             String backupFile,
             boolean backupProject,
-            boolean backupConfig,
-            boolean backupEfaLog) {
+            boolean backupConfig) {
         BackupTask backupTask = new BackupTask(backupDir, backupFile,
-                backupProject, backupConfig, backupEfaLog);
+                backupProject, backupConfig);
         ProgressDialog progressDialog = new ProgressDialog(parentDialog,
                 International.getString("Backup erstellen"), backupTask, false);
         backupTask.startBackup(progressDialog);
@@ -656,19 +581,17 @@ class BackupTask extends ProgressTask {
     // Constructor for Creating a Backup
     public BackupTask(String backupDir, String backupFile,
             boolean backupProject,
-            boolean backupConfig,
-            boolean backupEfaLog) {
+            boolean backupConfig) {
         super();
-        backup = new Backup(backupDir, backupFile, backupProject, backupConfig, backupEfaLog);
+        backup = new Backup(backupDir, backupFile, backupProject, backupConfig);
     }
 
     // Constructor for Creating an email Backup
     public BackupTask(String email,
             boolean backupProject,
-            boolean backupConfig,
-            boolean backupEfaLog) {
+            boolean backupConfig) {
         super();
-        backup = new Backup(Daten.efaTmpDirectory, null, email, backupProject, backupConfig, backupEfaLog);
+        backup = new Backup(Daten.efaTmpDirectory, null, email, backupProject, backupConfig);
     }
 
     // Constructor for Restoring a Backup

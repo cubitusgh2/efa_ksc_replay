@@ -41,7 +41,6 @@ import de.nmichael.efa.gui.util.TableItemHeader;
 import de.nmichael.efa.util.EfaUtil;
 import de.nmichael.efa.util.International;
 
-
 // @i18n complete
 public class PersonRecord extends DataRecord implements IItemFactory {
 

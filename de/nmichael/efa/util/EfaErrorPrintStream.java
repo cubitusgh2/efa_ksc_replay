@@ -11,6 +11,7 @@
 package de.nmichael.efa.util;
 
 import de.nmichael.efa.*;
+import de.nmichael.efa.util.Dialog;
 import java.io.*;
 
 import javax.swing.SwingUtilities;
