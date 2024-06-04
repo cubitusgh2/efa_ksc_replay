@@ -9,6 +9,7 @@
  */
 package de.nmichael.efa.data.efawett;
 
+import de.nmichael.efa.*;
 import java.util.*;
 
 // @i18n complete

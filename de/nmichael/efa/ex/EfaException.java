@@ -11,6 +11,7 @@
 package de.nmichael.efa.ex;
 
 import de.nmichael.efa.util.Logger;
+import java.util.*;
 
 public class EfaException extends Exception {
 

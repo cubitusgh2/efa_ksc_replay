@@ -10,8 +10,11 @@
 
 package de.nmichael.efa.drv;
 
+import de.nmichael.efa.efa1.Efa1Backup;
 import de.nmichael.efa.efa1.DatenListe;
 import java.io.*;
+import java.util.Hashtable;
+import de.nmichael.efa.*;
 import de.nmichael.efa.util.*;
 
 // @i18n complete (needs no internationalization -- only relevant for Germany)

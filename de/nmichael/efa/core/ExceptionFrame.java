@@ -13,6 +13,7 @@ package de.nmichael.efa.core;
 import de.nmichael.efa.*;
 import de.nmichael.efa.util.Mnemonics;
 import de.nmichael.efa.util.International;
+import de.nmichael.efa.util.Help;
 import de.nmichael.efa.util.EfaUtil;
 import de.nmichael.efa.util.Dialog;
 import de.nmichael.efa.util.ActionHandler;
@@ -20,6 +21,8 @@ import java.awt.*;
 import java.util.*;
 import java.awt.event.*;
 import javax.swing.*;
+import javax.swing.border.*;
+import java.io.*;
 
 // @i18n complete
 

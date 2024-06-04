@@ -21,7 +21,7 @@ import org.xml.sax.*;
 
 public class DataImport extends ProgressTask {
 
-	public static final String IMPORTMODE_ADD    = "ADD";           // import as new record; fail for duplicates (also for duplicate versionized records with different validity)
+    public static final String IMPORTMODE_ADD    = "ADD";           // import as new record; fail for duplicates (also for duplicate versionized records with different validity)
     public static final String IMPORTMODE_UPD    = "UPDATE";        // update existing record; fail if record doesn't exist (for versionized: if no version exists)
     public static final String IMPORTMODE_ADDUPD = "ADD_OR_UPDATE"; // add, or if duplicate, update
 
@@ -34,8 +34,6 @@ public class DataImport extends ProgressTask {
     public static final String UPDMODE_UPDATEVALIDVERSION = "UPDVERSION"; // update version which is valid at specified timestamp; fail if no version is valid
     public static final String UPPMODE_CREATENEWVERSION   = "NEWVERSION"; // always create a version at specified timestamp; fail if version for exact same timestamp exists
 
-    private static final String UTF8_BOM = "\uFEFF";
-    
     private StorageObject storageObject;
     private IDataAccess dataAccess;
     private String[] fields;
@@ -363,13 +361,7 @@ public class DataImport extends ProgressTask {
             String s;
             DataRecord dummyRecord = storageObject.createNewRecord();
             while ( (s = f.readLine()) != null) {
-                if (linecnt==0) {
-                	//Remove Excel's UTF-8 BOM prefix on the first line
-                	s = s.replace(UTF8_BOM, "").trim();
-                } else {
-                	s= s.trim();
-                }
-               
+                s = s.trim();
                 if (s.length() == 0)  {
                     continue;
                 }
