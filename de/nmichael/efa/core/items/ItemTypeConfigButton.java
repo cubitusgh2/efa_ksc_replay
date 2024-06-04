@@ -23,7 +23,6 @@ import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.SwingConstants;
 
 import de.nmichael.efa.Daten;
 import de.nmichael.efa.util.Dialog;
@@ -129,7 +128,6 @@ public class ItemTypeConfigButton extends ItemType {
         label = new JLabel();
         Mnemonics.setLabel(dlg, label, getDescription() + ": ");
         label.setLabelFor(button);
-        label.setHorizontalTextPosition(SwingConstants.RIGHT);
         if (type == IItemType.TYPE_EXPERT) {
             label.setForeground(Color.red);
         }
@@ -143,7 +141,7 @@ public class ItemTypeConfigButton extends ItemType {
         this.dlg = dlg;
         iniDisplay();
         panel.add(label, new GridBagConstraints(0, y, 1, 1, 0.0, 0.0,
-                GridBagConstraints.EAST, GridBagConstraints.NONE, new Insets(padYbefore, padXbefore, padYafter, 0), 0, 0));
+                GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(padYbefore, padXbefore, padYafter, 0), 0, 0));
         panel.add(field, new GridBagConstraints(1, y, 1, 1, 0.0, 0.0,
                 GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(padYbefore, 0, padYafter, (checkbox == null ? padXafter : 0)), 0, 0));
         if (checkbox != null) {
