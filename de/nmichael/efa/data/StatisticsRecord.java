@@ -3558,15 +3558,19 @@ public class StatisticsRecord extends DataRecord implements IItemListener {
         } else {
             sOutputFile = getOutputFile();
         }
-        if (FTPClient.isFTP(sOutputFile)) {
-            try {
+
+        //Try needs to cover isFTP method as this method may fail with noClassDefFoundError
+        //if ftp library is not installed.
+        try {
+	        if (FTPClient.isFTP(sOutputFile)) {
                 sOutputFtpClient = new FTPClient(sOutputFile, Daten.efaTmpDirectory + "output.ftp");
-            } catch (NoClassDefFoundError e) {
-                Dialog.error(International.getString("Fehlendes Plugin") + ": " + Plugins.PLUGIN_FTP);
-                return false;
-            }
-            sOutputFile = Daten.efaTmpDirectory + "output.ftp";
+	            sOutputFile = Daten.efaTmpDirectory + "output.ftp";
+	        }
+        } catch (NoClassDefFoundError e) {
+            Dialog.error(International.getString("Fehlendes Plugin") + ": " + Plugins.PLUGIN_FTP);
+            return false;
         }
+	        
         if (Email.getEmailAddressFromMailtoString(sOutputFile.toLowerCase()) != null) {
             sEmailAddresses = Email.getEmailAddressFromMailtoString(sOutputFile.toLowerCase());
             sOutputFile = Daten.efaTmpDirectory + "output_" + System.currentTimeMillis() + getOutputExtension();
