@@ -11,7 +11,6 @@
 package de.nmichael.efa.data;
 
 import de.nmichael.efa.Daten;
-import de.nmichael.efa.data.efacloud.TextResource;
 import de.nmichael.efa.util.*;
 import de.nmichael.efa.data.storage.*;
 import de.nmichael.efa.data.types.DataTypeIntString;
@@ -90,6 +89,10 @@ public class BoatStatus extends StorageObject {
             Vector<BoatStatusRecord> v = new Vector<BoatStatusRecord>();
             DataKeyIterator it = data().getStaticIterator();
             DataKey k = it.getFirst();
+            
+            String currentLogBookEfaBoatHouse = Daten.project.getCurrentLogbookEfaBoathouse();
+            currentLogBookEfaBoatHouse = (currentLogBookEfaBoatHouse != null ? currentLogBookEfaBoatHouse : "" ); // take care for null values. null should not happen here, but anyway.
+
             while (k != null) {
                 BoatStatusRecord r = (BoatStatusRecord) data().get(k);
                 
@@ -103,9 +106,12 @@ public class BoatStatus extends StorageObject {
                     
                     //  for boats on the water show only those which have sessions in the current logbook
                     if (status.equalsIgnoreCase(BoatStatusRecord.STATUS_ONTHEWATER)) {
-                        String rLogbook = (r.getLogbook() == null) ? "-" : r.getLogbook();
-                        if (rLogbook.equalsIgnoreCase(Daten.project.getCurrentLogbookEfaBoathouse()))
+                        String rLogbook =r.getLogbook();
+                        rLogbook = (rLogbook != null ? rLogbook :"-"); // take care for null values
+                        
+                        if (rLogbook.equalsIgnoreCase(currentLogBookEfaBoatHouse)) {
                             v.add(r);
+                        }
                     } else {
                     	// for all other show only the boats which are in this boathouse, if they are restricted.
                     
