@@ -561,10 +561,13 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
             String[] logFiles = efacloudLogDirF.list();
             if (logFiles != null) {
                 FileArchive fa = new FileArchive(null, "UTF-8");
-                for (String logFile : logFiles)
-                    fa.putContent(fa.getInstance(logFile, false),
-                                TextResource.getContents(new File(efacloudLogDir + File.separator + logFile), "UTF-8"));
-
+                for (String logFile : logFiles) {
+                    File lf = new File(efacloudLogDir + File.separator + logFile);
+                    // prevent from uploading files of excessive length
+                    if (lf.length() < 250000)
+                        fa.putContent(fa.getInstance(logFile, false),
+                            TextResource.getContents(lf, "UTF-8"));
+                }
                 // add config files
                 String projectFileName = storageLocationRoot + File.separator + "data" + File.separator + Daten.project.getName() +
                         ".efa2project";
