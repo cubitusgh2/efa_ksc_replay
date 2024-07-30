@@ -11,7 +11,6 @@
 package de.nmichael.efa.data;
 
 import de.nmichael.efa.Daten;
-import de.nmichael.efa.data.efacloud.TextResource;
 import de.nmichael.efa.util.*;
 import de.nmichael.efa.data.storage.*;
 import de.nmichael.efa.data.types.DataTypeIntString;
