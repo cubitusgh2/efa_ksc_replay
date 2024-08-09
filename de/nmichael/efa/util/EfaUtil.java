@@ -2313,6 +2313,23 @@ public class EfaUtil {
         }
 
     }	
+    public static Color lighter(Color theColor, float percent) {
+    	int red=Math.round(theColor.getRed()*(1+(percent/100)));
+    	int green=Math.round(theColor.getGreen()*(1+(percent/100)));
+    	int blue=Math.round(theColor.getBlue()*(1+(percent/100)));
+        return new Color(red, green, blue);	
+    }
+
+    public static Color darker(Color theColor, float percent) {
+    	int red=theColor.getRed();
+    	red = Math.max(0, red-(int)Math.round(red*percent/100));
+    	int green=theColor.getGreen();
+    	green=Math.max(0, green-(int)Math.round(green*percent/100));
+    	int blue=theColor.getBlue();
+    	blue=Math.max(0, blue-(int)Math.round(green*percent/100));
+        return new Color(red, green, blue);	
+    }
+    
     
     public static void main(String args[]) {
         String text = "abc & def";

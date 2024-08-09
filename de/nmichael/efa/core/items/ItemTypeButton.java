@@ -24,7 +24,7 @@ public class ItemTypeButton extends ItemType {
     protected JButton button;
     protected ImageIcon icon;
     protected Insets margin;
-    protected boolean boldfont;
+    protected boolean boldfont=true;
     
     public ItemTypeButton(String name, 
             int type, String category, String description) {
