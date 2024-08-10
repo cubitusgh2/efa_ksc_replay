@@ -165,7 +165,7 @@ public class EfaAboutDialog extends BaseDialog {
 		librariesText.append("JavaX Mail\n\thttps://github.com/javaee/javamail\n\tLicensed under COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.1\n\n");
 		librariesText.append("Apache FOP XML Graphics\n\thttps://xmlgraphics.apache.org/fop/\n\tLicensed under Apache 2.0 license.\n\n");
 		librariesText.append("JCraft jsch SSH/SFTP library\n\thttp://www.jcraft.com/jsch/\n\tLicensed under BSD-style license.\n\n");
-	
+		librariesText.append("CompoundIcon by Tips4Java\n\thttps://github.com/tips4java/tips4java/blob/main/source/CompoundIcon.java\n\t Licensed under MIT License.\n\n");
 	}	
 	
 	private void iniEfaSystemInfos() {
@@ -176,6 +176,17 @@ public class EfaAboutDialog extends BaseDialog {
         if (infos == null) {
             efaInfosText.append(International.getString("Keine Systeminformationen verfügbar."));
         }
+        
+        //Add Display information
+        
+    	efaInfosText.append("\n\n\nDisplayInfo\n-------------\n");
+        Vector<String> displayInfo = Daten.getDisplayInfos();
+        if (displayInfo!=null) {
+	        for (int i = 0; displayInfo != null && i < displayInfo.size(); i++) {
+	            efaInfosText.append((String) displayInfo.get(i) + "\n");
+	        }
+        }
+        
         
         //Add GUI Debug info, if debug info is activated in efaConfig or by Commandline
         if (Logger.isDebugLogging()||Logger.isDebugLoggingActivatedByCommandLine()) {
