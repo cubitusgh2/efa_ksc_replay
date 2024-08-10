@@ -10,24 +10,18 @@
 
 package de.nmichael.efa.gui;
 
-import de.nmichael.efa.*;
 import de.nmichael.efa.util.*;
 import de.nmichael.efa.util.Dialog;
 import de.nmichael.efa.core.items.*;
-import de.nmichael.efa.data.storage.*;
-import de.nmichael.efa.data.types.*;
-import de.nmichael.efa.gui.BaseDialog;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
-import javax.swing.border.*;
 import java.util.*;
-import javax.swing.event.ChangeEvent;
 
 // @i18n complete
 public class SimpleInputDialog extends BaseDialog {
 
-    private String KEYACTION_ENTER;
+	private String KEYACTION_ENTER;
     protected IItemType[] items;
 
     SimpleInputDialog(Frame parent, String title, IItemType[] items) {
@@ -52,7 +46,9 @@ public class SimpleInputDialog extends BaseDialog {
     }
 
     protected void iniDialog() throws Exception {
-        KEYACTION_ENTER = addKeyAction("ENTER");
+   		//better than addKeyAction("ENTER") as the default button is handled earlier
+    	//and provides better user experience
+    	this.getRootPane().setDefaultButton(closeButton);
 
         // create GUI items
         mainPanel.setLayout(new GridBagLayout());
@@ -80,7 +76,7 @@ public class SimpleInputDialog extends BaseDialog {
         items[0].requestFocus();
 
         if (closeButton != null) {
-            closeButton.setIcon(getIcon("button_accept.png"));
+            closeButton.setIcon(getIcon(IMAGE_ACCEPT));
         }
     }
 
@@ -117,6 +113,12 @@ public class SimpleInputDialog extends BaseDialog {
         dlg.showDialog();
         return dlg.resultSuccess;
     }
+
+    public static boolean showInputDialog(JFrame parent, String title, IItemType[] items) {
+        SimpleInputDialog dlg = new SimpleInputDialog(parent, title, items);
+        dlg.showDialog();
+        return dlg.resultSuccess;
+    }    
 
     public static boolean showInputDialog(Window parent, String title, IItemType item) {
         if (parent instanceof JDialog) {

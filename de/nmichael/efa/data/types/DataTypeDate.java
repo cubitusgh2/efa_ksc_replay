@@ -9,7 +9,6 @@
  */
 package de.nmichael.efa.data.types;
 
-import java.time.LocalTime;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
@@ -18,6 +17,7 @@ import de.nmichael.efa.core.config.EfaTypes;
 import de.nmichael.efa.util.EfaUtil;
 import de.nmichael.efa.util.International;
 import de.nmichael.efa.util.TMJ;
+import java.util.Date;
 
 public class DataTypeDate implements Cloneable, Comparable<DataTypeDate> {
 
@@ -209,6 +209,10 @@ public class DataTypeDate implements Cloneable, Comparable<DataTypeDate> {
         return day != -1 && month != -1 && year != -1;
     }
 
+    public Date getDate() {
+    	return new Date(year-1900,month-1,day);//that's the initialisation according javadoc
+    }
+    
     public int getDay() {
         return day;
     }
@@ -328,12 +332,12 @@ public class DataTypeDate implements Cloneable, Comparable<DataTypeDate> {
         long r1To   = r1ToDate.getTimestamp(r1ToTime);
         long r2From = r2FromDate.getTimestamp(r2FromTime);
         long r2To   = r2ToDate.getTimestamp(r2ToTime);
-        return (r2From < r1From && r2To > r1From) ||
-                (r2From < r1To && r2To > r1To) ||
-                (r2From > r1From && r2To < r1To) ||
-                (r1From < r2From && r1To > r2From) ||
-                (r1From < r2To && r1To > r2To) ||
-                (r1From > r2From && r1To < r2To);
+        return (r2From <= r1From && r2To >= r1From) ||
+                (r2From <= r1To && r2To >= r1To) ||
+                (r2From >= r1From && r2To <= r1To) ||
+                (r1From <= r2From && r1To >= r2From) ||
+                (r1From <= r2To && r1To >= r2To) ||
+                (r1From >= r2From && r1To <= r2To);
     }
 
     public static DataTypeDate[] getRangeOverlap(DataTypeDate r1From, DataTypeDate r1To, DataTypeDate r2From, DataTypeDate r2To) throws Exception {

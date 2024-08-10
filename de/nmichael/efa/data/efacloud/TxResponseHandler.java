@@ -26,7 +26,6 @@ import static de.nmichael.efa.data.efacloud.TxRequestQueue.TX_BUSY_QUEUE_INDEX;
 public class TxResponseHandler {
 
     private final TxRequestQueue txq;
-    private int internetabortionCount = 0;
 
     TxResponseHandler(TxRequestQueue txq) {
         this.txq = txq;
@@ -243,9 +242,11 @@ public class TxResponseHandler {
                     for (String param : cfg) {
                         if (param.contains("=")) {
                             String name = param.split("=", 2)[0];
-                            if (name.equalsIgnoreCase("server_welcome_message"))
+                            if (name.equalsIgnoreCase("server_welcome_message")) {
                                 txq.serverWelcomeMessage = param.split("=", 2)[1].replace("//", "\n");
-                            else if (name.equalsIgnoreCase("db_layout"))
+                                txq.synchControl.efaCloudRolleBths = txq.serverWelcomeMessage.contains("Rolle: bths");
+                                txq.synchControl.isBoathouseApp = (Daten.applID == Daten.APPL_EFABH);
+                            } else if (name.equalsIgnoreCase("db_layout"))
                                 Daten.tableBuilder.mapServerDBLayout(param.split("=", 2)[1]);
                             else {
                                 int val = -1;
@@ -315,12 +316,6 @@ public class TxResponseHandler {
             // the transaction container sending was aborted.
             TxResponseContainer txrc = new TxResponseContainer(null);
             handleTxcError(txrc, text + ";;" + txcResp.title);
-            internetabortionCount++;
-            // Abortion of a container request shall be very rare. And efa shall restart every day anyways, so this
-            // condition typically is hit when facing the raspberry system time adjustment. Restart efa to handle the
-            // situation.
-            if (internetabortionCount > 100)
-                txq.restartEfa();
 
             // } else if (type == InternetAccessManager.TYPE_PROGRESS_INFO) { // not relevant
             // } else if (type == InternetAccessManager.TYPE_FILE_SIZE_INFO) { // not relevant

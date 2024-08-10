@@ -1,5 +1,5 @@
 /**
- * Title:        efa - elektronisches Fahrtenbuch für Ruderer
+g * Title:        efa - elektronisches Fahrtenbuch für Ruderer
  * Copyright:    Copyright (c) 2001-2011 by Nicolas Michael
  * Website:      http://efa.nmichael.de/
  * License:      GNU General Public License v2
@@ -9,38 +9,75 @@
  */
 package de.nmichael.efa.util;
 
-import de.nmichael.efa.efa1.Synonyme;
-import de.nmichael.efa.efa1.DatenFelder;
-import de.nmichael.efa.core.config.EfaTypes;
-import de.nmichael.efa.*;
-import de.nmichael.efa.core.CrontabThread;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.zip.*;
-import java.io.*;
-import java.awt.event.*;
-import java.awt.Window;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
+import java.awt.RenderingHints;
+import java.awt.Window;
+import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.NetworkInterface;
 import java.net.URL;
 import java.net.URLConnection;
-import javax.swing.JComponent;
-import java.security.*;
+import java.security.MessageDigest;
+import java.text.SimpleDateFormat;
+import java.util.AbstractList;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.GregorianCalendar;
+import java.util.Hashtable;
+import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
+
 import javax.mail.internet.InternetAddress;
+import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
+
+import de.nmichael.efa.Daten;
+import de.nmichael.efa.core.CrontabThread;
+import de.nmichael.efa.core.config.EfaTypes;
+import de.nmichael.efa.data.types.DataTypeTime;
+import de.nmichael.efa.efa1.DatenFelder;
+import de.nmichael.efa.efa1.Synonyme;
 
 // @i18n complete
 public class EfaUtil {
 
     private static final int ZIP_BUFFER = 2048;
     private static java.awt.Container java_awt_Container = new java.awt.Container();
+
+	private static String UMLAUTS 		= "åàáâăäāąćçčèéêęëėěēìíîįīïďđģķĺļłńňñņòóôőõöōøřŕůùúûűüųūýÿšśşťţżžź";
+	private static String REPLACEMENT 	= "aaaaaaaaccceeeeeeeeiiiiiiddgklllnnnnoooooooorruuuuuuuuyysssttzzz"; 
+
+    private static String UMLAUTSEXTEND = UMLAUTS + "ßæœ";// those umlauts get translated to two characters
 
     public static String escapeXml(String str) {
         str = replaceString(str, "&", "&amp;");
@@ -56,8 +93,14 @@ public class EfaUtil {
         str = replaceString(str, "<", "&lt;");
         str = replaceString(str, ">", "&gt;");
         str = replaceString(str, "\"", "&quot;");
+        str = replaceString(str, "\u2026","&hellip;");
         return str;
     }
+
+    public static String escapeHtmlWithLinefeed(String str) {
+        return replaceString(escapeHtml(str),"\n","<br>");
+    }
+    
 
     public static String escapeHtmlGetString(String str) {
         if (str == null) {
@@ -112,6 +155,7 @@ public class EfaUtil {
         return buffer.toString();
     }
     
+    @Deprecated
     public static String replaceListByList(String string, String searchList, String replaceList) {
         if (searchList.length() != replaceList.length()) {
             return string;
@@ -128,6 +172,71 @@ public class EfaUtil {
         return string;
     }
 
+    /**
+     * Replaces special characters in a string by a replacement.
+     * Replacing is done character-by-character, so it is not possible to replace a single character "ä" by a multi-character string "ae". 
+	 *
+	 * searchList and replaceList MUST be of equal length.
+	 *
+     * The method is declarated as "fast" as it uses standard java replace function instead of old self-written code.
+     * This method is like 15 times faster than the former replaceListByList function, and more suitable for sorting algorithms.
+     * 
+     * @param strData	String containing characters to be replaced
+     * @param searchList  String containing all characters that shall be replaced one-by-one
+     * @param replaceList String containing all replacement characters
+     * @return String containing all replacements.
+     */
+    public static String replaceListByListFast(String strData, String searchList, String replaceList) {
+        if (searchList.length() != replaceList.length()) {
+            return strData;
+        }
+        for (int i=0; i<searchList.length(); i++) {
+        	strData = strData.replace(searchList.charAt(i),replaceList.charAt(i));
+        }
+        return strData;
+    }
+    
+    /**
+     * Replaces all umlauts of western character set (German, French, Spanish, Danish) to a simple latin character, e.g. "ä"->"a".
+     * This method can be used for sorting lists in efa or for String comparison.
+	 *
+	 * The former replaceAllUmlauts was used only for sorting Boatlist/Personlist in efaBths (myStringComperator used this code);
+	 * other sort algorithms hat other umlaut handling (Autocompletelist) or even none (Tablesorter)
+	 *
+     * Today it is used for sorting in the following lists: BoatList/Personlist, AutoCompleteList, spellcheck for autocomplete, tablesorter.
+     * 
+     * Addendum: 
+     * Sorting lists in efa is sort of old-fashioned. It does not yet use collator and locales, but
+     * it replaces common umlauts to get some better sorting of boats, persons which have umlauts in their names.
+     * This is subject to further refactoring.
+	 *
+     * @param data
+     * @return
+     */
+    public static String replaceAllUmlautsLowerCaseFast(String data) {
+	    String s1 = data.toLowerCase();
+	    s1 = EfaUtil.replaceListByListFast(s1, UMLAUTS, REPLACEMENT);
+	
+	    if (s1.indexOf("ß") >= 0) {
+	        s1 = EfaUtil.replace(s1, "ß", "ss", true);
+	    }
+	    
+	    if (s1.indexOf("æ") >= 0) {
+	        s1 = EfaUtil.replace(s1, "æ", "ae", true);
+	    }
+
+	    if (s1.indexOf("œ") >= 0) {
+	        s1 = EfaUtil.replace(s1, "œ", "oe", true);
+	    }
+	    
+	    
+	    return s1;
+    }    
+    
+    public static boolean containsUmlaut(String data) {
+    	return data.toLowerCase().matches(".*["+UMLAUTSEXTEND+"]+.*");
+    }
+    
     public static String getString(String s, int length) {
         while (s.length() < length) {
             s = s + " ";
@@ -470,7 +579,7 @@ public class EfaUtil {
         if (s == null) {
             return null;
         }
-        Vector v = new Vector<String>();
+        Vector <String>v = new Vector<String>();
         while (s.length() != 0) {
             int pos = s.indexOf(sep);
             if (pos >= 0) {
@@ -554,7 +663,7 @@ public class EfaUtil {
                 || !Daten.efaTypes.isConfigured(EfaTypes.CATEGORY_STATUS, EfaTypes.TYPE_STATUS_OTHER)) {
             return stati;
         }
-        Vector stati2 = new Vector();
+        Vector <String>stati2 = new Vector<String>();
         for (int i = 0; i < stati.length; i++) {
             if (!stati[i].toLowerCase().equals(Daten.efaTypes.getValue(EfaTypes.CATEGORY_STATUS, EfaTypes.TYPE_STATUS_GUEST).toLowerCase())
                     && !stati[i].toLowerCase().equals(Daten.efaTypes.getValue(EfaTypes.CATEGORY_STATUS, EfaTypes.TYPE_STATUS_OTHER).toLowerCase())) {
@@ -1041,7 +1150,7 @@ public class EfaUtil {
         if (l == null || s == null) {
             return null;
         }
-        Vector v = new Vector();
+        Vector <String>v = new Vector<String>();
         for (DatenFelder d = l.getCompleteFirst(); d != null; d = l.getCompleteNext()) {
             if (d.get(Synonyme.ORIGINAL).equals(s)) {
                 v.add(d.get(Synonyme.SYNONYM));
@@ -1142,7 +1251,8 @@ public class EfaUtil {
         }
         FileInputStream f1;
         byte[] buf = new byte[length];
-        int n;
+        @SuppressWarnings("unused")
+		int n;
         try {
             f1 = new FileInputStream(f);
             n = f1.read(buf, 0, length);
@@ -1356,6 +1466,17 @@ public class EfaUtil {
                 return "";
         }
     }
+    
+    public static int getCalendarWeekDayFromEfaWeekDay(String efaWeekDay) {
+    	if (efaWeekDay.equals(EfaTypes.TYPE_WEEKDAY_MONDAY)) {return 2;}
+    	if (efaWeekDay.equals(EfaTypes.TYPE_WEEKDAY_TUESDAY)) {return 3;}
+    	if (efaWeekDay.equals(EfaTypes.TYPE_WEEKDAY_WEDNESDAY)) {return 4;}
+    	if (efaWeekDay.equals(EfaTypes.TYPE_WEEKDAY_THURSDAY)) {return 5;}
+    	if (efaWeekDay.equals(EfaTypes.TYPE_WEEKDAY_FRIDAY)) {return 6;}
+    	if (efaWeekDay.equals(EfaTypes.TYPE_WEEKDAY_SATURDAY)) {return 7;}
+    	if (efaWeekDay.equals(EfaTypes.TYPE_WEEKDAY_SUNDAY)) {return 1;}
+    	return 1; //Default use Sunday 
+    }
 
     // prüft, ob im String s das Zeichen pos ein "+" ist. Falls der String zu kurz ist, wird false geliefert
     public static boolean isOptionSet(String s, int pos) {
@@ -1536,7 +1657,7 @@ public class EfaUtil {
             BufferedInputStream origin = null;
             FileOutputStream dest = new FileOutputStream(zipFile);
             ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(dest));
-            Hashtable processedDirectories = new Hashtable();
+            Hashtable <String,String>processedDirectories = new Hashtable<String,String>();
             byte data[] = new byte[ZIP_BUFFER];
             for (int j = 0; j < sourceDirs.size(); j++) {
                 // get a list of files from current directory
@@ -1745,6 +1866,7 @@ public class EfaUtil {
             size.setSize(size.getWidth() + 2, size.getHeight() + 2);
             frame.setSize(Dialog.getMaxSize(size));
         } catch (Exception e) {
+        	Logger.logdebug(e);
         }
     }
 
@@ -2066,6 +2188,179 @@ public class EfaUtil {
         return null;
     }
 
+    
+    /*
+     * Calculates the remaining minutes until today, 23:59:00
+     */
+    public static long getRemainingMinutesToday() {
+    	
+    	long value = 0;
+    	
+    	DataTypeTime nowTime = DataTypeTime.now();
+
+    	value = (23-nowTime.getHour())*60; // 60 minutes per Hour
+    	value = value + (59 - nowTime.getMinute());
+    	
+    	return value;
+    	
+    }    
+
+    /**
+     * Efa uses buttons which are filled with a color. 
+     * Not all LookAndFeels support this natively. This method ensures that color-filled buttons 
+     * are shown correctly in each standard LookAndFeel.
+     * @param button
+     */
+    public static void handleButtonOpaqueForLookAndFeels(JButton button) {
+        if (!Daten.lookAndFeel.endsWith(Daten.LAF_METAL) &&
+        		!Daten.lookAndFeel.endsWith(Daten.LAF_WINDOWS_CLASSIC) && 
+        		!Daten.isEfaFlatLafActive()) {
+        	button.setContentAreaFilled(true);       
+        }
+    	
+    	if (Daten.lookAndFeel.endsWith(Daten.LAF_WINDOWS)||Daten.lookAndFeel.endsWith(Daten.LAF_LINUX_GTK)) {
+        	button.setBorderPainted(true);// leads to full display of the color on the button canvas
+        	button.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+        	button.setContentAreaFilled(false);   
+        	button.setOpaque(true);
+        }                	
+    }    
+    
+    public static void handleTabbedPaneBackgroundColorForLookAndFeels() {
+	    if ( Daten.efaConfig.getHeaderUseForTabbedPanes()==true &&		    
+	    		(Daten.lookAndFeel.endsWith(Daten.LAF_METAL)||
+	    		 Daten.lookAndFeel.endsWith(Daten.LAF_WINDOWS_CLASSIC))){
+			UIManager.put("TabbedPane.selectedForeground", Daten.efaConfig.getHeaderForegroundColor());
+		    UIManager.put("TabbedPane.selectedBackground", Daten.efaConfig.getHeaderBackgroundColor());
+		    UIManager.put("TabbedPane.selected", Daten.efaConfig.getHeaderBackgroundColor());
+	    }
+    }
+    
+
+
+	/**
+	 * Creates a string array containing all font family names _installed_ on the current system
+	 * 
+	 * @param showAllFonts determines whether all fonts shall be returned (true), or just a list of  
+	 * well-known UI-suitable font names. 
+	 * 
+	 * @param DEFAULT_FONT_NAME if != null, it is added to the font families list.
+	 * 
+	 * @return String array with all installed font family names on the current system.
+	 */
+	public static String[] makeFontFamilyArray(Boolean showAllFonts, String DEFAULT_FONT_NAME) {
+    	Vector <String>fontFamilies = makeFontFamilyVector(showAllFonts, DEFAULT_FONT_NAME);
+    	String[] fontFamiliesArray =new String[fontFamilies.size()];
+
+    	fontFamilies.toArray(fontFamiliesArray);
+        return fontFamiliesArray;
+	}    
+
+	/**
+	 * Creates a String vector containing all font family names _installed_ on the current system
+	 * 
+	 * @param showAllFonts determines whether all fonts shall be returned (true), or just a list of  
+	 * well-known UI-suitable font names. 
+	 * 
+	 * @param DEFAULT_FONT_NAME if != null, it is added to the font families list.
+	 * 
+	 * @return Vector with all installed font family names on the current system.
+	 */	
+	public static Vector <String>makeFontFamilyVector (Boolean showAllFonts, String DEFAULT_FONT_NAME) {
+        GraphicsEnvironment graphicsEnvironment = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        Font[] allFonts = graphicsEnvironment.getAllFonts();
+        String guiFontRegexp="arial.*|dialog|roboto.*|tahoma.*|trebuchet.*|.*inter.*|.*sansserif|segoe.ui.*|verdana.*|cantarell.*|dejavu.*|liberation.*|.*piboto.*|noto.sans|noto.sans.display.*|quicksand.*";        
+        Vector <String>fontFamilies = new Vector<String>();
+        
+        for (Font font : allFonts) {
+            //avoid duplicates, as allFonts contains all permutations of installed font families and their style.
+        	if (!fontFamilies.contains(font.getFamily())) {
+            	if (showAllFonts==true) {
+            		fontFamilies.add(font.getFamily());
+            	} else {
+            		String curFamily=font.getFamily();
+            		if (curFamily.toLowerCase().matches(guiFontRegexp)) {
+            			fontFamilies.add(curFamily);
+            		}
+            	}
+            }
+        }
+        if (DEFAULT_FONT_NAME!=null) {
+        	fontFamilies.add(DEFAULT_FONT_NAME);
+        }
+    	Collections.sort(fontFamilies,new EfaSortStringComparator());
+    	return fontFamilies;
+	}
+
+	/**
+	 * Creates a colored pie chart icon. Each specified color takes 1/nth of the pie
+	 * @param colors Array of Colors to be used. Any color item must not be null.
+	 * @param iconWidth Width of the icon. Must not be 0.
+	 * @param iconHeight Height of the icon. Must not be 0. 
+	 * @return Icon 
+	 */
+	public static ImageIcon createColorPieIcon(Color[] colors, int iconWidth, int iconHeight) {
+	    BufferedImage image = new BufferedImage(iconWidth, iconHeight,
+	            BufferedImage.TYPE_INT_ARGB);
+	    Graphics2D g = image.createGraphics();
+	    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		if (colors.length == 1) {
+	        g.setColor(colors[0]);
+	        g.fillOval(0, 0, iconWidth, iconHeight);
+	    } else {
+	        int currentAngle = 90;
+	        int anglePerColor = 360 / colors.length;
+	        for (int i=0; i<colors.length; i++) {
+	            g.setColor(colors[i]);
+	            g.fillArc(0, 0, iconWidth, iconHeight,
+	                    currentAngle % 360, anglePerColor);
+	            currentAngle += anglePerColor;
+	        }
+	    }
+		return new ImageIcon(image);
+	}	
+	
+    /**
+     * Helper class to display a notification message.
+     * If this is a GUI application, we asynchronously display a dialog through
+     * SwingUtilities.invokeLater in a separate thread. If this is not a GUI application,
+     * we will synchronously in the calling thread invoke the logging method.
+     */
+    public static abstract class UserMessage {
+
+        public abstract void run();
+
+        public static void show(UserMessage m) {
+            if (Daten.isGuiAppl()) {
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        m.run();
+                    }
+                });
+            } else {
+                m.run();
+            }
+        }
+
+    }	
+    public static Color lighter(Color theColor, float percent) {
+    	int red=Math.round(theColor.getRed()*(1+(percent/100)));
+    	int green=Math.round(theColor.getGreen()*(1+(percent/100)));
+    	int blue=Math.round(theColor.getBlue()*(1+(percent/100)));
+        return new Color(red, green, blue);	
+    }
+
+    public static Color darker(Color theColor, float percent) {
+    	int red=theColor.getRed();
+    	red = Math.max(0, red-(int)Math.round(red*percent/100));
+    	int green=theColor.getGreen();
+    	green=Math.max(0, green-(int)Math.round(green*percent/100));
+    	int blue=theColor.getBlue();
+    	blue=Math.max(0, blue-(int)Math.round(green*percent/100));
+        return new Color(red, green, blue);	
+    }
+    
+    
     public static void main(String args[]) {
         String text = "abc & def";
         System.out.println(text + " -> EfaUtil.escapeXml() = " + EfaUtil.escapeXml(text));

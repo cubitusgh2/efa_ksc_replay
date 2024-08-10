@@ -14,6 +14,7 @@ import de.nmichael.efa.Daten;
 import de.nmichael.efa.core.config.AdminRecord;
 import de.nmichael.efa.core.items.IItemType;
 import de.nmichael.efa.core.items.ItemTypeDataRecordTable;
+import de.nmichael.efa.data.BoatReservationRecord;
 import de.nmichael.efa.data.Clubwork;
 import de.nmichael.efa.data.ClubworkRecord;
 import de.nmichael.efa.data.storage.DataRecord;
@@ -53,6 +54,10 @@ public class ClubworkListDialog extends DataListDialog {
             super.filterFieldName = "Flag";
             super.filterFieldValue = ""+ClubworkRecord.Flags.Normal.ordinal();
         }
+        
+		//From and to columns should be wider than default
+		this.minColumnWidths = new int[] {150,120,150,0,80,80};  
+		//	this.buttonPanelPosition = BorderLayout.NORTH;
     }
 
     public void keyAction(ActionEvent evt) {
@@ -134,7 +139,7 @@ public class ClubworkListDialog extends DataListDialog {
             table.setMinColumnWidths(minColumnWidths);
         }
         table.setButtonPanelPosition(buttonPanelPosition);
-        table.setFieldSize(600, 500);
+        table.setFieldSize(650, 500);
         table.setPadding(0, 0, 10, 0);
         table.displayOnGui(this, mainTablePanel, BorderLayout.CENTER);
 
@@ -151,8 +156,10 @@ public class ClubworkListDialog extends DataListDialog {
         super.iniControlPanel();
         mainPanel.add(mainTablePanel, BorderLayout.CENTER);
 
-        setRequestFocus(table);
+        table.setIsFilterSet(true);
+        setRequestFocus(table.getSearchField());
         this.validate();
+
     }
 
     public DataEditDialog createNewDataEditDialog(JDialog parent, StorageObject persistence, DataRecord record) {
@@ -200,4 +207,14 @@ public class ClubworkListDialog extends DataListDialog {
             super.itemListenerActionTable(actionId, records);
         }
     }
+    
+	protected void createSpecificItemTypeRecordTable() {
+		
+		super.createSpecificItemTypeRecordTable();
+
+		table.addPermanentSecondarySortingColumn(ClubworkRecord.COLUMN_ID_LAST_NAME);        
+		table.addPermanentSecondarySortingColumn(ClubworkRecord.COLUMN_ID_FIRST_NAME);
+		table.addPermanentSecondarySortingColumn(ClubworkRecord.COLUMN_ID_DATE);
+		
+	}
 }

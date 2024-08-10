@@ -10,13 +10,30 @@
 
 package de.nmichael.efa.data;
 
+import java.awt.GridBagConstraints;
+import java.util.UUID;
+import java.util.Vector;
+
 import de.nmichael.efa.core.config.AdminRecord;
-import de.nmichael.efa.data.storage.*;
-import de.nmichael.efa.data.types.*;
-import de.nmichael.efa.core.items.*;
-import de.nmichael.efa.gui.util.*;
-import de.nmichael.efa.util.*;
-import java.util.*;
+import de.nmichael.efa.core.items.IItemType;
+import de.nmichael.efa.core.items.ItemTypeBoolean;
+import de.nmichael.efa.core.items.ItemTypeDateTime;
+import de.nmichael.efa.core.items.ItemTypeDecimal;
+import de.nmichael.efa.core.items.ItemTypeLabelHeader;
+import de.nmichael.efa.core.items.ItemTypeString;
+import de.nmichael.efa.core.items.ItemTypeStringAutoComplete;
+import de.nmichael.efa.core.items.ItemTypeStringList;
+import de.nmichael.efa.data.storage.DataKey;
+import de.nmichael.efa.data.storage.DataRecord;
+import de.nmichael.efa.data.storage.IDataAccess;
+import de.nmichael.efa.data.storage.MetaData;
+import de.nmichael.efa.data.types.DataTypeDate;
+import de.nmichael.efa.data.types.DataTypeDecimal;
+import de.nmichael.efa.data.types.DataTypeTime;
+import de.nmichael.efa.gui.util.TableItem;
+import de.nmichael.efa.gui.util.TableItemHeader;
+import de.nmichael.efa.util.International;
+import de.nmichael.efa.util.Logger;
 
 // @i18n complete
 
@@ -52,7 +69,11 @@ public class BoatDamageRecord extends DataRecord {
 
     public static final String GUIITEM_REPORTDATETIME = "GUIITEM_REPORTDATETIME";
     public static final String GUIITEM_FIXDATETIME    = "GUIITEM_FIXDATETIME";
-
+    
+	public static final int COLUMN_ID_BOAT_NAME=0;        
+	public static final int COLUMN_ID_DAMAGE=1;  
+	public static final int COLUMN_ID_REPORTDATE=2;
+	
     private boolean showOnlyAddDamageFields = false;
 
     public static void initialize() {
@@ -384,12 +405,15 @@ public class BoatDamageRecord extends DataRecord {
         String CAT_DETAILS      = "%02%" + International.getString("Details");
         IItemType item;
         Vector<IItemType> v = new Vector<IItemType>();
-        v.add(item = new ItemTypeLabel("GUI_BOAT_NAME",
-                IItemType.TYPE_PUBLIC, CAT_BASEDATA, International.getMessage("Bootsschaden für {boat}", getBoatAsName())));
+        v.add(item = new ItemTypeLabelHeader("GUI_BOAT_NAME",
+                IItemType.TYPE_PUBLIC, CAT_BASEDATA, " "+International.getMessage("Bootsschaden für {boat}", getBoatAsName())));
         item.setPadding(0, 0, 0, 10);
+        item.setFieldGrid(4,GridBagConstraints.EAST, GridBagConstraints.BOTH);
+
         v.add(item = new ItemTypeString(BoatDamageRecord.DESCRIPTION, getDescription(),
                 IItemType.TYPE_PUBLIC, CAT_BASEDATA, International.getString("Beschreibung")));
         item.setNotNull(true);
+        item.setFieldGrid(3,GridBagConstraints.EAST, GridBagConstraints.BOTH);
         v.add(item = new ItemTypeStringList(SEVERITY, getSeverity(),
                 new String[] { "", SEVERITY_NOTUSEABLE, SEVERITY_LIMITEDUSEABLE, SEVERITY_FULLYUSEABLE },
                 new String[] { "--- " + International.getString("bitte wählen") + " ---",
@@ -400,8 +424,10 @@ public class BoatDamageRecord extends DataRecord {
                 IItemType.TYPE_PUBLIC, CAT_BASEDATA,
                 International.getString("Schwere des Schadens")));
         item.setNotNull(true);
+        item.setFieldGrid(3,GridBagConstraints.EAST, GridBagConstraints.BOTH);
         v.add(item = new ItemTypeDateTime(GUIITEM_REPORTDATETIME, getReportDate(), getReportTime(),
                 IItemType.TYPE_PUBLIC, CAT_BASEDATA, International.getString("gemeldet am")));
+        item.setFieldGrid(3,GridBagConstraints.EAST, GridBagConstraints.BOTH);
         if (showOnlyAddDamageFields) {
             item.setEnabled(false);
         }
@@ -409,6 +435,7 @@ public class BoatDamageRecord extends DataRecord {
                     IItemType.TYPE_PUBLIC, CAT_BASEDATA,
                     getPersistence().getProject().getPersons(false), System.currentTimeMillis(), System.currentTimeMillis(),
                     International.getString("gemeldet von")));
+
         if (getReportedByPersonId() != null) {
             ((ItemTypeStringAutoComplete)item).setId(getReportedByPersonId());
         } else {

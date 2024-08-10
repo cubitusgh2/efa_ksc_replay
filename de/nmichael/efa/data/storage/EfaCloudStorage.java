@@ -11,6 +11,7 @@
 
 package de.nmichael.efa.data.storage;
 
+import de.nmichael.efa.Daten;
 import de.nmichael.efa.data.efacloud.*;
 import de.nmichael.efa.ex.EfaException;
 import de.nmichael.efa.util.Dialog;
@@ -89,6 +90,14 @@ public class EfaCloudStorage extends XMLFile {
             if ((value != null && value.length() > 0) || update)
                 record.add(field + ";" + CsvCodec.encodeElement(value, CsvCodec.DEFAULT_DELIMITER,
                         CsvCodec.DEFAULT_QUOTATION));   // fields need no csv encoding
+        }
+        // for logbooks and clubworkbooks several files map to one efaCloud table. The filename is
+        // passed as Logbookname of Clubworkbookname field of the record. Now the file used may
+        // change during operation, e.g. when merging person objects. Therefore the current storage
+        // object record needs to be adjusted.
+        if (tablename.equalsIgnoreCase("efa2logbook") || tablename.equalsIgnoreCase("efa2clubworkbook")) {
+            TableBuilder.StorageObjectTypeDefinition rtd = Daten.tableBuilder.storageObjectTypes.get(tablename);
+            rtd.persistence = (EfaCloudStorage) dataRecord.getPersistence().data();
         }
         String[] rArray = record.toArray(new String[0]);
         int queueIndex = (useSynchQueue) ? TX_SYNCH_QUEUE_INDEX : TX_PENDING_QUEUE_INDEX;
@@ -169,9 +178,15 @@ public class EfaCloudStorage extends XMLFile {
                     // It will only be used during the synchronization process.
                     if (fieldName.equals("LastModification"))
                         dataRecord.LastModification = value;
-                    else
-                        // the dataRecord.set() function will ignore fields outside its metadata definition
-                        dataRecord.set(fieldName, value, false);
+                    else {
+                    	//Bugfix EFA#74 / https://github.com/nicmichael/efa/issues/138
+                    	// the field "ClientSideKey" exists in efaCloud, but not in efa.
+                    	// ignore this field when setting values.
+                    	if (!fieldName.equals("ClientSideKey")) {
+                            // the dataRecord.set() function will ignore fields outside its metadata definition
+                            dataRecord.set(fieldName, value, false);
+                    	}
+                    }
                     c++;
                 } catch (Exception e) {
                     Logger.log(Logger.ERROR, Logger.MSG_FILE_PARSEERROR, International.getMessage(

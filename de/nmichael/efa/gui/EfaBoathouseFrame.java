@@ -10,29 +10,99 @@
 
 package de.nmichael.efa.gui;
 
-import de.nmichael.efa.*;
+import java.awt.AWTEvent;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Frame;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.WindowEvent;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Hashtable;
+import java.util.Stack;
+import java.util.UUID;
+import java.util.Vector;
+
+import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JMenuBar;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.WindowConstants;
+import javax.swing.border.EmptyBorder;
+
+import de.nmichael.efa.Daten;
 import de.nmichael.efa.core.CrontabThread;
+import de.nmichael.efa.core.config.AdminRecord;
+import de.nmichael.efa.core.config.Admins;
+import de.nmichael.efa.core.items.IItemListener;
+import de.nmichael.efa.core.items.IItemType;
+import de.nmichael.efa.core.items.ItemTypeBoatstatusList;
+import de.nmichael.efa.core.items.ItemTypeBoolean;
+import de.nmichael.efa.core.items.ItemTypeConfigButton;
+import de.nmichael.efa.core.items.ItemTypeList;
+import de.nmichael.efa.data.BoatDamageRecord;
+import de.nmichael.efa.data.BoatDamages;
+import de.nmichael.efa.data.BoatRecord;
+import de.nmichael.efa.data.BoatReservationRecord;
+import de.nmichael.efa.data.BoatReservations;
+import de.nmichael.efa.data.BoatStatus;
+import de.nmichael.efa.data.BoatStatusRecord;
+import de.nmichael.efa.data.Clubwork;
+import de.nmichael.efa.data.Logbook;
+import de.nmichael.efa.data.LogbookRecord;
+import de.nmichael.efa.data.MessageRecord;
+import de.nmichael.efa.data.Persons;
+import de.nmichael.efa.data.Project;
 import de.nmichael.efa.data.efacloud.TxRequestQueue;
-import de.nmichael.efa.gui.util.*;
-import de.nmichael.efa.gui.widgets.*;
-import de.nmichael.efa.util.*;
+import de.nmichael.efa.data.storage.DataKey;
+import de.nmichael.efa.data.storage.DataKeyIterator;
+import de.nmichael.efa.data.storage.DataRecord;
+import de.nmichael.efa.data.storage.IDataAccess;
+import de.nmichael.efa.data.types.DataTypeDate;
+import de.nmichael.efa.data.types.DataTypeTime;
+import de.nmichael.efa.gui.dataedit.BoatDamageEditDialog;
+import de.nmichael.efa.gui.dataedit.BoatReservationListDialog;
+import de.nmichael.efa.gui.dataedit.ClubworkListDialog;
+import de.nmichael.efa.gui.dataedit.MessageEditDialog;
+import de.nmichael.efa.gui.dataedit.StatisticsListDialog;
+import de.nmichael.efa.gui.util.EfaBoathouseBackgroundTask;
+import de.nmichael.efa.gui.util.EfaMenuButton;
+import de.nmichael.efa.gui.util.EfaMouseListener;
+import de.nmichael.efa.gui.widgets.ClockMiniWidget;
+import de.nmichael.efa.gui.widgets.IWidget;
+import de.nmichael.efa.gui.widgets.NewsMiniWidget;
+import de.nmichael.efa.gui.widgets.Widget;
 import de.nmichael.efa.util.Dialog;
-import de.nmichael.efa.core.config.*;
-import de.nmichael.efa.core.items.*;
-import de.nmichael.efa.data.*;
-import de.nmichael.efa.data.types.*;
-import de.nmichael.efa.data.storage.*;
-import de.nmichael.efa.gui.dataedit.*;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.border.*;
-import java.util.*;
-import java.io.*;
+import de.nmichael.efa.util.EfaUtil;
+import de.nmichael.efa.util.Help;
+import de.nmichael.efa.util.International;
+import de.nmichael.efa.util.LogString;
+import de.nmichael.efa.util.Logger;
+import de.nmichael.efa.util.Mnemonics;
 
 public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
 
-    public static EfaBoathouseFrame efaBoathouseFrame;
+	private static final long serialVersionUID = -382107679365085355L;
+	public static EfaBoathouseFrame efaBoathouseFrame;
 
     public static final int EFA_EXIT_REASON_USER          = 0;
     public static final int EFA_EXIT_REASON_TIME          = 1;
@@ -40,6 +110,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     public static final int EFA_EXIT_REASON_OOME          = 3;
     public static final int EFA_EXIT_REASON_AUTORESTART   = 4;
     public static final int EFA_EXIT_REASON_ONLINEUPDATE  = 5;
+    public static final int EFA_EXIT_REASON_SYSTEM	      = 6;
 
     public static final int ACTIONID_STARTSESSION        = 1;
     public static final int ACTIONID_FINISHSESSION       = 2;
@@ -81,8 +152,10 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     // Center Panel GUI Items
     JLabel logoLabel = new JLabel();
     JButton startSessionButton = new JButton();
+    JButton startSessionButtonMultiple = new JButton();
     JButton finishSessionButton = new JButton();
     JButton lateEntryButton = new JButton();
+    JButton lateEntryButtonMultiple = new JButton();
     JButton abortSessionButton = new JButton();
     JButton boatReservationButton = new JButton();
     JButton messageToAdminButton = new JButton();
@@ -113,10 +186,12 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     JPanel centerPanel = new JPanel();
     JPanel northPanel = new JPanel();
     JPanel southPanel = new JPanel();
+    
 
     // Window GUI Items
     JLabel titleLabel = new JLabel();
-
+    JButton closeButton;
+    
     // Data
     EfaBoathouseBackgroundTask efaBoathouseBackgroundTask;
     CrontabThread crontabThread;
@@ -209,6 +284,8 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         iniGuiMain();
         iniApplication();
         iniGuiRemaining();
+        iniGuiHeaderColors();
+        iniGuiTooltipDelays();
         prepareEfaBaseFrame();
     }
 
@@ -216,6 +293,10 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         setIconImage(Toolkit.getDefaultToolkit().createImage(EfaBaseFrame.class.getResource("/de/nmichael/efa/img/efa_icon.png")));
         mainPanel.setLayout(new BorderLayout());
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+        //setting resizable to true would enable resizing the boathouse window.
+        //but as the boatlists on the left and the right are on east and west, 
+        //they do not scale horizontally with screen width.
+        //so setResizable(true) would be useless.
         setResizable(false);
         this.addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowClosing(WindowEvent e) {
@@ -323,7 +404,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         openProject((AdminRecord)null);
         openProjectLogbookClubwork();
 
-        updateBoatLists(true);
+        updateBoatLists(true, false);
 
         EfaExitFrame.initExitFrame(this);
 
@@ -345,7 +426,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         crontabThread.start();
 
         alive();
-        Logger.log(Logger.INFO, Logger.MSG_EVT_EFAREADY, International.getString("BEREIT"));
+        Logger.log(Logger.INFO, Logger.MSG_EVT_EFAREADY, International.getString("PROJEKT_GELADEN"));
     }
 
     private void iniGuiRemaining() {
@@ -362,17 +443,23 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
 
                 JMenuBar menuBar = new JMenuBar();
                 menuBar.setLayout(new BorderLayout());
-                menuBar.setBackground(bgColor);
-                menuBar.setForeground(Color.white);
+                if (!Daten.isEfaFlatLafActive()) {
+                	//flatLaf has some issues with setting menubar colors manually.
+                	//so we do this manual menu background color only if we don't have EFAFLATLAF
+                	menuBar.setBackground(bgColor);
+                	menuBar.setForeground(Color.white);
+                }
                 JLabel efaLabel = new JLabel();
-                efaLabel.setIcon(getIcon("efa_icon_small.png"));
+                efaLabel.setIcon(getIcon(ImagesAndIcons.IMAGE_EFA_ICON_SMALL ));
                 titleLabel.setText(Daten.EFA_LONGNAME);
                 titleLabel.setForeground(Color.white);
-                titleLabel.setFont(titleLabel.getFont().deriveFont(12f));
+                titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD,12f));
                 titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
-                titleLabel.setHorizontalTextPosition(SwingConstants.CENTER);
-                JButton closeButton = new JButton();
-                closeButton.setIcon(getIcon("frame_close.png"));
+                titleLabel.setHorizontalTextPosition(SwingConstants.LEFT);
+                titleLabel.setIconTextGap(20);
+                titleLabel.setBackground(bgColor);
+                closeButton = new JButton();
+                closeButton.setIcon(getIcon(ImagesAndIcons.IMAGE_FRAME_CLOSE ));
                 closeButton.setBackground(bgColor);
                 closeButton.setForeground(Color.white);
                 closeButton.setFont(closeButton.getFont().deriveFont(10f));
@@ -388,6 +475,11 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
                 menuBar.setBorder(new EmptyBorder(2,5,2,5));
                 menuBar.validate();
                 this.setJMenuBar(menuBar);
+                if (!Daten.isEfaFlatLafActive()) {
+                	//flatLaf has some issues with setting menubar colors manually.
+                	//so we do this manual menu background color only if we don't have EFAFLATLAF
+                	menuBar.setBackground(bgColor);
+                }
             } catch (NoSuchMethodError e) {
                 Logger.log(Logger.WARNING, Logger.MSG_WARN_JAVA_VERSION,
                         "Only supported as of Java 1.4: " +e.toString());
@@ -477,10 +569,10 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         toggleAvailableBoatsToPersons.setVisible(Daten.efaConfig.getValueEfaDirekt_listAllowToggleBoatsPersons());
 
         // Boat Lists
-        boatsAvailableList = new ItemTypeBoatstatusList("BOATSAVAILABLELIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("verfügbare Boote"), this, Daten.efaConfig.getValueEfaBoathouseFilterTextfieldStandardLists());
-        personsAvailableList = new ItemTypeBoatstatusList("PERSONSAVAILABLELIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("Personen"), this,Daten.efaConfig.getValueEfaBoathouseFilterTextfieldStandardLists());
-        boatsOnTheWaterList = new ItemTypeBoatstatusList("BOATSONTHEWATERLIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("Boote auf Fahrt"), this,Daten.efaConfig.getValueEfaBoathouseFilterTextfieldStandardLists());
-        boatsNotAvailableList = new ItemTypeBoatstatusList("BOATSNOTAVAILABLELIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("nicht verfügbare Boote"), this,Daten.efaConfig.getValueEfaBoathouseFilterTextfieldBoatsNotAvailableList());
+        boatsAvailableList = new ItemTypeBoatstatusList("BOATSAVAILABLELIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("verfügbare Boote"), this, Daten.efaConfig.getValueEfaBoathouseFilterTextfieldStandardLists(), Daten.efaConfig.getValueEfaBoathouseTwoColumnList());
+        personsAvailableList = new ItemTypeBoatstatusList("PERSONSAVAILABLELIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("Personen"), this,Daten.efaConfig.getValueEfaBoathouseFilterTextfieldStandardLists(), Daten.efaConfig.getValueEfaBoathouseTwoColumnList());
+        boatsOnTheWaterList = new ItemTypeBoatstatusList("BOATSONTHEWATERLIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("Boote auf Fahrt"), this,Daten.efaConfig.getValueEfaBoathouseFilterTextfieldStandardLists(), Daten.efaConfig.getValueEfaBoathouseTwoColumnList());
+        boatsNotAvailableList = new ItemTypeBoatstatusList("BOATSNOTAVAILABLELIST", IItemType.TYPE_PUBLIC, "", International.getStringWithMnemonic("nicht verfügbare Boote"), this,Daten.efaConfig.getValueEfaBoathouseFilterTextfieldBoatsNotAvailableList(), Daten.efaConfig.getValueEfaBoathouseTwoColumnList());        
         boatsAvailableList.setFieldSize(200, 400);
         personsAvailableList.setFieldSize(200, 400);
         boatsOnTheWaterList.setFieldSize(200, 300);
@@ -493,6 +585,10 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         personsAvailableList.registerItemListener(this);
         boatsOnTheWaterList.registerItemListener(this);
         boatsNotAvailableList.registerItemListener(this);
+        
+        //Highlight for Lists
+        iniGuiHeaderColors();        
+        
         iniGuiListNames();
 
         // add Panels to Gui
@@ -516,6 +612,45 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         eastPanel.add(boatsNotAvailablePanel, BorderLayout.CENTER);
     }
 
+	private void iniGuiHeaderColors() {
+		if (Daten.efaConfig.getHeaderUseHighlightColor()) {
+			boatsAvailableList.setColor(Daten.efaConfig.getHeaderForegroundColor());
+	        personsAvailableList.setColor(Daten.efaConfig.getHeaderForegroundColor());
+	        boatsOnTheWaterList.setColor(Daten.efaConfig.getHeaderForegroundColor());
+	        boatsNotAvailableList.setColor(Daten.efaConfig.getHeaderForegroundColor());
+	        boatsAvailableList.setBackgroundColor(Daten.efaConfig.getHeaderBackgroundColor());
+	        personsAvailableList.setBackgroundColor(Daten.efaConfig.getHeaderBackgroundColor());
+	        boatsOnTheWaterList.setBackgroundColor(Daten.efaConfig.getHeaderBackgroundColor());
+	        boatsNotAvailableList.setBackgroundColor(Daten.efaConfig.getHeaderBackgroundColor());
+	        
+	        EfaUtil.handleTabbedPaneBackgroundColorForLookAndFeels();
+		} else {
+			boatsAvailableList.setColor(null);
+	        personsAvailableList.setColor(null);
+	        boatsOnTheWaterList.setColor(null);
+	        boatsNotAvailableList.setColor(null);
+	        boatsAvailableList.setBackgroundColor(null);
+	        personsAvailableList.setBackgroundColor(null);
+	        boatsOnTheWaterList.setBackgroundColor(null);
+	        boatsNotAvailableList.setBackgroundColor(null);
+		}
+		boatsAvailableList.updateSeparatorColorFromEfaConfig();
+		personsAvailableList.updateSeparatorColorFromEfaConfig();
+		boatsNotAvailableList.updateSeparatorColorFromEfaConfig();
+		boatsOnTheWaterList.updateSeparatorColorFromEfaConfig();
+	}
+	
+	private void iniGuiTooltipDelays() {        
+		int initialDelay=Daten.efaConfig.getValueEfaBoathouseExtdToolTipInitialDelayMsec();
+	    int dismissDelay=Daten.efaConfig.getValueEfaBoathouseExtdToolTipDismissDelayMsec();
+	    if (initialDelay>0) {
+	    	javax.swing.ToolTipManager.sharedInstance().setInitialDelay(initialDelay);
+	    	javax.swing.ToolTipManager.sharedInstance().setReshowDelay(initialDelay);
+	    }
+	    if (dismissDelay>0) {
+	    	javax.swing.ToolTipManager.sharedInstance().setDismissDelay(dismissDelay);
+	    }
+	}
     private void iniGuiListNames() {
         boolean fkey = Daten.efaConfig.getValueEfaDirekt_showButtonHotkey();
         if (!Daten.efaConfig.getValueEfaDirekt_listAllowToggleBoatsPersons() || toggleAvailableBoatsToBoats.isSelected()) {
@@ -543,10 +678,34 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         }
         centerPanel.add(logoLabel, new GridBagConstraints(1, 0, 1, 2, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(logoTop, 0, logoBottom, 0), 0, 0));
         int fahrtbeginnTop = (int) (10.0f * (Dialog.getFontSize() < 10 ? 12 : Dialog.getFontSize()) / Dialog.getDefaultFontSize());
-        centerPanel.add(startSessionButton, new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(fahrtbeginnTop, 0, 0, 0), 0, 0));
+        
+        // startSessionButton and startSessionButtonMultiple shall be on the same line, 
+        // and take the same width as the other buttons. So we create a panel containing
+        // startSessionButton and startSessionButtonMultiple. The latter gets hidden if it shall not be used.
+        
+        JPanel myPanel=new JPanel();
+    	myPanel.setBorder(BorderFactory.createEmptyBorder(0,0,0,0));
+    	myPanel.setLayout(new GridBagLayout());
+    	// StartSession takes 8/9th of width and grows horizontally, multissessionbutton grows vertically as the icon alone makes the button to look smallish
+    	myPanel.add(startSessionButton,      new GridBagConstraints(1, 1, 8, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
+    	myPanel.add(startSessionButtonMultiple, new GridBagConstraints(9, 1, 1, 1, 0.0, 1.0, GridBagConstraints.WEST, GridBagConstraints.VERTICAL, new Insets(0, 2, 0, 0), 0, 0));
+    	startSessionButtonMultiple.setVisible(Daten.efaConfig.getValueEfaDirekt_MultisessionSupportLateEntry());    
+
+    	centerPanel.add(myPanel, new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(fahrtbeginnTop, 0, 0, 0), 0, 0));        
         centerPanel.add(finishSessionButton, new GridBagConstraints(1, 3, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
         centerPanel.add(abortSessionButton, new GridBagConstraints(1, 4, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(10, 0, 0, 0), 0, 0));
-        centerPanel.add(lateEntryButton, new GridBagConstraints(1, 5, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(10, 0, 0, 0), 0, 0));
+
+        // same for lateEntryButton and lateEntryButtonMultiple
+    	myPanel=new JPanel();
+    	myPanel.setBorder(BorderFactory.createEmptyBorder(0,0,0,0));
+    	myPanel.setLayout(new GridBagLayout());
+    	// StartSession takes 8/9th of width and grows horizontally, multissessionbutton grows vertically as the icon alone makes the button to look smallish
+    	myPanel.add(lateEntryButton,      new GridBagConstraints(1, 1, 8, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
+    	myPanel.add(lateEntryButtonMultiple, new GridBagConstraints(9, 1, 1, 1, 0.0, 1.0, GridBagConstraints.WEST, GridBagConstraints.VERTICAL, new Insets(0, 2, 0, 0), 0, 0));
+    	lateEntryButtonMultiple.setVisible(Daten.efaConfig.getValueEfaDirekt_MultisessionSupportLateEntry());    
+
+    	centerPanel.add(myPanel, new GridBagConstraints(1, 5, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(10, 0, 0, 0), 0, 0));        
+        
         centerPanel.add(clubworkButton, new GridBagConstraints(1, 6, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(10, 0, 0, 0), 0, 0));
         centerPanel.add(boatReservationButton, new GridBagConstraints(1, 7, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(10, 0, 0, 0), 0, 0));
         centerPanel.add(showLogbookButton, new GridBagConstraints(1, 8, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(10, 0, 0, 0), 0, 0));
@@ -557,6 +716,22 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         centerPanel.add(helpButton, new GridBagConstraints(1, 13, 1, 1, 0.0, 0.0, GridBagConstraints.SOUTH, GridBagConstraints.NONE, new Insets(10, 0, 0, 0), 0, 0));
         centerPanel.add(efaButton, new GridBagConstraints(1, 14, 1, 1, 0.0, 0.0, GridBagConstraints.SOUTH, GridBagConstraints.NONE, new Insets(10, 0, 0, 0), 0, 0));
         centerPanel.add(clock.getGuiComponent(), new GridBagConstraints(1, 15, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(10, 10, 10, 10), 0, 0));
+        
+        EfaUtil.handleButtonOpaqueForLookAndFeels(startSessionButton);
+        EfaUtil.handleButtonOpaqueForLookAndFeels(startSessionButtonMultiple);
+        EfaUtil.handleButtonOpaqueForLookAndFeels(finishSessionButton);
+        EfaUtil.handleButtonOpaqueForLookAndFeels(abortSessionButton);
+        EfaUtil.handleButtonOpaqueForLookAndFeels(lateEntryButton);
+        EfaUtil.handleButtonOpaqueForLookAndFeels(lateEntryButtonMultiple);
+        EfaUtil.handleButtonOpaqueForLookAndFeels(clubworkButton);
+        EfaUtil.handleButtonOpaqueForLookAndFeels(boatReservationButton);
+        EfaUtil.handleButtonOpaqueForLookAndFeels(showLogbookButton);
+        EfaUtil.handleButtonOpaqueForLookAndFeels(statisticsButton);
+        EfaUtil.handleButtonOpaqueForLookAndFeels(messageToAdminButton);
+        EfaUtil.handleButtonOpaqueForLookAndFeels(adminButton);
+        EfaUtil.handleButtonOpaqueForLookAndFeels(specialButton);
+        EfaUtil.handleButtonOpaqueForLookAndFeels(helpButton);
+        EfaUtil.handleButtonOpaqueForLookAndFeels(efaButton);
     }
 
     private void updateGuiLogo() {
@@ -565,7 +740,14 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             try {
                 logoLabel.setIcon(new ImageIcon(Daten.efaConfig.getValueEfaDirekt_vereinsLogo()));
                 logoLabel.setMinimumSize(new Dimension(200, 80));
-                logoLabel.setPreferredSize(new Dimension(200, 80));
+                if (logoLabel.getIcon()!=null) {
+                	logoLabel.setPreferredSize(new Dimension(
+                				Math.max(200, logoLabel.getIcon().getIconWidth()), 
+                				Math.max(80, logoLabel.getIcon().getIconHeight())));
+                } else {
+                	logoLabel.setPreferredSize(new Dimension(200,80));
+                }
+                logoLabel.setMaximumSize(new Dimension(logoLabel.getWidth(),logoLabel.getHeight()));
                 logoLabel.setHorizontalAlignment(SwingConstants.CENTER);
                 logoLabel.setHorizontalTextPosition(SwingConstants.CENTER);
             } catch (Exception e) {
@@ -583,6 +765,13 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
                 actionStartSession(null);
             }
         });
+        
+    	startSessionButtonMultiple.setToolTipText(International.getString("Mehrere Einzelfahrten beginnen"));
+    	startSessionButtonMultiple.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                actionStartSessionMultiple();
+            }
+        });          
 
         Mnemonics.setButton(this, finishSessionButton, International.getStringWithMnemonic("Fahrt beenden"));
         finishSessionButton.addActionListener(new java.awt.event.ActionListener() {
@@ -604,6 +793,13 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
                 actionLateEntry();
             }
         });
+        
+    	lateEntryButtonMultiple.setToolTipText(International.getString("Mehrere Einzelfahrten nachtragen"));
+    	lateEntryButtonMultiple.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                actionLateEntryMultiple();
+            }
+        });   
 
         Mnemonics.setButton(this, boatReservationButton, International.getStringWithMnemonic("Bootsreservierungen"));
         boatReservationButton.addActionListener(new java.awt.event.ActionListener() {
@@ -681,9 +877,14 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             button.setIconTextGap(10);
             button.setHorizontalAlignment(SwingConstants.LEFT);
         }
+        //Always use bold font for Buttons.
+        button.setFont(button.getFont().deriveFont(Font.BOLD));
     }
 
     private void updateGuiButtonLAF() {
+    	this.startSessionButtonMultiple.setVisible(Daten.efaConfig.getValueEfaDirekt_MultisessionSupportStartSession());
+    	this.lateEntryButtonMultiple.setVisible(Daten.efaConfig.getValueEfaDirekt_MultisessionSupportLateEntry());
+    	
         this.boatReservationButton.setVisible(Daten.efaConfig.getValueEfaDirekt_butBootsreservierungen().getValueShow());
         this.showLogbookButton.setVisible(Daten.efaConfig.getValueEfaDirekt_butFahrtenbuchAnzeigen().getValueShow());
         this.statisticsButton.setVisible(Daten.efaConfig.getValueEfaDirekt_butStatistikErstellen().getValueShow());
@@ -693,18 +894,20 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         this.specialButton.setVisible(Daten.efaConfig.getValueEfaDirekt_butSpezial().getValueShow());
         this.helpButton.setVisible(Daten.efaConfig.getValueEfaDirekt_butHelp().getValueShow());
 
-        setButtonLAF(startSessionButton, Daten.efaConfig.getValueEfaDirekt_butFahrtBeginnen(), "action_startSession.png");
-        setButtonLAF(finishSessionButton, Daten.efaConfig.getValueEfaDirekt_butFahrtBeenden(), "action_finishSession.png");
-        setButtonLAF(abortSessionButton, Daten.efaConfig.getValueEfaDirekt_butFahrtAbbrechen(), "action_abortSession.png");
-        setButtonLAF(lateEntryButton, Daten.efaConfig.getValueEfaDirekt_butNachtrag(), "action_lateEntry.png");
-        setButtonLAF(boatReservationButton, Daten.efaConfig.getValueEfaDirekt_butBootsreservierungen(), "action_boatReservations.png");
-        setButtonLAF(showLogbookButton, Daten.efaConfig.getValueEfaDirekt_butFahrtenbuchAnzeigen(), "action_logbook.png");
-        setButtonLAF(statisticsButton, Daten.efaConfig.getValueEfaDirekt_butStatistikErstellen(), "action_statistics.png");
-        setButtonLAF(clubworkButton, Daten.efaConfig.getValueEfaDirekt_butVereinsarbeit(), "action_clubwork.png");
-        setButtonLAF(messageToAdminButton, Daten.efaConfig.getValueEfaDirekt_butNachrichtAnAdmin(), "action_message.png");
-        setButtonLAF(adminButton, Daten.efaConfig.getValueEfaDirekt_butAdminModus(), "action_admin.png");
-        setButtonLAF(specialButton, Daten.efaConfig.getValueEfaDirekt_butSpezial(), "action_special.png");
-        setButtonLAF(helpButton, null, "action_help.png");
+        setButtonLAF(startSessionButton, Daten.efaConfig.getValueEfaDirekt_butFahrtBeginnen(), ImagesAndIcons.IMAGE_ACTION_START_SESSION);
+        setButtonLAF(startSessionButtonMultiple, Daten.efaConfig.getValueEfaDirekt_butFahrtBeginnen(), ImagesAndIcons.IMAGE_ACTION_START_SESSION_MULTI);
+        setButtonLAF(finishSessionButton, Daten.efaConfig.getValueEfaDirekt_butFahrtBeenden(), ImagesAndIcons.IMAGE_ACTION_FINISH_SESSION);
+        setButtonLAF(abortSessionButton, Daten.efaConfig.getValueEfaDirekt_butFahrtAbbrechen(), ImagesAndIcons.IMAGE_ACTION_ABORT_SESSION);
+        setButtonLAF(lateEntryButton, Daten.efaConfig.getValueEfaDirekt_butNachtrag(), ImagesAndIcons.IMAGE_ACTION_LATE_ENTRY);
+        setButtonLAF(lateEntryButtonMultiple, Daten.efaConfig.getValueEfaDirekt_butNachtrag(),ImagesAndIcons.IMAGE_ACTION_LATE_ENTRY_MULTI);
+        setButtonLAF(boatReservationButton, Daten.efaConfig.getValueEfaDirekt_butBootsreservierungen(), ImagesAndIcons.IMAGE_ACTION_BOAT_RESERVATIONS);
+        setButtonLAF(showLogbookButton, Daten.efaConfig.getValueEfaDirekt_butFahrtenbuchAnzeigen(), ImagesAndIcons.IMAGE_ACTION_LOGBOOK);
+        setButtonLAF(statisticsButton, Daten.efaConfig.getValueEfaDirekt_butStatistikErstellen(), ImagesAndIcons.IMAGE_ACTION_STATISTICS);
+        setButtonLAF(clubworkButton, Daten.efaConfig.getValueEfaDirekt_butVereinsarbeit(), ImagesAndIcons.IMAGE_ACTION_CLUBWORK);
+        setButtonLAF(messageToAdminButton, Daten.efaConfig.getValueEfaDirekt_butNachrichtAnAdmin(), ImagesAndIcons.IMAGE_ACTION_MESSAGE);
+        setButtonLAF(adminButton, Daten.efaConfig.getValueEfaDirekt_butAdminModus(), ImagesAndIcons.IMAGE_ACTION_ADMIN);
+        setButtonLAF(specialButton, Daten.efaConfig.getValueEfaDirekt_butSpezial(), ImagesAndIcons.IMAGE_ACTION_SPECIAL);
+        setButtonLAF(helpButton, null, ImagesAndIcons.IMAGE_ACTION_HELP);
 
     }
 
@@ -731,7 +934,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         if (clock == null) {
             clock = new ClockMiniWidget();
         }
-        clock.getGuiComponent().setVisible(Daten.efaConfig.getValueEfaDirekt_showUhr());
+        clock.setVisible(Daten.efaConfig.getValueEfaDirekt_showUhr());
     }
 
     private void updateGuiNews() {
@@ -740,7 +943,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         }
         news.setText(Daten.efaConfig.getValueEfaDirekt_newsText());
         news.setScrollSpeed(Daten.efaConfig.getValueEfaDirekt_newsScrollSpeed());
-        news.getGuiComponent().setVisible(Daten.efaConfig.getValueEfaDirekt_showNews());
+        news.setVisible(Daten.efaConfig.getValueEfaDirekt_showNews());
         if (isDisplayable()) {
             packFrame("updateGuiNews()");
         }
@@ -825,7 +1028,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     }
 
     private void statusLabelSetText(String s) {
-        statusLabel.setText(s);
+        statusLabel.setText(" "+ s);
         // wenn Text zu lang, dann PreferredSize verringern, damit bei pack() die zu große Label-Breite nicht
         // zum Vergrößern des Fensters führt!
         if (statusLabel.getPreferredSize().getWidth() > this.getSize().getWidth()) {
@@ -847,6 +1050,9 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     // i == 2 - boats on the water
     // i == 3 - boats not available
     public void boatListRequestFocus(int i) {
+    	
+    	clearListFilterAfterInterval();
+    	
         if (i == 0) {
             if (boatsAvailableList != null && boatsAvailableList.getSelectedIndex() >= 0) {
                 boatsAvailableList.requestFocus();
@@ -874,6 +1080,31 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             boatsNotAvailableList.requestFocus();
         }
     }
+
+    // Clears filter text of the main lists on efaBoatHouseFrame, if filter text fields
+    // are visible. The interval can be configured in efaConfig. The lists themselfves the lists themselves.
+    // also, the lists filter text field gets cleared if they get the focus and the last
+    // change within the filter is older than the time interval.
+    public void clearListFilterAfterInterval() {
+    	boatsAvailableList.clearFilterTextByInterval();
+    	personsAvailableList.clearFilterTextByInterval();
+    	boatsOnTheWaterList.clearFilterTextByInterval();
+    	boatsNotAvailableList.clearFilterTextByInterval();
+    }
+    
+    /*
+     * Clear filter field 
+     */
+    public void clearFilterFieldsIfConfigured() {
+    	if (Daten.efaConfig.getValueEfaBoathouseFilterTextAutoClearAfterAction()) {
+        	boatsAvailableList.clearFilterText();
+        	personsAvailableList.clearFilterText();
+        	boatsOnTheWaterList.clearFilterText();
+        	boatsNotAvailableList.clearFilterText();
+    	}
+    	boatListRequestFocus(0);//automatically detect the boatlist to get the focus          	
+    }
+
 
     void alive() {
         lastUserInteraction = System.currentTimeMillis();
@@ -973,6 +1204,9 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             case EFA_EXIT_REASON_ONLINEUPDATE:
                 who = International.getString("Online-Update");
                 break;
+            case EFA_EXIT_REASON_SYSTEM:
+            	who = "System Signal";
+            	break;
         }
         if (restart) {
             exitCode = Daten.program.restart();
@@ -994,7 +1228,8 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         final boolean _restart = restart;
         new Thread() {
             public void run() {
-                try {
+                this.setName("EfaBoathouseFrame.cancelRunInThreadWithDelay");
+            	try {
                     Thread.sleep(1000);
                 } catch (Exception e) {
                 }
@@ -1111,8 +1346,16 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             TxRequestQueue txq = TxRequestQueue.getInstance();
             if (txq != null)
                 txq.setEfaGUIrootContainer(this);   // is relevant only at startup
-            String efaCloudStatus = (txq != null) ? txq.getStateForDisplay() : "";
+            String efaCloudStatus = (txq != null) ? txq.getStateForDisplay(false) : "";
             titleLabel.setText(Daten.EFA_LONGNAME + " [" + Daten.project.getProjectName() +
+                    (logbook != null && logbook.isOpen() ? ": " + logbook.getName() : "") + 
+                    (Daten.project.getMyBoathouseName() != null ? " - " + Daten.project.getMyBoathouseName() : "") +
+                    "] " + efaCloudStatus);
+            
+            titleLabel.setIcon((txq != null) ? txq.getStateIconForDisplay(): null);
+            
+            efaCloudStatus = (txq != null) ? txq.getStateForDisplay(true) : "";
+            this.setTitle(Daten.EFA_LONGNAME + " [" + Daten.project.getProjectName() +
                     (logbook != null && logbook.isOpen() ? ": " + logbook.getName() : "") + 
                     (Daten.project.getMyBoathouseName() != null ? " - " + Daten.project.getMyBoathouseName() : "") +
                     "]" + efaCloudStatus);
@@ -1161,7 +1404,11 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             }
             return Daten.project;
         } finally {
-            updateProjectLogbookInfo();
+        	SwingUtilities.invokeLater(new Runnable() {
+        		public void run() {
+                    updateProjectLogbookInfo();
+        		}
+        	});             	
         }
     }
     
@@ -1229,7 +1476,11 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             }
             return logbook;
         } finally {
-            updateProjectLogbookInfo();
+        	SwingUtilities.invokeLater(new Runnable() {
+        		public void run() {
+                    updateProjectLogbookInfo();
+        		}
+        	});             	
         }
     }
 
@@ -1322,7 +1573,12 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             }
             return false;
         } finally {
-            updateProjectLogbookInfo();
+        	//openLogBook can also be called from efaBoatHouseBackgroundTask, so it is secure to call this swing-thread-safe.
+        	SwingUtilities.invokeLater(new Runnable() {
+        		public void run() {
+                    updateProjectLogbookInfo();
+        		}
+        	});        	
         }
     }
 
@@ -1367,8 +1623,23 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         return clubwork;
     }
 
+    /*
+     * Updates the contents of efa boathouse lists (if listChanged is true) and sets the focus to one of the lists.
+     * 
+     * This is automatically triggered by the efaBoathouseBackgroundTask, which looks for the latest change 
+     * in the data of reservations or boatstatus (boatstatus is changed when reservations get active, or a session is
+     * created, edited, cancelled, finished)).
+     * So usually there should be no need to call this method directly.
+     * 
+     * Technically, this list should be synchronized as it runs in swing's main thread, and is
+     * invoked by efaBoathouseBackgroundTask. Instead, it has an inner handling to avoid being run concurrently.
+     * 
+     * @parameter onlyAvailableBoatsOrPersons true if only the available boats/persons list needs an update.
+     *    this parameter is introduced due to performance issues on RASPIs when using two-column lists and
+     *    switching between boats and persons.
+     */
     // synchronizing this method can cause deadlock!!!!
-    public void updateBoatLists(boolean listChanged) {
+    public void updateBoatLists(boolean listChanged, boolean onlyAvailableBoatsOrPersons) {
         if (!isEnabled()) {
             return;
         }
@@ -1379,6 +1650,12 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             return;
         }
         inUpdateBoatList = true;
+        //Settings in EFA Config about two column Boat Lists shall take place immediately, if lists get updated. 
+        this.boatsAvailableList.setShowTwoColumnList(Daten.efaConfig.getValueEfaBoathouseTwoColumnList());
+        this.personsAvailableList.setShowTwoColumnList(Daten.efaConfig.getValueEfaBoathouseTwoColumnList());
+        this.boatsOnTheWaterList.setShowTwoColumnList(Daten.efaConfig.getValueEfaBoathouseTwoColumnList());
+        this.boatsNotAvailableList.setShowTwoColumnList(Daten.efaConfig.getValueEfaBoathouseTwoColumnList());
+        
         try {
             if (Logger.isTraceOn(Logger.TT_GUI, 8)) {
                 Logger.log(Logger.DEBUG, Logger.MSG_GUI_DEBUGGUI, "updateBoatLists(" + listChanged + ")");
@@ -1390,8 +1667,8 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
                 boatsOnTheWaterList.setItems(null);
                 boatsNotAvailableList.setItems(null);
                 if (Daten.project == null) {
-                    boatsAvailableList.addItem("*** " + International.getString("Kein Projekt geöffnet.") + " ***", null, false, '\0');
-                    personsAvailableList.addItem("*** " + International.getString("Kein Projekt geöffnet.") + " ***", null, false, '\0');
+                    boatsAvailableList.addItem("*** " + International.getString("Kein Projekt geöffnet.") + " ***", null, null, null, false, '\0');
+                    personsAvailableList.addItem("*** " + International.getString("Kein Projekt geöffnet.") + " ***", null, null, null, false, '\0'); 
                 }
                 boatsAvailableList.showValue();
                 personsAvailableList.showValue();
@@ -1403,11 +1680,29 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
                 }
 
                 if (listChanged) {
+                	
+                	String strDebugTimes="";
+                	long start = System.currentTimeMillis();
+
+                	Vector <BoatReservationRecord> todaysReservations; 
+                	//obtain reservation info only if they shall be shown in the boatLists
+                	if (Daten.efaConfig.getValueEfaBoathouseBoatListReservationInfo()) {
+                    	todaysReservations=getTodaysReservations();
+                	} else {
+                		 todaysReservations=new Vector <BoatReservationRecord>();
+                	}
+                	
+
+                	strDebugTimes=strDebugTimes+(System.currentTimeMillis()-start);
+                	
                     if (!Daten.efaConfig.getValueEfaDirekt_listAllowToggleBoatsPersons() || toggleAvailableBoatsToBoats.isSelected()) {
                         if (Logger.isTraceOn(Logger.TT_GUI, 9)) {
                             Logger.log(Logger.DEBUG, Logger.MSG_GUI_DEBUGGUI, "updateBoatLists(" + listChanged + ") - setting boatsAvailableList ...");
                         }
-                        boatsAvailableList.setBoatStatusData(boatStatus.getBoats(BoatStatusRecord.STATUS_AVAILABLE, true), logbook, "<" + International.getString("anderes Boot") + ">");
+                        start= System.currentTimeMillis();
+                        boatsAvailableList.setBoatStatusData(boatStatus.getBoats(BoatStatusRecord.STATUS_AVAILABLE, true), logbook, "<" + International.getString("anderes Boot") + ">", todaysReservations);
+                        strDebugTimes=strDebugTimes+";"+(System.currentTimeMillis()-start);
+                        
                         if (Logger.isTraceOn(Logger.TT_GUI, 9)) {
                             Logger.log(Logger.DEBUG, Logger.MSG_GUI_DEBUGGUI, "updateBoatLists(" + listChanged + ") - setting boatsAvailableList - done");
                         }
@@ -1425,11 +1720,18 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
                     if (Logger.isTraceOn(Logger.TT_GUI, 9)) {
                         Logger.log(Logger.DEBUG, Logger.MSG_GUI_DEBUGGUI, "updateBoatLists(" + listChanged + ") - setting boatsOnTheWaterList and boatsNotAvailableList ...");
                     }
-                    boatsOnTheWaterList.setBoatStatusData(boatStatus.getBoats(BoatStatusRecord.STATUS_ONTHEWATER, true), logbook, null);
-                    boatsNotAvailableList.setBoatStatusData(boatStatus.getBoats(BoatStatusRecord.STATUS_NOTAVAILABLE, true), logbook, null);
+                    if (!onlyAvailableBoatsOrPersons) {
+	                    start= System.currentTimeMillis();
+	                    boatsOnTheWaterList.setBoatStatusData(boatStatus.getBoats(BoatStatusRecord.STATUS_ONTHEWATER, true), logbook, null, todaysReservations);
+	                    strDebugTimes=strDebugTimes+";"+(System.currentTimeMillis()-start);
+	                    start=System.currentTimeMillis();
+	                    boatsNotAvailableList.setBoatStatusData(boatStatus.getBoats(BoatStatusRecord.STATUS_NOTAVAILABLE, true), logbook, null, todaysReservations);
+	                    strDebugTimes=strDebugTimes+";"+(System.currentTimeMillis()-start);
+                    }
                     if (Logger.isTraceOn(Logger.TT_GUI, 9)) {
                         Logger.log(Logger.DEBUG, Logger.MSG_GUI_DEBUGGUI, "updateBoatLists(" + listChanged + ") - setting boatsOnTheWaterList and boatsNotAvailableList - done");
                     }
+                    Logger.log(Logger.DEBUG, Logger.MSG_GUI_DEBUGGUI, "Aufrufzeiten: "+ strDebugTimes);
                 }
             }
 
@@ -1483,18 +1785,74 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         }
     }
 
+    /**
+     * Returns a vector that contains all reservations which take place within the current day.
+     * The list is sorted by boat and valid_in_minutes, so that the next upcoming reservations are the first items in the list.
+     * This usually is a much smaller list than the total list of reservations in the db.
+     * 
+     * If efaConfig is set that no reservation info shall be shown in the boatlists, this methods returns an empty vector.
+     * 
+     * So the assumption is:
+     *   Performance is crucial as we are in swing's main thread (so every other operation is halted until we finished)
+     *   and it is very crucial on low-power devices like the Raspberry Pi 3.
+     *    
+     * - two lists in efaBoatHouseFrame can be configured to show reservation data (of the next reservation of the boat today)
+     * - if so, obtaining the reservation info for each boat can be a matter of performance, if looked up within the whole reservation DB.
+     *   AND if there are a lot of boats within efa.
+     * - using this list as a cache, there is less of a performance bottleneck.
+
+     * 
+     */
+    private Vector <BoatReservationRecord> getTodaysReservations() {
+    	Vector <BoatReservationRecord> result = new Vector <BoatReservationRecord>();
+        
+        if (Daten.efaConfig.getValueEfaBoathouseBoatListReservationInfo()) {
+	    	Long now = System.currentTimeMillis();
+	    	Long remainingMinutesToday = EfaUtil.getRemainingMinutesToday();
+	      
+	        BoatReservations boatReservationDB = (Daten.project != null ? Daten.project.getBoatReservations(false) : null);
+	        //get reservations valid within 8 hours        
+	      	
+	        try {
+	        	DataKeyIterator iter = boatReservationDB.data().getStaticIterator();
+	            DataKey k = iter.getFirst();
+	            while (k != null) {
+	                BoatReservationRecord r = (BoatReservationRecord) boatReservationDB.data().get(k);
+	                if (r != null) {
+	                    boolean show = (!r.getInvisible()) &&
+	                                   (!r.getDeleted());
+	                    if (show) {
+	                        if (r.getReservationValidInMinutes(now, remainingMinutesToday) >= 0) { 
+	                        	//store the reservation 
+	                        	result.add(r);
+	                        }
+	                    }
+	                }
+	                k = iter.getNext();
+	            }
+	        	
+	        } catch (Exception e) {
+	        	Logger.log(e);
+	        }
+	        
+	        //sort by time span until reservation gets active, ascending
+	        result.sort(new BoatReservationComparatorByNextOccurrence());
+        }
+        return result;
+    	
+    }
 
     // ========================================================================================================================================
     // Callbacks and Events
     // ========================================================================================================================================
     public void setUnreadMessages(boolean admin, boolean boatmaintenance) {
-        String iconName = "action_admin.png";
+        String iconName = ImagesAndIcons.IMAGE_ACTION_ADMIN;
         if (admin && boatmaintenance) {
-            iconName = "action_admin_mailAdminBoat.png";
+            iconName = ImagesAndIcons.IMAGE_ACTION_ADMIN_MAIL_ADMIN_BOAT;
         } else if (admin) {
-            iconName = "action_admin_mailAdmin.png";
+            iconName = ImagesAndIcons.IMAGE_ACTION_ADMIN_MAIL_ADMIN;
         } else if (boatmaintenance) {
-            iconName = "action_admin_mailBoat.png";
+            iconName = ImagesAndIcons.IMAGE_ACTION_ADMIN_MAIL_BOAT;
         }
         adminButton.setIcon(getIcon(iconName));
     }
@@ -1629,7 +1987,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     }
 
     void boatListDoubleClick(int listnr, ItemTypeBoatstatusList list) {
-        if (list == null || list.getSelectedIndex() < 0) {
+    	if (list == null || list.getSelectedIndex() < 0) {
             return;
         }
         clearAllPopups();
@@ -1688,6 +2046,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         }
         try {
             String name = null;
+            Boolean isSeparator = false;
 
             ItemTypeBoatstatusList.BoatListItem item = null;
             while (item == null) {
@@ -1700,12 +2059,13 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
 	                    } else {
 	                        name = item.person.getQualifiedName();
 	                    }
+	                    isSeparator=list.getSelectedItemIsSeparator();
                     } else {
                     	name=null;
                     }
                 } catch (Exception e) {
                 }
-                if (name == null || name.startsWith("---")) {
+                if (name == null || isSeparator ) {
                 	//name is not set. So we try to select a single item 
                 	//in the list heading forward direction or backward direction
                 	//from the current selected index, we want to find an item                	
@@ -1737,7 +2097,8 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
                             : (status != null ? status.getBoatText() : International.getString("anderes oder fremdes Boot")));
                     String text = "";
                     if (status != null) {
-                        String s = status.getStatusDescription(status.getCurrentStatus());
+                    	@SuppressWarnings("static-access")
+                    	String s = status.getStatusDescription(status.getCurrentStatus());
                         if (s != null) {
                             text = s;
                         }
@@ -1784,6 +2145,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         if (!Daten.efaConfig.getValueEfaDirekt_listAllowToggleBoatsPersons()) {
             return;
         }
+        alive(); // set last user interaction time
         iniGuiListNames();
         if (Logger.isTraceOn(Logger.TT_GUI, 8)) {
             Logger.log(Logger.DEBUG, Logger.MSG_GUI_DEBUGGUI, "toggleAvailableBoats_actionPerformed()");
@@ -1813,7 +2175,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             this.validate();
             this.repaint(); // ist erforderlich, damit auch mnemonics richtig geschrieben werden.
             
-            updateBoatLists(true);
+            updateBoatLists(true,true);
         } catch (Exception ee) {
         }
         if (Logger.isTraceOn(Logger.TT_GUI, 8)) {
@@ -2021,9 +2383,21 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     }
 
     // Callback from EfaBaseFrame
+    /**
+     * This method is called from 
+     * - EfaBaseFrame (which is the main  GUI for starting, editing, finishing and lateentry of sessions)
+     * - EfaBaseFrameMultiSession (which is the gui for creating/lateentry of multiple single-person sessions.
+     * 
+     * It takes care that some notifications get shown, and that a list of the EfaBoathouseFrame gets the focus.
+     * Also, efaBoatHouseBackgroundTask gets a signal to keep BoatsAvailableList, Personlist, BoatsOntheWaterList and BoatsNotAvailableList up to date,
+     * as mostly this method is called when some data has been added or changed.
+     *  
+     * @param efaBoathouseAction Item of the boathouse list that was selected when starting a boathouse action.
+     * @param r LogbookRecord of the newly created record. May be null.
+     */
     void showEfaBoathouseFrame(ItemTypeBoatstatusList.BoatListItem efaBoathouseAction, LogbookRecord r) {
         bringFrameToFront();
-        updateBoatLists(true); // must be explicitly called here! only efaBoathouseBackgroundTask.interrupt() is NOT sufficient.
+        updateBoatLists(true,false); // must be explicitly called here! only efaBoathouseBackgroundTask.interrupt() is NOT sufficient.
         efaBoathouseBackgroundTask.interrupt();
         if (focusItem != null) {
             focusItem.requestFocus();
@@ -2076,8 +2450,55 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         }
 
         showEfaBaseFrame(EfaBaseFrame.MODE_BOATHOUSE_START, item);
+        clearFilterFieldsIfConfigured();        
     }
 
+    /**
+     * Starts the action behind StartSessionMultiple.
+     */
+    private void actionStartSessionMultiple() {
+    	actionForMultiple(false);
+    }    
+    
+    private void actionLateEntryMultiple() {
+    	actionForMultiple(true);
+    }
+    
+    /**
+     * Checks if a boat item in the available Boat list is selected,
+     * and shows the efaBaseFrameMultipleSession dialog if so.
+     *  
+     * @param lateEntry Boolean: Late Entry mode true or false?
+     */
+    private void actionForMultiple(boolean lateEntry) {
+    	alive();
+    	clearAllPopups();
+        if (Daten.project == null) {
+            return;
+        }    	
+
+        /*
+         * EfaBaseFrame is used for creating, editing, finishing and late-entry of sessions.
+         * It is multi-mode, and uses a BoatListItem to store the boat (or person), the mode of the dialog
+         * and some more.
+         * Due to this fact, efaBaseFrame cannot live without having a BoatListItem.
+         * So the user has to select a BoatListItem on his own.
+         * 
+         * This is also true for efaBaseFrameMultisession as a subclass of efaBaseFrame.
+         */
+        ItemTypeBoatstatusList.BoatListItem item = getSelectedListItem();
+        if (item == null) {
+            Dialog.error(International.getString("Bitte wähle zuerst ein Boot aus!"));
+            boatListRequestFocus(1);
+            efaBoathouseBackgroundTask.interrupt(); // Falls requestFocus nicht funktioniert hat, setzt der Thread ihn richtig!
+            return;
+        }        
+
+        showStartSessionMultipleDialog(lateEntry, item);
+        clearFilterFieldsIfConfigured();   
+
+    }
+    
     void actionStartSessionCorrect() {
         alive();
         clearAllPopups();
@@ -2091,6 +2512,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         }
 
         showEfaBaseFrame(EfaBaseFrame.MODE_BOATHOUSE_START_CORRECT, item);
+        clearFilterFieldsIfConfigured();
     }
 
 
@@ -2107,6 +2529,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         }
 
         showEfaBaseFrame(EfaBaseFrame.MODE_BOATHOUSE_FINISH, item);
+        clearFilterFieldsIfConfigured();
     }
 
     void actionAbortSession() {
@@ -2148,6 +2571,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         }
 
         showEfaBaseFrame(EfaBaseFrame.MODE_BOATHOUSE_ABORT, item);
+        clearFilterFieldsIfConfigured();
     }
 
     void actionLateEntry() {
@@ -2166,6 +2590,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         }
 
         showEfaBaseFrame(EfaBaseFrame.MODE_BOATHOUSE_LATEENTRY, item);
+        clearFilterFieldsIfConfigured();        
     }
 
     void actionBoatReservations() {
@@ -2210,7 +2635,14 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
                 Daten.efaConfig.getValueEfaDirekt_mitgliederDuerfenReservierenZyklisch(),
                 Daten.efaConfig.getValueEfaDirekt_mitgliederDuerfenReservierungenEditieren());
         dlg.showDialog();
+    	
+        // we do not clear the filter fields by calling clearFilterFieldsIfConfigured()
+        // because the assumption is that the user reserves more than one boat, if he has filtered for a boat.
+        // (as in Efa 2.3.3_01, a user can filter by boat type if tooltips are active in the available boat list)
+        
+        boatListRequestFocus(0);//automatically detect the boatlist to get the focus    
         efaBoathouseBackgroundTask.interrupt();
+
     }
 
     void actionClubwork() {
@@ -2224,6 +2656,8 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         }
         ClubworkListDialog dlg = new ClubworkListDialog(this, null);
         dlg.showDialog();
+        clearFilterFieldsIfConfigured();
+        
     }
 
     void actionBoatDamages() {
@@ -2242,6 +2676,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         }
         BoatDamageEditDialog.newBoatDamage(this, item.boat, null, null);
         efaBoathouseBackgroundTask.interrupt();
+        clearFilterFieldsIfConfigured();
     }
 
     void actionShowLogbook() {
@@ -2255,6 +2690,8 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         }
         ShowLogbookDialog dlg = new ShowLogbookDialog(this, logbook);
         dlg.showDialog();
+        clearFilterFieldsIfConfigured();
+
     }
 
     void actionStatistics() {
@@ -2268,6 +2705,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         }
         StatisticsListDialog dlg = new StatisticsListDialog(this, null);
         dlg.showDialog();
+        clearFilterFieldsIfConfigured();           
     }
 
     void actionMessageToAdmin() {
@@ -2292,6 +2730,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             dlg.showDialog();
             efaBoathouseBackgroundTask.interrupt();
         }
+        clearFilterFieldsIfConfigured();
     }
 
     void actionAdminMode() {
@@ -2311,11 +2750,13 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         }
         if (adminOnStack) {
             Dialog.error(International.getString("Es ist bereits ein Admin-Fenster geöffnet."));
+        	boatListRequestFocus(0);//automatically detect the boatlist to get the focus     
             return;
         }
 
         AdminRecord admin = AdminLoginDialog.login(this, International.getString("Admin-Modus"));
         if (admin == null) {
+        	boatListRequestFocus(0);//automatically detect the boatlist to get the focus             	
             return;
         }
         Daten.checkRegister();
@@ -2328,11 +2769,21 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
                 logbook = Daten.project.getCurrentLogbook();
                 boatStatus = Daten.project.getBoatStatus(false);
             }
-            updateBoatLists(true);
+            updateBoatLists(true, false);
             updateGuiElements();
+            iniGuiHeaderColors();
+            iniGuiTooltipDelays();
+            if (Daten.isApplEfaBoathouse() && Daten.isEfaFlatLafActive() && (closeButton!=null)) {
+                //EfaFlatLaf gets renitialized when efaConfig Dialog gets closed. 
+            	//this makes the closebutton in the blue header to get a border, and thus it grows.
+            	//we revoke the border when closing admin mode, then.
+                closeButton.setFont(closeButton.getFont().deriveFont(10f));
+                closeButton.setBorder(null);
+            }
         } finally {
             Daten.applMode = Daten.APPL_MODE_NORMAL;
         }
+        clearFilterFieldsIfConfigured();               
     }
 
     void actionSpecial() {
@@ -2374,7 +2825,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
                 String newLog = logbooks[(i+1) % logbooks.length];
                 if (newLog != null && Daten.project.getLogbooks().get(newLog) != null) {
                     openLogbook(newLog);
-                    updateBoatLists(true);
+                    updateBoatLists(true,false);
                     updateGuiElements();
                 }
                 return;
@@ -2393,7 +2844,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
                 if (newProject != null) {
                     openProject(newProject);
                     openProjectLogbookClubwork();
-                    updateBoatLists(true);
+                    updateBoatLists(true,false);
                     updateGuiElements();
                 }
                 return;
@@ -2412,7 +2863,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
                 if (newBoathouse != null) {
                     Daten.project.setMyBoathouseName(newBoathouse);
                     openProjectLogbookClubwork();
-                    updateBoatLists(true);
+                    updateBoatLists(true,false);
                     updateGuiElements();
                 }
                 return;
@@ -2454,6 +2905,8 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             Logger.logdebug(e);
             Dialog.error(e.getMessage());
         }
+        //No clearing of filter as user may want to proceed with an other action on the selected/filtered boat(s)
+        boatListRequestFocus(0);
     }
 
     void actionLastBoatUsage() {
@@ -2477,6 +2930,10 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         } else {
             Dialog.infoDialog(International.getString("Keinen Eintrag gefunden!"));
         }
+        
+        //No clearing of filter as user may want to proceed with an other action on the selected/filtered boat(s)
+    	boatListRequestFocus(0);//automatically detect the boatlist to get the focus    
+        
     }
 
     void efaButton_actionPerformed(ActionEvent e) {
@@ -2487,6 +2944,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     }
 
     void hilfeButton_actionPerformed(ActionEvent e) {
+    	alive();
         clearAllPopups();
         Help.showHelp(getHelpTopics());
     }
@@ -2508,6 +2966,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             new Thread() {
 
                 public void run() {
+                	this.setName("EfaBoathouseFrame.lockEfaThread");
                     try {
                         Thread.sleep(1000);
                     } catch (Exception e) {
@@ -2559,5 +3018,28 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     public void setUnlocked() {
         isLocked = false;
     }
+    
+    private void showStartSessionMultipleDialog(Boolean isLateEntry, ItemTypeBoatstatusList.BoatListItem item) {
 
+    	EfaBaseFrameMultisession myFrame = new EfaBaseFrameMultisession(this,
+    			(isLateEntry ? EfaBaseFrame.MODE_BOATHOUSE_LATEENTRY_MULTISESSION : EfaBaseFrame.MODE_BOATHOUSE_START_MULTISESSION)
+    			);
+
+    	try {
+            myFrame.efaBoathouseAction=item;
+            myFrame.efaBoathouseAction.mode = (isLateEntry ? EfaBaseFrame.MODE_BOATHOUSE_LATEENTRY_MULTISESSION : EfaBaseFrame.MODE_BOATHOUSE_START_MULTISESSION);
+            myFrame.showDialog();
+    	} catch (Exception e) {
+    		Logger.log(e);
+    	}
+
+        clearFilterFieldsIfConfigured();            	
+        alive();
+    }    
+
+}
+class BoatReservationComparatorByNextOccurrence implements Comparator<BoatReservationRecord> {
+	public int compare(BoatReservationRecord brr1, BoatReservationRecord brr2) {
+		return (int)(brr1.getReservationValidInMinutes(true) - brr2.getReservationValidInMinutes(true));
+	}
 }

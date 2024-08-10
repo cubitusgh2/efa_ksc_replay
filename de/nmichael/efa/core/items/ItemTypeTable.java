@@ -10,14 +10,31 @@
 
 package de.nmichael.efa.core.items;
 
-import de.nmichael.efa.util.*;
-import de.nmichael.efa.util.Dialog;
-import de.nmichael.efa.gui.util.*;
-import java.util.*;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.Window;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.util.Arrays;
+import java.util.Hashtable;
+import java.util.Vector;
+
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
+import javax.swing.ListSelectionModel;
+
 import de.nmichael.efa.Daten;
+import de.nmichael.efa.gui.ImagesAndIcons;
+import de.nmichael.efa.gui.util.EfaMouseListener;
+import de.nmichael.efa.gui.util.EfaTableCellRenderer;
+import de.nmichael.efa.gui.util.Table;
+import de.nmichael.efa.gui.util.TableItem;
+import de.nmichael.efa.gui.util.TableItemHeader;
 
 // @i18n complete
 
@@ -26,7 +43,7 @@ public class ItemTypeTable extends ItemType implements ActionListener, ITableEdi
     protected String value;
 
     protected Table table;
-    protected TableCellRenderer renderer;
+    protected EfaTableCellRenderer renderer;
     protected JScrollPane scrollPane;
     protected EfaMouseListener mouseListener;
     protected JPopupMenu popup;
@@ -34,6 +51,7 @@ public class ItemTypeTable extends ItemType implements ActionListener, ITableEdi
     protected String[] keys;
     protected Hashtable<String,TableItem[]> items; // keys -> columns for key
     protected String[] popupActions;
+    protected String[] popupIcons;
     protected int selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION;
     protected boolean sortingEnabled = true;
     protected int sortByColumn = 0;
@@ -46,6 +64,7 @@ public class ItemTypeTable extends ItemType implements ActionListener, ITableEdi
     private int minColumnWidth = -1;
     private int[] minColumnWidths = null;
     private int _moveRowSelectionUponNextRefresh = 0;
+    private Vector<Integer> permanentSecondarySortingColumns=new Vector<Integer>();
 
     public ItemTypeTable(String name, TableItemHeader[] header, Hashtable<String,TableItem[]> items, String value,
             int type, String category, String description) {
@@ -129,6 +148,7 @@ public class ItemTypeTable extends ItemType implements ActionListener, ITableEdi
                 scrollPane.remove(table);
             }
             table = Table.createTable(null, renderer, header, data, sortingEnabled);
+            permanentSecondarySortingColumns.forEach((n) -> table.addPermanentSecondarySortingColumn(n));
             if (fontSize > 0) {
                 table.getRenderer().setFontSize(fontSize);
                 table.setRowHeight(fontSize*2);
@@ -162,6 +182,10 @@ public class ItemTypeTable extends ItemType implements ActionListener, ITableEdi
                     JMenuItem menuItem = new JMenuItem(popupActions[i]);
                     menuItem.setActionCommand(EfaMouseListener.EVENT_POPUP_CLICKED + "_" + i);
                     menuItem.addActionListener(this);
+                    if (popupIcons != null && popupIcons[i]!=null) {
+                    	menuItem.setIcon(ImagesAndIcons.getIcon(popupIcons[i]));
+                    }
+                    //if (popup)
                     popup.add(menuItem);
                 }
             } else {
@@ -264,6 +288,7 @@ public class ItemTypeTable extends ItemType implements ActionListener, ITableEdi
     public int displayOnGui(Window dlg, JPanel panel, int x, int y) {
         this.dlg = dlg;
         iniDisplay();
+        //the two 1.0 values make the panel grow with the window.
         panel.add(scrollPane, new GridBagConstraints(x, y, fieldGridWidth, fieldGridHeight, 1.0, 1.0,
                 fieldGridAnchor, fieldGridFill, new Insets(padYbefore, padXbefore+10, padYafter, padXafter+10), 0, 0));
         return 1;
@@ -320,6 +345,10 @@ public class ItemTypeTable extends ItemType implements ActionListener, ITableEdi
     public void setPopupActions(String[] actions) {
         this.popupActions = actions;
     }
+    
+    public void setPopupIcons(String[] actionIconNames) {
+    	this.popupIcons=actionIconNames;
+    }
 
     public void setVisible(boolean visible) {
         table.setVisible(visible);
@@ -344,6 +373,13 @@ public class ItemTypeTable extends ItemType implements ActionListener, ITableEdi
     public void setSorting(int sortByColumn, boolean ascending) {
         this.sortByColumn = sortByColumn;
         this.ascending = ascending;
+    }
+    
+    public void addPermanentSecondarySortingColumn(int sortByColumn) {
+    	this.permanentSecondarySortingColumns.add(new Integer(sortByColumn));
+    	if (this.table != null) {
+    		this.table.addPermanentSecondarySortingColumn(sortByColumn);
+    	}
     }
 
     public void setFontSize(int fontSize) {
@@ -383,5 +419,4 @@ public class ItemTypeTable extends ItemType implements ActionListener, ITableEdi
     public void setMoveRowSelectionUponNextRefresh(int direction) {
         _moveRowSelectionUponNextRefresh = direction;
     }
-
 }

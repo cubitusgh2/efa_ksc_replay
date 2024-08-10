@@ -1,11 +1,667 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <efaOnlineUpdate>
+		<Version>
+        <VersionID>2.4.1_00</VersionID>
+        <ReleaseDate>TODO</ReleaseDate>
+        <DownloadUrl>TODO</DownloadUrl>
+        <DownloadSize>TODO</DownloadSize>
+        <Changes lang="de">
+            <ChangeItem>Neu: efaBths Listen: Farbicons für Bootslisten werden geglättet dargestellt.</ChangeItem>
+			<ChangeItem>Neu: Neuer Dialog für Erfassung von Wanderfahrten (Multisession), wenn mehrere Leute im eigenen Boot zu einer gemeinsamen Fahrt aufbrechen. Konfigurierbar in efaConfig.</ChangeItem>
+            <ChangeItem>Neu: Autovervollständigungs-Listen: bei der Suche nach Teilbegriff wird immer der Eintrag vorselektiert, der mit dem Suchbegriff beginnt.</ChangeItem>
+            <ChangeItem>Neu: Neue Option in Konfiguration-&gt;Allgemein-&gt;Eingabe-&gt;Besatzung: bei Einsitzer-Fahrten die Person als Crew statt als Steuermann eintragen.</ChangeItem>
+            <ChangeItem>Neu: Adminmodus/Personen: Personen, die in einer oder mehreren Gruppen sind, haben das zugehörige Icon, und der Tooltip stellt die Gruppen dar.</ChangeItem>
+            <ChangeItem>Neu: Adminmodus/Personen: Personen, die eine Kanu-eFB-ID haben, erhalten ein passendes Icon, und der Tooltip beinhaltet die eFB-ID.</ChangeItem>
+            <ChangeItem>Neu: Adminmodus/Boote: Boote, die in einer oder mehreren Gruppen sind, haben das zugehörige Icon, und der Tooltip stellt die Gruppen dar.</ChangeItem>
+            <ChangeItem>Neu: Adminmodus/Bootsstatus: Zum Boot werden Basis-Status, aktueller Status und Eigentümer angezeigt.</ChangeItem>
+            <ChangeItem>Neu: Adminmodus/Gruppen: In der Tabelle dargestellte Gruppen zeigen ihre Farbe an.</ChangeItem>
+            <ChangeItem>Neu: CSV DatenExport: Erzeugte CSV-Dateien lassen sich besser mit aktuellen Tabellenkalkulationen verarbeiten, wenn Format 'CSV (mit BOM)' gewählt wird.</ChangeItem>
+            <ChangeItem>Neu: CSV DatenExport: efaCLI mit erweiterten Parametern für Datenexport.</ChangeItem>
+            <ChangeItem>Neu: CSV DatenExport: efaCLI mit Export für Vereinsarbeit.</ChangeItem>
+            <ChangeItem>Neu: CSV DatenImport: CSV-Dateien in UTF-8 mit BOM (aus Tabellenkalkulationen) lassen sich importieren.</ChangeItem>
+			<ChangeItem>Neu: Bessere Sortierung in den Tabellen für die Bearbeitung von Bootsreservierungen, Personen, Booten... etc. wenn nach einer anderen Spalte sortiert wird.</ChangeItem>
+            <ChangeItem>Neu: Backup: efa.log Datei kann mit gesichert werden (wird aber nicht wiederhergestellt)</ChangeItem>
+            <ChangeItem>Neu: EFB-Sync: Fahrtart kann dem EFB-Kommentartext vorangestellt werden.</ChangeItem>
+            <ChangeItem>Neu: EFB-Sync: Schlägt das DB-Update einer Fahrt fehl, werden trotzdem alle weiteren Fahrten synchronisiert.</ChangeItem>
+            <ChangeItem>Neu: EFB-Sync: Option in EfaConfig-&gt;Sync um die KanuEFB-ID Felder für Personen, Boote, Gewässer immer anzeigen zu lassen.</ChangeItem>         
+			<ChangeItem>BugFix: In efaBootshaus funktioniert im Admin-Bereich: Fahrtenbuch wieder die Suche mit F3.</ChangeItem>           
+            <ChangeItem>BugFix: Abgelaufene Bootsreservierungen von "versteckten" Booten werden gelöscht.</ChangeItem>
+            <ChangeItem>BugFix: In Beta-Versionen wird im Admin-Modus nicht mehr beständig die Aktualisierung der Gewässerliste angeboten.</ChangeItem>
+            <ChangeItem>BugFix: Versteckte Option für "efa immer im Vordergrund" wird wieder angezeigt.</ChangeItem>
+            <ChangeItem>BugFix: efaCloud: Kein Nullpointer-Fehler mehr beim Betreten des Admin-Modus, wenn kein Projekt geöffnet ist.</ChangeItem>
+            <ChangeItem>BugFix: efaCloud: Im Debug Modus werden keine unnötigen Nullpointer-Exceptions mehr ins Log geschrieben. https://github.com/nicmichael/efa/issues/138</ChangeItem>
+            <ChangeItem>Code: Refactoring: Unnötige Imports entfernt.</ChangeItem>          
+        </Changes>
+        <Changes lang="en">
+            <ChangeItem>New: efaBths boatlists: Icons for boat groups are rendered aliased.</ChangeItem>
+			<ChangeItem>New: New dialog for input of multiple similar sessions (multiple persons go on the same trip with their own boat)</ChangeItem>
+            <ChangeItem>New: Popup-Lists: when searching in partial text mode, the preselected entry is now the first of the result set that BEGINS with the search text.</ChangeItem>
+            <ChangeItem>New: New option in Configuration-&gt;Common-&gt;Input-&gt;Crew: when creating single person sessions, set the person as crew instead of as cox.</ChangeItem>
+            <ChangeItem>New: Admin mode/Persons: Persons who are in one or more groups get the respecive group color icon, and the group names are visible in the tooltip.</ChangeItem>
+            <ChangeItem>New: Admin mode/Persons (German Kanoers only): Persons who have a Kanu-eFB-ID assigned get the respective EFB icon and the tooltip shows the eFB-ID.</ChangeItem>
+            <ChangeItem>New: Admin mode/Boats: Boats which are in one or more groups get the respecive group color icon, and the group names are visible in the tooltip.</ChangeItem>
+            <ChangeItem>New: Admin mode/Boat status: shows additional rows for base status, current status and owner</ChangeItem>            
+            <ChangeItem>New: Admin mode/Groups: Groups show their respective color in the table.</ChangeItem>
+            <ChangeItem>New: CSV export: Created files are more suitable for processing in spreadsheet programs, especially in localized variants. CSV gets a BOM, if UTF-8 charset is chosen.</ChangeItem>
+            <ChangeItem>New: CSV export: efaCLI has extended parameters for data export.</ChangeItem>
+            <ChangeItem>New: CSV export: efaCLI can export clubwork.</ChangeItem>
+            <ChangeItem>New: CSV import: UTF-8 CSV files with BOM (created by spreadsheets programs) can be used for import.</ChangeItem>
+			<ChangeItem>New: Better sorting of items in the tables for editing boat reservations, persons, boats... when sorting by another column.</ChangeItem>
+            <ChangeItem>New: Backup: efa.log file can be added to the items which are included in the backup.</ChangeItem>
+            <ChangeItem>BugFix: in efaBths the loogbook dialog supports the F3 key again.</ChangeItem>
+            <ChangeItem>BugFix: Outdated boatreservations of "hidden" boats are deleted.</ChangeItem>
+            <ChangeItem>BugFix: In beta versions there are no more questions for updateing the waters list in admin mode.</ChangeItem>
+            <ChangeItem>BugFix: Hidden option for "efa always on top" gets shown again.</ChangeItem>
+            <ChangeItem>BugFix: efaCloud: No more nullpointer exception when entering admin mode and no open project.</ChangeItem>
+            <ChangeItem>BugFix: efaCloud: No more exceptions logged in debug mode. https://github.com/nicmichael/efa/issues/138 </ChangeItem>
+            <ChangeItem>Code: Refactoring: Removed unused import statemens.</ChangeItem>          
+        </Changes>
+    </Version>
+	<Version>
+        <VersionID>2.4.0_00</VersionID>
+        <ReleaseDate>05.04.2024</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa240.zip</DownloadUrl>
+        <DownloadSize>6547777</DownloadSize>
+        <Changes lang="de">
+			<ChangeItem>Neu: EfaFlatLight LookAndFeel bietet eine klare, modernere Darstellung. In weiten Bereichen konfigurierbar.</ChangeItem>
+			<ChangeItem>Neu: EfaFlatLight Standard-Look nach Update oder Installation. Bei Update ist ein Neustart des Rechners erforderlich, damit efaFlatLight aktiv wird.</ChangeItem>
+			<ChangeItem>Neu: Fallback: Wenn flatLaf-Bibliothek nicht gefunden wird, wird METAL als Standard-Look verwendet.</ChangeItem>
+			<ChangeItem>Neu: EfaCloud-Status-Icons in blauer efaBths-Titelleiste sind besser dargestellt.</ChangeItem>
+			<ChangeItem>Neu: Fahrtenbuch-Anzeige in efaBths nutzt alternierende Zeilenfarben für mehr Übersicht.</ChangeItem>
+            <ChangeItem>Neu: EfaConfig: Schriftart für efaBths und efaBase einstellbar. Bessere Standardschrift für alle LookAndFeel.</ChangeItem>
+            <ChangeItem>Neu: EfaConfig: Tooltip-Farben sind konfigurierbar.</ChangeItem>
+            <ChangeItem>Neu: EfaConfig: Neustrukturierung der Konfiguration mit Überschriften und Hinweisen zu einzelnen Konfigurationselementen.</ChangeItem>
+            <ChangeItem>Neu: EfaConfig: Überschriftenfarbe kann auch für Registerkarten genutzt werden (Metal and WindowsClassic LookAndFeel).</ChangeItem>
+            <ChangeItem>Neu: EfaConfig: Vereins-Logo kann bis 320x200 Pixel gross werden.</ChangeItem>
+			<ChangeItem>Neu: EfaConfig: Beim Maximieren von Fenstern kann efa den Platzberdarf der Taskbars berücksichtigen</ChangeItem>
+            <ChangeItem>Neu: EfaConfig: EfaBootshaus-&gt;Eingabe: Option zur vereinfachten Anlage mehrerer ähnlicher Fahrten hintereinander (Expertenmodus)</ChangeItem>
+            <ChangeItem>Neu: Versteckte Elemente im Boots- und PersonenDialog zeigen ein Icon und einen Tooltip zu ihrem Status.</ChangeItem>
+            <ChangeItem>Neu: efaBths: Uhrzeit-Widget und Buttons immer mit fetter Schrift auch wenn keine fette Schrift vorgesehen ist.</ChangeItem>
+            <ChangeItem>Neu: Vereinsarbeit-Dialog hat angepasste Tabellen-Spaltenbreiten, damit die Daten einfacher zu lesen sind.</ChangeItem>
+            <ChangeItem>Neu: Beschriftungen zu Eingabefeldern werden rechtsbündig angezeigt (besserere Usability).</ChangeItem>
+            <ChangeItem>Neu: Überschriften von Listen (Gruppen, Typen) werden hervorgehoben.</ChangeItem>
+            <ChangeItem>Neu: About-Dialog: Anzeige der genutzten Bibliotheken und ihrer Lizenz. Im Debug-Modus werden Infos zum LAF und CSS angezeigt.</ChangeItem>
+            <ChangeItem>BugFix: WindowsLookAndFeel: Ist besser nutzbar geworden. Wie bei den anderen LookAndFeels werden Buttons mit Farbe gefüllt angezeigt, anstatt nur einen farbigen Rahmen zu haben.</ChangeItem>
+            <ChangeItem>BugFix: Icons zum Hinzufügen von Elementen sind dunkler und besser wahrnehmbar.</ChangeItem>              
+            <ChangeItem>BugFix: Tabellen mit alternierenden Zeilen nutzen die LookAndFeel-Farben als Standardfarbe anstatt fest weisse Hintergrundfarbe zu nutzen.</ChangeItem>
+            <ChangeItem>BugFix: Überflüssige grafische Rahmen entfernt in efaBths und allen Dialogen.</ChangeItem>
+            <ChangeItem>BugFix: Autovervollständigen-Felder zeigten sich unter Windows nicht mehr an, wenn man zwischenzeitlich in einem anderen Programm war. Zusätzlich: STRG+F öffnet das Autovervollständigen-Feld.</ChangeItem>
+            <ChangeItem>BugFix: Autovervollständigen-Felder: Zeigten sich unter Linux/Unbuntu mit "efa immer im Vordergrund" nicht an (versteckten sich hinter dem Hauptfenster)</ChangeItem>
+            <ChangeItem>BugFix: Autovervollständigen-Felder: Zeigen sich nun auch an, wenn mit der Eingabe im Textfeld kein Treffer gefunden wird.</ChangeItem>
+            <ChangeItem>BugFix: Autovervollständigen-Felder: werden diese mit TAB verlassen, wird der gewählte Eintrag übernommen.</ChangeItem>
+            <ChangeItem>BugFix: Fahrt Beginnen Dialog: Taste ESC in Autovervollständigen-Feldern schließt nur die Auswahlbox, nicht den gesamten Dialog.</ChangeItem>
+            <ChangeItem>BugFix: Lesen von Nachrichten: im Textfeld kann nun Text mit der Maus markiert und mit STRG+C in die Zwischenablage übernommen werden.</ChangeItem>
+            <ChangeItem>BugFix: EfaConfig: Scrollbar im Config-Fenster ist INNERHALB der Registerkarten - somit besser scrollbar</ChangeItem>
+            <ChangeItem>BugFix: EfaConfig: Tastenbelegung für Bemerkungsfeld - Textfeld zur Eingabe freigeschaltet.</ChangeItem>
+            <ChangeItem>BugFix: EfaConfig: MeteoAstro-Plugin weist in Konfiguration auf nicht mehr funktionierende Wetterabfrage hin.</ChangeItem>
+            <ChangeItem>BugFix: EfaConfig: mehr Elemente weisen darauf hin, dass sie einen Neustart von efa benötigen.</ChangeItem>
+            <ChangeItem>BugFix: EfaConfig: Automatische Vorgänge werden besser dargestellt.</ChangeItem>
+			<ChangeItem>BugFix: EfaConfig: KanuEFBSync Registerkarte wird besser dargestellt.</ChangeItem>
+			<ChangeItem>BugFix: Startup: Start-Probleme von efaBths auf langsameren Maschinen behoben (Raspberry PI). Audit Task läuft beim Öffnen von Projekten nicht mehr im Hintergrund, was den Start von efaBths um eine paar Sekunden verlängern kann.</ChangeItem>
+			<ChangeItem>BugFix: Boothaus-Listen mit zwei Spalten berechnen Breite für zweites Element besser. Performanceoptimierung für Darstellung der bunten Icons vor den Bootsnamen.</ChangeItem>
+            <ChangeItem>BugFix: Boothaus-Listen mit Filtern: Es wurden keine Einträge gefunden, wenn die Eingabe ein Sonderzeichen ß, æ oder œ beinhaltete.</ChangeItem>
+            <ChangeItem>BugFix: Boothaus-Listen mit zwei Spalten zeigen bei einfach 'nicht verfügbaren' Booten den Kommentar des Bootsstatus an.</ChangeItem>
+            <ChangeItem>BugFix: Bootsreservierung: Bei Auswahl des Bootes wird der Knopf für die Auswahlliste angezeigt.</ChangeItem>
+            <ChangeItem>BugFix: HTML Widgets zeigen ihren Inhalt in serifenloser Schrift mit 14 Pixel höhe an - wie unter Metal.</ChangeItem>
+            <ChangeItem>BugFix: NewsTicker Widget hat kein Problem mehr mit unüblichen Schriften.</ChangeItem>
+            <ChangeItem>BugFix: MetoAstro-Plugin in Hauptbildschirm von efaBths zeigt eine Hand als Mauscursor an, wenn ein HTML-Popup konfiguriert wurde.</ChangeItem>
+            <ChangeItem>BugFix: Keine (versteckte) Exception mehr bei der Aktualisierung der Inhalte des HTML-Widgets.</ChangeItem>
+            <ChangeItem>BugFix: Keine (versteckte) Exception mehr bei Initialisierung von efaBths wenn der Spezialbutton angezeigt wird. Spezialbutton zeigt nun das zugehörige Icon.</ChangeItem>
+            <ChangeItem>BugFix: Key F3 im 'Fahrt beginnen' Dialog öffnet nicht mehr den Suchdialog für das Fahrtenbuch.</ChangeItem>
+            <ChangeItem>BugFix: BEREIT wird nur noch nach der GUI-Initialisierung von efaBths und efaBase in das Log geschrieben, statt beim Anzeigen von BaseFrame.</ChangeItem>
+            <ChangeItem>BugFix: Swing Multithreading Problem gelöst bei automatischem Fahrtenbuchwechsel, periorischem oder geplanten efaBths Neustart und Aktualisierung des efaCloud status im Fenstertitel.</ChangeItem>
+            <ChangeItem>BugFix: Swing Multithreading Problem gelöst bei Aufruf von Statistiken mit interaktiver Abfrage von Namen, Booten, Gruppen.</ChangeItem>
+            <ChangeItem>BugFix: Dialog für automatisches Beenden/Neustarten von efa zeigt den Grund korrekt an.</ChangeItem>
+            <ChangeItem>BugFix: Resource Leak behoben: Die während eines Backups erstellte ZIP-Datei wird nach Abschluss geschlossen.</ChangeItem>
+			<ChangeItem>BugFix: News- und Uhr Widgets laufen im Hintergrund nicht weiter, wenn sie nicht sichtbar sind.</ChangeItem>
+            <ChangeItem>BugFix: emil: Einheitliche Höhe für Textfelder. Textfelder können nicht mehr zu klein sein in bestimmten LookAndFeels. Schnellere Scrollgeschwindigkeit in der Teilnehmerliste.</ChangeItem>
+			<ChangeItem>Bugfix: Keine Exception im Admintask zur Berechnung des Vereinsarbeit-Übertrags mehr, wenn zu einem Projekt ohne Vereinsarbeit gewechselt wird.</ChangeItem>
+			<ChangeItem>Bugfix: Bei aktivem Tooltip-Support zeigen Tabellen auch Tooltips für Spaltenüberschriften.</ChangeItem>
+			<ChangeItem>Bugfix: Fahrtenbuch anzeigen: zeigt breitere Spalten für Datum- und Zeitfelder an (gut bei Verwendung größerer Schriftarten)</ChangeItem>
+			<ChangeItem>Bugfix: Fahrtenbuch anzeigen: Darstellungsfehler behoben, wenn die Crew eines Fahrtenbucheintrags leer war.</ChangeItem>
+			<ChangeItem>Bugfix: Admin Modus: Dialoge zur Auswahl von Projekten, Fahrtenbüchern, Vereinsarbeit, Plugins werden besser dargestellt in allen LookAndFeels.</ChangeItem>
+			<ChangeItem>Bugfix: efaBths: Blaue Titelleiste verändert ihre Größe nicht mehr, wenn efaFlatLaf aktiv ist, und die efa-Konfiguration geändert wurde.</ChangeItem>
+			<ChangeItem>Bugfix: Tabellen: Wenn alternierende Zeilen aktiv sind, zeigt das efaFlatLaf zumindest horizontale Linien in den Tabellen an.</ChangeItem>        
+            <ChangeItem>BugFix: efaCloud: Verbesserungen der Synchronisation: bei Re-Synchronisation 'kürzlich' geänderter/neuer Datensätze berücksichtigt nur noch Datensätze der letzten 5 Tage statt 30 Tage.</ChangeItem>
+            <ChangeItem>BugFix: efaCloud: Verbesserungen der Synchronisation: Besserer Umgang mit der Situation, wenn die Klartext-Namen durch UUIDs ersetzt werden (durch Aufräumarbeiten am Jahresende).</ChangeItem>
+            <ChangeItem>BugFix: efaCloud: Projekt kann nicht mehr mit leeren Feldern zu efaCloud-Credentials in ein efaCloud-Projekt umgestellt werden.</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+			<ChangeItem>New: EfaFlatLight LookAndFeel provides a clear, modern look of efa. Customizable in wide ranges.</ChangeItem>
+			<ChangeItem>New: EfaFlatLight is the standard LookAndFeel after update or new install. After an update, a reboot of the machine is neccessary to activate flatlaf.</ChangeItem>
+			<ChangeItem>New: Fallback: If flatlaf library cannot be found, METAL is used as standard LookAndFeel.</ChangeItem>
+			<ChangeItem>New: Blue window title bar of efaBths shows efaCloud-status as icons instead of text.</ChangeItem>
+			<ChangeItem>New: Show Logbook dialog in efaBths makes use of alternating row colors.</ChangeItem>
+            <ChangeItem>New: EfaConfig: Font is customizable for all LookAndFeel in efaBase and efaBths. Better standard font for all LookAndFeel.</ChangeItem>
+            <ChangeItem>New: EfaConfig: Tooltip colores customizable.</ChangeItem>
+            <ChangeItem>New: EfaConfig: Restructuring of the configuration with headings and notes on individual configuration elements.</ChangeItem>
+            <ChangeItem>New: EfaConfig: Heading colors can be used for highlighting tab headers (Metal and WindowsClassic LookAndFeel).</ChangeItem>
+            <ChangeItem>New: EfaConfig: Club logo can have a bigger size of 320x200 pixels.</ChangeItem>
+			<ChangeItem>New: EfaConfig: When maximizing windows, efa can respect taskbar size and location</ChangeItem>
+            <ChangeItem>New: EfaConfig: efa-Boat House&amp;Input: New option to simplify input of multiple similar sessions (expert mode).</ChangeItem>
+            <ChangeItem>New: efaBths: Clock widget and buttons use bold font, even if not setup in efaConfig.</ChangeItem>
+            <ChangeItem>New: Labels for input fields are right-aligned for better usability.</ChangeItem>            
+            <ChangeItem>New: Clubwork list dialog: applied custom column widths so that the data is easier to read.</ChangeItem>
+			<ChangeItem>New: Headers for lists get highlighted (e.g. in persons editor when assigning groups).</ChangeItem>
+            <ChangeItem>New: Hidden elements for boats and persons show an icon and a tooltip indicating their status.</ChangeItem>
+            <ChangeItem>New: About dialog: list of used libraries and their licensing. In debug mode, system Infos show LAF and CSS settings.</ChangeItem>
+            <ChangeItem>BugFix: WindowsLookAndFeel: Is more usable for efa. As in all other LookAndFeels, the buttons get displayed filled with color, instead of just having a colored border.</ChangeItem>
+            <ChangeItem>BugFix: Tables with alternating row colors use the lookandfeel specific colors instead of plain white background color.</ChangeItem>
+            <ChangeItem>BugFix: Removed unneccesary borders in efaBths and all dialogs.</ChangeItem>
+            <ChangeItem>BugFix: Icons for adding new items use a darker green and are better recognizable.</ChangeItem>              
+			<ChangeItem>BugFix: Autocomplete fields did not show their popup window on Windows machines, when user changed to another program and returned to efa. Also, STRG+F now opens the popup window.</ChangeItem>
+            <ChangeItem>BugFix: Autocomplete fields: if user leaves a popup selection with tab, the selected entry is used for the field.</ChangeItem>
+            <ChangeItem>BugFix: Autocomplete fields: if set to partial text mode, the color of the button was orange instead of red if the item was not valid.</ChangeItem>
+            <ChangeItem>BugFix: Start session dialog: Hitting ESC while an autocomplete window is open, only the autocomplete window is closed instead of the start session dialog.</ChangeItem>
+            <ChangeItem>BugFix: EfaConfig: Scrollable in the config window is INSIDE the tabs - making it easier to scroll</ChangeItem>
+            <ChangeItem>BugFix: EfaConfig: Key assignment for comment field - text field for values set to enabled.</ChangeItem>
+            <ChangeItem>BugFix: EfaConfig: MeteoAstro plugin indicates in efaconfig that weather can no longer be displayed.</ChangeItem>
+            <ChangeItem>BugFix: EfaConfig: More config items indicate that they need a restart of efa.</ChangeItem>
+            <ChangeItem>BugFix: EfaConfig: Cron job tab is refactored.</ChangeItem>
+			<ChangeItem>BugFix: Startup: fixed startup problems of efaBths on slower machines (Raspberry PI). When opening projects, Audit task no longer runs in background. This can increase startup time for efaBths by a few seconds.</ChangeItem>
+			<ChangeItem>BugFix: When reading messages to admin, the text of the message can be selected and copied to clipboard via CTRL+C.</ChangeItem>
+			<ChangeItem>BugFix: Boathouse lists with two columns: calculate widths for second columns optimized, performance optimization when a boat name has an icon prefix.</ChangeItem>
+            <ChangeItem>BugFix: Boathouse lists with two columns: show the comment of the boat if the boat has been manually set to 'not available'</ChangeItem>
+            <ChangeItem>BugFix: Boathouse lists filter: did not find any boats when filter string contained only one of the special characters: ß, æ or œ.</ChangeItem>
+            <ChangeItem>BugFix: Boat reservation: When selecting the boat, the selection list button is displayed.</ChangeItem>
+			<ChangeItem>BugFix: Displaying messages for admin: User can now select text in textarea and copy it to clipboard (CTRL+C).</ChangeItem>
+            <ChangeItem>BugFix: HTML Widgets use Dialog font as default, in 14 pix size in all LookAndFeels.</ChangeItem>
+            <ChangeItem>BugFix: NewsTicker Widget without problems with unusual font sizes.</ChangeItem>
+            <ChangeItem>BugFix: MeteoAstro plugin in efaBths main screen shows a hand as a mouse cursor if an HTML popup has been configured.</ChangeItem>
+            <ChangeItem>BugFix: MeteoAstro plugin default value for 'download weather' is false for new installation. Avoids unneccessary exceptions in log after installation.</ChangeItem>
+            <ChangeItem>BugFix: No (hidden) exception in debug mode in HTMLWidget updating process</ChangeItem>
+            <ChangeItem>BugFix: No (hidden) exception during initialisation of efaBths if the special button is displayed. Special button now has the according icon.</ChangeItem>              
+            <ChangeItem>BugFix: No more duplicates in the spellchecking dialogue (which comes up when a item with a lookup list has not fully been set by the user).</ChangeItem>
+            <ChangeItem>BugFix: Key F3 in start session dialog does no longer invoke searching in logbook dialog.</ChangeItem>
+            <ChangeItem>BugFix: READY will only be written in efa.log after the GUI initialization of efaBths and efaBase, and no longer after showing of BaseFrame.</ChangeItem>
+            <ChangeItem>BugFix: Fixed swing multithreading problem when performing automatic logbook change, exiting efa due to periodic or planned restart, and updating efaCloud status in the title bar.</ChangeItem>
+            <ChangeItem>BugFix: Fixed swing multithreading problem when running parametized statistics with interactive specification of persons, boats, groups.</ChangeItem>
+            <ChangeItem>BugFix: Dialog for automatic shutdown/restart of efa now shows the reason.</ChangeItem>
+            <ChangeItem>BugFix: Removed resource leak: ZIP file created during a backup gets closed afterwards.</ChangeItem>
+			<ChangeItem>BugFix: Widgets for clock and news stop running in background if invisible.</ChangeItem>
+			<ChangeItem>Bugfix: no exception in admintask for carryover calculation when changing project to a project where no clubwork has been defined in efabase.</ChangeItem>            
+			<ChangeItem>Bugfix: When tooltips are active for tables, tooltips are shown for table column headers.</ChangeItem>
+			<ChangeItem>Bugfix: Show Logbook dialog: shows date and time colums with a larger width.</ChangeItem>
+			<ChangeItem>Bugfix: Show Logbook dialog: Fixed a rendering error when the crew of the logbook entry is empty.</ChangeItem>
+			<ChangeItem>Bugfix: Admin mode: Dialogs for selecting Projects, Logbooks, Clubwork, Plugins are better readable in any LookAndFeels.</ChangeItem>
+			<ChangeItem>Bugfix: efaBths: Blue title bar does not change it's size when efaFlatLaf is active and config items get saved in admin mode.</ChangeItem>
+			<ChangeItem>Bugfix: Tables: when alternating row colors are deactivated, flatlaf shows horizontal lines for better readability in tables.</ChangeItem>        
+			<ChangeItem>BugFix: efaCloud: Sync improvements: when resyncing 'recently' changed/created records only records of the last 5 days are considered, instead of the last 30 days.</ChangeItem>
+            <ChangeItem>BugFix: efaCloud: Sync improvements: better handling when names of boats and other items get replaced by uuids (by cleaning actions at the end of the year).</ChangeItem>
+            <ChangeItem>BugFix: efaCloud: Cannot convert an existing project to efaCloud then efaCloud credential fields are empty</ChangeItem>
+        </Changes>
+	</Version>	
+	<Version>
+        <VersionID>2.3.3_02</VersionID>
+        <ReleaseDate>26.11.2023</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa233.zip</DownloadUrl>
+        <DownloadSize>4546237</DownloadSize>
+        <Changes lang="de">
+            <ChangeItem>BugFix: Unerwuenschtes Dialogfenster bei Automatischen Ablauefen angezeigt</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+            <ChangeItem>BugFix: Unwanted Dialog window shown during cron job executions</ChangeItem>
+        </Changes>
+    </Version>
+    <Version>
+        <VersionID>2.3.3_03</VersionID>
+        <ReleaseDate>01.01.2024</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa233.zip</DownloadUrl>
+        <DownloadSize>TODO</DownloadSize>
+        <Changes lang="de">
+            <ChangeItem>BugFix: Datenimport von Fahrtenbucheinträgen funktioniert nicht, wegen ArrayIndexOutOfBounds Exception</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+            <ChangeItem>BugFix: Data import of logbook items did not work due to ArrayIndexOutOfBounds exception</ChangeItem>
+        </Changes>
+    </Version>
+    <Version>
+        <VersionID>2.3.3_02</VersionID>
+        <ReleaseDate>26.11.2023</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa233.zip</DownloadUrl>
+        <DownloadSize>4546237</DownloadSize>
+        <Changes lang="de">
+            <ChangeItem>BugFix: Unerwuenschtes Dialogfenster bei Automatischen Ablauefen angezeigt</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+            <ChangeItem>BugFix: Unwanted Dialog window shown during cron job executions</ChangeItem>
+        </Changes>
+    </Version>
+    <Version>
+        <VersionID>2.3.3_01</VersionID>
+        <ReleaseDate>05.11.2023</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa233.zip</DownloadUrl>
+        <DownloadSize>4545206</DownloadSize>
+        <Changes lang="de">
+            <ChangeItem>BugFix: Widgets multithreading-sicher: weniger Rendering-Exceptions im efa.log</ChangeItem>
+            <ChangeItem>BugFix: Teilbegriffsuche für Eingabefelder mit Vervollständigung suchen nun auf kompletter Liste</ChangeItem>
+            <ChangeItem>BugFix: Sortierung für Bootsliste, Personenliste, Vervollständigungs-Listen gehen besser mit europäischen Sonderzeichen um</ChangeItem>
+            <ChangeItem>Neu: Konfigurationsseiten für efaBootshaus (Allgemein, Erscheinungsbild) reorganisiert für bessere Auffindbarkeit von Eigenschaften</ChangeItem>
+            <ChangeItem>Neu: Konfigurierbares Zeitintervall für automatisches Leeren von Filterfeldern in Bootshaus</ChangeItem>
+            <ChangeItem>Neu: Konfigurierbares automatisches Leeren von Filterfeldern nach den meisten Bootshaus-Aktionen</ChangeItem>            
+            <ChangeItem>Neu: Einfacheres Finden von Einträgen mit Umlauten/Sonderzeichen in Tabellen, Bootslisten, und Eingabefeldern mit Vervollständigung (konfigurierbar)</ChangeItem>
+            <ChangeItem>BugFix: Mehr Konfigurationselemente, die einen Neustart von EFA benötigen, melden dieses beim Speichern der Konfigurationsdaten.</ChangeItem>
+            <ChangeItem>BugFix: Der Dialog für die Auswahl unklar eingegebener Werte zeigt keine doppelten Einträge mehr an.</ChangeItem>      
+            <ChangeItem>Neu: Bootsreservierungen: Ändern von Bootsnamen und Erstellen von Reservierungs-Kopien</ChangeItem>
+			<ChangeItem>BugFix: efaCloud: Synchronisation in efaBase erlaubt Übernahme von Datensätzen mit vielen Änderungen.</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+            <ChangeItem>BugFix: Widgets are safe for multithreading: Less exceptions for rendering in efa.log</ChangeItem>
+            <ChangeItem>BugFix: Autocomplete lists: Filter by partial contents now consideres complete list</ChangeItem>
+            <ChangeItem>BugFix: Sorting of boat lists, person lists, autocomplete-lists works better with european special characters like umlauts</ChangeItem>
+            <ChangeItem>New: Reorganisation of efaBoathouse configuration items (common, appearance) so the items can be found more easily</ChangeItem>
+            <ChangeItem>New: Automatic clearing of boathouse filter fields: configurable interval</ChangeItem>
+            <ChangeItem>New: Automatic clearing of boathouse filter fields: after most actions in efaBths (configurable)</ChangeItem>
+            <ChangeItem>New: Items with umlauts/special characters are easier to find when searching in tables, boat lists and autocomplete lists (configurable)</ChangeItem>
+            <ChangeItem>BugFix: Some more configuration elements requiring a restart of efaBths to activate produce a corresponding message when saving configuration changes.</ChangeItem>
+            <ChangeItem>BugFix: No more duplicates in the spellchecking dialogue (which comes up when a item with a lookup list has not fully been set by the user).</ChangeItem>
+            <ChangeItem>New: Boat reservations: Boat can be changed after saving, and also copies of boat reservations can be created.</ChangeItem>
+  			<ChangeItem>BugFix: efaCloud: Synchronisation in efaBase allows download of records with many changes.</ChangeItem>
+        </Changes>
+    </Version>
+
+    <Version>
+        <VersionID>2.3.3_00</VersionID>
+        <ReleaseDate>29.09.2023</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa233.zip</DownloadUrl>
+        <DownloadSize>4523987</DownloadSize>
+        <Changes lang="de">
+            <ChangeItem>Neu: efa 2.3.3 erfordert mindestens Java Version 8</ChangeItem>
+            <ChangeItem>Neu: Bootsreservierungen (sowohl einmalige als auch wöchentliche) lassen sich jetzt nach Datum filtern</ChangeItem>
+		    <ChangeItem>Neu: Kanu-EFB Synchronisation überarbeitet mit mehr Konfigurationsparametern</ChangeItem>
+            <ChangeItem>Neu: Bootshaus mit zweispaltiger Listendarstellung (deaktivierbar)</ChangeItem>
+            <ChangeItem>Neu: Bootshaus zeigt heutige Bootsreservierungen an (deaktivierbar)</ChangeItem>
+            <ChangeItem>Neu: Bootshaus mit Tooltipps für Einträge (deaktivierbar)</ChangeItem>
+            <ChangeItem>Neu: Bootshaus kann nach Inhalten der Tooltips filtern</ChangeItem>
+            <ChangeItem>Neu: Bootshaus mit besser sichtbaren Überschriften (konfigurierbar)</ChangeItem>
+            <ChangeItem>Neu: Bootshaus: Gelber Hintergrund für aktive/gefüllte Filter-Felder in Bootslisten, regelmäßiges Zurücksetzen der Filter</ChangeItem>
+            <ChangeItem>Neu: Eingabefelder mit Vervollständigung (z.B. Bootsname) suchen nach nach Teilbegriff</ChangeItem>
+            <ChangeItem>Neu: Bootsreservierungen lassen sich per Checkbox auf den heutigen Tag filtern</ChangeItem>
+            <ChangeItem>Neu: Bootsreservierungen mit zeitlich beschränkten wöchentlichen Reservierungen</ChangeItem>
+			<ChangeItem>Neu: Verhalten von efa bei Überschneidungen von Reservierungen unterschiedlichen Typs kann eingestellt werden</ChangeItem>
+            <ChangeItem>Bugfix: Logrotate efa.log verursacht mit efaCLI keine fehlenden Logeinträge mehr (https://github.com/nicmichael/efa/issues/22) </ChangeItem>
+            <ChangeItem>Bugfix: efaCloud Überschreiben von Fahrten in efaCloud bei Fahrtenbuchwechsel</ChangeItem>
+            <ChangeItem>Bugfix: efaCloud Synchronisationsabweichungstoleranz zu eng</ChangeItem>
+            <ChangeItem>Neu: efaCloud Eigenes Logging für Synchronisationsfehler</ChangeItem>
+            <ChangeItem>Bugfix: plugin.xml verweist auf korrekte JavaMail-Version 1.6.2</ChangeItem>
+            <ChangeItem>Bugfix: Französische Übersetzung hat keine Fehler mehr bei Texten mit Apostrophen</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+            <ChangeItem>New: efa 2.3.3. requires at least Java Vesion 8</ChangeItem>
+            <ChangeItem>New: Boat reservations (both one-time and weekly reservations) can now be filtered by date</ChangeItem>
+            <Changeitem>New: Kanu-EFB synchonisation refactored, can be configured in more detail</Changeitem>
+            <ChangeItem>New: Boathouse shows two-column lists (can be disabled)</ChangeItem>
+            <ChangeItem>New: Boathouse shows today's reservations for available boats(can be disabled)</ChangeItem>
+            <ChangeItem>New: Boathouse shows tooltips for items (can be disabled)</ChangeItem>
+            <ChangeItem>New: Boathouse can filter for tooltip contents</ChangeItem>
+            <ChangeItem>New: Boathouse with more prominent headers (configureable)</ChangeItem>
+            <ChangeItem>New: Boathouse: Yellow background for active/non-empty filter fields in boat lists. Filter fields get cleared in fixed intervals.</ChangeItem>
+            <ChangeItem>New: Boat reservations can be filtered for today's reservations only (new checkbox)</ChangeItem>            
+            <ChangeItem>New: Boat reservations allow weekly reservations within a limited period</ChangeItem>
+            <ChangeItem>New: Overlapping boat reservations of diffrent types: behaviour of efa can be set</ChangeItem>
+            <ChangeItem>New: Autocomplete fields (e.g. boat name) filter by partial word</ChangeItem>
+            <ChangeItem>Bugfix: Logrotate efa.log avoids missing log entries when running efaCLI(https://github.com/nicmichael/efa/issues/22) </ChangeItem>            
+            <ChangeItem>Bugfix: efaCloud overwriting of sessions when switching logbook</ChangeItem>
+            <ChangeItem>Bugfix: efaCloud too little tolerance for data synchronization</ChangeItem>
+            <ChangeItem>New: efaCloud logging of synchronization errors</ChangeItem>
+            <ChangeItem>Bugfix: plugin.xml now correctly reports current version 1.6.2 of JavaMail</ChangeItem>
+            <ChangeItem>Bugfix: Fixed errors in french locale concerning apostrophes.</ChangeItem>
+        </Changes>
+    </Version>
+
+    <Version>
+        <VersionID>2.3.2_03</VersionID>
+        <ReleaseDate>21.01.2023</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa232.zip</DownloadUrl>
+        <DownloadSize>4379916</DownloadSize>
+        <Changes lang="de">
+            <ChangeItem>Bugfix: Standard Lock Timeout auf 30 Sekunden erhoeht</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+            <ChangeItem>Bugfix: Increased default lock timeout to 30 sec</ChangeItem>
+        </Changes>
+    </Version>
+
+    <Version>
+        <VersionID>2.3.2_02</VersionID>
+        <ReleaseDate>21.01.2023</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa232.zip</DownloadUrl>
+        <DownloadSize>4380077</DownloadSize>
+        <Changes lang="de">
+            <ChangeItem>Bugfix: Erweiterte Lock Timeout Diagnostics</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+            <ChangeItem>Bugfix: Additional log timeout diagnostics</ChangeItem>
+        </Changes>
+    </Version>
+
+    <Version>
+        <VersionID>2.3.2_01</VersionID>
+        <ReleaseDate>28.10.2022</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa232.zip</DownloadUrl>
+        <DownloadSize>4380228</DownloadSize>
+        <Changes lang="de">
+            <ChangeItem>Neu: JavaMail Update auf Version 1.6.2</ChangeItem>
+            <ChangeItem>Bugfix: Ungueltige Personen in Personen-Auswahlliste (https://github.com/nicmichael/efa/issues/62)</ChangeItem>
+            <ChangeItem>Bugfix: Personen-Auswwahlliste schrumpft in efaBasis (https://github.com/nicmichael/efa/issues/67)</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+            <ChangeItem>Neu: JavaMail Update to Version 1.6.2</ChangeItem>
+            <ChangeItem>Bugfix: Invalid persons in person selection list (https://github.com/nicmichael/efa/issues/62)</ChangeItem>
+            <ChangeItem>Bugfix: Person selection list loses entries in efaBase (https://github.com/nicmichael/efa/issues/67)</ChangeItem>
+        </Changes>
+    </Version>
+
+    <Version>
+        <VersionID>2.3.2_00</VersionID>
+        <ReleaseDate>04.06.2022</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa232.zip</DownloadUrl>
+        <DownloadSize>4269537</DownloadSize>
+        <Changes lang="de">
+            <ChangeItem>Neu: Filter fuer Liste der verfuegbaren Boote und Boote auf Fahrt</ChangeItem>
+            <ChangeItem>Neu: Verbesserte Darstellung von Tabellen</ChangeItem>
+            <ChangeItem>Neu: Anpassung der Logik zur Änderung des Vereinsarbeitsbuches an die Logik zur Veränderung des Fahrtenbuches bei der Verwendung in efaCloud</ChangeItem>
+            <ChangeItem>Bugfix: Fehlerkorrektur für efaCloud auf Windows Systemen</ChangeItem>
+            <ChangeItem>Bugfix: Verbesserung der Synchronisierung mit efaCloud</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+            <ChangeItem>Neu: Filter for lists with available boats and boats on the water</ChangeItem>
+            <ChangeItem>Neu: Improved display of tables</ChangeItem>
+            <ChangeItem>Neu: Improved handling of club work in efaCloud</ChangeItem>
+            <ChangeItem>Bugfix: efaCloud bugfixes on Windows</ChangeItem>
+            <ChangeItem>Bugfix: Improved efaCloud synchronization</ChangeItem>
+        </Changes>
+    </Version>
+
+    <Version>
+        <VersionID>2.3.1_04</VersionID>
+        <ReleaseDate>22.03.2022</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa231.zip</DownloadUrl>
+        <DownloadSize>4270829</DownloadSize>
+        <Changes lang="de">
+            <ChangeItem>Bugfix: Korrektur fuer fehlendes Dezimalkomma in Darstellung von Entfernungen und anderen Dezimalwerten</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+            <ChangeItem>Bugfix: Fix for missing decimal point in display of distances and other decimal values</ChangeItem>
+        </Changes>
+    </Version>
+
+    <Version>
+        <VersionID>2.3.1_03</VersionID>
+        <ReleaseDate>06.03.2022</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa231.zip</DownloadUrl>
+        <DownloadSize>4270666</DownloadSize>
+        <Changes lang="de">
+            <ChangeItem>Neu: Verbesserte Uebersetzung nach Franzoesisch</ChangeItem>
+            <ChangeItem>Bugfix: efaCloud Synchronisationsfehler unter Windows behoben</ChangeItem>
+            <ChangeItem>Bugfix: Fehler bei Handhabung von Dezimalzahlen im Import behoben</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+            <ChangeItem>New: Improved transation to French</ChangeItem>
+            <ChangeItem>Bugfix: efaCloud synchronization problem under Windows fixed</ChangeItem>
+            <ChangeItem>Bugfix: Bug for import of decimal numbers fixed</ChangeItem>
+        </Changes>
+    </Version>
+
+    <Version>
+        <VersionID>2.3.1_02</VersionID>
+        <ReleaseDate>08.02.2022</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa231.zip</DownloadUrl>
+        <DownloadSize>4256352</DownloadSize>
+        <Changes lang="de">
+            <ChangeItem>Neu: Wettbewerbsbedingungen fuer Fahrtenabzeichen 2022 angepasst</ChangeItem>
+            <ChangeItem>Bugfix: efaCloud Bugfix bei Fahrtenbuchwechsel</ChangeItem>
+            <ChangeItem>Bugfix: Fehler bei Handhabung von Dezimalzahlen im Import behoben</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+            <ChangeItem>Bugfix: efaCloud Bugfix for logbook change</ChangeItem>
+            <ChangeItem>Bugfix: Bug for import of decimal numbers fixed</ChangeItem>
+        </Changes>
+    </Version>
+
+    <Version>
+        <VersionID>2.3.1_01</VersionID>
+        <ReleaseDate>24.01.2022</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa231.zip</DownloadUrl>
+        <DownloadSize>4256121</DownloadSize>
+        <Changes lang="de">
+            <ChangeItem>Neu: Verbesserte Auto-Complete Listen schlagen nur Personen vor, die noch nicht fuer das Boot ausgewaehlt sind</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+            <ChangeItem>New: Improved Auto-Complete lists only suggest persons which haven't yet been selected for this boat</ChangeItem>
+        </Changes>
+    </Version>
+
+    <Version>
+        <VersionID>2.3.1_00</VersionID>
+        <ReleaseDate>22.12.2021</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa231.zip</DownloadUrl>
+        <DownloadSize>4255809</DownloadSize>
+        <Changes lang="de">
+            <ChangeItem>efaCloud-Optimierungen mit zentraler Admin-Verwaltung</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+            <ChangeItem>efaCloud optimizations with centralized admin management</ChangeItem>
+        </Changes>
+    </Version>
+
+    <Version>
+        <VersionID>2.3.0_14</VersionID>
+        <ReleaseDate>19.11.2021</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa230.zip</DownloadUrl>
+        <DownloadSize>4246634</DownloadSize>
+        <Changes lang="de">
+            <ChangeItem>Bugfix: Fehlende Berechnung der Zielbereiche bei Wettbebwerbsauswertung fuer LRV Sommer-Wettbewerb 2021 behoben</ChangeItem>
+        </Changes>
+    </Version>
+
+    <Version>
+        <VersionID>2.3.0_12</VersionID>
+        <ReleaseDate>26.09.2021</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa230.zip</DownloadUrl>
+        <DownloadSize>4246168</DownloadSize>
+        <Changes lang="de">
+            <ChangeItem>Bugfix: efaCloud: Wenn die Internetverbindung beim Start des Programms noch nicht steht, wird der Retry der Autorisierung nun korrekt angestoßen.</ChangeItem>
+            <ChangeItem>Bugfix: Behebung des Referenzfehlers in der Logdatei-Prüfung beim Raspberry Systemzeitfehler-Effekt.</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+            <ChangeItem>Bugfix: efaCloud: Authorization retry if internet connection interrupted during program start</ChangeItem>
+            <ChangeItem>Bugfix:fixed reference count in logfile check for Raspberry</ChangeItem>
+        </Changes>
+    </Version>
+
+    <Version>
+        <VersionID>2.3.0_11</VersionID>
+        <ReleaseDate>19.06.2021</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa230.zip</DownloadUrl>
+        <DownloadSize>4246311</DownloadSize>
+        <Changes lang="de">
+            <ChangeItem>Neu: Wettbewerbsbedingungen fuer LRV-Sommer-Wettbewerb 2021 aktualisiert</ChangeItem>
+        </Changes>
+    </Version>
+
+    <Version>
+        <VersionID>2.3.0_10</VersionID>
+        <ReleaseDate>10.06.2021</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa230.zip</DownloadUrl>
+        <DownloadSize>4245993</DownloadSize>
+        <Changes lang="de">
+            <ChangeItem>Bugfix [efaCloud]: Gruppen mit mehr als 27 Mitgliedern nun möglich</ChangeItem>
+            <ChangeItem>Bugfix [efaCloud]: efaCloud und efaCLI nun kompatibel. Allerdings keine efaCloud Kommandos über efaCLI</ChangeItem>
+            <ChangeItem>Bugfix [efaCloud]: efaRemote + efaCloud getestet</ChangeItem>
+            <ChangeItem>Bugfix [efaCloud]: Toleranz der Fehlerprüfung optimiert</ChangeItem>
+            <ChangeItem>Bugfix [efaCloud]: Hinweisdialog bei fehlschlagen der Authentifizierung am Server</ChangeItem>
+            <ChangeItem>Bugfix [efaCloud]: verwaiste Konfigurationsreste in Konfigurationsmenü "Daten" durch Hinweis uf den richtigen Ort ersetzt.</ChangeItem>
+            <ChangeItem>Bugfix [efaCloud]: Bei Datensatzinkonsistenz enthält die Fehlermeldung nun den nicht aktualisierten Datensatz</ChangeItem>
+            <ChangeItem>Bugfix [efaCloud]: efa2fahrtenabzeichen wird mit bis zu 4 Abweichungen noch aktualisiert</ChangeItem>
+            <ChangeItem>Bugfix [efaCloud]: Eine Info über den Stand des Servers (server_welcome_message) wird nun im efaCloud Konfigurationsdialog mit angezeigt (braucht Serverversion 2.3.0_12)</ChangeItem>
+            <ChangeItem>Bugfix [efaCloud]: Server => client Konfigurationsinformation wird nun mit jeder Synchronisation neu übertragen, nicht nur bei Neustart. Resume nach Pausieren Fehler behoben.</ChangeItem>
+            <ChangeItem>Bugfix [efaCloud]: Verbesserte Dartsellung des Fehlers bei der initialen Verbindung zur Vereinfachung der Fehlerbehebung bei der ersten efaCloud Konfiguration</ChangeItem>
+        </Changes>
+    </Version>
+
+    <Version>
+        <VersionID>2.3.0_09</VersionID>
+        <ReleaseDate>11.04.2021</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa230.zip</DownloadUrl>
+        <DownloadSize>4244761</DownloadSize>
+        <Changes lang="de">
+            <ChangeItem>Change: Bedingungen fuer DRV-Fahrtenabzeichen 2021 angepasst</ChangeItem>
+        </Changes>
+    </Version>
+
+    <Version>
+        <VersionID>2.3.0_07</VersionID>
+        <ReleaseDate>30.03.2021</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa230.zip</DownloadUrl>
+        <DownloadSize>4250040</DownloadSize>
+        <Changes lang="de">
+            <ChangeItem>Bugfix: efaCloud Fast-Sync alle 30 Sekunden (Verringerung der Latenz der Sichtbarkeit von Aenderungen verschiedener Clients)</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+            <ChangeItem>Bugfix: efaCloud Fast-Sync every 30 seconds (latency reduction for changes of multiple clients becoming visible to others)</ChangeItem>
+        </Changes>
+    </Version>
+
+    <Version>
+        <VersionID>2.3.0_06</VersionID>
+        <ReleaseDate>23.03.2021</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa230.zip</DownloadUrl>
+        <DownloadSize>4249529</DownloadSize>
+        <Changes lang="de">
+            <ChangeItem>Bugfix: NullPointerException in efaCloud beim Beenden einer Fahrt mit unbekanntem Boot oder Doppeleintrag korrigiert</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+            <ChangeItem>Bugfix: NullPointerException fixed when finishing a session of an unknown or double-booked boat in efaCloud</ChangeItem>
+        </Changes>
+    </Version>
+
+    <Version>
+        <VersionID>2.3.0_05</VersionID>
+        <ReleaseDate>22.03.2021</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa230.zip</DownloadUrl>
+        <DownloadSize>4249632</DownloadSize>
+        <Changes lang="de">
+            <ChangeItem>Bugfix: efaCloud Upload-Fehler (manueller Upload) korrigiert</ChangeItem>
+            <ChangeItem>Bugfix: NullPointerException in efaCloud-Konfiguration korrigiert, wenn kein Projekt geoeffnet ist</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+            <ChangeItem>Bugfix: efaCloud Upload error (manual upload) fixed</ChangeItem>
+            <ChangeItem>Bugfix: NullPointerException in efaCloud configuration fixed when no project is opened</ChangeItem>
+        </Changes>
+    </Version>
+
+    <Version>
+        <VersionID>2.3.0_04</VersionID>
+        <ReleaseDate>20.03.2021</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa230.zip</DownloadUrl>
+        <DownloadSize>4249556</DownloadSize>
+        <Changes lang="de">
+            <ChangeItem>New: Erweiterte User Statistics bei remote Online-Update</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+            <ChangeItem>New: Enhanced Statistics during remote Online Update</ChangeItem>
+        </Changes>
+    </Version>
+
+    <Version>
+        <VersionID>2.3.0_02</VersionID>
+        <ReleaseDate>20.03.2021</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa230.zip</DownloadUrl>
+        <DownloadSize>4249549</DownloadSize>
+
+        <Changes lang="de">
+            <ChangeItem>Bugfix: NullPointerException beim Beenden einer Fahrt korrigiert</ChangeItem>
+            <ChangeItem>New: User Statistics bei remote Online-Update</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+            <ChangeItem>Bugfix: NullPointerException fixed when finishing a session</ChangeItem>
+            <ChangeItem>New: User Statistics during remote Online Update</ChangeItem>
+        </Changes>
+    </Version>
+
+    <Version>
+        <VersionID>2.3.0_01</VersionID>
+        <ReleaseDate>18.03.2021</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa230.zip</DownloadUrl>
+        <DownloadSize>4249302</DownloadSize>
+
+        <Changes lang="de">
+            <ChangeItem>Bugfix: Lizenztext aktualisiert</ChangeItem>
+        </Changes>
+    </Version>
+
+    <Version>
+        <VersionID>2.3.0_00</VersionID>
+        <ReleaseDate>16.03.2021</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa230.zip</DownloadUrl>
+        <DownloadSize>4249267</DownloadSize>
+
+        <Changes lang="de">
+            <ChangeItem>Neu: efaCloud - efa in der Cloud (experimentell)</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+            <ChangeItem>New: efaCloud - efa in the Cloud (experimental)</ChangeItem>
+        </Changes>
+    </Version>
+
+    <Version>
+        <VersionID>2.2.2_54</VersionID>
+        <ReleaseDate>15.12.2020</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa222.zip</DownloadUrl>
+        <DownloadSize>4099434</DownloadSize>
+
+        <Changes lang="de">
+            <ChangeItem>Neu: Meldegend fuer DRV-Fahrtenabzeichen aktualisiert</ChangeItem>
+        </Changes>
+    </Version>
+
+    <Version>
+        <VersionID>2.2.2_52</VersionID>
+        <ReleaseDate>18.11.2020</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa222.zip</DownloadUrl>
+        <DownloadSize>4099451</DownloadSize>
+
+        <Changes lang="de">
+            <ChangeItem>Neu: efa ueberprueft regelmaessig, ob Java Version 8 oder neuer verwendet wird und warnt ggf.</ChangeItem>
+            <ChangeItem>Bugfix: Ueberfluessige .java Dateien aus efa.jar entfernt</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+            <ChangeItem>Neu: efa checks periodically if Java version 8 or newer is being used and warns if not</ChangeItem>
+            <ChangeItem>Bugfix: Removed unnecessary .java files from efa.jar</ChangeItem>
+        </Changes>
+    </Version>
+
+    <Version>
+        <VersionID>2.2.2_51</VersionID>
+        <ReleaseDate>16.11.2020</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa222.zip</DownloadUrl>
+        <DownloadSize>4145485</DownloadSize>
+
+        <Changes lang="de">
+            <ChangeItem>Bugfix: Fehler beim Anlegen einer Person als normaler Nutzer im Bootshaus-Modus behoben</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+            <ChangeItem>Bugfix: Exception when creating new persons as an ordinary user in boathouse mode fixed</ChangeItem>
+        </Changes>
+    </Version>
+
+    <Version>
+        <VersionID>2.2.2_50</VersionID>
+        <ReleaseDate>16.11.2020</ReleaseDate>
+        <DownloadUrl>http://efa.nmichael.de/download/efa222.zip</DownloadUrl>
+        <DownloadSize>4145426</DownloadSize>
+
+        <Changes lang="de">
+            <ChangeItem>Bugfix: Fehlerhafte Uebermittlung von Zielfahrten fuer LRV-Sommer-Wettbebwerb 2020 (Covid) bei Meldung korrigiert</ChangeItem>
+        </Changes>
+    </Version>
 
     <Version>
         <VersionID>2.2.2_49</VersionID>
         <ReleaseDate>14.11.2020</ReleaseDate>
         <DownloadUrl>http://efa.nmichael.de/download/efa222.zip</DownloadUrl>
-        <DownloadSize>4338097</DownloadSize>
+        <DownloadSize>4145316</DownloadSize>
 
         <Changes lang="de">
             <ChangeItem>Bugfix: Ermittlung der Zielfahrten fuer geaenderte Bestimmungen (Covid) korrigiert</ChangeItem>
@@ -68,7 +724,7 @@
             <ChangeItem>Bugfix: Correct placement of dialogs in environments with multiple monitors</ChangeItem>
             <ChangeItem>Bugfix: Session cancel dialog can now be cancled with ESC</ChangeItem>
             <ChangeItem>Bugfix: Broken switching between person and boat selection lists fixed</ChangeItem>
-            <ChangeItem>New: reservation details of overlapping reservations are now shown</ChangeItem>
+            <ChangeItem>Neu: reservation details of overlapping reservations are now shown</ChangeItem>
         </Changes>
     </Version>
 

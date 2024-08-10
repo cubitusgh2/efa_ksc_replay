@@ -10,24 +10,63 @@
 
 package de.nmichael.efa.gui.dataedit;
 
+import java.awt.AWTEvent;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Frame;
+import java.awt.GridBagLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.FocusEvent;
+import java.awt.event.KeyEvent;
+import java.util.Hashtable;
+import java.util.Vector;
+
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.SwingConstants;
+import javax.swing.border.EmptyBorder;
+
+import de.nmichael.efa.Daten;
 import de.nmichael.efa.core.config.AdminRecord;
-import de.nmichael.efa.gui.*;
-import de.nmichael.efa.util.*;
-import de.nmichael.efa.util.Dialog;
-import de.nmichael.efa.core.items.*;
-import de.nmichael.efa.data.storage.*;
-import de.nmichael.efa.data.types.*;
+import de.nmichael.efa.core.items.IItemListener;
+import de.nmichael.efa.core.items.IItemListenerDataRecordTable;
+import de.nmichael.efa.core.items.IItemType;
+import de.nmichael.efa.core.items.ItemTypeBoolean;
+import de.nmichael.efa.core.items.ItemTypeButton;
+import de.nmichael.efa.core.items.ItemTypeDataRecordTable;
+import de.nmichael.efa.core.items.ItemTypeDateTime;
+import de.nmichael.efa.core.items.ItemTypeHtmlList;
+import de.nmichael.efa.data.storage.DataKey;
+import de.nmichael.efa.data.storage.DataRecord;
+import de.nmichael.efa.data.storage.StorageObject;
+import de.nmichael.efa.data.types.DataTypeDate;
+import de.nmichael.efa.data.types.DataTypeTime;
+import de.nmichael.efa.ex.EfaModifyException;
 import de.nmichael.efa.gui.BaseDialog;
-import de.nmichael.efa.ex.*;
+import de.nmichael.efa.gui.DataExportDialog;
+import de.nmichael.efa.gui.DataImportDialog;
+import de.nmichael.efa.gui.DataPrintListDialog;
+import de.nmichael.efa.gui.ProgressDialog;
+import de.nmichael.efa.gui.SimpleInputDialog;
 import de.nmichael.efa.gui.util.EfaMenuButton;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.border.*;
-import java.util.*;
+import de.nmichael.efa.gui.util.RoundedBorder;
+import de.nmichael.efa.gui.util.RoundedLabel;
+import de.nmichael.efa.util.Dialog;
+import de.nmichael.efa.util.International;
+import de.nmichael.efa.util.Logger;
+import de.nmichael.efa.util.ProgressTask;
 
 public abstract class DataListDialog extends BaseDialog implements IItemListener, IItemListenerDataRecordTable {
 
+	/* Documentation on action numbers: (see @ItemTypeDataRecordTable.iniDisplayActionTable)
+	 * <0  				Do not show this action in the popup menu for an element in the table.
+	 * >0 		<1000	Show as standard buttons with caption and icon
+	 * >1000	<2000	Show as buttons WITHOUT caption, just icons
+	 * >2000		    Do not show as a button
+	 */
+	
     public static final int ACTION_HIDE      =  100;
     public static final int ACTION_MERGE     =  200;
     public static final int ACTION_IMPORT    = -100; // negative actions will not be shown as popup actions
@@ -146,7 +185,13 @@ public abstract class DataListDialog extends BaseDialog implements IItemListener
             }
         }
     }
-
+/**
+ * Adds an Action into the DataListDialog Button list. Action is added at the end of the list.
+ * 
+ * @param text Displaytext for the button
+ * @param type Action Type (see DataListDialog.ACTION_* or ItemTypeDataRecordTable.ACTION_*)
+ * @param image Image Name (see BaseDialog.IMAGE_*)
+ */
     protected void addAction(String text, int type, String image) {
         if (actionText == null) {
             actionText = new String[0];
@@ -173,7 +218,68 @@ public abstract class DataListDialog extends BaseDialog implements IItemListener
         actionType[actionType.length - 1] = type;
         actionImage[actionImage.length - 1] = image;
     }
+   
+    /**
+     * Adds an Action into the DataListDialog Button list. Action is added right after the position of insertAfterType.
+     * If insertAfterType Action is not found, Action is positioned at the end.
+     * 
+     * @param text Displaytext for the button
+     * @param type Action Type (see DataListDialog.ACTION_* or ItemTypeDataRecordTable.ACTION_*)
+     * @param image Image Name (see BaseDialog.IMAGE_*)
+     * @param insertAfterType Existing Action Type in the list after which the new action shall be put. 
+     */    
+    protected void insertAction(String text, int type, String image, int insertAfterType){
+        if (actionText == null) {
+            actionText = new String[0];
+        }
+        if (actionType == null) {
+            actionType = new int[0];
+        }
+        if (actionImage == null) {
+            actionImage = new String[0];
+        }
+        String[] _actionText = actionText;
+        int[] _actionType = actionType;
+        String[] _actionImage = actionImage;
+        
+        // Extend the new array of actions by one item
+        actionText = new String[_actionText.length + 1];
+        actionType = new int[_actionType.length + 1];
+        actionImage = new String[_actionImage.length + 1];
+        
+        int insertPosition=0;
+        boolean insertAfterTypeIsFound=false;
+        // arrays must all be the same length!
+        // copy old elements to the new array. 
+        // check if the current position is the "insertAfterType" element and then
+        // add the new element
+        for (int i=0; i<actionType.length - 1; i++) {
+            actionText[insertPosition] = _actionText[i];
+            actionType[insertPosition] = _actionType[i];
+            actionImage[insertPosition] = _actionImage[i];
+            insertPosition++; // done with the current element
+            
+            if (_actionType[i]==insertAfterType) {
+            	//we need to add the new action after the current one
+            	actionText[insertPosition] = text;
+            	actionType[insertPosition] = type;
+            	actionImage[insertPosition] = image;
+            	insertPosition++; // and increment the position
+            	insertAfterTypeIsFound=true;
+            }
+        }
+        if (!insertAfterTypeIsFound) {
+        	// we did not find the action type specified, so we add the action at the end of the buttons.
+        	actionText[actionText.length - 1] = text;
+            actionType[actionType.length - 1] = type;
+            actionImage[actionImage.length - 1] = image;    	
+        }
+    }
 
+    /**
+     * Removes an action from the button list of the data list dialog.
+     * @param type type of the action to be removed
+     */
     protected void removeAction(int type) {
         for (int i=0; actionType != null && i<actionType.length; i++) {
             if (actionType[i] == type) {
@@ -207,8 +313,13 @@ public abstract class DataListDialog extends BaseDialog implements IItemListener
         mainTablePanel.setLayout(new BorderLayout());
 
         if (filterFieldDescription != null) {
-            JLabel filterName = new JLabel();
+            JLabel filterName = new RoundedLabel();
+            filterName.setBorder(new RoundedBorder(Daten.efaConfig.getHeaderForegroundColor()));
+            filterName.setBackground(Daten.efaConfig.getHeaderBackgroundColor());
+            filterName.setOpaque(true);
+            filterName.setForeground(Daten.efaConfig.getHeaderForegroundColor());
             filterName.setText(filterFieldDescription);
+            filterName.setFont(filterName.getFont().deriveFont(Font.BOLD));
             filterName.setHorizontalAlignment(SwingConstants.CENTER);
             mainTablePanel.add(filterName, BorderLayout.NORTH);
             mainTablePanel.setBorder(new EmptyBorder(10,0,0,0));
@@ -368,10 +479,10 @@ public abstract class DataListDialog extends BaseDialog implements IItemListener
                         String s = r.getKeyAsTextDescription();
                         keyMapping.put(k.encodeAsString(), k);
                         items.put(k.encodeAsString(),
-                                "ID: " + s + "<br>" +
+                                "<html>ID: " + s + "<br>" +
                                 International.getString("Name") + ": " + r.getQualifiedName() +
                                 (r.getPersistence().data().getMetaData().isVersionized() ? "<br>" +
-                                 International.getString("Gültigkeit") + ": " + r.getValidRangeString() : ""));
+                                 International.getString("Gültigkeit") + ": " + r.getValidRangeString() : "")+"</html>");
                     }
                 }
                 String[] keys = items.keySet().toArray(new String[0]);

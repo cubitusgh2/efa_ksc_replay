@@ -11,75 +11,76 @@
 package de.nmichael.efa.gui;
 
 import de.nmichael.efa.*;
-import de.nmichael.efa.data.efacloud.TxRequestQueue;
-import de.nmichael.efa.data.storage.IDataAccess;
 import de.nmichael.efa.util.*;
 import de.nmichael.efa.util.Dialog;
 import de.nmichael.efa.core.items.*;
+import de.nmichael.efa.gui.util.AutoCompletePopupWindow;
+
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
-import javax.swing.border.*;
 
 // @i18n complete
 public abstract class BaseDialog extends JDialog implements ActionListener {
+	
+	private static final String NOT_STORED_ITEM_PREFIX = "_";
 
-    public static final String IMAGE_ACCEPT    = "button_accept.png";
-    public static final String IMAGE_ADD       = "button_add.png";
-    public static final String IMAGE_CANCEL    = "button_cancel.png";
-    public static final String IMAGE_CLOSE     = "button_close.png";
-    public static final String IMAGE_DELETE    = "button_delete.png";
-    public static final String IMAGE_EDIT      = "button_edit.png";
-    public static final String IMAGE_EDIT2     = "button_edit2.png";
-    public static final String IMAGE_PRINT     = "button_print.png";
-    public static final String IMAGE_SELECT    = "button_select.png";
-    public static final String IMAGE_HIDE      = "button_hide.png";
-    public static final String IMAGE_IMPORT    = "button_import.png";
-    public static final String IMAGE_EXPORT    = "button_export.png";
-    public static final String IMAGE_LIST      = "button_list.png";
-    public static final String IMAGE_EDITMULTI = "button_editmultiple.png";
-    public static final String IMAGE_MERGE     = "button_merge.png";
-    public static final String IMAGE_CALENDAR  = "button_calendar.png";
-    public static final String IMAGE_DOWNLOAD  = "button_download.png";
-    public static final String IMAGE_CONFIGURE = "button_configure.png";
-    public static final String IMAGE_SETTINGS  = "button_settings.png";
-    public static final String IMAGE_OPEN      = "button_open.png";
-    public static final String IMAGE_FIRST     = "button_first.png";
-    public static final String IMAGE_NEXT      = "button_next.png";
-    public static final String IMAGE_PREV      = "button_prev.png";
-    public static final String IMAGE_LAST      = "button_last.png";
-    public static final String IMAGE_BACK      = "button_back.png";
-    public static final String IMAGE_FORWARD   = "button_forward.png";
-    public static final String IMAGE_RUNEXPORT = "button_runexport.png";
-    public static final String IMAGE_RUNIMPORT = "button_runimport.png";
-    public static final String IMAGE_HELP      = "button_help.png";
-    public static final String IMAGE_RUN       = "button_run.png";
-    public static final String IMAGE_PREVIEW   = "button_preview.png";
-    public static final String IMAGE_STAT      = "button_stat.png";
-    public static final String IMAGE_MARKREAD  = "button_markread.png";
-    public static final String IMAGE_MFORWARD  = "button_mforward.png";
-    public static final String IMAGE_REPAIR    = "button_repair.png";
-    public static final String IMAGE_LOGOUT    = "button_logout.png";
-    public static final String IMAGE_DAMAGE    = "button_damage.png";
-    public static final String IMAGE_SOAP      = "button_soap.png";
-    public static final String IMAGE_SEARCH    = "button_search.png";
-    public static final String IMAGE_SEARCHNEXT= "button_searchnext.png";
-    public static final String IMAGE_SPECIAL   = "button_special.png";
-    public static final String IMAGE_ARROWUP   = "button_arrowup.png";
-    public static final String IMAGE_ARROWDOWN = "button_arrowdown.png";
-    public static final String IMAGE_CORRECTION = "button_correction.png";
-    public static final String IMAGE_EFACLOUD_ACTIVATE    = "button_efacloud_activate.png";
-    public static final String IMAGE_EFACLOUD_DEACTIVATE  = "button_efacloud_deactivate.png";
-    public static final String IMAGE_EFACLOUD_DELETE      = "button_efacloud_delete.png";
-    public static final String IMAGE_EFACLOUD_START       = "button_efacloud_start.png";
-    public static final String IMAGE_EFACLOUD_SYNCH       = "button_efacloud_synch.png";
-    public static final String IMAGE_EFACLOUD_PAUSE       = "button_efacloud_pause.png";
-    public static final String IMAGE_EFACLOUD_STOP        = "button_efacloud_stop.png";
+    public static final String IMAGE_ACCEPT    = ImagesAndIcons.IMAGE_BUTTON_ACCEPT;
+    public static final String IMAGE_ADD       = ImagesAndIcons.IMAGE_BUTTON_ADD;
+    public static final String IMAGE_CANCEL    = ImagesAndIcons.IMAGE_BUTTON_CANCEL;
+    public static final String IMAGE_CLOSE     = ImagesAndIcons.IMAGE_BUTTON_CLOSE;
+    public static final String IMAGE_DELETE    = ImagesAndIcons.IMAGE_BUTTON_DELETE;
+    public static final String IMAGE_EDIT      = ImagesAndIcons.IMAGE_BUTTON_EDIT;
+    public static final String IMAGE_EDIT2     = ImagesAndIcons.IMAGE_BUTTON_EDIT2;
+    public static final String IMAGE_PRINT     = ImagesAndIcons.IMAGE_BUTTON_PRINT;
+    public static final String IMAGE_SELECT    = ImagesAndIcons.IMAGE_BUTTON_SELECT;
+    public static final String IMAGE_HIDE      = ImagesAndIcons.IMAGE_BUTTON_HIDE;
+    public static final String IMAGE_IMPORT    = ImagesAndIcons.IMAGE_BUTTON_IMPORT;
+    public static final String IMAGE_EXPORT    = ImagesAndIcons.IMAGE_BUTTON_EXPORT;
+    public static final String IMAGE_LIST      = ImagesAndIcons.IMAGE_BUTTON_LIST;
+    public static final String IMAGE_EDITMULTI = ImagesAndIcons.IMAGE_BUTTON_EDITMULTI;
+    public static final String IMAGE_MERGE     = ImagesAndIcons.IMAGE_BUTTON_MERGE;
+    public static final String IMAGE_CALENDAR  = ImagesAndIcons.IMAGE_BUTTON_CALENDAR;
+    public static final String IMAGE_DOWNLOAD  = ImagesAndIcons.IMAGE_BUTTON_DOWNLOAD;
+    public static final String IMAGE_CONFIGURE = ImagesAndIcons.IMAGE_BUTTON_CONFIGURE;
+    public static final String IMAGE_SETTINGS  = ImagesAndIcons.IMAGE_BUTTON_SETTINGS;
+    public static final String IMAGE_OPEN      = ImagesAndIcons.IMAGE_BUTTON_OPEN;
+    public static final String IMAGE_FIRST     = ImagesAndIcons.IMAGE_BUTTON_FIRST;
+    public static final String IMAGE_NEXT      = ImagesAndIcons.IMAGE_BUTTON_NEXT;
+    public static final String IMAGE_PREV      = ImagesAndIcons.IMAGE_BUTTON_PREV;
+    public static final String IMAGE_LAST      = ImagesAndIcons.IMAGE_BUTTON_LAST;
+    public static final String IMAGE_BACK      = ImagesAndIcons.IMAGE_BUTTON_BACK;
+    public static final String IMAGE_FORWARD   = ImagesAndIcons.IMAGE_BUTTON_FORWARD;
+    public static final String IMAGE_RUNEXPORT = ImagesAndIcons.IMAGE_BUTTON_RUNEXPORT;
+    public static final String IMAGE_RUNIMPORT = ImagesAndIcons.IMAGE_BUTTON_RUNIMPORT;
+    public static final String IMAGE_HELP      = ImagesAndIcons.IMAGE_BUTTON_HELP;
+    public static final String IMAGE_RUN       = ImagesAndIcons.IMAGE_BUTTON_RUN;
+    public static final String IMAGE_PREVIEW   = ImagesAndIcons.IMAGE_BUTTON_PREVIEW;
+    public static final String IMAGE_STAT      = ImagesAndIcons.IMAGE_BUTTON_STAT;
+    public static final String IMAGE_MARKREAD  = ImagesAndIcons.IMAGE_BUTTON_MARKREAD;
+    public static final String IMAGE_MFORWARD  = ImagesAndIcons.IMAGE_BUTTON_MFORWARD;
+    public static final String IMAGE_REPAIR    = ImagesAndIcons.IMAGE_BUTTON_REPAIR;
+    public static final String IMAGE_LOGOUT    = ImagesAndIcons.IMAGE_BUTTON_LOGOUT;
+    public static final String IMAGE_DAMAGE    = ImagesAndIcons.IMAGE_BUTTON_DAMAGE;
+    public static final String IMAGE_SOAP      = ImagesAndIcons.IMAGE_BUTTON_SOAP;
+    public static final String IMAGE_SEARCH    = ImagesAndIcons.IMAGE_BUTTON_SEARCH;
+    public static final String IMAGE_SEARCHNEXT= ImagesAndIcons.IMAGE_BUTTON_SEARCHNEXT;
+    public static final String IMAGE_SPECIAL   = ImagesAndIcons.IMAGE_BUTTON_SPECIAL;
+    public static final String IMAGE_ARROWUP   = ImagesAndIcons.IMAGE_BUTTON_ARROWUP;
+    public static final String IMAGE_ARROWDOWN = ImagesAndIcons.IMAGE_BUTTON_ARROWDOWN;
+    public static final String IMAGE_CORRECTION = ImagesAndIcons.IMAGE_BUTTON_CORRECTION;
+    public static final String IMAGE_EFACLOUD_ACTIVATE    = ImagesAndIcons.IMAGE_BUTTON_EFACLOUD_ACTIVATE;
+    public static final String IMAGE_EFACLOUD_DEACTIVATE  = ImagesAndIcons.IMAGE_BUTTON_EFACLOUD_DEACTIVATE;
+    public static final String IMAGE_EFACLOUD_DELETE      = ImagesAndIcons.IMAGE_BUTTON_EFACLOUD_DELETE;
+    public static final String IMAGE_EFACLOUD_START       = ImagesAndIcons.IMAGE_BUTTON_EFACLOUD_START;
+    public static final String IMAGE_EFACLOUD_SYNCH       = ImagesAndIcons.IMAGE_BUTTON_EFACLOUD_SYNCH;
+    public static final String IMAGE_EFACLOUD_PAUSE       = ImagesAndIcons.IMAGE_BUTTON_EFACLOUD_PAUSE;
+    public static final String IMAGE_EFACLOUD_STOP        = ImagesAndIcons.IMAGE_BUTTON_EFACLOUD_STOP;
 
-    public static final String BIGIMAGE_CLOSEDOORS = "notification_closedoors.png";
-    public static final String BIGIMAGE_DARKNESS   = "notification_darkness.png";
-    public static final String BIGIMAGE_INFO       = "notification_info.png";
-    public static final String BIGIMAGE_WARNING    = "notification_warning.png";
+    public static final String BIGIMAGE_CLOSEDOORS = ImagesAndIcons.BIGIMAGE_CLOSEDOORS;
+    public static final String BIGIMAGE_DARKNESS   = ImagesAndIcons.BIGIMAGE_DARKNESS;
+    public static final String BIGIMAGE_INFO       = ImagesAndIcons.BIGIMAGE_INFO;
+    public static final String BIGIMAGE_WARNING    = ImagesAndIcons.BIGIMAGE_WARNING;
 
     protected Window _parent;
     protected String _title;
@@ -209,7 +210,15 @@ public abstract class BaseDialog extends JDialog implements ActionListener {
         }
 
         if (evt.getActionCommand().equals(KEYACTION_ESCAPE)) {
-            cancel();
+        	Component focusedComp=this.getFocusOwner();
+        	if (focusedComp instanceof JTextField) {
+        		if (AutoCompletePopupWindow.isShowingAt((JTextField) focusedComp)) {
+        			// do not hide window if autocomplete window is currently showing
+        			return;
+        		}
+        	}
+    		// otherwise, hide basewindow.
+        	cancel();
         }
 
         if (evt.getActionCommand().equals(KEYACTION_F1)) {
@@ -303,6 +312,8 @@ public abstract class BaseDialog extends JDialog implements ActionListener {
         mainScrollPane.setPreferredSize(Dialog.getMaxSize(dim));
 
         mainScrollPane.getViewport().add(mainPanel, null);
+        mainScrollPane.setBorder(BorderFactory.createEmptyBorder(4,4,4,4));
+        mainScrollPane.getVerticalScrollBar().setUnitIncrement(12); // faster scrolling with the mouse
     }
 
     protected abstract void iniDialog() throws Exception;
@@ -352,23 +363,8 @@ public abstract class BaseDialog extends JDialog implements ActionListener {
     public JScrollPane getScrollPane() {
         return mainScrollPane;
     }
-
     public static ImageIcon getIcon(String name) {
-        try {
-            if (name.indexOf("/") < 0) {
-                name = Daten.IMAGEPATH + name;
-            }
-            if (Logger.isTraceOn(Logger.TT_GUI, 9)) {
-                Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_GUI_ICONS, "getIcon("+name+")");
-            }
-            return new ImageIcon(BaseDialog.class.getResource(name));
-        } catch(Exception e) {
-            if (Logger.isTraceOn(Logger.TT_GUI, 9)) {
-                Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_GUI_ICONS, "getIcon("+name+"): no icon found!");
-            }
-            Logger.logdebug(e);
-            return null;
-        }
+    	return ImagesAndIcons.getIcon(name); // use a central function instead of redundant code.
     }
 
     public static ImageIcon getScaledImage(String name) {
@@ -400,4 +396,54 @@ public abstract class BaseDialog extends JDialog implements ActionListener {
         return (helpTopic2 != null ? new String[] { helpTopic1, helpTopic2 } : new String[] { helpTopic1 });
     }
 
+	/**
+	 * Adds an hint element to the GUI. Hints have a slight blue background and display
+	 * additional informations for the user.
+	 * 
+	 * @param uniqueName Unique name of the IItemType in the GUI
+	 * @param type TYPE_PUBLIC, TYPE_EXPERT, TYPE_INTERNAL
+	 * @param category Category where the element shall show up. May be null.
+	 * @param caption Caption of the hint. Should be single-line.
+	 * @param gridWidth How many grids may this hint be expanded
+	 * @param padBefore pixels of whitespace before
+	 * @param padAfter pixels of whitespace after the hint.
+	 * @return
+	 */
+    protected IItemType addHint(String uniqueName, int type, String category, String caption, int gridWidth,
+			int padBefore, int padAfter) {
+		//if caption starts with html, do not have a blank as a prefix as this will disable html rendering.
+		ItemTypeLabel item = (ItemTypeLabel) addDescription(uniqueName, type, category, (caption.startsWith("<html>") ? caption : " "+caption), gridWidth,
+				padBefore, padAfter);
+		// item.setImage(BaseDialog.getIcon(ImagesAndIcons.IMAGE_MENU_ABOUT));
+		item.setBackgroundColor(Daten.efaConfig.hintBackgroundColor);
+		item.setHorizontalAlignment(SwingConstants.LEFT);
+		item.setRoundShape(false);
+		return item;
+	}    
+	
+	/**
+	 * Adds a description item in an efa GUI. This description value is not safed
+	 * within efaConfig. There is no word-wrap for the caption.
+	 * 
+	 * This is similar to @see addHeader(), but the element does not get a
+	 * highlighted background.
+	 * 
+	 * @param uniqueName Unique name of the element (as for all of efaConfig
+	 *                   elements need unique names)
+	 * @param type       TYPE_PUBLIC, TYPE_EXPERT, TYPE_INTERNAL
+	 * @param category   Category in which the description is placed
+	 * @param caption    Caption
+	 * @param gridWidth  How many GridBagLayout cells shall this description be
+	 *                   placed in?
+	 */
+	private IItemType addDescription(String uniqueName, int type, String category, String caption, int gridWidth,
+			int padBefore, int padAfter) {
+		// ensure that the description value does not get saved in efaConfig file by
+		// adding a special prefix
+		IItemType item = new ItemTypeLabel(NOT_STORED_ITEM_PREFIX + uniqueName, type, category, caption);
+		item.setPadding(0, 0, padBefore, padAfter);
+		item.setFieldGrid(3, GridBagConstraints.EAST, GridBagConstraints.BOTH);
+		return item;
+	}	
+    
 }

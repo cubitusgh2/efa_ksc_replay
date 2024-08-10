@@ -24,7 +24,7 @@ public class Table extends JTable {
 
     BaseDialog dlg;
     TableSorter sorter;
-    TableCellRenderer renderer;
+    EfaTableCellRenderer renderer;
     TableItemHeader[] header;
     TableItem[][] data;
     private boolean dontResize = false;
@@ -35,7 +35,7 @@ public class Table extends JTable {
     private int minColumnWidth = 50;
     private int[] minColumnWidths = null;
 
-    public Table(BaseDialog dlg, TableSorter sorter, TableCellRenderer renderer, 
+    public Table(BaseDialog dlg, TableSorter sorter, EfaTableCellRenderer renderer, 
             TableItemHeader[] header, TableItem[][] data, boolean allowSorting) {
         super(sorter);
         this.dlg = dlg;
@@ -43,12 +43,13 @@ public class Table extends JTable {
         this.renderer = renderer;
         this.header = header;
         this.data = data;
-
+        this.setTableHeader(new TableHeaderWithTooltips(this.getColumnModel()));
+        
         if (Daten.efaConfig.getValueEfaDirekt_tabelleAlternierendeZeilenFarben()) {
         	// Update for standard tables: Update for standard inverted cursor
         	// only applied when using alternating row colors - otherwise the standard of the lookandfeel is used.
-	        this.setSelectionBackground(new Color(75,134,193));
-	        this.setSelectionForeground(Color.WHITE);
+	        this.setSelectionBackground(Daten.efaConfig.getTableSelectionBackgroundColor());
+	        this.setSelectionForeground(Daten.efaConfig.getTableSelectionForegroundColor());
         }
         
         // Update for standard tables: increase row height for better readability (depending on the tables font size)
@@ -57,14 +58,19 @@ public class Table extends JTable {
         this.setRowHeight(fm.getHeight()+4);
 
         if (renderer == null) {
-            renderer = new TableCellRenderer();
+            renderer = new EfaTableCellRenderer();
+            renderer.setAlternatingRowColor(Daten.efaConfig.getTableAlternatingRowColor());
         }
         setDefaultRenderer(Object.class, renderer);
         
         // Update for standard tables: Replace default header renderer with bold+dark background renderer 
         javax.swing.table.TableCellRenderer l_originalRenderer = this.getTableHeader().getDefaultRenderer();
-        this.getTableHeader().setDefaultRenderer(new TableHeaderCellRendererBold(l_originalRenderer));
-        
+
+        TableHeaderCellRendererBold r = new TableHeaderCellRendererBold(l_originalRenderer);
+        r.setBackground(Daten.efaConfig.getTableHeaderBackgroundColor());
+        r.setForeground(Daten.efaConfig.getTableHeaderHeaderColor());
+        this.getTableHeader().setDefaultRenderer(r);
+
         this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         if (allowSorting) {
             sorter.addMouseListenerToHeaderInTable(this);
@@ -152,18 +158,26 @@ public class Table extends JTable {
 
         int[] widths = new int[header.length];
         for (int i = 0; i < widths.length; i++) {
-            widths[i] = (int) Math.floor((((float)header[i].getMaxColumnWidth()) / ((float)absoluteWidth)) * ((float)width));
-            if (widths[i] < minColumnWidth) {
-                widths[i] = minColumnWidth;
-            }
-            if (minColumnWidths != null && i < minColumnWidths.length &&
-                widths[i] < minColumnWidths[i]) {
-                widths[i] = minColumnWidths[i];
-            }
+            if (header[i].getVisible()) {
+	        	widths[i] = (int) Math.floor((((float)header[i].getMaxColumnWidth()) / ((float)absoluteWidth)) * ((float)width));
+	            if (widths[i] < minColumnWidth) {
+	                widths[i] = minColumnWidth;
+	            }
+	            if (minColumnWidths != null && i < minColumnWidths.length &&
+	                widths[i] < minColumnWidths[i]) {
+	                widths[i] = minColumnWidths[i];
+	            }
+            }             	
         }
 
         for (int i = 0; i < widths.length; i++) {
-            getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
+            if (header[i].getVisible()) {
+                getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
+            } else {
+                getColumnModel().getColumn(i).setPreferredWidth(0);
+                getColumnModel().getColumn(i).setMaxWidth(0);
+                getColumnModel().getColumn(i).setMinWidth(0);
+            }
         }
     }
 
@@ -210,11 +224,11 @@ public class Table extends JTable {
         return createTable(dlg, null, header, data);
     }
 
-    public static Table createTable(BaseDialog dlg, TableCellRenderer renderer, TableItemHeader[] header, TableItem[][] data) {
+    public static Table createTable(BaseDialog dlg, EfaTableCellRenderer renderer, TableItemHeader[] header, TableItem[][] data) {
         return createTable(dlg, renderer, header, data, true);
     }
 
-    public static Table createTable(BaseDialog dlg, TableCellRenderer renderer, TableItemHeader[] header,
+    public static Table createTable(BaseDialog dlg, EfaTableCellRenderer renderer, TableItemHeader[] header,
             TableItem[][] data, boolean allowSorting) {
         for (int i=0; i<data.length; i++) {
             for (int j=0; j<data[i].length; j++) {
@@ -241,8 +255,12 @@ public class Table extends JTable {
     public boolean getSortingAscending() {
         return sorter.getSortingAscending();
     }
-
-    public TableCellRenderer getRenderer() {
+    
+    public void addPermanentSecondarySortingColumn(int sortColumn) {
+    	sorter.addPermanentSecondarySortcolumn(sortColumn);
+    }
+    
+    public EfaTableCellRenderer getRenderer() {
         return renderer;
     }
 
@@ -263,7 +281,7 @@ public class Table extends JTable {
 
     public String getToolTipText(MouseEvent event) {
         try {
-            if (toolTipsEnabled) {
+        	if (toolTipsEnabled) {
                 int row = rowAtPoint(event.getPoint());
                 int col = columnAtPoint(event.getPoint());
 				
@@ -273,12 +291,18 @@ public class Table extends JTable {
                 	javax.swing.table.TableCellRenderer l_renderer = getCellRenderer(row, col);
 					Component l_component = prepareRenderer (l_renderer, row, col);
 					Rectangle l_cellRect=getCellRect(row, col, false);
-	
-					if (l_cellRect.width >= l_component.getPreferredSize().width) {
-						// do not show any tooltip if the column has enough space for the value
-						return null;
+
+					//Obtain tooltip only in the first column.
+					String toolTip = (col==0) ? ((TableItem) getValueAt(row,col)).getToolTipText() : null;
+					if (toolTip == null) {
+						if (l_cellRect.width >= l_component.getPreferredSize().width) {
+							// do not show any tooltip if the column has enough space for the value
+							return null;
+						} else {
+							return getValueAt(row, col).toString();
+						}
 					} else {
-						return getValueAt(row, col).toString();
+						return toolTip;
 					}
 				}
              }            
@@ -302,4 +326,25 @@ public class Table extends JTable {
     public void setMinColumnWidths(int[] minColumnWidths) {
         this.minColumnWidths = minColumnWidths;
     }
+    
+    private class TableHeaderWithTooltips extends JTableHeader {
+
+		private static final long serialVersionUID = -7345224027810977124L;
+
+		TableHeaderWithTooltips(TableColumnModel columnModel) {
+          super(columnModel);//do everything a normal JTableHeader does
+        }
+
+		/**
+		 * return the caption of the clumn the mouse is hovering.
+		 * do not check wether a tooltip is neccessary or not
+		 */
+        public String getToolTipText(MouseEvent e) {
+            java.awt.Point p = e.getPoint();
+            int index = columnModel.getColumnIndexAtX(p.x);
+            //int realIndex = columnModel.getColumn(index).getModelIndex();
+			
+            return this.getColumnModel().getColumn(index).getHeaderValue().toString();
+        }
+    }    
 }

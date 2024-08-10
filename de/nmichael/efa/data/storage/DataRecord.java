@@ -10,15 +10,65 @@
 
 package de.nmichael.efa.data.storage;
 
+import java.awt.GridBagConstraints;
+import java.util.HashMap;
+import java.util.UUID;
+import java.util.Vector;
+
+import javax.swing.SwingConstants;
+
 import de.nmichael.efa.Daten;
 import de.nmichael.efa.core.config.AdminRecord;
-import java.util.*;
-import de.nmichael.efa.data.types.*;
-import de.nmichael.efa.core.items.*;
-import de.nmichael.efa.gui.util.*;
-import de.nmichael.efa.util.*;
+import de.nmichael.efa.core.items.IItemType;
+import de.nmichael.efa.core.items.ItemTypeLabel;
+import de.nmichael.efa.core.items.ItemTypeStringAutoComplete;
+import de.nmichael.efa.data.types.DataTypeDate;
+import de.nmichael.efa.data.types.DataTypeDecimal;
+import de.nmichael.efa.data.types.DataTypeDistance;
+import de.nmichael.efa.data.types.DataTypeIntString;
+import de.nmichael.efa.data.types.DataTypeList;
+import de.nmichael.efa.data.types.DataTypePasswordCrypted;
+import de.nmichael.efa.data.types.DataTypePasswordHashed;
+import de.nmichael.efa.data.types.DataTypeTime;
+import de.nmichael.efa.gui.util.AutoCompleteList;
+import de.nmichael.efa.gui.util.TableItem;
+import de.nmichael.efa.gui.util.TableItemHeader;
+import de.nmichael.efa.util.EfaUtil;
+import de.nmichael.efa.util.International;
+import de.nmichael.efa.util.Logger;
 
 // @i18n complete
+
+/*
+ * A DataRecord represents an record of a specific type in a database.
+ * The structure of the record is defined in the respective subclasses.
+ * 
+ * Also, a DataRecord knows how its data can be displayed within a gui:
+ * 
+ * Presentation in DataListDialog (and descendants): Showing all records
+ * ---------------------
+ * - getGuiTableHeader() - returns all visible columns for this record
+ * - getGuiTableItems() - returns all records to be shown
+ * - getGuiTableAggregations() - returns an extra sum table shown below the actual records.
+ * 						this is used for clubwork, if a filter is set - the additional table shows the aggregation of hours
+ * 
+ * Presentation in DataEditDialog (and descendants): Showing and editing a single record 
+ * ---------------------
+ * - getGuiItems - get all Fields (visible and invisible) to be shown on a DataEditDialog.
+ *   This method provides all informations:
+ *   - which fields to show and in which order (first come first)
+ *   - which fields shall be shown in which category (categories are rendered into tabs, if there are more than one category for the fields)
+ *   - SWING rendering hints like GridBagLayout, field lengths, paddings between fields, field colours
+ *   - if some of the fields shall only be visible on certain conditions, this is usually done by an event handler in the corresponding DataEditDialog
+ *     (sample @see BoatReservationEditDialog)
+ *   
+ *   Also @see ItemTypeLabelValue for further information
+ *   
+ * Presentation in lookup lists (like boats, persons, ...)
+ * ---------------------
+ * - getGuiItemTypeStringAutoComplete() gets a single record in a representation for an auto complete list item
+ *  
+ */
 
 public abstract class DataRecord implements Cloneable, Comparable {
 
@@ -146,6 +196,15 @@ public abstract class DataRecord implements Cloneable, Comparable {
     public String[] getFields() {
         return metaData.getFields();
     }
+    
+    /**
+     * Returns true if a specified field name exists in the data record.
+     * @param fieldName Name (case-sensitive) of the field
+     * @return
+     */
+    public boolean isField(String fieldName) {
+    	return metaData.isField(fieldName);
+    }
 
     public int getFieldCount() {
         return metaData.getNumberOfFields();
@@ -159,6 +218,13 @@ public abstract class DataRecord implements Cloneable, Comparable {
         return metaData.getFieldType(i);
     }
 
+    /**
+     * Returns the iDataAccess field type of a given field.
+     * If fieldName does not exists, it returns iDataAccess.DATA_UNKOWN.
+     * 
+     * @param fieldName
+     * @return iDataAccess field type value (int). If fieldName does not exist, it returns IDataAccess.DATA_UNKOWN.
+     */
     public int getFieldType(String fieldName) {
         return metaData.getFieldType(fieldName);
     }
@@ -930,7 +996,7 @@ public abstract class DataRecord implements Cloneable, Comparable {
         list.setDataAccess(persistence.data(), validFrom, validUntil);
         String svalue = (value != null ? list.getValueForId(value.toString()) : "");
         ItemTypeStringAutoComplete item = new ItemTypeStringAutoComplete(name, svalue, type, category, description, true);
-        item.setFieldSize(200, 19);
+        item.setFieldSize(200, 21); // 21 pixels high for new flatlaf, otherwise chars y and p get cut off 
         item.setAutoCompleteData(list);
         item.setChecks(true, true);
         return item;
@@ -953,6 +1019,9 @@ public abstract class DataRecord implements Cloneable, Comparable {
         return items.toArray(new IItemType[0]);
     }
 
+    /*
+     * get the data from the GUI items and store them in the current record
+     */   
     public void saveGuiItems(Vector<IItemType> items) {
         for(IItemType item : items) {
             String name = item.getName();
@@ -997,5 +1066,49 @@ public abstract class DataRecord implements Cloneable, Comparable {
             }
         }
     }
+    
+    /**
+     * Adds a hint label with a light blue background to the gui. To be used from getGuiItems();
+     * @param uniqueName
+     * @param type
+     * @param category
+     * @param caption
+     * @param gridWidth
+     * @param padBefore
+     * @param padAfter
+     * @return ItemTypeLabel Hint
+     */
+	protected ItemTypeLabel addHint(String uniqueName, int type, String category, String caption, int gridWidth,
+			int padBefore, int padAfter) {
+		//if caption starts with html, do not have a blank as a prefix as this will disable html rendering.
+		ItemTypeLabel item = addDescription(uniqueName, type, category, (caption.startsWith("<html>") ? caption : " "+caption), gridWidth,
+				padBefore, padAfter);
+		// item.setImage(BaseDialog.getIcon(ImagesAndIcons.IMAGE_MENU_ABOUT));
+		item.setBackgroundColor(Daten.efaConfig.hintBackgroundColor);
+		item.setHorizontalAlignment(SwingConstants.LEFT);
+		item.setRoundShape(false);
+		return item;
+	}
+	
+	/**
+	 * Adds a description label to the gui. To be used from getGuiItems();
+	 * @param uniqueName
+	 * @param type
+	 * @param category
+	 * @param caption
+	 * @param gridWidth
+	 * @param padBefore
+	 * @param padAfter
+	 * @return ItemTypeLabel Description
+	 */
+	protected ItemTypeLabel addDescription(String uniqueName, int type, String category, String caption, int gridWidth,
+			int padBefore, int padAfter) {
+		// ensure that the description value does not get saved in efaConfig file by
+		// adding a special prefix
+		ItemTypeLabel item = new ItemTypeLabel("_" + uniqueName, type, category, caption);
+		item.setPadding(0, 0, padBefore, padAfter);
+		item.setFieldGrid(3, GridBagConstraints.EAST, GridBagConstraints.BOTH);
+		return item;
+	}    
 
 }

@@ -18,6 +18,8 @@ import de.nmichael.efa.data.types.*;
 import de.nmichael.efa.core.items.*;
 import de.nmichael.efa.gui.util.*;
 import de.nmichael.efa.util.*;
+
+import java.awt.GridBagConstraints;
 import java.util.*;
 
 // @i18n complete
@@ -48,6 +50,11 @@ public class BoatStatusRecord extends DataRecord {
     public static final String ENTRYNO             = "EntryNo";       // the EntryNo if this boat in ONTHEWATER
     public static final String COMMENT             = "Comment";
 
+    public static final int COLUMN_ID_BOAT_NAME = 0;
+    public static final int COLUMN_ID_BOAT_BASE_STATUS = 1;
+    public static final int COLUMN_ID_BOAT_CURRENT_STATUS = 2;
+    public static final int COLUMN_ID_BOAT_COMMENT = 3;
+    
     protected static String CAT_STATUS       = "%06%" + International.getString("Bootsstatus");
     
     public static void initialize() {
@@ -110,6 +117,11 @@ public class BoatStatusRecord extends DataRecord {
         return getUUID(BOATID);
     }
 
+    /**
+     * Return the qualified name of the boat identified by the boatstatus record's boat id, valid at the given timestamp.
+     * @param validAt timestamp (System.currentTimeMillis)
+     * @return Qualified name of the boat, null if no boatrecord can be found for the BoatID.
+     */
     public String getBoatNameAsString(long validAt) {
         Boats b = getPersistence().getProject().getBoats(false);
         if (b != null) {
@@ -201,6 +213,20 @@ public class BoatStatusRecord extends DataRecord {
         return r != null && isOnTheWaterShowNotAvailable(r.getSessionType(), r.getEndDate());
     }
 
+    /**
+     * Determines the BoatStautsRecord Destination, depending  on the current logbook.
+     * @return Destination and DestinationVariant name
+     */
+    public String getDestination() {
+    	
+        LogbookRecord r = getLogbookRecord(); 	
+        if (r==null) {
+        	return International.getString("Fehler: kein Fahrtenbucheintrag zu Boot auf Fahrt");
+        } else {
+        	return r.getDestinationAndVariantName();
+        }
+    }    
+    
     public void setOnlyInBoathouseId(int boathouseId) {
         setString(ONLYINBOATHOUSEID, (boathouseId < 0 ? null : Integer.toString(boathouseId)));
     }
@@ -228,7 +254,13 @@ public class BoatStatusRecord extends DataRecord {
     public LogbookRecord getLogbookRecord() {
         try {
             Logbook l = Daten.project.getLogbook(getLogbook(), false);
-            return l.getLogbookRecord(getEntryNo());
+            
+            if (l==null) {
+            	return null;
+            } else {
+            	return l.getLogbookRecord(getEntryNo());
+            }
+            	
         } catch(Exception e) {
             Logger.logdebug(e);
         }
@@ -241,7 +273,27 @@ public class BoatStatusRecord extends DataRecord {
     public String getComment() {
         return getString(COMMENT);
     }
+    
+    /**
+     * Get the name of the boat owner of the current boatstatusrecord's boat.
+     * @return Boat owner's name, or empty string if boat cannot be found for this BoatStatusRecord.
+     */
+    public String getBoatOwner() {
+    	  Boats boats = getPersistence().getProject().getBoats(false);
+          String boatOwner = "";
+          if (boats != null && getBoatId() != null) {
+              BoatRecord r = boats.getBoat(getBoatId(), System.currentTimeMillis());
+              if (r != null) {
+                  boatOwner = r.getOwner();
+              }
+          } 
+          return boatOwner;    	
+    }
 
+    /**
+     * Get the name of the boat of the current boatstatusrecord.
+     * @return Boat's qualified name, or user-entered name of a foreign boat, with suffix "(unknown boat)".
+     */
     private String getBoatName() {
         Boats boats = getPersistence().getProject().getBoats(false);
         String boatName = "?";
@@ -303,10 +355,12 @@ public class BoatStatusRecord extends DataRecord {
         IItemType item;
         Vector<IItemType> v = new Vector<IItemType>();
 
-        v.add(item = new ItemTypeLabel("GUI_BOAT_NAME",
-                IItemType.TYPE_PUBLIC, CAT_STATUS, International.getMessage("Bootsstatus für {boat}", getBoatNameAsString(System.currentTimeMillis()))));
+        v.add(item = new ItemTypeLabelHeader("GUI_BOAT_NAME",
+                IItemType.TYPE_PUBLIC, CAT_STATUS, " "+International.getMessage("Bootsstatus für {boat}", getBoatNameAsString(System.currentTimeMillis()))));
         item.setPadding(0, 0, 0, 10);
 
+        item.setFieldGrid(2,GridBagConstraints.EAST, GridBagConstraints.BOTH);
+        
         v.add(item = new ItemTypeString(BoatStatusRecord.BOATTEXT, getBoatText(),
                 IItemType.TYPE_EXPERT, CAT_STATUS,
                 International.getString("Bootsname")));
@@ -345,20 +399,22 @@ public class BoatStatusRecord extends DataRecord {
     }
 
     public TableItemHeader[] getGuiTableHeader() {
-        TableItemHeader[] header = new TableItemHeader[4];
+        TableItemHeader[] header = new TableItemHeader[5];
         header[0] = new TableItemHeader(International.getString("Boot"));
         header[1] = new TableItemHeader(International.getString("Basis-Status"));
         header[2] = new TableItemHeader(International.getString("aktueller Status"));
         header[3] = new TableItemHeader(International.getString("Bemerkung"));
+        header[4] = new TableItemHeader(International.getString("Eigentümer"));
         return header;
     }
 
     public TableItem[] getGuiTableItems() {
-        TableItem[] items = new TableItem[4];
+        TableItem[] items = new TableItem[5];
         items[0] = new TableItem(getBoatName());
         items[1] = new TableItem(getStatusDescription(getBaseStatus()));
         items[2] = new TableItem(getStatusDescription(getCurrentStatus()));
         items[3] = new TableItem(getComment());
+        items[4] = new TableItem(getBoatOwner());
         return items;
     }
 

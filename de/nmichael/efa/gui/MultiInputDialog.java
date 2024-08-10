@@ -10,24 +10,18 @@
 
 package de.nmichael.efa.gui;
 
-import de.nmichael.efa.*;
 import de.nmichael.efa.util.*;
 import de.nmichael.efa.util.Dialog;
 import de.nmichael.efa.core.items.*;
-import de.nmichael.efa.data.storage.*;
-import de.nmichael.efa.data.types.*;
-import de.nmichael.efa.gui.BaseDialog;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
-import javax.swing.border.*;
-import java.util.*;
-import javax.swing.event.ChangeEvent;
+
 
 // @i18n complete
 public class MultiInputDialog extends BaseDialog {
 
-    private String KEYACTION_ENTER;
+	private String KEYACTION_ENTER;
     protected IItemType[] items;
 
     public MultiInputDialog(Frame parent, String title, IItemType[] items) {
@@ -65,7 +59,7 @@ public class MultiInputDialog extends BaseDialog {
         items[0].requestFocus();
 
         if (closeButton != null) {
-            closeButton.setIcon(getIcon("button_accept.png"));
+            closeButton.setIcon(getIcon(IMAGE_ACCEPT));
         }
     }
 

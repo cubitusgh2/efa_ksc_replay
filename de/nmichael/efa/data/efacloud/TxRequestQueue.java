@@ -10,19 +10,26 @@
  */
 package de.nmichael.efa.data.efacloud;
 
+import java.awt.Container;
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.Vector;
+
+import javax.swing.ImageIcon;
+import javax.swing.SwingUtilities;
+
 import de.nmichael.efa.Daten;
-import de.nmichael.efa.core.config.AdminRecord;
-import de.nmichael.efa.core.config.Admins;
 import de.nmichael.efa.gui.EfaBaseFrame;
 import de.nmichael.efa.gui.EfaBoathouseFrame;
 import de.nmichael.efa.gui.EfaCloudConfigDialog;
+import de.nmichael.efa.gui.ImagesAndIcons;
 import de.nmichael.efa.util.International;
 import de.nmichael.efa.util.Logger;
-
-import java.awt.*;
-import java.io.*;
-import java.text.SimpleDateFormat;
-import java.util.*;
 
 /**
  * <p>The efaCloud transaction request queue manager.</p>
@@ -164,14 +171,26 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
     public static final HashMap<Integer, String> QUEUE_STATE_SYMBOL = new HashMap<Integer, String>();
 
     static {
-        QUEUE_STATE_SYMBOL.put(QUEUE_IS_STOPPED, "  \u25aa");
+        QUEUE_STATE_SYMBOL.put(QUEUE_IS_STOPPED, "  ▪");
         QUEUE_STATE_SYMBOL.put(QUEUE_IS_AUTHENTICATING, "  ?");
-        QUEUE_STATE_SYMBOL.put(QUEUE_IS_PAUSED, "  \u2551");
-        QUEUE_STATE_SYMBOL.put(QUEUE_IS_DISCONNECTED, "  \u21ce!");
-        QUEUE_STATE_SYMBOL.put(QUEUE_IS_WORKING, "  \u21d4");
-        QUEUE_STATE_SYMBOL.put(QUEUE_IS_IDLE, "  \u2714");
-        QUEUE_STATE_SYMBOL.put(QUEUE_IS_SYNCHRONIZING, " \u27f3");
+        QUEUE_STATE_SYMBOL.put(QUEUE_IS_PAUSED, "  ║");
+        QUEUE_STATE_SYMBOL.put(QUEUE_IS_DISCONNECTED, "  ⇔!");
+        QUEUE_STATE_SYMBOL.put(QUEUE_IS_WORKING, "  ⇔");
+        QUEUE_STATE_SYMBOL.put(QUEUE_IS_IDLE, "  ✔");
+        QUEUE_STATE_SYMBOL.put(QUEUE_IS_SYNCHRONIZING, " ⟳");
     }
+    
+    public static final HashMap<Integer, ImageIcon> QUEUE_STATE_ICON = new HashMap<Integer, ImageIcon>();
+
+    static {
+    	QUEUE_STATE_ICON.put(QUEUE_IS_STOPPED, ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_EFACLOUD_STOPPED));
+    	QUEUE_STATE_ICON.put(QUEUE_IS_AUTHENTICATING, ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_EFACLOUD_AUTHENTICATING));
+    	QUEUE_STATE_ICON.put(QUEUE_IS_PAUSED, ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_EFACLOUD_PAUSED));
+    	QUEUE_STATE_ICON.put(QUEUE_IS_DISCONNECTED, ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_EFACLOUD_DISCONNECTED));
+    	QUEUE_STATE_ICON.put(QUEUE_IS_WORKING, ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_EFACLOUD_WORKING));
+    	QUEUE_STATE_ICON.put(QUEUE_IS_IDLE, ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_EFACLOUD_IDLE));
+    	QUEUE_STATE_ICON.put(QUEUE_IS_SYNCHRONIZING, ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_EFACLOUD_SYNCHRONIZING));
+    }    
 
     private static int txID;                  // the last used transaction ID
     private static int txcID;                 // the last used transaction container ID
@@ -186,6 +205,7 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
     protected String efacloudLogDir;
     private long logLastModified;
     static String logFilePath;
+    static String synchErrorFilePath;
 
     // The response queue
     private final ArrayList<TaskManager.RequestMessage> queueResponses = new ArrayList<TaskManager.RequestMessage>();
@@ -331,6 +351,7 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
         while (System.currentTimeMillis() < lastModifiedLog) {
             settleWaitCounter++;
             try {
+                //noinspection BusyWait
                 Thread.sleep(10);
             } catch (InterruptedException ignored) {
             }
@@ -380,10 +401,16 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
      *
      * @return the state of operation, e. g. TX_QUEUE_WORKING
      */
-    public String getStateForDisplay() {
-        String efaCloudStatus = QUEUE_STATE_SYMBOL.get(txq.getState());
-        if (efaCloudStatus == null)
-            efaCloudStatus = TxRequestQueue.QUEUE_STATE_SYMBOL.get(TxRequestQueue.QUEUE_IS_AUTHENTICATING);
+    public String getStateForDisplay(Boolean withState) {
+    	if (txq==null) 
+    		return "";
+    	
+    	String efaCloudStatus = "";
+    	if (withState) {
+    		efaCloudStatus=QUEUE_STATE_SYMBOL.get(txq.getState());
+            if (efaCloudStatus == null)
+                efaCloudStatus = TxRequestQueue.QUEUE_STATE_SYMBOL.get(TxRequestQueue.QUEUE_IS_AUTHENTICATING);
+    	}
         if ((getQueueSize(TX_BUSY_QUEUE_INDEX) + getQueueSize(TX_PENDING_QUEUE_INDEX) +
                 getQueueSize(TX_SYNCH_QUEUE_INDEX)) == 0)
             return efaCloudStatus;
@@ -392,10 +419,25 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
                 getQueueSize(TX_BUSY_QUEUE_INDEX) > 0) ? queues.get(TX_BUSY_QUEUE_INDEX).firstElement() : (((
                 getQueueSize(TX_SYNCH_QUEUE_INDEX) > 0) ? queues.get(TX_SYNCH_QUEUE_INDEX).firstElement() : null)));
         String txID = (tx == null) ? "" : "#" + tx.ID + " ";
-        return efaCloudStatus + " - " + txID + getQueueSize(TX_BUSY_QUEUE_INDEX) + "|" +
+        return (efaCloudStatus.isEmpty() ? "" : efaCloudStatus+ " - " ) + txID + getQueueSize(TX_BUSY_QUEUE_INDEX) + "|" +
                 getQueueSize(TX_PENDING_QUEUE_INDEX) + "|" + getQueueSize(TX_SYNCH_QUEUE_INDEX);
     }
 
+    /**
+     * Get an icon for display in the base frame of efaBoathouse top decoration
+     * @return
+     */
+    public ImageIcon getStateIconForDisplay() {
+    	if (txq==null) 
+    		return null;
+    	
+		ImageIcon efaCloudStatus=QUEUE_STATE_ICON.get(txq.getState());
+        if (efaCloudStatus == null) 
+        	efaCloudStatus = QUEUE_STATE_ICON.get(TxRequestQueue.QUEUE_IS_AUTHENTICATING);
+        return efaCloudStatus;
+    }
+    
+    
     /**
      * Simple getter
      *
@@ -428,11 +470,8 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
         if (type < 2) {
             // truncate log files,
             File f = new File(logFilePath);
-            if ((f.length() > 200000) && (f.renameTo(new File(logFilePath + ".previous"))))
-                TextResource.writeContents(logFilePath,
-                        "[Log continued]\n" + dateString + message, false);
-            else
-                TextResource.writeContents(logFilePath, dateString + message, true);
+            TextResource.writeContents(logFilePath,
+                    dateString + message, (f.length() <= 200000) || (!f.renameTo(new File(logFilePath + ".previous"))));
         }
     }
 
@@ -462,13 +501,12 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
         // initialize log paths and cleanse files.
         SimpleDateFormat formatFull = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         logFilePath = efacloudLogDir + File.separator + "efacloud.log";
+        synchErrorFilePath = efacloudLogDir + File.separator + "synchErrors.log";
         File efaCloudLogFile = new File(logFilePath);
         logLastModified = ((logLastModified == 0) && efaCloudLogFile.exists()) ? efaCloudLogFile
                     .lastModified() : logLastModified;
-        if (efaCloudLogFile.exists())
-            //noinspection ResultOfMethodCallIgnored
-            efaCloudLogFile.renameTo(new File(logFilePath + ".previous"));
-        TextResource.writeContents(logFilePath, formatFull.format(new Date()) + " INFO state, []: LOG STARTING\n", false);
+        if (!efaCloudLogFile.exists())
+            TextResource.writeContents(logFilePath, formatFull.format(new Date()) + " INFO state, []: LOG STARTING\n", false);
     }
 
     /**
@@ -559,6 +597,9 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
     public String checkCredentials() {
         String testResponse = InternetAccessManager.getText(this.efaCloudUrl,
                 "txc=" + Transaction.createSingleNopRequestContainer(this.credentials));
+        // error messages are plain text, no base 64 encoding.
+        if (testResponse.startsWith("#ERROR:"))
+            return testResponse;
         String txContainerBase64 = testResponse.replace('-', '/').replace('*', '+').replace('_', '=').trim();
         String txContainer;
         try {
@@ -696,28 +737,21 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
     }
 
     /**
-     * Full application restart to reset all queues and communication. The function is provided for the raspberry bootup
-     * system time issue.
-     */
-    void restartEfa() {
-        if (efaGUIroot instanceof EfaBoathouseFrame) {
-            // Indicate the restart cause. This has no effect on the queue handling.
-            Logger.log(Logger.WARNING, Logger.MSG_EFACLOUDSYNCH_INFO, International
-                    .getMessage("Kommunikation zu '{URL}' ist nachhaltig gestört. Versuche einen Neustart des Programms zur Behebung.",
-                            efaCloudUrl));
-            AdminRecord admin = Daten.admins.getAdmin(Admins.SUPERADMIN);
-            ((EfaBoathouseFrame) efaGUIroot).cancel(null, EfaBoathouseFrame.EFA_EXIT_REASON_AUTORESTART, admin, true);
-        }
-    }
-
-    /**
      * Display the current status in the GUI.
      */
     public void showStatusAtGUI() {
         if (efaGUIroot instanceof EfaBaseFrame)
-            ((EfaBaseFrame) efaGUIroot).setTitle();
+        	SwingUtilities.invokeLater(new Runnable() {
+        		public void run() {
+                	((EfaBaseFrame) efaGUIroot).setTitle();
+        		}
+        	});              	
         else if (efaGUIroot instanceof EfaBoathouseFrame)
-            ((EfaBoathouseFrame) efaGUIroot).updateProjectLogbookInfo();
+        	SwingUtilities.invokeLater(new Runnable() {
+        		public void run() {
+                    ((EfaBoathouseFrame) efaGUIroot).updateProjectLogbookInfo();
+        		}
+        	});              	
     }
 
     /**
@@ -1274,4 +1308,3 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
     }
 
 }
-

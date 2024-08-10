@@ -10,7 +10,6 @@
 
 package de.nmichael.efa.gui.dataedit;
 
-import de.nmichael.efa.*;
 import de.nmichael.efa.core.config.AdminRecord;
 import de.nmichael.efa.core.items.*;
 import de.nmichael.efa.data.*;
@@ -49,7 +48,7 @@ public class LogbookListDialog extends DataListDialog {
         addAction(International.getString("Korrekturassistent"),
                 ACTION_CORRECTIONASSISTENT,
                 BaseDialog.IMAGE_CORRECTION);
-        minColumnWidths = new int[] { 80, 150, 150, 200, 150, 80 };
+        minColumnWidths = new int[] { 80, 150, 150, 200, 150, 100 };
     }
 
     public void keyAction(ActionEvent evt) {
