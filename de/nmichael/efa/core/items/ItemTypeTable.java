@@ -29,6 +29,7 @@ import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
 
 import de.nmichael.efa.Daten;
+import de.nmichael.efa.gui.ImagesAndIcons;
 import de.nmichael.efa.gui.util.EfaMouseListener;
 import de.nmichael.efa.gui.util.EfaTableCellRenderer;
 import de.nmichael.efa.gui.util.Table;
@@ -50,6 +51,7 @@ public class ItemTypeTable extends ItemType implements ActionListener, ITableEdi
     protected String[] keys;
     protected Hashtable<String,TableItem[]> items; // keys -> columns for key
     protected String[] popupActions;
+    protected String[] popupIcons;
     protected int selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION;
     protected boolean sortingEnabled = true;
     protected int sortByColumn = 0;
@@ -180,6 +182,10 @@ public class ItemTypeTable extends ItemType implements ActionListener, ITableEdi
                     JMenuItem menuItem = new JMenuItem(popupActions[i]);
                     menuItem.setActionCommand(EfaMouseListener.EVENT_POPUP_CLICKED + "_" + i);
                     menuItem.addActionListener(this);
+                    if (popupIcons != null && popupIcons[i]!=null) {
+                    	menuItem.setIcon(ImagesAndIcons.getIcon(popupIcons[i]));
+                    }
+                    //if (popup)
                     popup.add(menuItem);
                 }
             } else {
@@ -338,6 +344,10 @@ public class ItemTypeTable extends ItemType implements ActionListener, ITableEdi
 
     public void setPopupActions(String[] actions) {
         this.popupActions = actions;
+    }
+    
+    public void setPopupIcons(String[] actionIconNames) {
+    	this.popupIcons=actionIconNames;
     }
 
     public void setVisible(boolean visible) {

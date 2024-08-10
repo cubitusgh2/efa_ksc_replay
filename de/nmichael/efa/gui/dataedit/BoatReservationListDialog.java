@@ -157,8 +157,9 @@ public class BoatReservationListDialog extends DataListDialog {
         this.allowNewReservationsWeekly = allowNewReservationsWeekly;
         
 		//From and to columns should be wider than default
+		//Buttons on north, if boat reservations are called from efaBths main screen.
+		this.buttonPanelPosition = (Daten.isAdminMode() ? BorderLayout.EAST : BorderLayout.NORTH);
 		this.minColumnWidths = new int[] {150,150,150,120,12,-1};   
-
     }
 
 
@@ -242,7 +243,7 @@ public class BoatReservationListDialog extends DataListDialog {
 		super.iniDialog();
 		//show only matching items by default in BoatDamageListDialog 
 		table.setIsFilterSet(true);
-		
+		this.setRequestFocus(table.getSearchField());
 	}
 	
     protected void iniControlPanel() {

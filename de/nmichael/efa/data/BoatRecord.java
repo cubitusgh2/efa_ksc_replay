@@ -10,6 +10,7 @@
 
 package de.nmichael.efa.data;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.util.ArrayList;
@@ -1210,6 +1211,9 @@ public class BoatRecord extends DataRecord implements IItemFactory, IItemListene
                     BoatReservationRecord.BOATID, getId().toString(),
                     null, null, null, this,
                     IItemType.TYPE_PUBLIC, CAT_RESERVATIONS, International.getString("Reservierungen")));
+            ((ItemTypeDataRecordTable) item).setButtonPanelPosition(BorderLayout.NORTH);
+            item.setFieldSize(800, -1);
+            item.setFieldGrid(1, GridBagConstraints.CENTER, GridBagConstraints.BOTH);
         }
 
         // CAT_DAMAGES
@@ -1220,6 +1224,8 @@ public class BoatRecord extends DataRecord implements IItemFactory, IItemListene
                     BoatDamageRecord.BOATID, getId().toString(),
                     null, null, null, this,
                     IItemType.TYPE_PUBLIC, CAT_DAMAGES, International.getString("Bootsschäden")));
+            ((ItemTypeDataRecordTable) item).setButtonPanelPosition(BorderLayout.NORTH);
+            item.setFieldSize(800, -1);
         }
 
         // CAT_STATUS

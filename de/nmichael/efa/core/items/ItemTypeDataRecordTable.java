@@ -10,6 +10,7 @@ package de.nmichael.efa.core.items;
 
 import de.nmichael.efa.Daten;
 import de.nmichael.efa.core.config.AdminRecord;
+import de.nmichael.efa.core.config.EfaConfig;
 import de.nmichael.efa.gui.dataedit.VersionizedDataDeleteDialog;
 import de.nmichael.efa.gui.dataedit.DataEditDialog;
 import de.nmichael.efa.util.*;
@@ -24,6 +25,9 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
+
+import org.apache.batik.ext.swing.GridBagConstants;
+
 import java.util.*;
 
 // @i18n complete
@@ -124,8 +128,8 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
             this.actionText = DEFAULT_ACTIONS;
             this.actionTypes = new int[]{ACTION_NEW, ACTION_EDIT, ACTION_DELETE};
             this.actionIcons = new String[]{
-            		ImagesAndIcons.IMAGE_BUTTON_ADD, ImagesAndIcons.IMAGE_BUTTON_EDIT, ImagesAndIcons.IMAGE_BUTTON_DELETE
-            };
+            		ImagesAndIcons.IMAGE_BUTTON_ADD, ImagesAndIcons.IMAGE_BUTTON_EDIT, ImagesAndIcons.IMAGE_BUTTON_DELETE};
+            super.setPopupIcons(this.actionIcons);
         } else {
             int popupActionCnt = 0;
             for (int i = 0; i < actionTypes.length; i++) {
@@ -162,6 +166,7 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
                     }
                 }
             }
+            super.setPopupIcons(this.actionIcons);
         }
     }
 
@@ -175,9 +180,9 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
         myPanel.setLayout(new BorderLayout());
         tablePanel = new JPanel();
         tablePanel.setLayout(new GridBagLayout());
-        buttonPanel = new JPanel();
+        buttonPanel = new RoundedPanel();
         buttonPanel.setLayout(new GridBagLayout());
-        buttonPanel.setAlignmentY(Component.TOP_ALIGNMENT);
+        buttonPanel.setAlignmentY(Component.CENTER_ALIGNMENT);
         searchPanel = new JPanel();
         searchPanel.setLayout(new GridBagLayout());
         myPanel.add(tablePanel, BorderLayout.CENTER);
@@ -195,6 +200,7 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
             ItemTypeButton button = new ItemTypeButton(action, IItemType.TYPE_PUBLIC, "BUTTON_CAT",
                     (actionTypes[i] < ACTIONTYPE_SHOW_AS_SMALL_BUTTONS ? actionText[i] : null)); // >= 2000 just as small buttons without text
             button.registerItemListener(this);
+            button.boldfont = true;
             if (actionTypes[i] < ACTIONTYPE_SHOW_AS_SMALL_BUTTONS) {
                 button.setPadding(20, 20, (i > 0 && actionTypes[i] < 0 && actionTypes[i - 1] >= 0 ? 20 : 0), 5);
                 button.setFieldSize(200, -1);
@@ -220,20 +226,54 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
                 }
             }
             if (actionTypes[i] < ACTIONTYPE_SHOW_AS_SMALL_BUTTONS) {
-                button.displayOnGui(dlg, buttonPanel, 0, i);
+                
+            	if (buttonPanelPosition.equals(BorderLayout.NORTH)) {
+            		//put all action items in one horizontal line.
+            		button.setFieldSize(getTextLength(button.getDescription())+(i==0? 40:30)	,-1);
+            		button.setPadding((i==0 ? 10 :4), 0, 6, 6);
+                	button.displayOnGui(dlg, buttonPanel, i,0);
+            	} else {
+                	button.displayOnGui(dlg, buttonPanel, 0, i);
+            	}
             } else {
                 button.displayOnGui(dlg, smallButtonPanel, i, 0);
             }
             actionButtons.put(button, action);
         }
+        //If ButtonPanel is above the table, align it to the right.
+        if (buttonPanelPosition.equals(BorderLayout.NORTH)) {
+        	JLabel myLabelSpacer=new JLabel();
+        	myLabelSpacer.setText(" ");
+        	Dimension dim = new Dimension(100,10);
+        	myLabelSpacer.setMinimumSize(dim);
+        	myLabelSpacer.setPreferredSize(dim);
+            buttonPanel.add(myLabelSpacer, new GridBagConstraints(actionText.length,0,1,1,1.0,0,GridBagConstants.EAST, GridBagConstants.HORIZONTAL,new Insets(0,0,0,0),0,0));
+            //buttonPanel.setBackground(Daten.efaConfig.getHeaderBackgroundColor());
+            buttonPanel.setBackground(EfaUtil.darker(buttonPanel.getBackground(), 18));
+        }
         searchField = new ItemTypeString("SEARCH_FIELD", "", IItemType.TYPE_PUBLIC, "SEARCH_CAT", International.getString("Suche"));
         searchField.setFieldSize(300, -1);
         searchField.registerItemListener(this);
+        searchField.setPadding(12, 2, 2, 0);
         searchField.displayOnGui(dlg, searchPanel, 0, 0);
+        searchField.setBackgroundColorWhenFocused(Daten.efaConfig.getValueEfaDirekt_colorizeInputField() ? Color.yellow : null);
         filterBySearch = new ItemTypeBoolean("FILTERBYSEARCH", false, IItemType.TYPE_PUBLIC, "SEARCH_CAT", International.getString("filtern"));
         filterBySearch.registerItemListener(this);
         filterBySearch.displayOnGui(dlg, searchPanel, 10, 0);
+        if (buttonPanelPosition.equals(BorderLayout.NORTH)) {
+        	JLabel myLabelSpacer=new JLabel();
+        	myLabelSpacer.setText(" ");
+        	Dimension dim = new Dimension(100,10);
+        	myLabelSpacer.setMinimumSize(dim);
+        	myLabelSpacer.setPreferredSize(dim);
+            searchPanel.add(myLabelSpacer, new GridBagConstraints(11,0,1,1,1.0,0,GridBagConstants.EAST, GridBagConstants.HORIZONTAL,new Insets(0,0,0,0),0,0));        	
+        }
     }
+
+    private int getTextLength(String text) {
+    	return buttonPanel.getFontMetrics(buttonPanel.getFont()).stringWidth(text);
+    }
+
 
     public int displayOnGui(Window dlg, JPanel panel, int x, int y) {
         iniDisplayActionTable(dlg);

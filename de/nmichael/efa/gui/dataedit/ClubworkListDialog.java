@@ -56,7 +56,8 @@ public class ClubworkListDialog extends DataListDialog {
         }
         
 		//From and to columns should be wider than default
-		this.minColumnWidths = new int[] {150,120,150,0,80,80};           
+		this.minColumnWidths = new int[] {150,120,150,0,80,80};  
+		//	this.buttonPanelPosition = BorderLayout.NORTH;
     }
 
     public void keyAction(ActionEvent evt) {
@@ -155,8 +156,10 @@ public class ClubworkListDialog extends DataListDialog {
         super.iniControlPanel();
         mainPanel.add(mainTablePanel, BorderLayout.CENTER);
 
-        setRequestFocus(table);
+        table.setIsFilterSet(true);
+        setRequestFocus(table.getSearchField());
         this.validate();
+
     }
 
     public DataEditDialog createNewDataEditDialog(JDialog parent, StorageObject persistence, DataRecord record) {
