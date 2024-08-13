@@ -10,6 +10,7 @@
 
 package de.nmichael.efa.data;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.util.ArrayList;
@@ -1210,8 +1211,12 @@ public class BoatRecord extends DataRecord implements IItemFactory, IItemListene
                     BoatReservationRecord.BOATID, getId().toString(),
                     null, null, null, this,
                     IItemType.TYPE_PUBLIC, CAT_RESERVATIONS, International.getString("Reservierungen")));
+            ((ItemTypeDataRecordTable) item).setButtonPanelPosition(BorderLayout.NORTH);
+            item.setFieldSize(850, -1);
+            item.setPadding(0, 0, 0, 0);
+            item.setFieldGrid(1, 1, GridBagConstraints.WEST, GridBagConstraints.BOTH);
         }
-
+        
         // CAT_DAMAGES
         if (getId() != null && admin != null && admin.isAllowedEditBoatDamages()) {
             v.add(item = new ItemTypeDataRecordTable(GUIITEM_DAMAGES,
@@ -1220,6 +1225,10 @@ public class BoatRecord extends DataRecord implements IItemFactory, IItemListene
                     BoatDamageRecord.BOATID, getId().toString(),
                     null, null, null, this,
                     IItemType.TYPE_PUBLIC, CAT_DAMAGES, International.getString("Bootsschäden")));
+            ((ItemTypeDataRecordTable) item).setButtonPanelPosition(BorderLayout.NORTH);
+            item.setFieldSize(850, -1);
+            item.setPadding(0, 0, 0, 0);
+            item.setFieldGrid(1, 1, GridBagConstraints.WEST, GridBagConstraints.BOTH);
         }
 
         // CAT_STATUS

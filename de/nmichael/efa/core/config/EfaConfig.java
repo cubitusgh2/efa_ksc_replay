@@ -1001,7 +1001,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_GUI),
 					International.getString("Schriftstil")));
 
-			addParameter(efa_otherTableFontSize = new ItemTypeInteger("EfaOtherTableFontSize", 12, 6, 20,
+			addParameter(efa_otherTableFontSize = new ItemTypeInteger("EfaOtherTableFontSize", 12, 6, 24,
 					false, IItemType.TYPE_PUBLIC,
 					BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_GUI),
 					International.getString("Tabellen-Schriftgröße in Punkten (6 bis 20, Standard: 12)")));					
@@ -1344,7 +1344,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),
 					International.getString("Schriftstil")));
 
-			addParameter(efaDirekt_BthsTableFontSize = new ItemTypeInteger("EfaBoathouseTableFontSize", 14, 6, 20,
+			addParameter(efaDirekt_BthsTableFontSize = new ItemTypeInteger("EfaBoathouseTableFontSize", 14, 6, 24,
 					false, IItemType.TYPE_PUBLIC,
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),
 					International.getString("Tabellen-Schriftgröße in Punkten (6 bis 20, Standard: 14)")));

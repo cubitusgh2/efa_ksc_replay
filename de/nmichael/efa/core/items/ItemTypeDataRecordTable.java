@@ -10,6 +10,7 @@ package de.nmichael.efa.core.items;
 
 import de.nmichael.efa.Daten;
 import de.nmichael.efa.core.config.AdminRecord;
+import de.nmichael.efa.core.config.EfaConfig;
 import de.nmichael.efa.gui.dataedit.VersionizedDataDeleteDialog;
 import de.nmichael.efa.gui.dataedit.DataEditDialog;
 import de.nmichael.efa.util.*;
@@ -24,6 +25,9 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
+
+import org.apache.batik.ext.swing.GridBagConstants;
+
 import java.util.*;
 
 // @i18n complete
@@ -124,8 +128,8 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
             this.actionText = DEFAULT_ACTIONS;
             this.actionTypes = new int[]{ACTION_NEW, ACTION_EDIT, ACTION_DELETE};
             this.actionIcons = new String[]{
-            		ImagesAndIcons.IMAGE_BUTTON_ADD, ImagesAndIcons.IMAGE_BUTTON_EDIT, ImagesAndIcons.IMAGE_BUTTON_DELETE
-            };
+            		ImagesAndIcons.IMAGE_BUTTON_ADD, ImagesAndIcons.IMAGE_BUTTON_EDIT, ImagesAndIcons.IMAGE_BUTTON_DELETE};
+            super.setPopupIcons(this.actionIcons);
         } else {
             int popupActionCnt = 0;
             for (int i = 0; i < actionTypes.length; i++) {
@@ -162,6 +166,7 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
                     }
                 }
             }
+            super.setPopupIcons(this.actionIcons);
         }
     }
 
@@ -169,19 +174,44 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
         this.defaultActionForDoubleclick = defaultAction;
     }
 
+    /*
+     * Creates the table including button bar and filter field.
+     * Depending on buttonPanelPosition, there are two ways to position the button bar:
+     *   
+     * - buttonPanelPosition=BorderLayout.EAST
+     *   Good for tables for a small number of columns. Also good, if there are a lot of buttons for the table,  
+     *   like in the dataEdit dialogs.
+     *   
+     * - buttonPanelPosition=BorderLayout.NORTH
+     *   Good for tables like Boatreservations, which have a lot of columns and consume a lot of horizontal space.
+     *   Does NOT work well with a lot of buttons.
+     *    
+     */
     protected void iniDisplayActionTable(Window dlg) {
         this.dlg = dlg;
         myPanel = new JPanel();
         myPanel.setLayout(new BorderLayout());
         tablePanel = new JPanel();
         tablePanel.setLayout(new GridBagLayout());
-        buttonPanel = new JPanel();
+        buttonPanel = new RoundedPanel();
         buttonPanel.setLayout(new GridBagLayout());
-        buttonPanel.setAlignmentY(Component.TOP_ALIGNMENT);
+        buttonPanel.setAlignmentY(Component.CENTER_ALIGNMENT);
+        buttonPanel.setFont(buttonPanel.getFont().deriveFont(Font.BOLD));// this is needed as all buttons use bold font - otherwise GetTextLength would not work correctly.
         searchPanel = new JPanel();
         searchPanel.setLayout(new GridBagLayout());
         myPanel.add(tablePanel, BorderLayout.CENTER);
         myPanel.add(buttonPanel, buttonPanelPosition);
+        
+        // Buttons on the top? Align the buttonpanel with the table with some insets.
+        if (buttonPanelPosition.equals(BorderLayout.NORTH)) {
+        	JPanel innerPanel=new JPanel();
+        	innerPanel.setLayout(new GridBagLayout());
+        	innerPanel.add(buttonPanel,new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0,
+        			GridBagConstraints.WEST, GridBagConstraints.BOTH, new Insets (0,10,0,10) , 0, 0));
+        	myPanel.add(innerPanel, buttonPanelPosition);
+        } else {
+        	myPanel.add(buttonPanel, buttonPanelPosition);
+        }
         tablePanel.add(searchPanel, new GridBagConstraints(0, 10, 0, 0, 0.0, 0.0,
                 GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
         actionButtons = new Hashtable<ItemTypeButton, String>();
@@ -195,6 +225,7 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
             ItemTypeButton button = new ItemTypeButton(action, IItemType.TYPE_PUBLIC, "BUTTON_CAT",
                     (actionTypes[i] < ACTIONTYPE_SHOW_AS_SMALL_BUTTONS ? actionText[i] : null)); // >= 2000 just as small buttons without text
             button.registerItemListener(this);
+            button.boldfont = true;
             if (actionTypes[i] < ACTIONTYPE_SHOW_AS_SMALL_BUTTONS) {
                 button.setPadding(20, 20, (i > 0 && actionTypes[i] < 0 && actionTypes[i - 1] >= 0 ? 20 : 0), 5);
                 button.setFieldSize(200, -1);
@@ -220,20 +251,58 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
                 }
             }
             if (actionTypes[i] < ACTIONTYPE_SHOW_AS_SMALL_BUTTONS) {
-                button.displayOnGui(dlg, buttonPanel, 0, i);
+                
+            	if (buttonPanelPosition.equals(BorderLayout.NORTH)) {
+            		//put all action items in one horizontal line.
+            		//ItemTypeButton does not support automatic resizing according to text length.
+            		//But we need this if the buttons are on top.
+            		//Get the Text length according to the font, add icon width and textIconGap(10 pix) and some pixels depending on the font size.
+            		button.setFieldSize(getTextLength(button.getDescription())+16+10+(24-buttonPanel.getFont().getSize()), -1);
+            		button.setPadding(4, 0, 6, 6);
+                	button.displayOnGui(dlg, buttonPanel, i,0);
+            	} else {
+                	button.displayOnGui(dlg, buttonPanel, 0, i);
+            	}
             } else {
                 button.displayOnGui(dlg, smallButtonPanel, i, 0);
             }
             actionButtons.put(button, action);
         }
+        //If ButtonPanel is above the table, align it to the right.
+        if (buttonPanelPosition.equals(BorderLayout.NORTH)) {
+        	JLabel myLabelSpacer=new JLabel();
+        	myLabelSpacer.setText(" ");
+        	Dimension dim = new Dimension(100,10);
+        	myLabelSpacer.setMinimumSize(dim);
+        	myLabelSpacer.setPreferredSize(dim);
+            buttonPanel.add(myLabelSpacer, new GridBagConstraints(actionText.length,0,1,1,1.0,0,GridBagConstants.EAST, GridBagConstants.HORIZONTAL,new Insets(0,0,0,0),0,0));
+            //buttonPanel.setBackground(Daten.efaConfig.getHeaderBackgroundColor());
+            buttonPanel.setBackground(EfaUtil.darker(buttonPanel.getBackground(), 18));
+        }
         searchField = new ItemTypeString("SEARCH_FIELD", "", IItemType.TYPE_PUBLIC, "SEARCH_CAT", International.getString("Suche"));
         searchField.setFieldSize(300, -1);
         searchField.registerItemListener(this);
+        searchField.setPadding(12, 2, 2, 0);
         searchField.displayOnGui(dlg, searchPanel, 0, 0);
+        searchField.setBackgroundColorWhenFocused(Daten.efaConfig.getValueEfaDirekt_colorizeInputField() ? Color.yellow : null);
         filterBySearch = new ItemTypeBoolean("FILTERBYSEARCH", false, IItemType.TYPE_PUBLIC, "SEARCH_CAT", International.getString("filtern"));
         filterBySearch.registerItemListener(this);
         filterBySearch.displayOnGui(dlg, searchPanel, 10, 0);
+        if (buttonPanelPosition.equals(BorderLayout.NORTH)) {
+        	JLabel myLabelSpacer=new JLabel();
+        	myLabelSpacer.setText(" ");
+        	Dimension dim = new Dimension(100,10);
+        	myLabelSpacer.setMinimumSize(dim);
+        	myLabelSpacer.setPreferredSize(dim);
+            searchPanel.add(myLabelSpacer, new GridBagConstraints(11,0,1,1,1.0,0,GridBagConstants.EAST, GridBagConstants.HORIZONTAL,new Insets(0,0,0,0),0,0));        	
+        }
     }
+
+    private int getTextLength(String text) {
+    	//for very short texts, the text length is too short.
+    	return Math.max(40, (int) Math.round(buttonPanel.getFontMetrics(buttonPanel.getFont()).stringWidth(text)));
+    }
+
 
     public int displayOnGui(Window dlg, JPanel panel, int x, int y) {
         iniDisplayActionTable(dlg);
