@@ -1187,10 +1187,11 @@ public class BoatRecord extends DataRecord implements IItemFactory, IItemListene
                     null, null, null, this,
                     IItemType.TYPE_PUBLIC, CAT_RESERVATIONS, International.getString("Reservierungen")));
             ((ItemTypeDataRecordTable) item).setButtonPanelPosition(BorderLayout.NORTH);
-            item.setFieldSize(800, -1);
-            item.setFieldGrid(1, GridBagConstraints.CENTER, GridBagConstraints.BOTH);
+            item.setFieldSize(850, -1);
+            item.setPadding(0, 0, 0, 0);
+            item.setFieldGrid(1, 1, GridBagConstraints.WEST, GridBagConstraints.BOTH);
         }
-
+        
         // CAT_DAMAGES
         if (getId() != null && admin != null && admin.isAllowedEditBoatDamages()) {
             v.add(item = new ItemTypeDataRecordTable(GUIITEM_DAMAGES,
@@ -1200,7 +1201,9 @@ public class BoatRecord extends DataRecord implements IItemFactory, IItemListene
                     null, null, null, this,
                     IItemType.TYPE_PUBLIC, CAT_DAMAGES, International.getString("Bootsschäden")));
             ((ItemTypeDataRecordTable) item).setButtonPanelPosition(BorderLayout.NORTH);
-            item.setFieldSize(800, -1);
+            item.setFieldSize(850, -1);
+            item.setPadding(0, 0, 0, 0);
+            item.setFieldGrid(1, 1, GridBagConstraints.WEST, GridBagConstraints.BOTH);
         }
 
         // CAT_STATUS

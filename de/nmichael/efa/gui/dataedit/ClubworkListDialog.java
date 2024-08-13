@@ -55,8 +55,8 @@ public class ClubworkListDialog extends DataListDialog {
         }
         
 		//From and to columns should be wider than default
-		this.minColumnWidths = new int[] {150,120,150,0,80,80};  
-		//	this.buttonPanelPosition = BorderLayout.NORTH;
+		this.minColumnWidths = new int[] {170,150,180,0,80,120};  
+		this.buttonPanelPosition = (Daten.isAdminMode() ? BorderLayout.EAST : BorderLayout.NORTH);
     }
 
     public void keyAction(ActionEvent evt) {
@@ -138,7 +138,7 @@ public class ClubworkListDialog extends DataListDialog {
             table.setMinColumnWidths(minColumnWidths);
         }
         table.setButtonPanelPosition(buttonPanelPosition);
-        table.setFieldSize(650, 500);
+        table.setFieldSize((Daten.isAdminMode() ? 700 : 850), 500);
         table.setPadding(0, 0, 10, 0);
         table.displayOnGui(this, mainTablePanel, BorderLayout.CENTER);
 

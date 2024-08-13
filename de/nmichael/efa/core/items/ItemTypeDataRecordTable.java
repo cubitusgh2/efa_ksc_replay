@@ -174,6 +174,19 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
         this.defaultActionForDoubleclick = defaultAction;
     }
 
+    /*
+     * Creates the table including button bar and filter field.
+     * Depending on buttonPanelPosition, there are two ways to position the button bar:
+     *   
+     * - buttonPanelPosition=BorderLayout.EAST
+     *   Good for tables for a small number of columns. Also good, if there are a lot of buttons for the table,  
+     *   like in the dataEdit dialogs.
+     *   
+     * - buttonPanelPosition=BorderLayout.NORTH
+     *   Good for tables like Boatreservations, which have a lot of columns and consume a lot of horizontal space.
+     *   Does NOT work well with a lot of buttons.
+     *    
+     */
     protected void iniDisplayActionTable(Window dlg) {
         this.dlg = dlg;
         myPanel = new JPanel();
@@ -183,10 +196,22 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
         buttonPanel = new RoundedPanel();
         buttonPanel.setLayout(new GridBagLayout());
         buttonPanel.setAlignmentY(Component.CENTER_ALIGNMENT);
+        buttonPanel.setFont(buttonPanel.getFont().deriveFont(Font.BOLD));// this is needed as all buttons use bold font - otherwise GetTextLength would not work correctly.
         searchPanel = new JPanel();
         searchPanel.setLayout(new GridBagLayout());
         myPanel.add(tablePanel, BorderLayout.CENTER);
         myPanel.add(buttonPanel, buttonPanelPosition);
+        
+        // Buttons on the top? Align the buttonpanel with the table with some insets.
+        if (buttonPanelPosition.equals(BorderLayout.NORTH)) {
+        	JPanel innerPanel=new JPanel();
+        	innerPanel.setLayout(new GridBagLayout());
+        	innerPanel.add(buttonPanel,new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0,
+        			GridBagConstraints.WEST, GridBagConstraints.BOTH, new Insets (0,10,0,10) , 0, 0));
+        	myPanel.add(innerPanel, buttonPanelPosition);
+        } else {
+        	myPanel.add(buttonPanel, buttonPanelPosition);
+        }
         tablePanel.add(searchPanel, new GridBagConstraints(0, 10, 0, 0, 0.0, 0.0,
                 GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
         actionButtons = new Hashtable<ItemTypeButton, String>();
@@ -229,8 +254,11 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
                 
             	if (buttonPanelPosition.equals(BorderLayout.NORTH)) {
             		//put all action items in one horizontal line.
-            		button.setFieldSize(getTextLength(button.getDescription())+(i==0? 40:30)	,-1);
-            		button.setPadding((i==0 ? 10 :4), 0, 6, 6);
+            		//ItemTypeButton does not support automatic resizing according to text length.
+            		//But we need this if the buttons are on top.
+            		//Get the Text length according to the font, add icon width and textIconGap(10 pix) and some pixels depending on the font size.
+            		button.setFieldSize(getTextLength(button.getDescription())+16+10+(24-buttonPanel.getFont().getSize()), -1);
+            		button.setPadding(4, 0, 6, 6);
                 	button.displayOnGui(dlg, buttonPanel, i,0);
             	} else {
                 	button.displayOnGui(dlg, buttonPanel, 0, i);
@@ -271,7 +299,8 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
     }
 
     private int getTextLength(String text) {
-    	return buttonPanel.getFontMetrics(buttonPanel.getFont()).stringWidth(text);
+    	//for very short texts, the text length is too short.
+    	return Math.max(40, (int) Math.round(buttonPanel.getFontMetrics(buttonPanel.getFont()).stringWidth(text)));
     }
 
 
