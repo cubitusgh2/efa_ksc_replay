@@ -1262,7 +1262,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					International.getString("Nachtrag: Vereinfachte Eingabe für mehrere Einzelfahrten")));
 
 			addParameter(efaDirekt_MultisessionLastGuiElemParticipants = new ItemTypeBoolean("MultiSessionLastGuiElemParticipants",
-					true, IItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_INPUT),
+					false, IItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_INPUT),
 					International.getString("Teilnehmer und Boot am Ende des Dialogs erfassen")));
 			
 			addDescription("PresentLastTripDescription2", IItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_INPUT),
