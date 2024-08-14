@@ -554,7 +554,7 @@ public abstract class DataListDialog extends BaseDialog implements IItemListener
     }
 
     // @Override
-    public boolean deleteCallback(DataRecord[] records) {
+    public boolean deleteCallback(JDialog parent,IItemListenerDataRecordTable caller, AdminRecord admin, DataRecord[] records) {
         return true;
     }
 

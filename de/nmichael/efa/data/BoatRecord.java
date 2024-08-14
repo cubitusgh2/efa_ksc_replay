@@ -1448,8 +1448,25 @@ public class BoatRecord extends DataRecord implements IItemFactory, IItemListene
         return null;
     }
 
-    public boolean deleteCallback(DataRecord[] records) {
-        return true;
+    /*
+     * This is the IItemListenerDataRecordTable method for deleting records.
+     * For boat damages there should be a confirmation dialog if the damage should be set as fixed
+     * instead of being deleted. This mimics the same behaviour as the "delete" function
+     * in BoatDamageListDialog.
+     */
+    public boolean deleteCallback(JDialog parent,IItemListenerDataRecordTable caller, AdminRecord admin, DataRecord[] records) {
+    	boolean onlyDamages=true;
+    	for (int i=0; i<records.length; i++) {
+    		if (! (records[i] instanceof BoatDamageRecord)) {
+    			onlyDamages=false;
+    			break;
+    		}
+    	}
+    	if (onlyDamages) {
+    		return BoatDamageRecord.deleteCallbackForGUIs(parent, caller, admin, records[0].getPersistence(), records);
+    	} else {
+            return true;
+    	}
     }
     
 	/**
