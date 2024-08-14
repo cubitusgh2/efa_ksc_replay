@@ -11,11 +11,14 @@
             <ChangeItem>Neu: Autovervollständigungs-Listen: bei der Suche nach Teilbegriff wird immer der Eintrag vorselektiert, der mit dem Suchbegriff beginnt.</ChangeItem>
             <ChangeItem>Neu: Dialog für Bootsreservierungen in efaBths ist breiter und hat die Schaltflächen über der Tabelle.</ChangeItem>
             <ChangeItem>Neu: Dialog für Vereinsarbeit in efaBths ist breiter und hat die Schaltflächen über der Tabelle.</ChangeItem>
-            <ChangeItem>Neu: Boot Bearbeiten-Dialog: breitere Darstellung für Bootsreservierungen und Bootsschäden.</ChangeItem>
             <ChangeItem>Neu: Neue Option in Konfiguration-&gt;Allgemein-&gt;Eingabe-&gt;Besatzung: bei Einsitzer-Fahrten die Person als Crew statt als Steuermann eintragen.</ChangeItem>
             <ChangeItem>Neu: Adminmodus/Personen: Personen, die in einer oder mehreren Gruppen sind, haben das zugehörige Icon, und der Tooltip stellt die Gruppen dar.</ChangeItem>
             <ChangeItem>Neu: Adminmodus/Personen: Personen, die eine Kanu-eFB-ID haben, erhalten ein passendes Icon, und der Tooltip beinhaltet die eFB-ID.</ChangeItem>
             <ChangeItem>Neu: Adminmodus/Boote: Boote, die in einer oder mehreren Gruppen sind, haben das zugehörige Icon, und der Tooltip stellt die Gruppen dar.</ChangeItem>
+            <ChangeItem>Neu: Adminmodus/Boote: Registerkarte Bootsschäden: Bei Eintragung neuer Bootsschäden wird eine Benachrichtigung erstellt (Deaktivierbar in Konfiguration).</ChangeItem>
+            <ChangeItem>Neu: Adminmodus/Boote: Registerkarte Bootsschäden: Bei Löschung von Bootsschäden wird gefragt, ob diese nicht besser als behoben markiert werden sollen. Dann wird ggfs. auch eine Benachrichtigung erstellt.</ChangeItem>
+            <ChangeItem>Neu: Adminmodus/Boote: Boot Bearbeiten-Dialog: breitere Darstellung für Bootsreservierungen und Bootsschäden.</ChangeItem>
+            <ChangeItem>Neu: Adminmodus/Bootsschäden: Layout des Dialogs zur Erfassung von Bootsschäden wurde überarbeitet.</ChangeItem>
             <ChangeItem>Neu: Adminmodus/Bootsstatus: Zum Boot werden Basis-Status, aktueller Status und Eigentümer angezeigt.</ChangeItem>
             <ChangeItem>Neu: Adminmodus/Bootsreservierungen: Filterfeld erhält automatisch den Fokus.</ChangeItem>
             <ChangeItem>Neu: Adminmodus/Vereinsarbeit: Filterfeld erhält automatisch den Fokus.</ChangeItem>
@@ -49,10 +52,14 @@
             <ChangeItem>New: Admin mode/Persons: Persons who are in one or more groups get the respecive group color icon, and the group names are visible in the tooltip.</ChangeItem>
             <ChangeItem>New: Admin mode/Persons (German Kanoers only): Persons who have a Kanu-eFB-ID assigned get the respective EFB icon and the tooltip shows the eFB-ID.</ChangeItem>
             <ChangeItem>New: Admin mode/Boats: Boats which are in one or more groups get the respecive group color icon, and the group names are visible in the tooltip.</ChangeItem>
+            <ChangeItem>Neu: Admin mode/Boats: Boat edit dialog: Tabs for Boat reservations and Boat damages provide more space for the table data.</ChangeItem>
+            <ChangeItem>New: Admin mode/Boats: Tab Boatdamages: When adding new boat damages, a notification will be sent (can be deactivated in Configuration).</ChangeItem>
+            <ChangeItem>New: Admin mode/Boats: Tab Boatdamages: When attemting to delete a boat damage, admin gets asks if the damage should not be marked as fixed instead. If so, a notification is sent.</ChangeItem>
+            <ChangeItem>New: Admin mode/Boat damages: Layout of the dialog is updated.</ChangeItem>            
             <ChangeItem>New: Admin mode/Boat status: shows additional rows for base status, current status and owner</ChangeItem>            
             <ChangeItem>New: Admin mode/Boat reservations: Filter text field automatically gets focused.</ChangeItem>
-            <ChangeItem>Neu: Adminmodus/Clubwork: Filter text field automatically gets focused.</ChangeItem>
-            <ChangeItem>Neu: Adminmodus/Dialogs: Filter text field gets yellow background if focused..</ChangeItem>
+            <ChangeItem>New: Admin mode/Clubwork: Filter text field automatically gets focused.</ChangeItem>
+            <ChangeItem>New: Admin mode/Dialogs: Filter text field gets yellow background if focused..</ChangeItem>
             <ChangeItem>New: Admin mode/Groups: Groups show their respective color in the table.</ChangeItem>
             <ChangeItem>New: CSV export: Created files are more suitable for processing in spreadsheet programs, especially in localized variants. CSV gets a BOM, if UTF-8 charset is chosen.</ChangeItem>
             <ChangeItem>New: CSV export: efaCLI has extended parameters for data export.</ChangeItem>
