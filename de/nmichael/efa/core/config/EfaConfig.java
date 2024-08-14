@@ -342,6 +342,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 	private ItemTypeLong efaDirekt_bnrWarning_lasttime;
 	private ItemTypeBoolean notificationMarkReadAdmin;
 	private ItemTypeBoolean notificationMarkReadBoatMaintenance;
+	private ItemTypeBoolean notificationNewBoatDamageByAdmin;
 	private ItemTypeString efaDirekt_emailServer;
 	private ItemTypeInteger efaDirekt_emailPort;
 	private ItemTypeRadioButtons efaDirekt_emailSecurity;
@@ -1571,6 +1572,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					International.getMessage("Benachrichtigungen verschicken an {to} {on_event}",
 							International.getString("Bootswarte"),
 							International.getString("bei Fehlern") + " (ERROR)")));
+			efaDirekt_bnrError_bootswart.setPadding(0, 0, 10, 0);
 			addParameter(efaDirekt_bnrWarning_bootswart = new ItemTypeBoolean("NotificationWarningBoatMaintenance",
 					false, IItemType.TYPE_PUBLIC,
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_NOTIFICATIONS),
@@ -1587,6 +1589,12 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					System.currentTimeMillis() - 7l * 24l * 60l * 60l * 1000l, 0, Long.MAX_VALUE, // one week ago
 					IItemType.TYPE_INTERNAL, BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_NOTIFICATIONS),
 					International.getString("letzte Benachrichtigungen")));
+			addParameter(notificationNewBoatDamageByAdmin= new ItemTypeBoolean("NotificationNewBoatDamageByAdmin", true, IItemType.TYPE_PUBLIC,
+					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_NOTIFICATIONS),
+					International.getString("Benachrichtigung auch für vom Admin erfasste Bootsschäden")
+					));
+			notificationNewBoatDamageByAdmin.setPadding(0, 0, 10, 0);
+			
 			addParameter(notificationMarkReadAdmin = new ItemTypeBoolean("NotificationMarkReadAdmin", false,
 					IItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_NOTIFICATIONS),
 					International.getMessage("Nachrichten an {recipient} automatisch als gelesen markieren",
@@ -1596,6 +1604,8 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_NOTIFICATIONS),
 					International.getMessage("Nachrichten an {recipient} automatisch als gelesen markieren",
 							International.getString("Bootswart"))));
+			notificationMarkReadAdmin.setPadding(0, 0, 10, 0);
+
 			addParameter(efaDirekt_emailServer = new ItemTypeString("NotificationEmailServer", "",
 					IItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_NOTIFICATIONS),
 					International.getString("email") + ": " + International.getString("SMTP-Server")));
@@ -2681,6 +2691,10 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 		return notificationMarkReadBoatMaintenance.getValue();
 	}
 
+	public boolean getValueNotificationNewBoatDamageByAdmin() {
+		return notificationNewBoatDamageByAdmin.getValue();
+	}
+	
 	public String getValueEfaDirekt_emailServer() {
 		return efaDirekt_emailServer.getValue();
 	}

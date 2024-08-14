@@ -12,6 +12,7 @@ import de.nmichael.efa.Daten;
 import de.nmichael.efa.core.config.AdminRecord;
 import de.nmichael.efa.gui.dataedit.VersionizedDataDeleteDialog;
 import de.nmichael.efa.gui.dataedit.DataEditDialog;
+import de.nmichael.efa.gui.dataedit.UnversionizedDataEditDialog;
 import de.nmichael.efa.util.*;
 import de.nmichael.efa.util.Dialog;
 import de.nmichael.efa.gui.util.*;
@@ -330,6 +331,9 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
                         if (dlg == null) {
                             return;
                         }
+                        //admin mode must be set in the DataEdit dialog so that messages for
+                        //changed or new items get sent.
+                        ((UnversionizedDataEditDialog) dlg).setAdmin(admin);
                         dlg.showDialog();
                         break;
                     case ACTION_EDIT:
@@ -360,6 +364,9 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
                                 if (dlg == null) {
                                     return;
                                 }
+                                //admin mode must be set in the DataEdit dialog so that messages for
+                                //changed or new items get sent.
+                                ((UnversionizedDataEditDialog) dlg).setAdmin(admin);                              
                                 dlg.showDialog();
                                 if (!dlg.getDialogResult()) {
                                     break;
@@ -372,7 +379,7 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
                             return;
                         }
                         if (itemListenerActionTable != null) {
-                            if (!itemListenerActionTable.deleteCallback(records)) {
+                            if (!itemListenerActionTable.deleteCallback(this.getParentDialog(), itemListenerActionTable, this.admin, records)) {
                                 updateData();
                                 showValue();
                                 return;
