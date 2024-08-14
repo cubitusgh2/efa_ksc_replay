@@ -14,7 +14,7 @@ import java.awt.GridBagConstraints;
 import java.util.UUID;
 import java.util.Vector;
 
-import javax.swing.JDialog;
+himport javax.swing.JDialog;
 
 import de.nmichael.efa.core.config.AdminRecord;
 import de.nmichael.efa.core.items.IItemListenerDataRecordTable;
@@ -75,7 +75,11 @@ public class BoatDamageRecord extends DataRecord {
 
     public static final String GUIITEM_REPORTDATETIME = "GUIITEM_REPORTDATETIME";
     public static final String GUIITEM_FIXDATETIME    = "GUIITEM_FIXDATETIME";
-
+    
+	public static final int COLUMN_ID_BOAT_NAME=0;        
+	public static final int COLUMN_ID_DAMAGE=1;  
+	public static final int COLUMN_ID_REPORTDATE=2;
+	
     private boolean showOnlyAddDamageFields = false;
 
     public static void initialize() {
