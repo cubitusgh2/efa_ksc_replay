@@ -163,9 +163,14 @@ public class ItemTypeTable extends ItemType implements ActionListener, ITableEdi
                     menuItem.setActionCommand(EfaMouseListener.EVENT_POPUP_CLICKED + "_" + i);
                     menuItem.addActionListener(this);
                     if (popupIcons != null && popupIcons[i]!=null) {
-                    	menuItem.setIcon(ImagesAndIcons.getIcon(popupIcons[i]));
+                    	// small button icons may start with %, so we remove them
+                    	// see de.nmichael.efa.core.items.ItemTypeDataRecordTable.BUTTON_IMAGE_CENTERED_PREFIX
+                    	if (popupIcons[i].startsWith("%")) {
+                			menuItem.setIcon(ImagesAndIcons.getIcon(popupIcons[i].substring(1)));
+                		} else {
+                			menuItem.setIcon(ImagesAndIcons.getIcon(popupIcons[i]));
+                		}
                     }
-                    //if (popup)
                     popup.add(menuItem);
                 }
             } else {
