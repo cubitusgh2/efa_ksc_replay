@@ -19,6 +19,7 @@ import javax.swing.SwingConstants;
 
 import de.nmichael.efa.Daten;
 import de.nmichael.efa.core.config.AdminRecord;
+import de.nmichael.efa.core.config.EfaConfig;
 import de.nmichael.efa.core.items.IItemType;
 import de.nmichael.efa.core.items.ItemTypeLabel;
 import de.nmichael.efa.core.items.ItemTypeStringAutoComplete;
@@ -1066,7 +1067,7 @@ public abstract class DataRecord implements Cloneable, Comparable {
             }
         }
     }
-    
+
     /**
      * Adds a hint label with a light blue background to the gui. To be used from getGuiItems();
      * @param uniqueName
@@ -1083,10 +1084,13 @@ public abstract class DataRecord implements Cloneable, Comparable {
 		//if caption starts with html, do not have a blank as a prefix as this will disable html rendering.
 		ItemTypeLabel item = addDescription(uniqueName, type, category, (caption.startsWith("<html>") ? caption : " "+caption), gridWidth,
 				padBefore, padAfter);
-		// item.setImage(BaseDialog.getIcon(ImagesAndIcons.IMAGE_MENU_ABOUT));
-		item.setBackgroundColor(Daten.efaConfig.hintBackgroundColor);
+
+		item.setImage(ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_INFO));
+		item.setImagePosition(SwingConstants.TRAILING); // info icon should be first, the text trailing.
+		item.setBackgroundColor(EfaConfig.hintBackgroundColor);
+		item.setBorder(new RoundedBorder(EfaConfig.hintBorderColor));
 		item.setHorizontalAlignment(SwingConstants.LEFT);
-		item.setRoundShape(false);
+		item.setRoundShape(true);
 		return item;
 	}
 	
