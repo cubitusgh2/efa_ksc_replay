@@ -95,6 +95,7 @@ public class ImagesAndIcons {
 	public static final String IMAGE_EFACLOUD_SYNCHRONIZING = "efacloud_SYNCHRONIZING.png";
 	public static final String IMAGE_EFACLOUD_WORKING = "efacloud_WORKING.png";
 	public static final String IMAGE_FRAME_CLOSE = "frame_close.png";
+	public static final String IMAGE_INFO = "info.png";
 	public static final String IMAGE_MENU_ABOUT = "menu_about.png";
 	public static final String IMAGE_MENU_ADMINS = "menu_admins.png";
 	public static final String IMAGE_MENU_BACKUP = "menu_backup.png";

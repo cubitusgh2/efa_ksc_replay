@@ -13,8 +13,10 @@ package de.nmichael.efa.gui;
 import de.nmichael.efa.*;
 import de.nmichael.efa.util.*;
 import de.nmichael.efa.util.Dialog;
+import de.nmichael.efa.core.config.EfaConfig;
 import de.nmichael.efa.core.items.*;
 import de.nmichael.efa.gui.util.AutoCompletePopupWindow;
+import de.nmichael.efa.gui.util.RoundedBorder;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -414,13 +416,15 @@ public abstract class BaseDialog extends JDialog implements ActionListener {
 		//if caption starts with html, do not have a blank as a prefix as this will disable html rendering.
 		ItemTypeLabel item = (ItemTypeLabel) addDescription(uniqueName, type, category, (caption.startsWith("<html>") ? caption : " "+caption), gridWidth,
 				padBefore, padAfter);
-		// item.setImage(BaseDialog.getIcon(ImagesAndIcons.IMAGE_MENU_ABOUT));
-		item.setBackgroundColor(Daten.efaConfig.hintBackgroundColor);
+		item.setImage(ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_INFO));
+		item.setImagePosition(SwingConstants.TRAILING); // info icon should be first, the text trailing.
+		item.setBackgroundColor(EfaConfig.hintBackgroundColor);
+		item.setBorder(new RoundedBorder(EfaConfig.hintBorderColor));
 		item.setHorizontalAlignment(SwingConstants.LEFT);
-		item.setRoundShape(false);
+		item.setRoundShape(true);
 		return item;
-	}    
-	
+	}   	
+    
 	/**
 	 * Adds a description item in an efa GUI. This description value is not safed
 	 * within efaConfig. There is no word-wrap for the caption.
@@ -445,5 +449,5 @@ public abstract class BaseDialog extends JDialog implements ActionListener {
 		item.setFieldGrid(3, GridBagConstraints.EAST, GridBagConstraints.BOTH);
 		return item;
 	}	
-    
+
 }

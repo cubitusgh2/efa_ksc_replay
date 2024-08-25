@@ -15,6 +15,7 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Vector;
 
+import javax.swing.BorderFactory;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.plaf.ColorUIResource;
@@ -59,6 +60,8 @@ import de.nmichael.efa.data.types.DataTypeList;
 import de.nmichael.efa.data.types.DataTypeTime;
 import de.nmichael.efa.ex.EfaException;
 import de.nmichael.efa.gui.BaseTabbedDialog;
+import de.nmichael.efa.gui.ImagesAndIcons;
+import de.nmichael.efa.gui.util.RoundedBorder;
 import de.nmichael.efa.gui.widgets.AlertWidget;
 import de.nmichael.efa.gui.widgets.IWidget;
 import de.nmichael.efa.gui.widgets.Widget;
@@ -432,7 +435,8 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 	private static Color standardFlatLafBackgroundColor = new Color(239, 237, 232);// #EFEDE8 //some yellowish gray
 	private static Color standardFlatLafAccentColor = new Color(38, 117, 191); // #2675bf Blue
 	private static Color standardFlatLafFocusColor = new Color(255, 153, 0); // #ff9900 Orange
-	public static Color hintBackgroundColor = new Color(171, 206, 241);
+	public static Color hintBackgroundColor = new Color(210,225,239);
+	public static Color hintBorderColor = new Color(120,166,213);
 
 	private static Color standardToolTipBackgroundColor = new Color(224,237,249);
 	private static Color standardToolTipForegroundColor = new Color(21,65,106);
@@ -1972,10 +1976,12 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 		//if caption starts with html, do not have a blank as a prefix as this will disable html rendering.
 		ItemTypeLabel item = (ItemTypeLabel) addDescription(uniqueName, type, category, (caption.startsWith("<html>") ? caption : " "+caption), gridWidth,
 				padBefore, padAfter);
-		// item.setImage(BaseDialog.getIcon(ImagesAndIcons.IMAGE_MENU_ABOUT));
+		item.setImage(ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_INFO));
+		item.setImagePosition(SwingConstants.TRAILING); // info icon should be first, the text trailing.
 		item.setBackgroundColor(hintBackgroundColor);
+		item.setBorder(new RoundedBorder(hintBorderColor));
 		item.setHorizontalAlignment(SwingConstants.LEFT);
-		item.setRoundShape(false);
+		item.setRoundShape(true);
 		return item;
 	}
 

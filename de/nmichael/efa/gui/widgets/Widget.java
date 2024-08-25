@@ -10,7 +10,10 @@
 
 package de.nmichael.efa.gui.widgets;
 
+import de.nmichael.efa.core.config.EfaConfig;
 import de.nmichael.efa.core.items.*;
+import de.nmichael.efa.gui.ImagesAndIcons;
+import de.nmichael.efa.gui.util.RoundedBorder;
 import de.nmichael.efa.util.*;
 import java.util.*;
 import java.awt.*;
@@ -116,11 +119,15 @@ public abstract class Widget implements IWidget {
     
     protected IItemType addHint(String uniqueName, int type, String category, String caption, int gridWidth, int padBefore, int padAfter) {
     	ItemTypeLabel item = (ItemTypeLabel) addDescription(uniqueName, type, category, " "+caption, gridWidth, padBefore,padAfter);
-    	//item.setImage(BaseDialog.getIcon(ImagesAndIcons.IMAGE_MENU_ABOUT));
-    	item.setBackgroundColor(hintBackgroundColor);
-    	item.setHorizontalAlignment(SwingConstants.LEFT);
-    	return item;
+		item.setImage(ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_INFO));
+		item.setImagePosition(SwingConstants.TRAILING); // info icon should be first, the text trailing.
+		item.setBackgroundColor(EfaConfig.hintBackgroundColor);
+		item.setBorder(new RoundedBorder(EfaConfig.hintBorderColor));
+		item.setHorizontalAlignment(SwingConstants.LEFT);
+		item.setRoundShape(true);
+		return item;
     }
+    
 
     IItemType getParameterInternal(String internalName) {
         String name = getParameterName(internalName);

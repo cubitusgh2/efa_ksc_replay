@@ -33,6 +33,7 @@ public class ItemTypeLabel extends ItemType {
     private ImageIcon icon;
     private boolean mouseClickListener = false;
     private boolean roundShape=false;
+    private int iconPosition=-1;
     		
     public ItemTypeLabel(String name, int type,
             String category, String description) {
@@ -54,6 +55,7 @@ public class ItemTypeLabel extends ItemType {
         thisCopy.setHorizontalAlignment(hAlignment);
         thisCopy.setRoundShape(roundShape);
         thisCopy.setBorder(border);
+        thisCopy.setImagePosition(iconPosition);
         return thisCopy;
 
     }
@@ -93,7 +95,11 @@ public class ItemTypeLabel extends ItemType {
             }
             if (hAlignment != -1) {
                 l.setHorizontalAlignment(hAlignment);
-                l.setHorizontalTextPosition(hAlignment);
+                if (iconPosition==-1) {
+                	l.setHorizontalTextPosition(hAlignment);
+                } else {
+                	l.setHorizontalTextPosition(iconPosition);
+                }
             }
             if (this.getColor() != null) {
                 l.setForeground(this.getColor());
@@ -197,6 +203,10 @@ public class ItemTypeLabel extends ItemType {
         }
     }
 
+    public void setImagePosition(int pos) {
+    	this.iconPosition = pos;
+    }
+    
     public void activateMouseClickListener() {
         mouseClickListener = true;
     }
