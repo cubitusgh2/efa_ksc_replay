@@ -11,20 +11,16 @@
 package de.nmichael.efa.gui;
 
 import de.nmichael.efa.*;
-import de.nmichael.efa.data.efacloud.TxRequestQueue;
-import de.nmichael.efa.data.storage.IDataAccess;
 import de.nmichael.efa.util.*;
 import de.nmichael.efa.util.Dialog;
 import de.nmichael.efa.core.config.EfaConfig;
 import de.nmichael.efa.core.items.*;
-import de.nmichael.efa.gui.ImagesAndIcons;
 import de.nmichael.efa.gui.util.AutoCompletePopupWindow;
 import de.nmichael.efa.gui.util.RoundedBorder;
 
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
-import javax.swing.border.*;
 
 // @i18n complete
 public abstract class BaseDialog extends JDialog implements ActionListener {
@@ -318,7 +314,8 @@ public abstract class BaseDialog extends JDialog implements ActionListener {
         mainScrollPane.setPreferredSize(Dialog.getMaxSize(dim));
 
         mainScrollPane.getViewport().add(mainPanel, null);
-        mainScrollPane.setBorder(BorderFactory.createEmptyBorder(4,4,4,4));        
+        mainScrollPane.setBorder(BorderFactory.createEmptyBorder(4,4,4,4));
+        mainScrollPane.getVerticalScrollBar().setUnitIncrement(12); // faster scrolling with the mouse
     }
 
     protected abstract void iniDialog() throws Exception;
@@ -452,4 +449,5 @@ public abstract class BaseDialog extends JDialog implements ActionListener {
 		item.setFieldGrid(3, GridBagConstraints.EAST, GridBagConstraints.BOTH);
 		return item;
 	}	
+
 }

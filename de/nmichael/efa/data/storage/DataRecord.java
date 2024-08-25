@@ -10,20 +10,33 @@
 
 package de.nmichael.efa.data.storage;
 
-import de.nmichael.efa.Daten;
-import de.nmichael.efa.core.config.AdminRecord;
-import de.nmichael.efa.core.config.EfaConfig;
-
 import java.awt.GridBagConstraints;
-import java.util.*;
+import java.util.HashMap;
+import java.util.UUID;
+import java.util.Vector;
 
 import javax.swing.SwingConstants;
 
-import de.nmichael.efa.data.types.*;
-import de.nmichael.efa.core.items.*;
-import de.nmichael.efa.gui.ImagesAndIcons;
-import de.nmichael.efa.gui.util.*;
-import de.nmichael.efa.util.*;
+import de.nmichael.efa.Daten;
+import de.nmichael.efa.core.config.AdminRecord;
+import de.nmichael.efa.core.config.EfaConfig;
+import de.nmichael.efa.core.items.IItemType;
+import de.nmichael.efa.core.items.ItemTypeLabel;
+import de.nmichael.efa.core.items.ItemTypeStringAutoComplete;
+import de.nmichael.efa.data.types.DataTypeDate;
+import de.nmichael.efa.data.types.DataTypeDecimal;
+import de.nmichael.efa.data.types.DataTypeDistance;
+import de.nmichael.efa.data.types.DataTypeIntString;
+import de.nmichael.efa.data.types.DataTypeList;
+import de.nmichael.efa.data.types.DataTypePasswordCrypted;
+import de.nmichael.efa.data.types.DataTypePasswordHashed;
+import de.nmichael.efa.data.types.DataTypeTime;
+import de.nmichael.efa.gui.util.AutoCompleteList;
+import de.nmichael.efa.gui.util.TableItem;
+import de.nmichael.efa.gui.util.TableItemHeader;
+import de.nmichael.efa.util.EfaUtil;
+import de.nmichael.efa.util.International;
+import de.nmichael.efa.util.Logger;
 
 // @i18n complete
 
@@ -183,6 +196,15 @@ public abstract class DataRecord implements Cloneable, Comparable {
 
     public String[] getFields() {
         return metaData.getFields();
+    }
+    
+    /**
+     * Returns true if a specified field name exists in the data record.
+     * @param fieldName Name (case-sensitive) of the field
+     * @return
+     */
+    public boolean isField(String fieldName) {
+    	return metaData.isField(fieldName);
     }
 
     public int getFieldCount() {
@@ -1045,6 +1067,7 @@ public abstract class DataRecord implements Cloneable, Comparable {
             }
         }
     }
+
     /**
      * Adds a hint label with a light blue background to the gui. To be used from getGuiItems();
      * @param uniqueName
@@ -1061,6 +1084,7 @@ public abstract class DataRecord implements Cloneable, Comparable {
 		//if caption starts with html, do not have a blank as a prefix as this will disable html rendering.
 		ItemTypeLabel item = addDescription(uniqueName, type, category, (caption.startsWith("<html>") ? caption : " "+caption), gridWidth,
 				padBefore, padAfter);
+
 		item.setImage(ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_INFO));
 		item.setImagePosition(SwingConstants.TRAILING); // info icon should be first, the text trailing.
 		item.setBackgroundColor(EfaConfig.hintBackgroundColor);
@@ -1090,4 +1114,5 @@ public abstract class DataRecord implements Cloneable, Comparable {
 		item.setFieldGrid(3, GridBagConstraints.EAST, GridBagConstraints.BOTH);
 		return item;
 	}    
+
 }
