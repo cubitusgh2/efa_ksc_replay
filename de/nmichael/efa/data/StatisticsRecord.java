@@ -261,6 +261,8 @@ public class StatisticsRecord extends DataRecord implements IItemListener {
     
     public static final String SHOWDATAVALID_STATENDTIME = "StatEndTime";
     public static final String SHOWDATAVALID_LASTTRIPTIME = "LastTripTime";
+    public static final String ECRID = "ecrid";
+
 
     private static final int ARRAY_STRINGLIST_VALUES = 1;
     private static final int ARRAY_STRINGLIST_DISPLAY = 2;
@@ -648,6 +650,7 @@ public class StatisticsRecord extends DataRecord implements IItemListener {
         f.add(OPTIONSUMGUESTSANDOTHERS);          t.add(IDataAccess.DATA_BOOLEAN);
         f.add(OPTIONSUMGUESTSBYCLUB);             t.add(IDataAccess.DATA_BOOLEAN);
         f.add(OPTIONSHOWVALIDLASTTRIP);           t.add(IDataAccess.DATA_STRING);
+        f.add(ECRID);                             t.add(IDataAccess.DATA_STRING);
         MetaData metaData = constructMetaData(Statistics.DATATYPE, f, t, false);
         metaData.setKey(new String[] { ID });
         metaData.addIndex(IDX_NAME);

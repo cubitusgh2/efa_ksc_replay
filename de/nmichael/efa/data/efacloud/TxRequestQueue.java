@@ -60,9 +60,9 @@ import de.nmichael.efa.util.Logger;
 public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
 
     // API protocol versions: 1: first implementation; 2: added VERIFY statement; 3: (planned: use of ecrid keys)
-    public static final int EFA_CLOUD_MAX_API_VERSION = 2;
+    public static final int EFA_CLOUD_MAX_API_VERSION = 3;  // since August 2024. before it was '1'
     // depending on the server response the api version is adjusted to the common maximum
-    public static int efa_cloud_used_api_version = 1;
+    public static int efa_cloud_used_api_version = 3;  // since August 2024. before it was '1'
 
     public static final char TX_REQ_DELIMITER = ';';
     public static final String TX_RESP_DELIMITER = ";";
@@ -81,6 +81,7 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
     // The update period MUST be at least 5 times the InternetAccessManager timeout.
     // The synchronisation start delay is one SYNCH_PERIOD
     static final int SYNCH_PERIOD_DEFAULT = 3600000; // = 3600 seconds = 1 hour
+    static final long SYNCHRONIZATION_TIMEOUT = 180000; // the synchronisation will be forced to end after this time
     static int synch_period = SYNCH_PERIOD_DEFAULT; // = 3600 seconds = 1 hour
     static final int STATS_UPLOAD_PERIOD_MIN = 86400000;  // = 86400 seconds = 24 hours
 
@@ -212,7 +213,7 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
 
     // The queue state machine parameters
     private int state = QUEUE_IS_STOPPED;
-    SynchControl synchControl;
+    protected SynchControl synchControl;
 
     // poll timer, internet access manager and connection settings
     private Timer queueTimer;
@@ -546,7 +547,7 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
                         "\nlogLastModified: " + txq.logLastModified + "\nstorageLocationRoot: " +
                         txq.storageLocationRoot + "\nsynch_period: " + TxRequestQueue.synch_period +
                         "\nsynch_check_polls_period: " + TxRequestQueue.synch_check_polls_period +
-                        "\nsynchControl.timeOfLastSynch: " + synchControl.timeOfLastSynch +
+                        "\nsynchControl.timeOfLastSynch: " + synchControl.lastSynchStartedMillis +
                         "\nsynchControl.LastModifiedLimit: " + synchControl.LastModifiedLimit;
         TextResource.writeContents(efacloudLogDir + File.separator + "auditinfo.txt", txqAuditInfo, true);
     }
@@ -579,6 +580,11 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
                         cfgFile = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
                     fa.putContent(fa.getInstance(cfgFname, false), cfgFile);
                 }
+                // add the log and synchronisation errors file
+                String errorsFile = TextResource.getContents(new File(synchErrorFilePath), "UTF-8");
+                fa.putContent(fa.getInstance("synchErrors.log", false), errorsFile);
+                String logFile = TextResource.getContents(new File(logFilePath), "UTF-8");
+                fa.putContent(fa.getInstance("efacloud.log", false), logFile);
                 // Java8: return Base64.getEncoder().encodeToString(fa.getZipAsBytes());
                 return Base64.encodeBytes(fa.getZipAsBytes()); // Java6
             } else
@@ -790,6 +796,14 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
                     }
                 }
 
+                // ============== time out for synchronization ======
+                if ((txq.getState() == TxRequestQueue.QUEUE_IS_SYNCHRONIZING)
+                        && ((System.currentTimeMillis() - synchControl.lastSynchStartedMillis) > SYNCHRONIZATION_TIMEOUT)) {
+                    txq.registerStateChangeRequest(TxRequestQueue.RQ_QUEUE_RESUME);
+                    txq.logApiMessage("Synchronization Timeout. "
+                             + International.getString("Die Synchronisation wird beendet."), 1);
+                }
+
                 // ============== handle state change ===============
                 try {
                     int currentState = txq.getState();
@@ -963,7 +977,7 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
                         }
                         // check whether to start synchronisation, if neither busy nor pending requests are there
                         else if ((txq.getState() == QUEUE_IS_IDLE) &&
-                                (polltime - synchControl.timeOfLastSynch > synch_period)) {
+                                (polltime - synchControl.lastSynchStartedMillis > synch_period)) {
                             // use the opportunity to clear the done and dropped queue, which will else be a memory leak
                             while (queues.get(TX_DONE_QUEUE_INDEX).size() > DONE_QUEUE_MAX_TXS)
                                 queues.get(TX_DONE_QUEUE_INDEX).remove(0);
@@ -1110,14 +1124,10 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
                 registerAction(tx, action);
                 if (!registerActionOnly) {
                     // Before moving the transaction check whether this is pausing or stopping the queue. When
-                    // pausing write actions and key fixing confirmations shall stay, when stopping only key fixing
-                    // confirmations .
-                    boolean isKeyFixingConfirmation = ((tx.type == Transaction.TX_TYPE.KEYFIXING) && tx.hasRecord());
+                    // pausing write actions shall stay in the queue
                     boolean keepOnPause = (action == ACTION_TX_PAUSE) &&
-                            ((sourceQueueIndex == TX_SYNCH_QUEUE_INDEX) ? isKeyFixingConfirmation : (
-                                    isKeyFixingConfirmation || tx.type.isWriteAction));
-                    boolean keepOnStop = (action == ACTION_TX_STOP) && isKeyFixingConfirmation;
-                    if (!keepOnPause && !keepOnStop) {
+                            (sourceQueueIndex != TX_SYNCH_QUEUE_INDEX && tx.type.isWriteAction);
+                    if (!keepOnPause) {
                         if (destinationQueueIndex == TX_DROPPED_QUEUE_INDEX)
                             txq.logApiMessage("#" + tx.ID + ", " + tx.type + " [" + tx.tablename + "]: " + "Transaction dropped", 1);
                         dest.add(tx);

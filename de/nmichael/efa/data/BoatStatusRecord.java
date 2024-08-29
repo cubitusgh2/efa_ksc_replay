@@ -49,6 +49,7 @@ public class BoatStatusRecord extends DataRecord {
     public static final String LOGBOOK             = "Logbook";       // the name of the logbook EntryNo is pointing to
     public static final String ENTRYNO             = "EntryNo";       // the EntryNo if this boat in ONTHEWATER
     public static final String COMMENT             = "Comment";
+    public static final String ECRID               = "ecrid";
 
     protected static String CAT_STATUS       = "%06%" + International.getString("Bootsstatus");
     
@@ -66,6 +67,7 @@ public class BoatStatusRecord extends DataRecord {
         f.add(LOGBOOK);                  t.add(IDataAccess.DATA_STRING);
         f.add(ENTRYNO);                  t.add(IDataAccess.DATA_INTSTRING);
         f.add(COMMENT);                  t.add(IDataAccess.DATA_STRING);
+        f.add(ECRID);                    t.add(IDataAccess.DATA_STRING);
         MetaData metaData = constructMetaData(BoatStatus.DATATYPE, f, t, false);
         metaData.setKey(new String[] { BOATID });
         metaData.addIndex(new String[] { CURRENTSTATUS });

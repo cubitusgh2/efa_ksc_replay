@@ -316,8 +316,8 @@ public class TableBuilder {
         // do not cut numbers, Ids or similar. That will create illegalArgument exceptions when reading back.
         if (((rtf.datatypeIndex == IDataAccess.DATA_STRING) || (rtf.datatypeIndex == IDataAccess.DATA_TEXT)
                 || (rtf.datatypeIndex == IDataAccess.DATA_LIST_STRING) || (rtf.datatypeIndex == IDataAccess.DATA_VIRTUAL))
-                && (value.length() >= rtf.maxLength))
-            return value.substring(0, rtf.maxLength - 4) + " ...";
+                && (value.length() > rtf.maxLength))     // Do not use >= because ecrids have the exact length of 12 characters set in the server db layout
+            return value.substring(0, (int) (rtf.maxLength * 0.9 - 6) ) + " ..."; // cut length to max bytes for UTF-8 String.
         else
             return value;
     }

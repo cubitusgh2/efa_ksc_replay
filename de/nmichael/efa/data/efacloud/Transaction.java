@@ -30,8 +30,7 @@ public class Transaction {
 
     public enum TX_TYPE {
         INSERT("insert", true, false,true, false, true), UPDATE("update", true, false,true, false,
-                true), DELETE("delete", false, false,true, false, true), KEYFIXING("keyfixing", false, false,false, true,
-                true), SELECT("select", false, false,false, false, true), SYNCH("synch", false, false,false, true, true), LIST(
+                true), DELETE("delete", false, false,true, false, true), SELECT("select", false, false,false, false, true), SYNCH("synch", false, false,false, true, true), LIST(
                 "list", false, false,false, false, false), NOP("nop", false, false,false, true, false),
                  VERIFY("verify", false, false,false, false, false), BACKUP("backup", false,
                 false,false, false, false), UPLOAD("upload", false, false,false, false, false), CRONJOBS("cronjobs", false, false,false,
