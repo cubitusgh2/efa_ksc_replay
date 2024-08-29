@@ -53,12 +53,6 @@ public class Transaction {
             this.addBookName = addBookName;
         }
 
-        static TX_TYPE getType(String typeString) {
-            for (TX_TYPE type : TX_TYPE.values())
-                if (type.typeString.equalsIgnoreCase(typeString))
-                    return type;
-            return NOP;
-        }
     }
 
     // The transaction response codes as text
@@ -244,8 +238,7 @@ public class Transaction {
                     extendedRecord[record.length] = "ClubworkbookName;" + clubworkbookname;
                 }
                 this.record = extendedRecord;
-        } else
-            this.record = record;
+        } else this.record = record;
     }
 
     /**
@@ -410,10 +403,6 @@ public class Transaction {
         return retries;
     }
 
-    long getClosedAt() {
-        return closedAt;
-    }
-
     void setRetries(long retries) {
         this.retries = retries;
     }
@@ -426,16 +415,8 @@ public class Transaction {
         this.closedAt = closedAt;
     }
 
-    int getCresultCode() {
-        return cresultCode;
-    }
-
     void setCresultCode(int cresultCode) {
         this.cresultCode = cresultCode;
-    }
-
-    String getCresultMessage() {
-        return cresultMessage;
     }
 
     void setCresultMessage(String cresultMessage) {

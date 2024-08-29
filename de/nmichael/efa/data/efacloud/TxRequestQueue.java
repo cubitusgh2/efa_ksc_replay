@@ -312,7 +312,7 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
                 efaCloudUserID + TX_REQ_DELIMITER + CsvCodec.encodeElement(password, TX_REQ_DELIMITER, TX_QUOTATION) +
                         TX_REQ_DELIMITER;
         this.adminSessionMessage = " [admin: " + adminName + "]";
-        this.adminEfaCloudUserID = "" + efaCloudUserID;
+        this.adminEfaCloudUserID = efaCloudUserID;
         txq.logApiMessage("state, []: Starting admin session with efaCloudUserID " + efaCloudUserID, 0);
     }
 
@@ -426,7 +426,7 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
 
     /**
      * Get an icon for display in the base frame of efaBoathouse top decoration
-     * @return
+     * @return the image icon
      */
     public ImageIcon getStateIconForDisplay() {
     	if (txq==null) 

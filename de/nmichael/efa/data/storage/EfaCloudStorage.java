@@ -248,7 +248,6 @@ public class EfaCloudStorage extends XMLFile {
         if (csvString.trim().isEmpty())
             return ret;
         // parse the text
-        char d = CsvCodec.DEFAULT_DELIMITER;
         char q = CsvCodec.DEFAULT_QUOTATION;
         int MAX_VALUE_LENGTH = 65536;
         DataRecord dataRecord;

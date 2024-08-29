@@ -111,6 +111,13 @@ public class TxResponseHandler {
                     handleAuthenticationError(txrc.cresultCode);
                     // do never remove a failed authentication transaction
                     break;
+                case 404:  // "Server side busy"
+                case 406:  // "Overload detected"
+                case 407:  // "No database connection"
+                    txq.shiftTx(TX_BUSY_QUEUE_INDEX, TX_BUSY_QUEUE_INDEX, TxRequestQueue.ACTION_TX_RETRY, 0, 0);
+                    if (txq.getState() == TxRequestQueue.QUEUE_IS_SYNCHRONIZING)
+                        txq.registerStateChangeRequest(TxRequestQueue.RQ_QUEUE_STOP_SYNCH);
+                    break;
                 case 401:  // "Syntax error"
                 case 500:  // "Internal server error"
                 case 505:  // "Server response empty"
@@ -119,13 +126,6 @@ public class TxResponseHandler {
                 default:
                     txq.shiftTx(TX_BUSY_QUEUE_INDEX, TxRequestQueue.TX_FAILED_QUEUE_INDEX,
                             TxRequestQueue.ACTION_TX_CONTAINER_FAILED, 0, 0);
-                    if (txq.getState() == TxRequestQueue.QUEUE_IS_SYNCHRONIZING)
-                        txq.registerStateChangeRequest(TxRequestQueue.RQ_QUEUE_STOP_SYNCH);
-                    break;
-                case 404:  // "Server side busy"
-                case 406:  // "Overload detected"
-                case 407:  // "No data base connection"
-                    txq.shiftTx(TX_BUSY_QUEUE_INDEX, TX_BUSY_QUEUE_INDEX, TxRequestQueue.ACTION_TX_RETRY, 0, 0);
                     if (txq.getState() == TxRequestQueue.QUEUE_IS_SYNCHRONIZING)
                         txq.registerStateChangeRequest(TxRequestQueue.RQ_QUEUE_STOP_SYNCH);
                     break;
@@ -322,7 +322,6 @@ public class TxResponseHandler {
                         efaCloudStorage.modifyLocalRecord(updated, false, true, false);
                         // check and update the boat status record, if the current trip is open
                         // you will have to use a new lock, because the old one uses the wrong table
-                        EfaCloudStorage boatstatus = Daten.tableBuilder.getPersistence("efa2boatstatus");
                         if (tx.tablename.equals(Logbook.DATATYPE) && (((LogbookRecord) current).getSessionIsOpen()))
                             txq.synchControl.adjustBoatStatus(((LogbookRecord) current).getBoatId(),
                                     ((LogbookRecord) updated).getEntryId().intValue());
