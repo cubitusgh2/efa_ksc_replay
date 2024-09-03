@@ -304,7 +304,7 @@ class SynchControl {
                         boolean localRecordHasNoEcrid = (localRecord != null) &&
                                 (localRecord.getAsString(Ecrid.ECRID_FIELDNAME) == null);
                         boolean addEcridToLocal = serverRecordHasEcrid && localRecordHasNoEcrid;
-                        boolean serverMoreRecent = (serverLastModified > (localLastModified - surely_newer_after_ms));
+                        boolean serverMoreRecent = (serverLastModified > (localLastModified + surely_newer_after_ms));
 
                         // identify whether a data key has changed. Can only happen, if ecrid is given and valid.
                         boolean keyHasChanged = (localKey != null) && (localKey.compareTo(returnedKey) != 0);
