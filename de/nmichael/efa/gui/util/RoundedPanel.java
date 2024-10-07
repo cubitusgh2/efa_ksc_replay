@@ -5,6 +5,8 @@ import java.awt.Graphics;
 import javax.swing.JPanel;
 
 public class RoundedPanel extends JPanel {
+
+	private static final long serialVersionUID = 2810604129112946801L;
 	private static int ARC = 10;	
 	  protected void paintComponent(Graphics g) {
 	        if (ui != null) {
