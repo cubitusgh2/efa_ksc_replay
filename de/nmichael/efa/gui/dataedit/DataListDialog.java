@@ -341,7 +341,8 @@ public abstract class DataListDialog extends BaseDialog implements IItemListener
         }
         table.setButtonPanelPosition(buttonPanelPosition);
         table.setFieldSize(600, 500);
-        table.setPadding(0, 0, 10, 0);
+        //table shall not have a huge distance from a toolbar above (NORTH position)
+        table.setPadding(0, 0, (buttonPanelPosition.equals(BorderLayout.NORTH) ? 0 : 10), 0);
         table.displayOnGui(this, mainTablePanel, BorderLayout.CENTER);
 
         boolean hasEditAction = false;

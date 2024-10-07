@@ -140,7 +140,7 @@ public class ClubworkListDialog extends DataListDialog {
         }
         table.setButtonPanelPosition(buttonPanelPosition);
         table.setFieldSize((Daten.isAdminMode() ? 700 : 850), 500);
-        table.setPadding(0, 0, 10, 0);
+        table.setPadding(0, 0, (buttonPanelPosition.equals(BorderLayout.NORTH) ? 0 : 10), 0);
         table.displayOnGui(this, mainTablePanel, BorderLayout.CENTER);
 
         boolean hasEditAction = false;

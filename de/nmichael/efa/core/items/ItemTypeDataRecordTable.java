@@ -259,7 +259,7 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
             		//But we need this if the buttons are on top.
             		//Get the Text length according to the font, add icon width and textIconGap(10 pix) and some pixels depending on the font size.
             		button.setFieldSize(getTextLength(button.getDescription())+16+10+(24-buttonPanel.getFont().getSize()), -1);
-            		button.setPadding(4, 0, 6, 6);
+            		button.setPadding(4, 0, 4, 4);
                 	button.displayOnGui(dlg, buttonPanel, i,0);
             	} else {
                 	button.displayOnGui(dlg, buttonPanel, 0, i);
