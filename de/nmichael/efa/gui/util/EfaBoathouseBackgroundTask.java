@@ -463,11 +463,16 @@ public class EfaBoathouseBackgroundTask extends Thread {
                         // reservations found
                         if (!boatStatusRecord.getCurrentStatus().equals(BoatStatusRecord.STATUS_ONTHEWATER)) {
                             if (Daten.efaConfig.getValueEfaDirekt_resBooteNichtVerfuegbar()) {
-                                if (!boatStatusRecord.getShowInList().equals(BoatStatusRecord.STATUS_NOTAVAILABLE)) {
+                                //Show reserved boats in the "not available" list if configured
+                            	//"Hidden" Boats have no list they are shown by default, and thus return NULL as getShowInList.
+                            	// but also hidden boats may move to the "not available" list if there is a reservation.
+                            	if ((boatStatusRecord.getShowInList()==null) || 
+                            			!boatStatusRecord.getShowInList().equals(BoatStatusRecord.STATUS_NOTAVAILABLE)) {
                                     boatStatusRecord.setShowInList(BoatStatusRecord.STATUS_NOTAVAILABLE);
                                 }
                             } else {
-                                if (!boatStatusRecord.getShowInList().equals(boatStatusRecord.getBaseStatus())) {
+                                if ((boatStatusRecord.getShowInList()==null) || 
+                                		!boatStatusRecord.getShowInList().equals(boatStatusRecord.getBaseStatus())) {
                                     boatStatusRecord.setShowInList(boatStatusRecord.getBaseStatus());
                                 }
                             }
