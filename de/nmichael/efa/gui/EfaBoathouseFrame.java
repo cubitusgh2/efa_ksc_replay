@@ -1418,8 +1418,13 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         if (admin == null && Daten.efaConfig.getValueLastProjectEfaBoathouse().length() > 0) {
             projectName = Daten.efaConfig.getValueLastProjectEfaBoathouse();
         }
+        
+        Hashtable<String,String> availableProjects = null;
+        availableProjects = Project.getProjects();
 
-        if (projectName == null || projectName.length() == 0) {
+        // No projects open, but the last open project name points to a former one.
+        // Do not try to open a former project if the list of projects is empty.
+        if (projectName == null || projectName.length() == 0 || availableProjects.isEmpty()) {
             if (admin != null && admin.isAllowedAdministerProjectLogbook()) {
                 OpenProjectOrLogbookDialog dlg = new OpenProjectOrLogbookDialog(this, OpenProjectOrLogbookDialog.Type.project, admin);
                 projectName = dlg.openDialog();
@@ -2782,6 +2787,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             }
         } finally {
             Daten.applMode = Daten.APPL_MODE_NORMAL;
+            efaBoathouseBackgroundTask.interrupt(); //wake up efaBthsBackgroundTask
         }
         clearFilterFieldsIfConfigured();               
     }

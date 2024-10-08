@@ -65,6 +65,7 @@ public class Backup {
     private int totalWork = 0;
     private int totalWorkDone = 0;
     private StringBuilder msgOut = new StringBuilder();
+    boolean bConfigRestored=false;
 
     public Backup(String backupDir, String backupFile,
             boolean backupProject,
@@ -503,9 +504,13 @@ public class Backup {
                         continue; // this object was not selected to be restored
                     }
                     restoreObjectsHash.remove(meta.getNameAndType());
-                    if (restoreStorageObject(meta,
-                            isRemoteProject, zip)) {
+                    if (restoreStorageObject(meta, isRemoteProject, zip)) {
                         successful++;
+                        if (meta.getName().equalsIgnoreCase("configuration") ||
+                        		meta.getName().equalsIgnoreCase("admins") ||
+                        		meta.getName().equalsIgnoreCase("types")) {
+                        	bConfigRestored=true;
+                        }                        
                     } else {
                         errors++;
                     }
@@ -529,15 +534,42 @@ public class Backup {
 
             // re-open project
             if (Daten.applID != Daten.APPL_CLI) {
-                String pName = Daten.project.getProjectName();
-                logMsg(Logger.INFO, Logger.MSG_BACKUP_REOPENINGFILES,
-                        LogString.fileClosing(pName, International.getString("Projekt")));
-                Daten.project.closeAllStorageObjects();
-                logMsg(Logger.INFO, Logger.MSG_BACKUP_REOPENINGFILES,
-                        LogString.fileOpening(pName, International.getString("Projekt")));
-                Daten.project.openProject(pName, true);
-                logMsg(Logger.INFO, Logger.MSG_EVT_PROJECTOPENED,
-                        LogString.fileOpened(pName, International.getString("Projekt")));
+            	//Daten.project can be null after installation and after restoring config items only.
+            	//Avoid a nullpointer here
+            	if (Daten.project != null) {
+	                String pName = Daten.project.getProjectName();
+	                logMsg(Logger.INFO, Logger.MSG_BACKUP_REOPENINGFILES, LogString.fileClosing(pName, International.getString("Projekt")));
+	                
+	                // closing the project is okay in efaBths as efaBoathouseBackgroundTask stops its actions
+	                // if Daten.getAdminMode==true which is so right after starting admin mode.
+	                // So we are safe in bths mode although there is an background task.
+	                Project currentProject = Daten.project;
+	                Daten.project=null; // this is set up again when calling openProject() but we need it to be null for efaBthsBackgroundTask	                
+	                currentProject.closeAllStorageObjects();
+
+	                if (!bConfigRestored) {	                
+	                	//re-open project if NO config files were affected
+	                	//this automatically starts the audit task
+	                	logMsg(Logger.INFO, Logger.MSG_BACKUP_REOPENINGFILES, LogString.fileOpening(pName, International.getString("Projekt")));
+		                Daten.project.openProject(pName, true);
+		                logMsg(Logger.INFO, Logger.MSG_EVT_PROJECTOPENED, LogString.fileOpened(pName, International.getString("Projekt")));
+	                } else {
+	                    // if config data is restored, a restart of efa is neccessary.
+	                	// we do not reopen the project to avoid problems with audit task and outdated efaTypes and other configuration information.
+	                    // efaTypes cannot be reloaded automatically after a restore action. a restart of efa is a safe way to get ALL of the config data
+	                	// into action before any project is reopened.
+
+	                	String achtung = International.getString("ACHTUNG");
+	                    logMsg(Logger.WARNING, Logger.MSG_BACKUP_RESTOREFINISHEDINFO,
+	                            achtung+": "+International.getString("Es wurden Konfigurationselemente wiederhergestellt."));
+	                    logMsg(Logger.WARNING, Logger.MSG_BACKUP_RESTOREFINISHEDINFO,
+	                            achtung+": "+International.getString("Das Projekt wurde daher nicht automatisch neu geladen."));
+	                    logMsg(Logger.WARNING, Logger.MSG_BACKUP_RESTOREFINISHEDINFO,
+	                    		achtung+": "+International.getString("Bitte starten Sie EFA neu, damit die Konfigurationselemente aktiv werden und das Projekt sauber geladen wird."));	                	
+	                	
+	                }
+	                
+	           }
             }
 
             if (errors == 0) {
@@ -557,6 +589,10 @@ public class Backup {
         return errors;
     }
 
+    public boolean getRestoreConfigUpdated() {    
+    	return this.bConfigRestored;
+    }
+        
     private void openOrCreateProject(String newProjectName) {
         try {
             // close project, if a wrong project is open
@@ -712,8 +748,14 @@ class BackupTask extends ProgressTask {
                             International.getString("Archiv") + ": \n" +
                             backup.getZipFile();
                 case restore:
-                    return LogString.operationSuccessfullyCompleted(
-                            International.getString("Wiederherstellung"));
+                	String userFeedback = LogString.operationSuccessfullyCompleted(International.getString("Wiederherstellung"));
+                    if (backup.getRestoreConfigUpdated()) {
+                    	userFeedback = userFeedback + "\n\n" + International.getString("ACHTUNG");
+                    	userFeedback = userFeedback + "\n" + International.getString("Es wurden Konfigurationselemente wiederhergestellt.");                    	
+                    	userFeedback = userFeedback + "\n" + International.getString("Das Projekt wurde daher nicht automatisch neu geladen.");                    	
+                    	userFeedback = userFeedback + "\n" + International.getString("Bitte starten Sie EFA neu, damit die Konfigurationselemente aktiv werden und das Projekt sauber geladen wird.");
+                    }
+                    return userFeedback;
             }
             return LogString.operationSuccessfullyCompleted(
                             International.getString("Operation"));
@@ -735,5 +777,9 @@ class BackupTask extends ProgressTask {
         } else {
             return null;
         }
+    }
+    
+    public boolean getRestoreConfigUpdated() {
+    	return backup.getRestoreConfigUpdated();
     }
 }

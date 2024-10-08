@@ -144,7 +144,18 @@ public class EfaBoathouseBackgroundTask extends Thread {
                 if (Logger.isTraceOn(Logger.TT_BACKGROUND, 5)) {
                     Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK, "EfaBoathouseBackgroundTask: alive!");
                 }
-
+                
+                //Daten.isAdminMode is true if Application is efaBths AND Admin mode is true.
+                //if efaBths is in admin mode, stop the efaBthsBackgroundTask actions, as in admin mode some
+                //critical changes can take place like changing the current project, closing the project due to backup/restore functions
+                //and more.
+                //so, in isAdminMode=true mode we only sleep for a while...
+                if (Daten.isAdminMode()) {
+                     if (Logger.isTraceOn(Logger.TT_BACKGROUND, 5)) {
+                         Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK, "EfaBoathouseBackgroundTask: doing nothing as admin mode is active.");
+                     }
+                } else {
+                	
                 // find out whether a project is open, and whether it's local or remote
                 updateProjectInfo();
 
@@ -191,6 +202,7 @@ public class EfaBoathouseBackgroundTask extends Thread {
                     checkUnfixedBoatDamages();
 
                     remindAdminOfLogbookSwitch();
+                }
                 }
                 
                 sleepForAWhile();
@@ -382,6 +394,16 @@ public class EfaBoathouseBackgroundTask extends Thread {
                 Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
                         "EfaBoathouseBackgroundTask: checkBoatStatus() - done for remote project");
             }
+            return;
+        }
+        
+
+        if (!isProjectOpen) {
+	        SwingUtilities.invokeLater(new BthsUpdateBoatLists(listChanged,false));
+            if (Logger.isTraceOn(Logger.TT_BACKGROUND, 8)) {
+                Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
+                        "EfaBoathouseBackgroundTask: checkBoatStatus() - done for closed project");
+            }	        
             return;
         }
 
