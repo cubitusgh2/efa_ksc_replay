@@ -9,8 +9,8 @@
             <ChangeItem>Neu: efaBths Listen: Farbicons für Bootslisten werden geglättet dargestellt.</ChangeItem>
 			<ChangeItem>Neu: Neuer Dialog für Erfassung von Wanderfahrten (Multisession), wenn mehrere Leute im eigenen Boot zu einer gemeinsamen Fahrt aufbrechen. Konfigurierbar in efaConfig.</ChangeItem>
             <ChangeItem>Neu: Autovervollständigungs-Listen: bei der Suche nach Teilbegriff wird immer der Eintrag vorselektiert, der mit dem Suchbegriff beginnt.</ChangeItem>
-            <ChangeItem>Neu: Dialog für Bootsreservierungen in efaBths ist breiter und hat die Schaltflächen über der Tabelle.</ChangeItem>
-            <ChangeItem>Neu: Dialog für Vereinsarbeit in efaBths ist breiter und hat die Schaltflächen über der Tabelle.</ChangeItem>
+            <ChangeItem>Neu: Dialog für Bootsreservierungen in efaBths ist breiter und hat die Schaltflächen über der Tabelle (Aktualisierte Version).</ChangeItem>
+            <ChangeItem>Neu: Dialog für Vereinsarbeit in efaBths ist breiter und hat die Schaltflächen über der Tabelle (Aktualisierte Version).</ChangeItem>
             <ChangeItem>Neu: Neue Option in Konfiguration-&gt;Allgemein-&gt;Eingabe-&gt;Besatzung: bei Einsitzer-Fahrten die Person als Crew statt als Steuermann eintragen.</ChangeItem>
             <ChangeItem>Neu: Adminmodus/Personen: Personen, die in einer oder mehreren Gruppen sind, haben das zugehörige Icon, und der Tooltip stellt die Gruppen dar.</ChangeItem>
             <ChangeItem>Neu: Adminmodus/Personen: Personen, die eine Kanu-eFB-ID haben, erhalten ein passendes Icon, und der Tooltip beinhaltet die eFB-ID.</ChangeItem>
@@ -38,6 +38,7 @@
             <ChangeItem>BugFix: Abgelaufene Bootsreservierungen von "versteckten" Booten werden gelöscht.</ChangeItem>
             <ChangeItem>BugFix: In Beta-Versionen wird im Admin-Modus nicht mehr beständig die Aktualisierung der Gewässerliste angeboten.</ChangeItem>
             <ChangeItem>BugFix: Versteckte Option für "efa immer im Vordergrund" wird wieder angezeigt.</ChangeItem>
+            <ChangeItem>BugFix: Wenn ein Backup efa-Konfigurationsdaten wiederherstellt, dann wird zum Neustart von EFA aufgefordert. Hierdurch wird verhindert, dass der Audit Task beim Öffnen des Projekts Daten korrigiert, weil er ggfs. nicht geladene TYPEN oder andere Konfigurationsdaten (noch) nicht findet.</ChangeItem>
             <ChangeItem>BugFix: efaCloud: Kein Nullpointer-Fehler mehr beim Betreten des Admin-Modus, wenn kein Projekt geöffnet ist.</ChangeItem>
             <ChangeItem>BugFix: efaCloud: Im Debug Modus werden keine unnötigen Nullpointer-Exceptions mehr ins Log geschrieben. https://github.com/nicmichael/efa/issues/138</ChangeItem>
             <ChangeItem>Code: Refactoring: Unnötige Imports entfernt.</ChangeItem>          
@@ -72,6 +73,7 @@
             <ChangeItem>BugFix: Outdated boatreservations of "hidden" boats are deleted.</ChangeItem>
             <ChangeItem>BugFix: In beta versions there are no more questions for updateing the waters list in admin mode.</ChangeItem>
             <ChangeItem>BugFix: Hidden option for "efa always on top" gets shown again.</ChangeItem>
+            <ChangeItem>BugFix: If efa configuration data gets restored from a backup, the user is informed to restart efa. By this accidental changes by audit task are avoided (which may take place as the audit task may not find restored config data before efa gets restarted.)</ChangeItem>
             <ChangeItem>BugFix: efaCloud: No more nullpointer exception when entering admin mode and no open project.</ChangeItem>
             <ChangeItem>BugFix: efaCloud: No more exceptions logged in debug mode. https://github.com/nicmichael/efa/issues/138 </ChangeItem>
             <ChangeItem>Code: Refactoring: Removed unused import statemens.</ChangeItem>          
