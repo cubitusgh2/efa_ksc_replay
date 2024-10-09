@@ -38,7 +38,7 @@ public class AlertWidget extends Widget implements IItemFactory {
     static final String PARAM_TEXT          = "Text";
 
     public AlertWidget() {
-        super(NAME, International.getString("Hinweis-Widget"), false);
+        super(NAME, International.getString("Hinweis-Widget"), false, true);
         ItemTypeItemList item;
         addParameterInternal(item = new ItemTypeItemList(PARAM_ALERTS, new Vector<IItemType[]>(), this,
                 IItemType.TYPE_PUBLIC, "",

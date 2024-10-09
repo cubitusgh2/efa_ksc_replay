@@ -10,41 +10,27 @@
 
 package de.nmichael.efa.gui.widgets;
 
-import java.awt.Cursor;
 import java.awt.Font;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.net.URLConnection;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
-import java.util.Stack;
-import java.util.Vector;
 
-import javax.net.ssl.HttpsURLConnection;
 import javax.swing.JComponent;
-import javax.swing.JEditorPane;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
-import javax.swing.text.html.HTMLEditorKit;
-
-import org.xml.sax.Attributes;
-import org.xml.sax.InputSource;
-import org.xml.sax.XMLReader;
-import org.xml.sax.helpers.DefaultHandler;
 
 import de.nmichael.efa.Daten;
 import de.nmichael.efa.core.Plugins;
 import de.nmichael.efa.core.items.IItemType;
 import de.nmichael.efa.core.items.ItemTypeBoolean;
-import de.nmichael.efa.core.items.ItemTypeFile;
 import de.nmichael.efa.core.items.ItemTypeInteger;
 import de.nmichael.efa.core.items.ItemTypeLongLat;
 import de.nmichael.efa.core.items.ItemTypeString;
@@ -52,45 +38,22 @@ import de.nmichael.efa.core.items.ItemTypeStringList;
 import de.nmichael.efa.data.LogbookRecord;
 import de.nmichael.efa.gui.BaseDialog;
 import de.nmichael.efa.gui.EfaBaseFrame;
+import de.nmichael.efa.gui.ImagesAndIcons;
 import de.nmichael.efa.gui.NotificationDialog;
 import de.nmichael.efa.util.EfaUtil;
 import de.nmichael.efa.util.International;
 import de.nmichael.efa.util.Logger;
 import de.nmichael.efa.util.SunRiseSet;
-import de.nmichael.efa.util.TMJ;
-import oauth.signpost.OAuthConsumer;
-import oauth.signpost.basic.DefaultOAuthConsumer;  
+import de.nmichael.efa.util.TMJ;  
 
 public class MeteoAstroWidget extends Widget {
 
-    static final String TEMP_CELSIUS              = "CELSIUS";
-    static final String TEMP_FAHRENHEIT           = "FAHRENHEIT";
-
-    static final String LAYOUT_COMPACT            = "COMPACT";
-    static final String LAYOUT_HORIZONTAL         = "HORIZONTAL";
-    static final String LAYOUT_VERTICAL           = "VERTICAL";
-
-    static final String PARAM_LAYOUT              = "Layout";
+    static final String PARAM_SHOWCOCK         = "ShowClock";
+    static final String PARAM_SHOWDATE         = "ShowDate";
+	
     static final String PARAM_SHOWSUNRISE         = "ShowSunrise";
     static final String PARAM_LATITUDE            = "Latitude";
     static final String PARAM_LONGITUDE           = "Longitude";
-
-    static final String PARAM_SHOWWEATHER         = "ShowWeather";
-    static final String PARAM_WEATHERLOCATION     = "WeatherLocation";
-    static final String PARAM_TEMPERATURESCALE    = "TemperatureScale";
-    static final String PARAM_SHOWWEATHERLOCATION = "ShowWeatherLocation";
-    static final String PARAM_SHOWWEATHERCURTEXT  = "ShowWeatherCurText";
-    static final String PARAM_SHOWWEATHERCURIMG   = "ShowWeatherCurImage";
-    static final String PARAM_SHOWWEATHERCURTEMP  = "ShowWeatherCurTemp";
-    static final String PARAM_SHOWWEATHERCURWIND  = "ShowWeatherCurWind";
-    static final String PARAM_SHOWWEATHERFCTEXT   = "ShowWeatherFcText";
-    static final String PARAM_SHOWWEATHERFCIMG    = "ShowWeatherFcImg";
-    static final String PARAM_SHOWWEATHERFCTEMP   = "ShowWeatherFcTemp";
-
-    static final String PARAM_POPUPEXECCOMMAND    = "PopupExecCommand";
-    static final String PARAM_HTMLPOPUPURL        = "HtmlPopupUrl";
-    static final String PARAM_HTMLPOPWIDTH        = "HtmlPopupWidth";
-    static final String PARAM_HTMLPOPHEIGHT       = "HtmlPopupHeight";
 
     static final String PARAM_WARNDARKNESS          = "WarnDarkness";
     static final String PARAM_WARNTIMEBEFORESUNSET  = "WarnTimeBeforeSunset";
@@ -98,44 +61,40 @@ public class MeteoAstroWidget extends Widget {
     static final String PARAM_WARNTIMEBEFORESUNRISE = "WarnTimeBeforeSunrise";
     static final String PARAM_WARNTEXTDARKSOON      = "WarnTextDarkSoon";
     static final String PARAM_WARNTEXTDARKNOW       = "WarnTextDarkNow";
-
-    static final String PARAM_INCLUDEHTMLTEXT       = "IncludeHtmlText";
-    static final String PARAM_INCLUDEHTMLPAGE       = "IncludeHtmlPage";
     
-    enum WeatherApi {
-        google,
-        yahoo
-    }
+    static final String LAYOUT_COMPACT            = "COMPACT";
+    static final String LAYOUT_HORIZONTAL         = "HORIZONTAL";
+    static final String LAYOUT_VERTICAL           = "VERTICAL";
 
-    static final WeatherApi weatherApi = WeatherApi.yahoo;
+    static final String PARAM_LAYOUT              = "Layout";
 
-    static final String GOOGLE_API = "http://www.google.com/ig/api";
-    static final String GOOGLE_URL = "http://www.google.com";
-
-    /* Documentation: http://developer.yahoo.com/weather/ */
-    /* should limit rate to 2,000 requests per day */
-    //static final String YAHOO_API = "http://weather.yahooapis.com/forecastrss";
-    static final String YAHOO_API = "https://weather.yahooapis.com/forecastrss";
-    static final String YAHOO_API2 = "https://query.yahooapis.com/v1/public/yql";
-    static final String YAHOO_API3 = "https://weather-ydn-yql.media.yahoo.com/forecastrss";
-    
-    private static WeatherXmlResponse cachedResponse;
-    private static long lastResponseTime = 0;
-
-    private JEditorPane htmlPane = new JEditorPane();
-    private HTMLUpdater htmlUpdater;
+    private JPanel mainPanel = new JPanel();
+    private JLabel timeLabel = new JLabel();
+    private JLabel dateLabel = new JLabel();
+    private JPanel sunPanel = new JPanel();
+    private JLabel sunriseLabel = new JLabel();
+    private JLabel sunsetLabel = new JLabel();
+    private PanelUpdater panelUpdater;
 
     public MeteoAstroWidget() {
-        super("MeteoAstro", International.getString("Meteo-Astro-Widget"), true);
-        addParameterInternal(new ItemTypeStringList(PARAM_LAYOUT, LAYOUT_COMPACT,
-                new String[] { LAYOUT_COMPACT, LAYOUT_HORIZONTAL, LAYOUT_VERTICAL },
-                new String[] { International.getString("kompakt"),
-                               International.getString("horizontal"),
+        super(International.getString("Uhr und Astro"), "MeteoAstro", International.getString("Uhr und Astro-Widget"), true,false);
+
+        addParameterInternal(new ItemTypeBoolean(PARAM_SHOWCOCK, true,
+                IItemType.TYPE_PUBLIC, "",
+                International.getString("Uhrzeit anzeigen")));
+        
+        addParameterInternal(new ItemTypeBoolean(PARAM_SHOWDATE, true,
+                IItemType.TYPE_PUBLIC, "",
+                International.getString("Datum anzeigen")));
+        
+        addParameterInternal(new ItemTypeStringList(PARAM_LAYOUT, LAYOUT_HORIZONTAL,
+                new String[] { LAYOUT_HORIZONTAL, LAYOUT_VERTICAL },
+                new String[] { International.getString("horizontal"),
                                International.getString("vertikal")
                 },
                 IItemType.TYPE_PUBLIC, "",
                 International.getString("Layout")));
-
+        
         addHeader("WidgetMeteoSunrise",IItemType.TYPE_PUBLIC, "", International.getString("Sonnenaufgang/Sonnenuntergang"), 3);        
         addParameterInternal(new ItemTypeBoolean(PARAM_SHOWSUNRISE, true,
                 IItemType.TYPE_PUBLIC, "",
@@ -172,171 +131,30 @@ public class MeteoAstroWidget extends Widget {
         addParameterInternal(new ItemTypeInteger(PARAM_WARNTIMEBEFORESUNRISE, 30, 0, 60, false,
                 IItemType.TYPE_EXPERT, "",
                 PARAM_WARNTIMEBEFORESUNRISE));
-        addParameterInternal(new ItemTypeString(PARAM_INCLUDEHTMLTEXT, "",
-                IItemType.TYPE_PUBLIC, "",
-                International.getString("HTML-Text einbinden")));
-        addParameterInternal(new ItemTypeString(PARAM_INCLUDEHTMLPAGE, "",
-                IItemType.TYPE_PUBLIC, "",
-                International.getString("HTML-Seite einbinden")));        
-
-        addHeader("WidgetMeteoWeather",IItemType.TYPE_PUBLIC, "", International.getString("Wetter anzeigen"), 3);  
-        addHint("WidgetMeteoWeatherDisabled",IItemType.TYPE_PUBLIC, "", International.getString("Die Wetteranzeige ist nicht verfügbar - WetterAPI von Yahoo wurde eingestellt."), 3,6,6);
-        
-        addParameterInternal(new ItemTypeBoolean(PARAM_SHOWWEATHER, false,
-                IItemType.TYPE_EXPERT, "",
-                International.getString("Wetterdaten anzeigen") +
-                " (" + International.getString("Internetverbindung erforderlich") + ")"));
-        addParameterInternal(new ItemTypeString(PARAM_WEATHERLOCATION,
-                "638242", // "14109-Germany",
-                IItemType.TYPE_EXPERT, "",
-                International.getString("Ort für Wetterdaten")));
-        addParameterInternal(new ItemTypeStringList(PARAM_TEMPERATURESCALE, TEMP_CELSIUS,
-                new String[] { TEMP_CELSIUS, TEMP_FAHRENHEIT },
-                new String[] { International.getString("Celsius"),
-                               International.getString("Fahrenheit")
-                },
-                IItemType.TYPE_EXPERT, "",
-                International.getString("Temperaturskala")));
-        addParameterInternal(new ItemTypeBoolean(PARAM_SHOWWEATHERLOCATION, false,
-                IItemType.TYPE_EXPERT, "",
-                International.getMessage("{item} anzeigen",
-                International.getString("Ort"))));
-        addParameterInternal(new ItemTypeBoolean(PARAM_SHOWWEATHERCURTEXT, false,
-                IItemType.TYPE_EXPERT, "",
-                International.getMessage("{item} anzeigen",
-                International.getString("aktuelles Wetter") +
-                " (" + International.getString("Text") + ")")));
-        addParameterInternal(new ItemTypeBoolean(PARAM_SHOWWEATHERCURIMG, false,
-                IItemType.TYPE_EXPERT, "",
-                International.getMessage("{item} anzeigen",
-                International.getString("aktuelles Wetter") +
-                " (" + International.getString("Bild") + ")")));
-        addParameterInternal(new ItemTypeBoolean(PARAM_SHOWWEATHERCURTEMP, true,
-                IItemType.TYPE_EXPERT, "",
-                International.getMessage("{item} anzeigen",
-                International.getString("aktuelle Temperatur"))));
-        addParameterInternal(new ItemTypeBoolean(PARAM_SHOWWEATHERCURWIND, true,
-                IItemType.TYPE_EXPERT, "",
-                International.getMessage("{item} anzeigen",
-                International.getString("Wind"))));
-        addParameterInternal(new ItemTypeBoolean(PARAM_SHOWWEATHERFCTEXT, false,
-                IItemType.TYPE_EXPERT, "",
-                International.getMessage("{item} anzeigen",
-                International.getString("Wettervorhersage") +
-                " (" + International.getString("Text") + ")")));
-        addParameterInternal(new ItemTypeBoolean(PARAM_SHOWWEATHERFCIMG, true,
-                IItemType.TYPE_EXPERT, "",
-                International.getMessage("{item} anzeigen",
-                International.getString("Wettervorhersage") +
-                " (" + International.getString("Bild") + ")")));
-        addParameterInternal(new ItemTypeBoolean(PARAM_SHOWWEATHERFCTEMP, true,
-                IItemType.TYPE_EXPERT, "",
-                International.getMessage("{item} anzeigen",
-                International.getString("Höchst- und Tiefst-Temperatur"))));
-
-        addHeader("WidgetMeteoHTML",IItemType.TYPE_PUBLIC, "", International.getString("HTML-Seite anzeigen"), 3);  
-        addDescription("WidgetMeteoHTMLPOPUP",IItemType.TYPE_PUBLIC, "", International.getString("Bei Mausklick auf das Astro/Meteo-Widget kann eine HMTL-Seite angezeigt werden."), 3,3,3);
-        
-        addParameterInternal(new ItemTypeFile(PARAM_HTMLPOPUPURL, "",
-                International.getString("HTML-Seite"),
-                International.getString("HTML-Seite"),
-                null,ItemTypeFile.MODE_OPEN,ItemTypeFile.TYPE_FILE,
-                IItemType.TYPE_PUBLIC, "",
-                International.getString("HTML-Popup") + ": " +
-                International.getString("HTML-Seite")));
-        addParameterInternal(new ItemTypeInteger(PARAM_HTMLPOPWIDTH, 400, 1, Integer.MAX_VALUE, false,
-                IItemType.TYPE_PUBLIC, "",
-                International.getString("HTML-Popup") + ": " +
-                International.getString("Breite")));
-        addParameterInternal(new ItemTypeInteger(PARAM_HTMLPOPHEIGHT, 200, 1, Integer.MAX_VALUE, false,
-                IItemType.TYPE_PUBLIC, "",
-                International.getString("HTML-Popup") + ": " +
-                International.getString("Höhe")));
-        addParameterInternal(new ItemTypeString(PARAM_POPUPEXECCOMMAND, "",
-                IItemType.TYPE_PUBLIC, "",
-                International.getMessage("Auszuführendes Kommando vor {event}",
-                International.getString("Popup"))));
-
-
 
         super.setEnabled(true);
         super.setPosition(IWidget.POSITION_CENTER);
-    }
-
-    public String getLayout() {
-        return ((ItemTypeStringList)getParameterInternal(PARAM_LAYOUT)).toString();
+        
     }
 
     public boolean isShowSunrise() {
         return ((ItemTypeBoolean)getParameterInternal(PARAM_SHOWSUNRISE)).getValue();
     }
 
+    public boolean isShowClock() {
+        return ((ItemTypeBoolean)getParameterInternal(PARAM_SHOWCOCK)).getValue();   	
+    }
+    
+    public boolean isShowDate() {
+        return ((ItemTypeBoolean)getParameterInternal(PARAM_SHOWDATE)).getValue();   	
+    }
+    
     public ItemTypeLongLat getLatitude() {
         return (ItemTypeLongLat)getParameterInternal(PARAM_LATITUDE);
     }
 
     public ItemTypeLongLat getLongitude() {
         return (ItemTypeLongLat)getParameterInternal(PARAM_LONGITUDE);
-    }
-
-    public boolean isShowWeather() {
-        return ((ItemTypeBoolean)getParameterInternal(PARAM_SHOWWEATHER)).getValue();
-    }
-
-    public String getWeatherLocation() {
-        return ((ItemTypeString)getParameterInternal(PARAM_WEATHERLOCATION)).toString();
-    }
-
-    public String getTemperatureScale() {
-        return ((ItemTypeStringList)getParameterInternal(PARAM_TEMPERATURESCALE)).toString();
-    }
-
-    public boolean isShowWeatherLocation() {
-        return ((ItemTypeBoolean)getParameterInternal(PARAM_SHOWWEATHERLOCATION)).getValue();
-    }
-
-    public boolean isShowCurrentWeatherText() {
-        return ((ItemTypeBoolean)getParameterInternal(PARAM_SHOWWEATHERCURTEXT)).getValue();
-    }
-
-    public boolean isShowCurrentWeatherImage() {
-        return ((ItemTypeBoolean)getParameterInternal(PARAM_SHOWWEATHERCURIMG)).getValue();
-    }
-
-    public boolean isShowCurrentWeatherTemperature() {
-        return ((ItemTypeBoolean)getParameterInternal(PARAM_SHOWWEATHERCURTEMP)).getValue();
-    }
-
-    public boolean isShowCurrentWeatherWind() {
-        return ((ItemTypeBoolean)getParameterInternal(PARAM_SHOWWEATHERCURWIND)).getValue();
-    }
-
-    public boolean isShowForecastWeatherText() {
-        return ((ItemTypeBoolean)getParameterInternal(PARAM_SHOWWEATHERFCTEXT)).getValue();
-    }
-
-    public boolean isShowForecastWeatherImage() {
-        return ((ItemTypeBoolean)getParameterInternal(PARAM_SHOWWEATHERFCIMG)).getValue();
-    }
-
-    public boolean isShowForecastWeatherTemperature() {
-        return ((ItemTypeBoolean)getParameterInternal(PARAM_SHOWWEATHERFCTEMP)).getValue();
-    }
-
-    public String getPopupExecCommand() {
-        return ((ItemTypeString)getParameterInternal(PARAM_POPUPEXECCOMMAND)).toString();
-    }
-
-    public String getHtmlPopupUrl() {
-        return ((ItemTypeFile)getParameterInternal(PARAM_HTMLPOPUPURL)).toString();
-    }
-
-    public int getHtmlPopupWidth() {
-        return ((ItemTypeInteger)getParameterInternal(PARAM_HTMLPOPWIDTH)).getValue();
-    }
-
-    public int getHtmlPopupHeight() {
-        return ((ItemTypeInteger)getParameterInternal(PARAM_HTMLPOPHEIGHT)).getValue();
     }
 
     public boolean isWarnDarkness() {
@@ -357,64 +175,88 @@ public class MeteoAstroWidget extends Widget {
     public String getWarnTextDarkNow() {
         return ((ItemTypeString)getParameterInternal(PARAM_WARNTEXTDARKNOW)).toString();
     }
-    public String getIncludeHtmlText() {
-        return ((ItemTypeString)getParameterInternal(PARAM_INCLUDEHTMLTEXT)).toString();
-    }
-    public String getIncludeHtmlPage() {
-        return ((ItemTypeString)getParameterInternal(PARAM_INCLUDEHTMLPAGE)).toString();
-    }
+
     
+    public String getLayout() {
+        return ((ItemTypeStringList)getParameterInternal(PARAM_LAYOUT)).toString();   
+    }
     
 
     void construct() {
+
+       	/* Layout, created by plain java
+    	 
+        12:23
+   20.03.2024 
+(*) 08:20 (o) 18:23
+
+	 */  
+
+	mainPanel = new JPanel();
+	mainPanel.setLayout(new GridBagLayout());
+	
+	sunPanel.setLayout(new GridBagLayout());
+	Boolean isHorzLayout=getLayout().equals(LAYOUT_HORIZONTAL);
+	int sunsetX;
+	int sunsetY;
+	int sunriseAlign;
+	int sunsetAlign;
+	int sunsetInsetLeft;
+	int sunsetInsetTop;
+	if (isHorzLayout) {
+		sunsetX=1;
+		sunsetY=0;
+		sunriseAlign=GridBagConstraints.EAST;
+		sunsetAlign =GridBagConstraints.WEST;
+		sunsetInsetLeft=4;
+		sunsetInsetTop=0;
+	} else {
+		sunsetX=0;
+		sunsetY=1;
+		sunriseAlign=GridBagConstraints.EAST;
+		sunsetAlign =GridBagConstraints.EAST;
+		sunsetInsetLeft=0;
+		sunsetInsetTop=4;
+	}
+	sunPanel.add(sunriseLabel, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, sunriseAlign, GridBagConstraints.HORIZONTAL, new Insets(0,0,0,4), 0, 0));
+	sunPanel.add(sunsetLabel,  new GridBagConstraints(sunsetX, sunsetY, 1, 1, 0.0, 0.0, sunsetAlign, GridBagConstraints.HORIZONTAL, new Insets(sunsetInsetTop,sunsetInsetLeft,0,0), 0, 0));    	
+	
+	mainPanel.add(timeLabel,   new GridBagConstraints(0,0, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(4, 0, 0, 0), 0, 0));
+	mainPanel.add(dateLabel,   new GridBagConstraints(0,1, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 0, 4, 0), 0, 0));
+	
+	if (isHorzLayout) {
+		mainPanel.add(sunPanel,    new GridBagConstraints(0,2, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(4, 0, 4, 0), 0, 0));
+	} else {
+		mainPanel.add(sunPanel,    new GridBagConstraints(2,0, 1, 2, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(4, 32, 4, 0), 0, 0));
+	}
+	
+
+	sunriseLabel.setIcon(ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_SUNRISE));
+	sunriseLabel.setIconTextGap(2);
+	sunsetLabel.setIcon(ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_SUNSET));
+	sunsetLabel.setIconTextGap(2);
+	
+	//Time label shall be bold and huge
+	timeLabel.setHorizontalAlignment(SwingConstants.CENTER);
+	dateLabel.setHorizontalAlignment(SwingConstants.CENTER);    	
     	
-    	htmlPane.setContentType("text/html");
-        if (Daten.isEfaFlatLafActive()) {
-            htmlPane.putClientProperty("html.disable", Boolean.TRUE); 
-        	htmlPane.setFont(htmlPane.getFont().deriveFont(Font.PLAIN,14));
-        }
-        htmlPane.setEditable(false);
-        htmlPane.setBorder(null);
-
-        // show a hand cursor on sunrise/sunset/weather widget only if an html popup is set up.
-        if (getHtmlPopupUrl() != null && getHtmlPopupUrl().length() > 0) {
-        	htmlPane.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        }
-
-
-        // following hyperlinks is automatically "disabled" (if no HyperlinkListener is taking care of it)
-        // But we also need to disable submiting of form data:
-        ((HTMLEditorKit)htmlPane.getEditorKit()).setAutoFormSubmission(false);
-
-        // HTML-Popup
-        htmlPane.addMouseListener(new MouseAdapter() {
-            public void mouseClicked(MouseEvent e) {
-                if (getHtmlPopupUrl() != null && getHtmlPopupUrl().length() > 0) {
-                    new HtmlPopupDialog(getDescription(),
-                            getHtmlPopupUrl(),
-                            getPopupExecCommand(),
-                            getHtmlPopupWidth(), getHtmlPopupHeight(), 60).showDialog();
-                }
-            }
-        });
-
-        try {
-            htmlUpdater = new HTMLUpdater(getUpdateInterval());
-            htmlUpdater.start();
-        } catch(NoClassDefFoundError e) {
-            Logger.log(Logger.WARNING, Logger.MSG_WARN_WEATHERUPDATEFAILED, 
-                    International.getString("Wetterinformationen können erst nach Neustart angezeigt werden."));
+    	try {
+            panelUpdater = new PanelUpdater(mainPanel);
+            panelUpdater.start();
+            
+        } catch(Exception e) {
+            Logger.log(e);
         }
     }
 
     public JComponent getComponent() {
-        return htmlPane;
+        return mainPanel;
     }
 
     public void stop() {
         try {
         	// stopHTML also lets the thread die, and efaBths is responsible to set up a new thread.
-            htmlUpdater.stopHTML();
+            panelUpdater.stopHTML();
         } catch(Exception eignore) {
             // nothing to do, might not be initialized
         }
@@ -455,337 +297,90 @@ public class MeteoAstroWidget extends Widget {
         }
     }
 
-    class HTMLUpdater extends Thread {
+    class PanelUpdater extends Thread {
 
         volatile boolean keepRunning = true;
         private boolean sunriseError = false;
-        private boolean weatherError = false;
-        private int weatherSlowDownUpdateFactor = 1;
-        private int updateIntervalInSeconds = 24*3600;
+        private JPanel panel;
 
-        public HTMLUpdater(int updateIntervalInSeconds) {
-            this.updateIntervalInSeconds = updateIntervalInSeconds;
+        public PanelUpdater(JPanel thePanel) {
+
+        	this.panel=thePanel;
+        
         }
 
+        /*
+         * Gets the remaining seconds until the next full minute.
+         * This sets the update interval.
+         */
+        private long getMilliSecondsToFullMinute() {
+            LocalDateTime start = LocalDateTime.now();
+            // Hour + 1, set Minute and Second to 00
+            LocalDateTime end = start.plusMinutes(1).truncatedTo(ChronoUnit.MINUTES);
+
+            // Get Duration
+            Duration duration = Duration.between(start, end);
+            long millis = duration.toMillis();
+            return millis;
+        };
+        
         public void run() {
-        	this.setName("MeteoAstroWidget.HTMLUpdater");
-            String bgcolor = EfaUtil.getColor(myPanel.getBackground());
-
-            int weatherCnt = 0;
+        	this.setName("MeteoAstroWidget.PanelUpdater");
+            String clockValue=null;
+            String dateValue=null;
+            String sunriseValue=null;
+            String sunsetValue=null;
+            
             while (keepRunning) {
-                Vector<Cell> data = new Vector<Cell>();
-                int row = 1;
-                int column = 1;
+            	
+            	try {
+	            	clockValue= (isShowClock() ? EfaUtil.getCurrentTimeStampHHMM().toString() : null);
+	            	dateValue=(isShowDate() ? EfaUtil.getCurrentTimeStampInDateFormat().toString() : null);
+	
+	                // Sunrise and Sunset
+	                if (isShowSunrise()) {
+	                    try {
+	                        String sun[] = SunRiseSet.getSunRiseSet(getLatitude(), getLongitude());
+	                        sunriseValue = sun[0];
+	                        sunsetValue = sun[1];
+	                    } catch (NoClassDefFoundError e) {
+	                        sunriseValue = "--:--";
+	                        sunsetValue = "--:--";
+	                        if (!sunriseError) {
+	                            Logger.log(Logger.WARNING, Logger.MSG_CORE_MISSINGPLUGIN,
+	                                    International.getString("Fehlendes Plugin") + ": " + Plugins.PLUGIN_JSUNTIMES + " - "
+	                                    + International.getString("Die Sonnenaufgangs- und Untergangszeiten können nicht angezeigt werden.") + " "
+	                                    + International.getMessage("Bitte lade das fehlende Plugin unter der Adresse {url} herunter.", Daten.pluginWebpage));
+	                        }
+	                        sunriseError = true;
+	                    } catch (Exception ee) {
+	                        Logger.logdebug(ee);
+	                        sunriseValue = "--:--";
+	                        sunsetValue = "--:--";
+	                    }
+	                }
+	            	
+	            	//Use invokelater as swing threadsafe ways
+	            	SwingUtilities.invokeLater(new UpdateClockAstroRunner(this.panel, clockValue, dateValue, sunriseValue, sunsetValue));
+	
+	            	
+	            	//wait until next full minute plus one sec. this is more accurate than just waiting 60.000 msec
+	            	//from a random offset.
+	           		long waitTime=getMilliSecondsToFullMinute()+1000;
+	                Thread.sleep(waitTime);
 
-                // Weather
-                if (isShowWeather() && (++weatherCnt % weatherSlowDownUpdateFactor) == 0) {
-                    long availBytes = 0;
-                    String url = null;
-                    InputStream in = null;
-                    URLConnection conn = null;
-                    XMLReader parser = null;
-                    try {
-                        WeatherXmlResponse response = null;
-                        if (cachedResponse != null &&
-                            (System.currentTimeMillis() - lastResponseTime < 3600*1000 ||
-                             EfaUtil.getCurrentHour() >= 20 || EfaUtil.getCurrentHour() <= 5)) {
-                            // use cached response for at least one hour, and always during night
-                            response = cachedResponse;
-                        } else {
-                            switch (weatherApi) {
-                                case google:
-                                    url = GOOGLE_API + "?weather=" + getWeatherLocation() + "&hl=" + International.getLanguageID() + "&ie=utf-8&oe=utf-8";
-                                    conn = new URL(url).openConnection();
-                                    conn.connect();
-                                    in = conn.getInputStream();
-                                    availBytes = in.available();
-                                    in.mark(1024 * 1024);
-                                    parser = EfaUtil.getXMLReader();
-                                    response = new GoogleXmlResponse();
-                                    parser.setContentHandler(response);
-                                    parser.parse(new InputSource(in));
-                                    break;
-                                case yahoo:
-                                    /* old Yahoo API (EOL)
-                                    url = YAHOO_API + "?w=" + getWeatherLocation() + "&u="
-                                            + (getTemperatureScale().equals(TEMP_CELSIUS) ? "c" : "f");
-                                    */
-                                    /* old Yahoo API (EOL)
-                                    url = YAHOO_API2 + "?q=select%20*%20from%20weather.forecast%20where%20woeid%3D%22" + getWeatherLocation() + "%22" +
-                                            "%20and%20u%3D%22" + (getTemperatureScale().equals(TEMP_CELSIUS) ? "c" : "f") + "%22"
-                                            + "&format=xml&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys";
-                                    */
-                                    url = YAHOO_API3 + "?location=" + getWeatherLocation() + "&u=" + (getTemperatureScale().equals(TEMP_CELSIUS) ? "c" : "f");
-                                    if (Logger.isTraceOn(Logger.TT_WIDGETS, 5)) {
-                                        Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_METEOWIDGET, "Weather Request: " + url);
-                                    }
-                                    OAuthConsumer consumer = new DefaultOAuthConsumer("dj0yJmk9TDh2Q05KY0dIZUxmJmQ9WVdrOVZVRnZNbVpRTkRnbWNHbzlNQS0tJnM9Y29uc3VtZXJzZWNyZXQmeD1iNA--", "07b26654a24b6ada504616a50b27bff74a08975e");
-                                    conn = new URL(url).openConnection();
-                                    consumer.sign((HttpsURLConnection) conn);
-                                    conn.connect();
-                                    in = conn.getInputStream();
-                                    availBytes = in.available();
-                                    in.mark(1024 * 1024);
-                                    parser = EfaUtil.getXMLReader();
-                                    response = new YahooXmlResponse();
-                                    parser.setContentHandler(response);
-                                    parser.parse(new InputSource(in));
-                                    break;
-                            }
-                            cachedResponse = response;
-                            lastResponseTime = System.currentTimeMillis();
-                        }
-
-                        if (getLayout().equals(LAYOUT_HORIZONTAL)) {
-                            if (isShowWeatherLocation()) {
-                                data.add(new Cell(column++, row, response.city + ":", true));
-                            }
-                            if (isShowCurrentWeatherText() || isShowCurrentWeatherWind()) {
-                                data.add(new Cell(column++, row,
-                                        (isShowCurrentWeatherText() ? response.currentCondition : "") +
-                                        (isShowCurrentWeatherText() && isShowCurrentWeatherWind() ? "<br>" : "") +
-                                        (isShowCurrentWeatherWind() ? response.currentWind : "")
-                                        , false));
-                            }
-                            if (isShowCurrentWeatherImage()) {
-                                data.add(new Cell(column++, row, "<img src=\"" + response.currentImg + "\">", false));
-                            }
-                            if (isShowCurrentWeatherTemperature()) {
-                                data.add(new Cell(column++, row, "<big><b>" + (getTemperatureScale().equals(TEMP_CELSIUS) ? response.currentTempC + " °C" : response.currentTempF + " °F") + "</b></big>", false));
-                            }
-                            if (isShowForecastWeatherText()) {
-                                data.add(new Cell(column++, row, International.getMessage("Vorhersage für {day}", checkIfToday(response.forecastDay)) + ":<br>"
-                                        + response.forecastCondifion, false));
-                            }
-                            if (isShowForecastWeatherImage()) {
-                                data.add(new Cell(column++, row, "<img src=\"" + response.forecastIcon + "\">", false));
-                            }
-                            if (isShowForecastWeatherTemperature()) {
-                                data.add(new Cell(column++, row, International.getString("Min") + ": " + response.forecastLow + " °" + "<br>"
-                                        + International.getString("Max") + ": " + response.forecastHigh + " °", false));
-                            }
-                        }
-
-                        if (getLayout().equals(LAYOUT_VERTICAL)) {
-                            if (isShowWeatherLocation()) {
-                                data.add(new Cell(column, row++, response.city + ":", true));
-                            }
-                            if (isShowCurrentWeatherText() || isShowCurrentWeatherWind()) {
-                                data.add(new Cell(column, row++,
-                                        (isShowCurrentWeatherText() ? response.currentCondition : "") +
-                                        (isShowCurrentWeatherText() && isShowCurrentWeatherWind() ? "<br>" : "") +
-                                        (isShowCurrentWeatherWind() ? response.currentWind : "")
-                                        , true));
-                            }
-                            if (isShowCurrentWeatherImage()) {
-                                data.add(new Cell(column, row++, "<img src=\"" + response.currentImg + "\">", true));
-                            }
-                            if (isShowCurrentWeatherTemperature()) {
-                                data.add(new Cell(column, row++, "<big><b>" + (getTemperatureScale().equals(TEMP_CELSIUS) ? response.currentTempC + " °C" : response.currentTempF + " °F") + "</b></big>", true));
-                            }
-                            if (isShowForecastWeatherText()) {
-                                data.add(new Cell(column, row++, International.getMessage("Vorhersage für {day}", checkIfToday(response.forecastDay)) + ":<br>"
-                                        + response.forecastCondifion, true));
-                            }
-                            if (isShowForecastWeatherImage()) {
-                                data.add(new Cell(column, row++, "<img src=\"" + response.forecastIcon + "\">", true));
-                            }
-                            if (isShowForecastWeatherTemperature()) {
-                                data.add(new Cell(column, row++, International.getString("Min") + ": " + response.forecastLow + " °" + "<br>"
-                                        + International.getString("Max") + ": " + response.forecastHigh + " °", true));
-                            }
-                        }
-
-                        if (getLayout().equals(LAYOUT_COMPACT)) {
-                            if (isShowWeatherLocation()) {
-                                data.add(new Cell(column, row++, response.city + ":", true));
-                            }
-                            if ((isShowCurrentWeatherText() || isShowForecastWeatherText())) {
-                                data.add(new Cell(column++, row,
-                                        (isShowCurrentWeatherText() ? response.currentCondition : "") +
-                                        (isShowCurrentWeatherText() && isShowCurrentWeatherWind() ? "<br>" : "") +
-                                        (isShowCurrentWeatherWind() ? response.currentWind : "")
-                                        , false));
-                            }
-                            if (isShowCurrentWeatherImage()) {
-                                data.add(new Cell(column++, row, "<img src=\"" + response.currentImg + "\">", false));
-                            }
-                            if (isShowCurrentWeatherTemperature()) {
-                                data.add(new Cell(column++, row, "<big><b>" + (getTemperatureScale().equals(TEMP_CELSIUS) ? response.currentTempC + " °C" : response.currentTempF + " °F") + "</b></big>", false));
-                            }
-
-                            if (isShowCurrentWeatherText() || isShowForecastWeatherText()) {
-                                row++;
-                                column = 1;
-                            }
-
-                            if (isShowForecastWeatherText()) {
-                                data.add(new Cell(column++, row, International.getMessage("Vorhersage für {day}", checkIfToday(response.forecastDay)) + ":<br>"
-                                        + response.forecastCondifion, false));
-                            }
-                            if (isShowForecastWeatherImage()) {
-                                data.add(new Cell(column++, row, "<img src=\"" + response.forecastIcon + "\">", false));
-                            }
-                            if (isShowForecastWeatherTemperature()) {
-                                data.add(new Cell(column++, row, International.getString("Min") + ": " + response.forecastLow + " °" + "<br>"
-                                        + International.getString("Max") + ": " + response.forecastHigh + " °", false));
-                            }
-
-                            if (isShowCurrentWeatherWind() && !isShowCurrentWeatherText() && !isShowForecastWeatherText()) {
-                                row++;
-                                column = 1;
-                                data.add(new Cell(column, row++, response.currentWind, true));
-                            }
-                        }
-                        //if (weatherApi == WeatherApi.yahoo) {
-                        //    data.add(new Cell(0, row++, "<font size=\"1\">Yahoo! Weather.</font>", false, true));
-                        //}
-
-                        weatherError = false;
-                    } catch (Exception e) {
-                        String firstResultLine = null;
-                        try {
-                            in.reset();
-                            BufferedReader buf = new BufferedReader(new InputStreamReader(in));
-                            firstResultLine = buf.readLine();
-                        } catch (Exception eignore) {
-                        }
-                        // log as WARNING for first weatherError; log as DEBUG for every next weatherError
-                        String errMsg = e.toString();
-                        if (availBytes == 0) {
-                            errMsg = "no data received from " + url;
-                        }
-                        if (firstResultLine != null && firstResultLine.length() > 0) {
-                            if (firstResultLine.length() > 1000) {
-                                firstResultLine = firstResultLine.substring(0, 1000);
-                            }
-                            if (firstResultLine.indexOf("We're sorry") > 0) {
-                                weatherSlowDownUpdateFactor = 3;
-                                weatherCnt = 0;
-                            }
-                            errMsg = "invalid response received from " + url + ": " + firstResultLine;
-                        }
-                        Logger.log( (weatherError ? Logger.DEBUG : Logger.WARNING), Logger.MSG_WARN_WEATHERUPDATEFAILED,
-                                International.getString("Wetterdaten konnten nicht geladen werden") + ": " + errMsg);
-                        Logger.logdebug(e);
-                        weatherError = true;
-                    } catch (NoClassDefFoundError e) {
-                        if (!weatherError) {
-                            Logger.log(Logger.WARNING, Logger.MSG_CORE_MISSINGPLUGIN,
-                                    International.getString("Fehlendes Plugin") + ": " + Plugins.PLUGIN_WEATHER + " - "
-                                    + International.getString("Die Wetterdaten können nicht angezeigt werden.") + " "
-                                    + International.getMessage("Bitte lade das fehlende Plugin unter der Adresse {url} herunter.", Daten.pluginWebpage));
-                        }
-                        weatherError = true;
-                    }
+            	} catch (InterruptedException e) {
+                	//This is when the thread gets interrupted when it is sleeping.
+                	EfaUtil.foo();            
+                } catch (Exception e) {
+                	Throwable t = e.getCause();
+                	if (t.getClass().getName().equalsIgnoreCase("java.lang.InterruptedException")) {
+                		EfaUtil.foo();
+                	} else {
+                		Logger.logdebug(e);
+                	}
                 }
-
-                // Sunrise and Sunset
-                if (isShowSunrise()) {
-                    String sunriseTime;
-                    String sunsetTime;
-                    try {
-                        String sun[] = SunRiseSet.getSunRiseSet(getLatitude(), getLongitude());
-                        sunriseTime = sun[0];
-                        sunsetTime = sun[1];
-                    } catch (NoClassDefFoundError e) {
-                        sunriseTime = "--:--";
-                        sunsetTime = "--:--";
-                        if (!sunriseError) {
-                            Logger.log(Logger.WARNING, Logger.MSG_CORE_MISSINGPLUGIN,
-                                    International.getString("Fehlendes Plugin") + ": " + Plugins.PLUGIN_JSUNTIMES + " - "
-                                    + International.getString("Die Sonnenaufgangs- und Untergangszeiten können nicht angezeigt werden.") + " "
-                                    + International.getMessage("Bitte lade das fehlende Plugin unter der Adresse {url} herunter.", Daten.pluginWebpage));
-                        }
-                        sunriseError = true;
-                    } catch (Exception ee) {
-                        Logger.logdebug(ee);
-                        sunriseTime = "--:--";
-                        sunsetTime = "--:--";
-                    }
-                    if (getLayout().equals(LAYOUT_HORIZONTAL) || getLayout().equals(LAYOUT_VERTICAL)) {
-                        data.add(new Cell(column++, row, "<img src=\"" + saveImage("sunrise.gif", "gif") + "\">&nbsp;" + sunriseTime + "<br>"
-                                + "<img src=\"" + saveImage("sunset.gif", "gif") + "\">&nbsp;" + sunsetTime, getLayout().equals(LAYOUT_VERTICAL)));
-                    }
-                    if (getLayout().equals(LAYOUT_COMPACT)) {
-                        if (column > 1) {
-                            row++;
-                            column = 1;
-                        }
-                        data.add(new Cell(column++, row, "<img src=\"" + saveImage("sunrise.gif", "gif") + "\">&nbsp;" + sunriseTime + "&nbsp;&nbsp;"
-                                + "<img src=\"" + saveImage("sunset.gif", "gif") + "\">&nbsp;" + sunsetTime, true));
-                    }
-                }
-
-                try {
-                    int maxCols = 0;
-                    for (int i=0; i<data.size(); i++) {
-                        if (data.get(i).col > maxCols) {
-                            maxCols = data.get(i).col;
-                        }
-                    }
-
-                    StringBuffer htmlDoc = new StringBuffer();
-                    
-                    htmlDoc.append("<html>\n<body bgcolor=\"#" + bgcolor + "\">\n");
-                    htmlDoc.append("<table align=\"center\" cellspacing=\"" + (getLayout().equals(LAYOUT_COMPACT) ? 0 : 8) + "\">\n");
-
-                    row = 0;
-                    column = 0;
-                    for (int i=0; i<data.size(); i++) {
-                        Cell cell = data.get(i);
-                        if (cell.row > row) {
-                            if (row > 0) {
-                                htmlDoc.append("</tr>\n");
-                            }
-                            htmlDoc.append("<tr>");
-                            row = cell.row;
-                        }
-                        boolean lastCellInRow = (i + 1 == data.size() || data.get(i + 1).row > row);
-                        int colspan = (lastCellInRow && cell.col < maxCols ? 1 + maxCols - cell.col : 1);
-                        htmlDoc.append("<td colspan=\"" + colspan + 
-                                "\" align=\"" + (cell.alignCenter ? "center" : (cell.alignRight ? "right" : "left"))  + "\">" +
-                                cell.content + "</td>");
-                    }
-                    htmlDoc.append("</tr>\n");
-
-                    htmlDoc.append("</table>\n");
-                    
-                    if (getIncludeHtmlText() != null && getIncludeHtmlText().length() > 0) {
-                        htmlDoc.append(getIncludeHtmlText());
-                    }
-                    if (getIncludeHtmlPage() != null && getIncludeHtmlPage().length() > 0) {
-                        String includeText = EfaUtil.getBodyFromURL(getIncludeHtmlPage());
-                        if (includeText != null && includeText.trim().length() > 0) {
-                            htmlDoc.append(includeText.trim());
-                        }
-                    }
-                    
-                    htmlDoc.append("</body>\n</html>\n");
-
-                    if (Logger.isTraceOn(Logger.TT_WIDGETS, 9)) {
-                        BufferedWriter f = new BufferedWriter(new FileWriter("/tmp/efa_widget.html"));
-                        f.write(htmlDoc.toString());
-                        f.close();
-                    }
-                    // System.out.println(htmlDoc.toString());
-                    // the simple way is not thread safe and can lead to sporadic exceptions in Swing main thread
-                    //htmlPane.setText(htmlDoc.toString());
-
-                    // Use Swing thread-safe update method instead
-                    SwingUtilities.invokeLater(new UpdateHtmlMeteoPaneRunner(htmlPane,htmlDoc.toString()));
-                } 
-                catch(Exception e) {
-                    Logger.logdebug(e);
-                }
-
-                try {
-                    Thread.sleep(Math.max(updateIntervalInSeconds, 3600) * 1000);
-                } catch (InterruptedException e) {
-                	EfaUtil.foo();
-                }catch(Exception e) {
-                    Logger.logdebug(e);
-                }
+	                
             }
         }
         
@@ -794,248 +389,58 @@ public class MeteoAstroWidget extends Widget {
             interrupt(); // wake up thread
         }
 
-        private String saveImage(String image, String format) {
-            String fname = Daten.efaTmpDirectory + image;
-            if (!EfaUtil.canOpenFile(fname)) {
-                try {
-                    BufferedImage img = javax.imageio.ImageIO.read(MeteoAstroWidget.class.getResource(Daten.IMAGEPATH + image));
-                    javax.imageio.ImageIO.write(img, format, new File(fname));
-                } catch (Exception e) {
-                    Logger.logdebug(e);
-                }
-            }
-            if (Daten.fileSep.equals("\\")) {
-                fname = "/" + EfaUtil.replace(fname, "\\", "/", true);
-            }
-            return "file://" + fname;
-        }
-
-        // check whether the day returned from Google is today
-        private String checkIfToday(String day) {
-            GregorianCalendar cal = new GregorianCalendar();
-            switch(cal.get(Calendar.DAY_OF_WEEK)) {
-                case Calendar.MONDAY:
-                    if (day.equals("Mo.") || day.equals("Mon")) {
-                        return International.getString("heute");
-                    }
-                case Calendar.TUESDAY:
-                    if (day.equals("Di.") || day.equals("Tue")) {
-                        return International.getString("heute");
-                    }
-                case Calendar.WEDNESDAY:
-                    if (day.equals("Mi.") || day.equals("Wed")) {
-                        return International.getString("heute");
-                    }
-                case Calendar.THURSDAY:
-                    if (day.equals("Do.") || day.equals("Thu")) {
-                        return International.getString("heute");
-                    }
-                case Calendar.FRIDAY:
-                    if (day.equals("Fr.") || day.equals("Fri")) {
-                        return International.getString("heute");
-                    }
-                case Calendar.SATURDAY:
-                    if (day.equals("Sa.") || day.equals("Sat")) {
-                        return International.getString("heute");
-                    }
-                case Calendar.SUNDAY:
-                    if (day.equals("So.") || day.equals("Sun")) {
-                        return International.getString("heute");
-                    }
-            }
-            return day;
-        }
-
     }
 
-    class Cell {
-        public int col,row;
-        public String content;
-        boolean alignCenter;
-        boolean alignRight;
-        public Cell(int col, int row, String content, boolean alignCenter) {
-            this.col = col;
-            this.row = row;
-            this.content = content;
-            this.alignCenter = alignCenter;
-            this.alignRight = false;
-        }
-        public Cell(int col, int row, String content, boolean alignCenter, boolean alignRight) {
-            this.col = col;
-            this.row = row;
-            this.content = content;
-            this.alignCenter = alignCenter;
-            this.alignRight = alignRight;
-        }
-    }
-
-    class WeatherXmlResponse extends DefaultHandler {
-
-        int forecastConditions = 0;
-        String city;
-        String currentCondition;
-        String currentImg;
-        String currentWind;
-        String currentTempF;
-        String currentTempC;
-        String forecastDay;
-        String forecastLow;
-        String forecastHigh;
-        String forecastIcon;
-        String forecastCondifion;
-
-    }
-
-    class GoogleXmlResponse extends WeatherXmlResponse {
-
-        Stack<String> elementStack = new Stack<String>();
-
-        private String getValue(Attributes atts) {
-            String s = atts.getValue("data");
-            return EfaUtil.replace(s, " ", "&nbsp;", true);
-        }
-
-        public void startElement(String uri, String localName, String qname, Attributes atts) {
-            String parentElement = (!elementStack.isEmpty() ? elementStack.peek() : null);
-            elementStack.push(localName);
-
-            if (parentElement != null && parentElement.equals("forecast_information")) {
-                if (localName.equals("city")) {
-                    city = getValue(atts);
-                }
-            }
-
-            if (parentElement != null && parentElement.equals("current_conditions")) {
-                if (localName.equals("condition")) {
-                    currentCondition = getValue(atts);
-                }
-                if (localName.equals("temp_f")) {
-                    currentTempF = getValue(atts);
-                }
-                if (localName.equals("temp_c")) {
-                    currentTempC = getValue(atts);
-                }
-                if (localName.equals("icon")) {
-                    currentImg = GOOGLE_URL + getValue(atts);
-                }
-                if (localName.equals("wind_condition")) {
-                    currentWind = getValue(atts);
-                }
-            }
-
-            if (localName.equals("forecast_conditions")) {
-                forecastConditions++;
-            }
-
-            if (parentElement != null && parentElement.equals("forecast_conditions") && forecastConditions == 1) {
-                if (localName.equals("day_of_week")) {
-                    forecastDay = getValue(atts);
-                }
-                if (localName.equals("low")) {
-                    forecastLow = getValue(atts);
-                }
-                if (localName.equals("high")) {
-                    forecastHigh = getValue(atts);
-                }
-                if (localName.equals("icon")) {
-                    forecastIcon = GOOGLE_URL + getValue(atts);
-                }
-                if (localName.equals("condition")) {
-                    forecastCondifion = getValue(atts);
-                }
-            }
-
-        }
-
-        public void endElement(String uri, String localName, String qname) {
-            elementStack.pop();
-        }
-    }
-
-    class YahooXmlResponse extends WeatherXmlResponse {
-
-        String speedUnit = "km/h";
-
-        public void startElement(String uri, String localName, String qname, Attributes atts) {
-            if (qname.equals("yweather:location")) {
-                city = atts.getValue("city");
-            }
-            if (qname.equals("yweather:units")) {
-                speedUnit = atts.getValue("speed");
-            }
-            if (qname.equals("yweather:wind")) {
-                String direction = "";
-                try {
-                    int dir = Integer.parseInt(atts.getValue("direction"));
-                    for (int angle = 22; angle <= 22+360; angle += 45) {
-                        if (dir < angle) {
-                            switch(angle) {
-                                case 22:  
-                                    direction = International.getString("N", "direction"); break;
-                                case 67:  
-                                    direction = International.getString("NO", "direction"); break;
-                                case 112: 
-                                    direction = International.getString("O", "direction"); break;
-                                case 157: 
-                                    direction = International.getString("SO", "direction"); break;
-                                case 202: 
-                                    direction = International.getString("S", "direction"); break;
-                                case 247: 
-                                    direction = International.getString("SW", "direction"); break;
-                                case 292: 
-                                    direction = International.getString("W", "direction"); break;
-                                case 337: 
-                                    direction = International.getString("NW", "direction"); break;
-                                case 382: 
-                                    direction = International.getString("N", "direction"); break;
-                            }
-                            break;
-                        }
-                    }
-                } catch(Exception eignore) {}
-                String speed = atts.getValue("speed");
-                if (speed != null && speed.indexOf(".") > 0) {
-                    speed = speed.substring(0, speed.indexOf("."));
-                }
-                currentWind = International.getString("Wind") + ": " + 
-                        direction + " " + speed + " " + speedUnit;
-            }
-            if (qname.equals("yweather:condition")) {
-                currentCondition = atts.getValue("text");
-                if (getTemperatureScale().equals(TEMP_CELSIUS)) {
-                    currentTempC = atts.getValue("temp");
-                } else {
-                    currentTempF = atts.getValue("temp");
-                }
-                currentImg = "http://l.yimg.com/a/i/us/we/52/" + atts.getValue("code") + ".gif";
-            }
-
-            if (qname.equals("yweather:forecast") && ++forecastConditions == 1) {
-                forecastDay = atts.getValue("day");
-                forecastLow = atts.getValue("low");
-                forecastHigh = atts.getValue("high");
-                forecastIcon = "http://l.yimg.com/a/i/us/we/52/" + atts.getValue("code") + ".gif";
-                forecastCondifion = atts.getValue("text");
-
-            }
-
-        }
-
-    }
-
-    private class UpdateHtmlMeteoPaneRunner implements Runnable {
+    private class UpdateClockAstroRunner implements Runnable {
         
-    	private JEditorPane htmlPane=null;
-    	private String value = null;
+    	private JPanel panel=null;
+    	private String clockValue = null;
+    	private String dateValue = null;
+    	private String sunriseValue = null;
+    	private String sunsetValue = null;
     	
-    	public UpdateHtmlMeteoPaneRunner(JEditorPane theHtmlPane, String data) {
-    		htmlPane = theHtmlPane;
-    		value = data;
+    	public UpdateClockAstroRunner(JPanel targetPanel, String sclockValue, String sdateValue, String ssunriseValue, String ssunsetValue) {
+    		panel = targetPanel;
+    		this.clockValue = sclockValue;
+    		this.dateValue = sdateValue;
+    		this.sunriseValue = ssunriseValue;
+    		this.sunsetValue = ssunsetValue;
     	}
     	
     	public void run() {
-	        	htmlPane.setText(value);
-	      }
-	}
+    		try {
+	    		timeLabel.setVisible(clockValue!=null);
+	    		dateLabel.setVisible(dateValue!=null);
+	    		sunPanel.setVisible(sunriseValue!=null);
+	    		
+	    		timeLabel.setText(clockValue);
+	    		dateLabel.setText(dateValue);
+	    		sunriseLabel.setText(sunriseValue);
+	    		sunsetLabel.setText(sunsetValue);
+	    		
+	    		timeLabel.setFont(timeLabel.getFont().deriveFont(Font.BOLD));
+	    		if (Daten.efaConfig != null) {
+	    			if (dateValue==null) {
+	    				timeLabel.setFont(timeLabel.getFont().deriveFont((float)Daten.efaConfig.getValueEfaDirekt_BthsFontSize()+12));
+	    			} else {
+	    				timeLabel.setFont(timeLabel.getFont().deriveFont((float)Daten.efaConfig.getValueEfaDirekt_BthsFontSize()+6));
+	    			}
+	    			if (clockValue==null) {
+	    				dateLabel.setFont(dateLabel.getFont().deriveFont((float)Daten.efaConfig.getValueEfaDirekt_BthsFontSize()+12));
+	    				dateLabel.setFont(dateLabel.getFont().deriveFont(Font.BOLD));
+	    			} else {
+	    				dateLabel.setFont(dateLabel.getFont().deriveFont((float)Daten.efaConfig.getValueEfaDirekt_BthsFontSize()));
+	    				dateLabel.setFont(dateLabel.getFont().deriveFont(Font.PLAIN));
+	    			}
+
+	    			mainPanel.setFont(mainPanel.getFont().deriveFont((float)Daten.efaConfig.getValueEfaDirekt_BthsFontSize()));
+	    		}
+	
+	    		panel.repaint();
+    		} catch (Exception e){
+    			Logger.log(e);
+    		}
+    	}
+    }
 
 }

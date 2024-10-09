@@ -27,16 +27,22 @@ public abstract class Widget implements IWidget {
     public static final String PARAM_POSITION       = "Position";
     public static final String PARAM_UPDATEINTERVAL = "UpdateInterval";
     public static final String NOT_STORED_ITEM_PREFIX ="_";
-    private static Color hintBackgroundColor= new Color(171,206,241);
     
     String name;
     String description;
+    String parameterPrefix;
     boolean ongui;
     Vector<IItemType> parameters = new Vector<IItemType>();
     JPanel myPanel;
     
-    public Widget(String name, String description, boolean ongui) {
+    public Widget(String name, String description, boolean ongui, boolean showRefreshInterval) {
+    	this(name, name, description, ongui, showRefreshInterval);
+    }
+    
+   
+    public Widget(String name, String parameterPrefix, String description, boolean ongui, boolean showRefreshInterval) {
         this.name = name;
+        this.parameterPrefix = parameterPrefix;
         this.description = description;
         this.ongui = ongui;
 
@@ -59,16 +65,18 @@ public abstract class Widget implements IWidget {
                     },
                     IItemType.TYPE_PUBLIC, "",
                     International.getString("Position")));
-
-            addParameterInternal(new ItemTypeInteger(PARAM_UPDATEINTERVAL, 3600, 1, Integer.MAX_VALUE, false,
-                    IItemType.TYPE_PUBLIC, "",
-                    International.getString("Aktualisierungsintervall")
-                    + " (s)"));
+            
+            if (showRefreshInterval) {
+	            addParameterInternal(new ItemTypeInteger(PARAM_UPDATEINTERVAL, 3600, 1, Integer.MAX_VALUE, false,
+	                    IItemType.TYPE_PUBLIC, "",
+	                    International.getString("Aktualisierungsintervall")
+	                    + " (s)"));
+            }
         }
     }
 
     public String getParameterName(String internalName) {
-        return "Widget" + this.name + internalName;
+        return "Widget" + this.parameterPrefix + internalName;
     }
 
     void addParameterInternal(IItemType p) {
