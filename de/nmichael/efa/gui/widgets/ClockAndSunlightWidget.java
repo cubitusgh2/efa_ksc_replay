@@ -46,7 +46,7 @@ import de.nmichael.efa.util.Logger;
 import de.nmichael.efa.util.SunRiseSet;
 import de.nmichael.efa.util.TMJ;  
 
-public class MeteoAstroWidget extends Widget {
+public class ClockAndSunlightWidget extends Widget {
 
     static final String PARAM_SHOWCOCK         = "ShowClock";
     static final String PARAM_SHOWDATE         = "ShowDate";
@@ -62,7 +62,6 @@ public class MeteoAstroWidget extends Widget {
     static final String PARAM_WARNTEXTDARKSOON      = "WarnTextDarkSoon";
     static final String PARAM_WARNTEXTDARKNOW       = "WarnTextDarkNow";
     
-    static final String LAYOUT_COMPACT            = "COMPACT";
     static final String LAYOUT_HORIZONTAL         = "HORIZONTAL";
     static final String LAYOUT_VERTICAL           = "VERTICAL";
 
@@ -76,17 +75,9 @@ public class MeteoAstroWidget extends Widget {
     private JLabel sunsetLabel = new JLabel();
     private PanelUpdater panelUpdater;
 
-    public MeteoAstroWidget() {
-        super(International.getString("Uhr und Astro"), "MeteoAstro", International.getString("Uhr und Astro-Widget"), true,false);
+    public ClockAndSunlightWidget() {
+        super(International.getString("Uhr und Tageslicht"), "MeteoAstro", International.getString("Uhr und Tageslicht"), true,false);
 
-        addParameterInternal(new ItemTypeBoolean(PARAM_SHOWCOCK, true,
-                IItemType.TYPE_PUBLIC, "",
-                International.getString("Uhrzeit anzeigen")));
-        
-        addParameterInternal(new ItemTypeBoolean(PARAM_SHOWDATE, true,
-                IItemType.TYPE_PUBLIC, "",
-                International.getString("Datum anzeigen")));
-        
         addParameterInternal(new ItemTypeStringList(PARAM_LAYOUT, LAYOUT_HORIZONTAL,
                 new String[] { LAYOUT_HORIZONTAL, LAYOUT_VERTICAL },
                 new String[] { International.getString("horizontal"),
@@ -94,6 +85,14 @@ public class MeteoAstroWidget extends Widget {
                 },
                 IItemType.TYPE_PUBLIC, "",
                 International.getString("Layout")));
+        
+        addParameterInternal(new ItemTypeBoolean(PARAM_SHOWCOCK, true,
+                IItemType.TYPE_PUBLIC, "",
+                International.getString("Uhrzeit anzeigen")));
+        
+        addParameterInternal(new ItemTypeBoolean(PARAM_SHOWDATE, false,
+                IItemType.TYPE_PUBLIC, "",
+                International.getString("Datum anzeigen")));
         
         addHeader("WidgetMeteoSunrise",IItemType.TYPE_PUBLIC, "", International.getString("Sonnenaufgang/Sonnenuntergang"), 3);        
         addParameterInternal(new ItemTypeBoolean(PARAM_SHOWSUNRISE, true,
@@ -194,42 +193,56 @@ public class MeteoAstroWidget extends Widget {
 
 	mainPanel = new JPanel();
 	mainPanel.setLayout(new GridBagLayout());
-	
 	sunPanel.setLayout(new GridBagLayout());
+	sunPanel.setOpaque(false);
 	Boolean isHorzLayout=getLayout().equals(LAYOUT_HORIZONTAL);
-	int sunsetX;
-	int sunsetY;
-	int sunriseAlign;
-	int sunsetAlign;
-	int sunsetInsetLeft;
-	int sunsetInsetTop;
+	
 	if (isHorzLayout) {
-		sunsetX=1;
-		sunsetY=0;
-		sunriseAlign=GridBagConstraints.EAST;
-		sunsetAlign =GridBagConstraints.WEST;
-		sunsetInsetLeft=4;
-		sunsetInsetTop=0;
+		/*      
+		     20:23     (*) 08:00
+		  20.12.2024   (o) 18:00
+		  
+		    or
+		    
+		    20:23      (*) 08:00
+		               (o) 18:00
+		    
+		    or
+		    
+		  20.12.2024   (*) 08:00
+		               (o) 18:00
+		               
+		*/
+		
+		sunPanel.add(sunriseLabel, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.EAST, GridBagConstraints.BOTH, new Insets(0,0,0,0), 0, 0));
+		sunPanel.add(sunsetLabel,  new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.EAST, GridBagConstraints.BOTH, new Insets(4,0,0,0), 0, 0)); 
+
+		if (isShowClock() && isShowDate()) {
+			//date and time in separate rows
+			if (isShowSunrise()) {
+				mainPanel.add(timeLabel,   new GridBagConstraints(0,0, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(4, 0, 0, 0), 0, 0));
+				mainPanel.add(dateLabel,   new GridBagConstraints(0,1, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 0, 4, 0), 0, 0));
+			} else {
+				mainPanel.add(timeLabel,   new GridBagConstraints(0,0, 1, 1, 0.0, 0.0, GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL, new Insets(4, 0, 0, 0), 0, 0));
+				mainPanel.add(dateLabel,   new GridBagConstraints(1,0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(4, 40, 0, 0), 0, 0));
+			}
+		} else if (isShowClock() && ! isShowDate()) {
+			//only add timelabel, span over two rows
+			mainPanel.add(timeLabel,   new GridBagConstraints(0,0, 1, 2, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(4, 0, 0, 0), 0, 0));
+		} else if (!isShowClock() && isShowDate()) {
+			mainPanel.add(dateLabel,   new GridBagConstraints(0,0, 1, 2, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(4, 0, 0, 0), 0, 0));
+		}
+
+		mainPanel.add(sunPanel,    new GridBagConstraints(1,0, 1, 2, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(4, 40, 0, 0), 0, 0));
+
 	} else {
-		sunsetX=0;
-		sunsetY=1;
-		sunriseAlign=GridBagConstraints.EAST;
-		sunsetAlign =GridBagConstraints.EAST;
-		sunsetInsetLeft=0;
-		sunsetInsetTop=4;
-	}
-	sunPanel.add(sunriseLabel, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, sunriseAlign, GridBagConstraints.HORIZONTAL, new Insets(0,0,0,4), 0, 0));
-	sunPanel.add(sunsetLabel,  new GridBagConstraints(sunsetX, sunsetY, 1, 1, 0.0, 0.0, sunsetAlign, GridBagConstraints.HORIZONTAL, new Insets(sunsetInsetTop,sunsetInsetLeft,0,0), 0, 0));    	
-	
-	mainPanel.add(timeLabel,   new GridBagConstraints(0,0, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(4, 0, 0, 0), 0, 0));
-	mainPanel.add(dateLabel,   new GridBagConstraints(0,1, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 0, 4, 0), 0, 0));
-	
-	if (isHorzLayout) {
+		sunPanel.add(sunriseLabel, new GridBagConstraints(0,0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(0,0,0,4), 0, 0));
+		sunPanel.add(sunsetLabel,  new GridBagConstraints(1,0, 1, 1, 0.0, 0.0, GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL, new Insets(0,0,0,4), 0, 0));  
+		
+		mainPanel.add(timeLabel,   new GridBagConstraints(0,0, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(4, 0, 0, 0), 0, 0));
+		mainPanel.add(dateLabel,   new GridBagConstraints(0,1, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 0, 4, 0), 0, 0));
 		mainPanel.add(sunPanel,    new GridBagConstraints(0,2, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(4, 0, 4, 0), 0, 0));
-	} else {
-		mainPanel.add(sunPanel,    new GridBagConstraints(2,0, 1, 2, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(4, 32, 4, 0), 0, 0));
 	}
-	
 
 	sunriseLabel.setIcon(ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_SUNRISE));
 	sunriseLabel.setIconTextGap(2);
@@ -256,7 +269,7 @@ public class MeteoAstroWidget extends Widget {
     public void stop() {
         try {
         	// stopHTML also lets the thread die, and efaBths is responsible to set up a new thread.
-            panelUpdater.stopHTML();
+            panelUpdater.stopRunning();
         } catch(Exception eignore) {
             // nothing to do, might not be initialized
         }
@@ -384,7 +397,7 @@ public class MeteoAstroWidget extends Widget {
             }
         }
         
-        public synchronized void stopHTML() {
+        public synchronized void stopRunning() {
             keepRunning = false;
             interrupt(); // wake up thread
         }
@@ -418,22 +431,28 @@ public class MeteoAstroWidget extends Widget {
 	    		sunriseLabel.setText(sunriseValue);
 	    		sunsetLabel.setText(sunsetValue);
 	    		
+    			mainPanel.setFont(mainPanel.getFont().deriveFont((float)Daten.efaConfig.getValueEfaDirekt_BthsFontSize()));	    		
 	    		timeLabel.setFont(timeLabel.getFont().deriveFont(Font.BOLD));
 	    		if (Daten.efaConfig != null) {
 	    			if (dateValue==null) {
-	    				timeLabel.setFont(timeLabel.getFont().deriveFont((float)Daten.efaConfig.getValueEfaDirekt_BthsFontSize()+12));
+	    				timeLabel.setFont(timeLabel.getFont().deriveFont((float)Daten.efaConfig.getValueEfaDirekt_BthsFontSize()+10));
 	    			} else {
 	    				timeLabel.setFont(timeLabel.getFont().deriveFont((float)Daten.efaConfig.getValueEfaDirekt_BthsFontSize()+6));
 	    			}
 	    			if (clockValue==null) {
-	    				dateLabel.setFont(dateLabel.getFont().deriveFont((float)Daten.efaConfig.getValueEfaDirekt_BthsFontSize()+12));
+	    				dateLabel.setFont(dateLabel.getFont().deriveFont((float)Daten.efaConfig.getValueEfaDirekt_BthsFontSize()+6));
 	    				dateLabel.setFont(dateLabel.getFont().deriveFont(Font.BOLD));
 	    			} else {
-	    				dateLabel.setFont(dateLabel.getFont().deriveFont((float)Daten.efaConfig.getValueEfaDirekt_BthsFontSize()));
+	    				if (isShowSunrise()) {
+		    				dateLabel.setFont(dateLabel.getFont().deriveFont((float)Daten.efaConfig.getValueEfaDirekt_BthsFontSize()));
+	    				} else {
+		    				dateLabel.setFont(dateLabel.getFont().deriveFont((float)Daten.efaConfig.getValueEfaDirekt_BthsFontSize()+6));
+	    				}	    					
 	    				dateLabel.setFont(dateLabel.getFont().deriveFont(Font.PLAIN));
+		    				
 	    			}
 
-	    			mainPanel.setFont(mainPanel.getFont().deriveFont((float)Daten.efaConfig.getValueEfaDirekt_BthsFontSize()));
+
 	    		}
 	
 	    		panel.repaint();

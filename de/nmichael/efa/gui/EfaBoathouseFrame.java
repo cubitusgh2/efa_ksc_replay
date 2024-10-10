@@ -87,7 +87,6 @@ import de.nmichael.efa.gui.dataedit.StatisticsListDialog;
 import de.nmichael.efa.gui.util.EfaBoathouseBackgroundTask;
 import de.nmichael.efa.gui.util.EfaMenuButton;
 import de.nmichael.efa.gui.util.EfaMouseListener;
-import de.nmichael.efa.gui.widgets.ClockMiniWidget;
 import de.nmichael.efa.gui.widgets.IWidget;
 import de.nmichael.efa.gui.widgets.NewsMiniWidget;
 import de.nmichael.efa.gui.widgets.Widget;
@@ -168,7 +167,6 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     JButton clubworkButton = new JButton();
 
     // Widgets
-    ClockMiniWidget clock;
     NewsMiniWidget news;
     Vector<IWidget> widgets;
     JPanel widgetTopPanel = new JPanel();
@@ -362,7 +360,6 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
 
     public void updateGuiElements() {
         updateGuiWidgets();
-        updateGuiClock();
         updateGuiNews();
         updateGuiButtonText();
         updateGuiLogo();
@@ -665,7 +662,6 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     private void iniGuiCenterPanel() {
         updateGuiLogo();
         iniGuiButtons();
-        updateGuiClock();
 
         centerPanel.setLayout(new GridBagLayout());
         int logoTop = (int) (10.0f * (Dialog.getFontSize() < 10 ? 12 : Dialog.getFontSize()) / Dialog.getDefaultFontSize());
@@ -715,7 +711,6 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         centerPanel.add(specialButton, new GridBagConstraints(1, 12, 1, 1, 0.0, 0.0, GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL, new Insets(10, 0, 0, 0), 0, 0));
         centerPanel.add(helpButton, new GridBagConstraints(1, 13, 1, 1, 0.0, 0.0, GridBagConstraints.SOUTH, GridBagConstraints.NONE, new Insets(10, 0, 0, 0), 0, 0));
         centerPanel.add(efaButton, new GridBagConstraints(1, 14, 1, 1, 0.0, 0.0, GridBagConstraints.SOUTH, GridBagConstraints.NONE, new Insets(10, 0, 0, 0), 0, 0));
-        centerPanel.add(clock.getGuiComponent(), new GridBagConstraints(1, 15, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(10, 10, 10, 10), 0, 0));
         
         EfaUtil.handleButtonOpaqueForLookAndFeels(startSessionButton);
         EfaUtil.handleButtonOpaqueForLookAndFeels(startSessionButtonMultiple);
@@ -928,13 +923,6 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         if (!Daten.efaConfig.getValueEfaDirekt_startMaximized() && isDisplayable()) {
             packFrame("iniButtonText()");
         }
-    }
-
-    private void updateGuiClock() {
-        if (clock == null) {
-            clock = new ClockMiniWidget();
-        }
-        clock.setVisible(Daten.efaConfig.getValueEfaDirekt_showUhr());
     }
 
     private void updateGuiNews() {

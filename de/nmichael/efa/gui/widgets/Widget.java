@@ -232,7 +232,7 @@ public abstract class Widget implements IWidget {
     public static String[] getAllWidgetClassNames() {
         return new String[] {
             HTMLWidget.class.getCanonicalName(),
-            MeteoAstroWidget.class.getCanonicalName(),
+            ClockAndSunlightWidget.class.getCanonicalName(),
             AlertWidget.class.getCanonicalName()
         };
     }

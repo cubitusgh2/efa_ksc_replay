@@ -105,7 +105,6 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 	public final String CATEGORY_KANUEFB = "%16%" + International.onlyFor("Kanu-eFB", "de");
 	public final String CATEGORY_LOCALE = "%17%" + International.getStringWithoutAnyEscaping("Sprache & Region");
 	public final String CATEGORY_WIDGETS = "%18%" + International.getString("Widgets");
-	public final String CATEGORY_WIDGET_CLOCK = "%181%" + International.getString("Uhr");
 	public final String CATEGORY_WIDGET_NEWS = "%182%" + International.getString("Ticker");
 	public final String CATEGORY_DATAACCESS = "%19%" + International.getString("Daten");
 	public final String CATEGORY_DATAXML = "%191%" + International.getString("lokale Dateien");
@@ -1774,9 +1773,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					"Fahrtbeschreibung für EFB um Fahrtart erweitern"));
 			
 			// ============================= WIDGETS =============================
-			addParameter(efaDirekt_showUhr = new ItemTypeBoolean("WidgetClockEnabled", true, IItemType.TYPE_PUBLIC,
-					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_WIDGETS, CATEGORY_WIDGET_CLOCK),
-					International.getMessage("{item} anzeigen", International.getString("Uhr"))));
+
 			addParameter(efaDirekt_showNews = new ItemTypeBoolean("WidgetNewsEnabled", true, IItemType.TYPE_PUBLIC,
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_WIDGETS, CATEGORY_WIDGET_NEWS),
 					International.getMessage("{item} anzeigen", International.getString("News"))));
