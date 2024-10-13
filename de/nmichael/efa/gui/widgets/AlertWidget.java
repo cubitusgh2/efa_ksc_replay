@@ -176,7 +176,7 @@ public class AlertWidget extends Widget implements IItemFactory {
     }
 
     @Override
-    void construct() {
+    public void construct() {
     }
 
     @Override

@@ -132,7 +132,12 @@ public class ImagesAndIcons {
 	public static final String IMAGE_MENU_WATERS = "menu_waters.png";
 	public static final String IMAGE_SUNRISE = "sunrise.png";
 	public static final String IMAGE_SUNSET = "sunset.png";
-	
+	public static final String IMAGE_WIDGET_ARROW_LEFT = "widget_arrow_left.png";
+	public static final String IMAGE_WIDGET_ARROW_RIGHT = "widget_arrow_right.png";
+	public static final String IMAGE_WEATHER_116_64 = "116_64.png";
+	public static final String IMAGE_WEATHER_116_32 = "116_32.png";
+	public static final String IMAGE_WEATHER_116_48 = "116_48.png";
+	public static final String IMAGE_WEATHER_227_64 = "227_64.png";	
     public static ImageIcon getIcon(String name) {
         try {
             if (name.indexOf("/") < 0) {

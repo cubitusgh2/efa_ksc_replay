@@ -137,7 +137,7 @@ public abstract class Widget implements IWidget {
     }
     
 
-    IItemType getParameterInternal(String internalName) {
+    protected IItemType getParameterInternal(String internalName) {
         String name = getParameterName(internalName);
         for (int i=0; i<parameters.size(); i++) {
             if (parameters.get(i).getName().equals(name)) {
@@ -202,7 +202,7 @@ public abstract class Widget implements IWidget {
         return ((ItemTypeInteger)getParameterInternal(PARAM_UPDATEINTERVAL)).getValue();
     }
 
-    abstract void construct();
+    public abstract void construct();
     public abstract JComponent getComponent();
 
     public void show(JPanel panel, int x, int y) {
@@ -225,14 +225,27 @@ public abstract class Widget implements IWidget {
         construct();
         JComponent comp = getComponent();
         if (comp != null) {
-            panel.add(comp, orientation);
+        	if (orientation.equals(BorderLayout.CENTER)) {
+	            if (panel.getComponentCount()==0) {
+	            	panel.add(comp, BorderLayout.NORTH);
+	            } else if (panel.getComponentCount()==1){
+	            	panel.add(comp, BorderLayout.CENTER);
+	            } else {
+	            	panel.add(comp, BorderLayout.SOUTH);
+	            }
+        	} else {
+        		panel.add(comp, orientation);
+        	}
+        	
         }
     }
 
     public static String[] getAllWidgetClassNames() {
         return new String[] {
-            HTMLWidget.class.getCanonicalName(),
+            MultiWidgetContainer.class.getCanonicalName(),
             ClockAndSunlightWidget.class.getCanonicalName(),
+            WeatherWidget.class.getCanonicalName(),
+            HTMLWidget.class.getCanonicalName(),
             AlertWidget.class.getCanonicalName()
         };
     }

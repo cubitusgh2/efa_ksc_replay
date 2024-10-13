@@ -69,7 +69,7 @@ public class HTMLWidget extends Widget {
                 "URL"));
     }
 
-    void construct() {
+    public void construct() {
         IItemType iscale = getParameterInternal(PARAM_SCALE);
         final double scale = (iscale != null ? ((ItemTypeDouble)iscale).getValue() : 1.0);
         htmlPane = new JEditorPane() {

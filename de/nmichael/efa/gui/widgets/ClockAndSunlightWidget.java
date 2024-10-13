@@ -180,8 +180,8 @@ public class ClockAndSunlightWidget extends Widget {
         return ((ItemTypeStringList)getParameterInternal(PARAM_LAYOUT)).toString();   
     }
     
-
-    void construct() {
+    @Override
+    public void construct() {
 
        	/* Layout, created by plain java
     	 

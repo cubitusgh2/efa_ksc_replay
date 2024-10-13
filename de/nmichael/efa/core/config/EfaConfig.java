@@ -105,7 +105,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 	public final String CATEGORY_KANUEFB = "%16%" + International.onlyFor("Kanu-eFB", "de");
 	public final String CATEGORY_LOCALE = "%17%" + International.getStringWithoutAnyEscaping("Sprache & Region");
 	public final String CATEGORY_WIDGETS = "%18%" + International.getString("Widgets");
-	public final String CATEGORY_WIDGET_NEWS = "%182%" + International.getString("Ticker");
+	public final String CATEGORY_WIDGET_NEWS = "%9%" + International.getString("Ticker");
 	public final String CATEGORY_DATAACCESS = "%19%" + International.getString("Daten");
 	public final String CATEGORY_DATAXML = "%191%" + International.getString("lokale Dateien");
 	public final String CATEGORY_DATAREMOTE = "%192%" + Daten.EFA_REMOTE;
@@ -1783,7 +1783,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 			addParameter(efaDirekt_newsScrollSpeed = new ItemTypeInteger("WidgetNewsScrollSpeed", 250, 100,
 					Integer.MAX_VALUE, IItemType.TYPE_EXPERT,
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_WIDGETS, CATEGORY_WIDGET_NEWS),
-					"Scroll Speed"));
+					"Scroll Speed"));			
 
 			widgets = Widget.getAllWidgets();
 			for (int i = 0; widgets != null && i < widgets.size(); i++) {
