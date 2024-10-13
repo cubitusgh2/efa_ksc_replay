@@ -163,11 +163,11 @@ public class WeatherWidget extends Widget {
 	private void addForeCast() {
 		mainPanel.add(addForeCastPanel("14:00", ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_WEATHER_116_48), "28 °C"),
 				 new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(4,2,2,18), 0, 0));
-		mainPanel.add(addForeCastPanel("16:00", ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_WEATHER_116_48), "24 °C"),
+		mainPanel.add(addForeCastPanel("16:00", ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_WEATHER_299_48), "24 °C"),
 				 new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2,0,2,18), 0, 0));
-		mainPanel.add(addForeCastPanel("18:00", ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_WEATHER_116_48), "20 °C"),
+		mainPanel.add(addForeCastPanel("18:00", ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_WEATHER_386_48), "20 °C"),
 				 new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2,0,2,18), 0, 0));
-		mainPanel.add(addForeCastPanel("20:00", ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_WEATHER_116_48), "18 °C"),
+		mainPanel.add(addForeCastPanel("20:00", ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_WEATHER_329_48), "18 °C"),
 				 new GridBagConstraints(3, 1, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2,0,2,4), 0, 0));
 		
 		

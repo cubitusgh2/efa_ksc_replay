@@ -137,7 +137,11 @@ public class ImagesAndIcons {
 	public static final String IMAGE_WEATHER_116_64 = "116_64.png";
 	public static final String IMAGE_WEATHER_116_32 = "116_32.png";
 	public static final String IMAGE_WEATHER_116_48 = "116_48.png";
-	public static final String IMAGE_WEATHER_227_64 = "227_64.png";	
+	public static final String IMAGE_WEATHER_227_64 = "227_64.png";
+	public static final String IMAGE_WEATHER_329_48 = "329_48.png";
+	public static final String IMAGE_WEATHER_386_48 = "386_48.png";
+	public static final String IMAGE_WEATHER_299_48 = "299_48.png";
+	
     public static ImageIcon getIcon(String name) {
         try {
             if (name.indexOf("/") < 0) {
