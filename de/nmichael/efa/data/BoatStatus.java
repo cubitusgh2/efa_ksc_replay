@@ -89,6 +89,10 @@ public class BoatStatus extends StorageObject {
             Vector<BoatStatusRecord> v = new Vector<BoatStatusRecord>();
             DataKeyIterator it = data().getStaticIterator();
             DataKey k = it.getFirst();
+            String currentLogBookEfaBoatHouse = Daten.project.getCurrentLogbookEfaBoathouse();
+            // take care for null values. null should not happen here, but anyway
+            if (currentLogBookEfaBoatHouse == null)
+                currentLogBookEfaBoatHouse = "";
             while (k != null) {
                 BoatStatusRecord r = (BoatStatusRecord) data().get(k);
 
@@ -101,8 +105,8 @@ public class BoatStatus extends StorageObject {
                     }
                     //  for boats on the water show only those which have sessions in the current logbook
                     if (status.equalsIgnoreCase(BoatStatusRecord.STATUS_ONTHEWATER)) {
-                        String rLogbook = (r.getLogbook() == null) ? "-" : r.getLogbook();
-                        if (rLogbook.equalsIgnoreCase(Daten.project.getCurrentLogbookEfaBoathouse()))
+                        String rLogbook = r.getLogbook();
+                        if ((rLogbook != null) && rLogbook.equalsIgnoreCase(currentLogBookEfaBoatHouse))
                             v.add(r);
                     } else {
                         // for all other show only the boats which are in this boathouse, if they are restricted.

@@ -26,12 +26,16 @@ public class Ecrid {
     public static String generate() {
         SecureRandom random = new SecureRandom();
         byte[] bytes = new byte[9];
-        random.nextBytes(bytes);
-        int repSlashInt = Math.abs(random.nextInt()) % 62;
-        int repPlusInt = Math.abs(random.nextInt()) % 62;
-        char repSlash = BASE62_CHARS.charAt(repSlashInt);
-        char repPlus = BASE62_CHARS.charAt(repPlusInt);
-        return Base64.encodeBytes(bytes).replace('/', repSlash).replace('+', repPlus);
+        String ecrid = "";
+        do {
+            random.nextBytes(bytes);
+            int repSlashInt = Math.abs(random.nextInt()) % 62;
+            int repPlusInt = Math.abs(random.nextInt()) % 62;
+            char repSlash = BASE62_CHARS.charAt(repSlashInt);
+            char repPlus = BASE62_CHARS.charAt(repPlusInt);
+            ecrid = Base64.encodeBytes(bytes).replace('/', repSlash).replace('+', repPlus);
+        } while (iEcrids.get(ecrid) != null);
+        return ecrid;
     }
 
     /**
