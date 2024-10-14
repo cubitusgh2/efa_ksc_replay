@@ -76,6 +76,7 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
     // Count of polls to run a lowa request. Multiply with QUEUE_TIMER_TRIGGER_INTERVAL for te time
     private static final int SYNCH_CHECK_PERIOD_DEFAULT = 30000;    // = 30000 ms = 0.5 minutes
     static int synch_check_polls_period = SYNCH_CHECK_PERIOD_DEFAULT / QUEUE_TIMER_TRIGGER_INTERVAL;
+    static int logs_to_return = 2; // return all logs
 
     // every SYNCH_PERIOD the client checks for updates at the server side.
     // The update period MUST be at least 5 times the InternetAccessManager timeout.
@@ -582,9 +583,11 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
                 }
                 // add the log and synchronisation errors file
                 String errorsFile = TextResource.getContents(new File(synchErrorFilePath), "UTF-8");
-                fa.putContent(fa.getInstance("synchErrors.log", false), errorsFile);
+                if (TxRequestQueue.logs_to_return >= 1)
+                    fa.putContent(fa.getInstance("synchErrors.log", false), errorsFile);
                 String logFile = TextResource.getContents(new File(logFilePath), "UTF-8");
-                fa.putContent(fa.getInstance("efacloud.log", false), logFile);
+                if (TxRequestQueue.logs_to_return >= 2)
+                    fa.putContent(fa.getInstance("efacloud.log", false), logFile);
                 // Java8: return Base64.getEncoder().encodeToString(fa.getZipAsBytes());
                 return Base64.encodeBytes(fa.getZipAsBytes()); // Java6
             } else

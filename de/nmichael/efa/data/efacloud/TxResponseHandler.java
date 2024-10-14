@@ -114,6 +114,7 @@ public class TxResponseHandler {
                 case 404:  // "Server side busy"
                 case 406:  // "Overload detected"
                 case 407:  // "No database connection"
+                case 506:  // "Internet connection aborted"
                     txq.shiftTx(TX_BUSY_QUEUE_INDEX, TX_BUSY_QUEUE_INDEX, TxRequestQueue.ACTION_TX_RETRY, 0, 0);
                     if (txq.getState() == TxRequestQueue.QUEUE_IS_SYNCHRONIZING)
                         txq.registerStateChangeRequest(TxRequestQueue.RQ_QUEUE_STOP_SYNCH);
@@ -121,7 +122,6 @@ public class TxResponseHandler {
                 case 401:  // "Syntax error"
                 case 500:  // "Internal server error"
                 case 505:  // "Server response empty"
-                case 506:  // "Internet connection aborted"
                 case 507:  // "Could not decode server response"
                 default:
                     txq.shiftTx(TX_BUSY_QUEUE_INDEX, TxRequestQueue.TX_FAILED_QUEUE_INDEX,
@@ -252,6 +252,8 @@ public class TxResponseHandler {
                                         TxRequestQueue.synch_period = 1000 * val;
                                     else if (name.equalsIgnoreCase("group_memberidlist_size"))
                                         Daten.tableBuilder.adjustGroupMemberIdListSize(val);
+                                    else if (name.equalsIgnoreCase("logs_to_return"))
+                                        TxRequestQueue.logs_to_return = val;
                                 }
                                 if (val == 0) {
                                     if (name.equalsIgnoreCase("synch_check_period"))
@@ -259,6 +261,8 @@ public class TxResponseHandler {
                                     else if (name.equalsIgnoreCase("synch_period"))
                                         TxRequestQueue.synch_period = TxRequestQueue.SYNCH_PERIOD_DEFAULT;
                                     // if group_memberidlist_size is 0 do nothing, the default is already set.
+                                    else if (name.equalsIgnoreCase("logs_to_return"))
+                                        TxRequestQueue.logs_to_return = val;
                                 }
                             }
                         }
