@@ -269,33 +269,38 @@ class SynchControl {
                     DataRecord localRecord = null;
                     DataKey returnedKey = null;
                     DataKey localKey = null;
+                    String returnedEcrid = null;
+                    String localEcrid = null;
                     String cacheKey = "";
                     try {
                         // retrieve the local record matching the server side record. Use the ecrid, if available and
                         // registered, else use the regular data key
-                        String ecrid = returnedRecord.getAsString(ECRID);
-                        boolean useEcrid = (ecrid != null) && (Ecrid.iEcrids.get(ecrid) != null);
-                        boolean recordHasCompleteKey = efaCloudStorage.hasCompleteKey(returnedRecord);
-                        if (useEcrid)
+                        returnedEcrid = returnedRecord.getAsString(ECRID);
+                        boolean returnedHasCompleteKey = efaCloudStorage.hasCompleteKey(returnedRecord);
+                        if ((returnedEcrid != null) && (Ecrid.iEcrids.get(returnedEcrid) != null))
                             // use ecrid to get the local record
-                            localRecord = Ecrid.iEcrids.get(ecrid);
-                        if (recordHasCompleteKey) {
+                            localRecord = Ecrid.iEcrids.get(returnedEcrid);
+                        else if (returnedHasCompleteKey) {
                             returnedKey = efaCloudStorage.constructKey(returnedRecord);
                             // use the returned efa key as fallback, if the ecrid was not identified in the all-tables-ecrid index
-                            if ((returnedKey != null) && (localRecord == null))
+                            if (returnedKey != null)
                                 localRecord = efaCloudStorage.get(returnedKey);
                         }
-                        cacheKey = ((ecrid == null) || ecrid.isEmpty() &&(returnedKey != null))
-                                ? returnedKey.encodeAsString() : ecrid;
-                        if (localRecord != null)
+                        if (localRecord != null) {
                             localKey = efaCloudStorage.constructKey(localRecord);
+                            localEcrid = localRecord.getAsString(ECRID);
+                        }
                     } catch (EfaException ignored) {
                     }
-                    if (returnedKey != null) {
+                    if ((returnedKey != null) || (returnedEcrid != null)) {
 
                         // remove the reference to this record from the cached list
-                        if (synch_download_all && (localRecord != null))
-                            unmatchedLocalKeys.put(cacheKey, null);
+                        if (synch_download_all && (localRecord != null)) {
+                            if ((localEcrid != null) && localEcrid.equalsIgnoreCase(returnedEcrid))
+                                unmatchedLocalKeys.put(localEcrid, null);
+                            else if ((localKey != null) && localKey.compareTo(returnedKey) == 0)
+                                unmatchedLocalKeys.put(localKey.encodeAsString(), null);
+                        }
 
                         // identify which record is to be used.
                         long serverLastModified = returnedRecord.getLastModified();
@@ -308,23 +313,6 @@ class SynchControl {
 
                         // identify whether a data key has changed. Can only happen, if ecrid is given and valid.
                         boolean keyHasChanged = (localKey != null) && (localKey.compareTo(returnedKey) != 0);
-
-                        // Special case autoincrement counter fields: always use the larger value, even if it is older.
-                        if (tx.tablename.equalsIgnoreCase("efa2autoincrement")) {
-                            long lmaxReturned = 0;
-                            long lmaxLocal = 0;
-                            long imaxReturned = 0;
-                            long imaxLocal = 0;
-                            try {
-                                lmaxReturned = Long.parseLong(returnedRecord.getAsString("LongValue"));
-                                lmaxLocal = Long.parseLong(returnedRecord.getAsString("LongValue"));
-                                imaxReturned = Long.parseLong(returnedRecord.getAsString("IntValue"));
-                                imaxLocal = Long.parseLong(returnedRecord.getAsString("IntValue"));
-                            } catch (Exception ignored) {
-                            }
-                            serverMoreRecent = (lmaxReturned > 0) ? (lmaxReturned > lmaxLocal) : (imaxReturned >
-                                    imaxLocal);
-                        }
 
                         // identify what to do, may be nothing, in particular if the record had been changed by this client
                         String lastModification = efaCloudStorage.getLastModification(returnedRecord);
