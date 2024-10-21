@@ -277,15 +277,13 @@ class SynchControl {
                         // registered, else use the regular data key
                         returnedEcrid = returnedRecord.getAsString(ECRID);
                         boolean returnedHasCompleteKey = efaCloudStorage.hasCompleteKey(returnedRecord);
+                        returnedKey = efaCloudStorage.constructKey(returnedRecord);
                         if ((returnedEcrid != null) && (Ecrid.iEcrids.get(returnedEcrid) != null))
                             // use ecrid to get the local record
                             localRecord = Ecrid.iEcrids.get(returnedEcrid);
-                        else if (returnedHasCompleteKey) {
-                            returnedKey = efaCloudStorage.constructKey(returnedRecord);
+                        else if (returnedHasCompleteKey)
                             // use the returned efa key as fallback, if the ecrid was not identified in the all-tables-ecrid index
-                            if (returnedKey != null)
-                                localRecord = efaCloudStorage.get(returnedKey);
-                        }
+                            localRecord = efaCloudStorage.get(returnedKey);
                         if (localRecord != null) {
                             localKey = efaCloudStorage.constructKey(localRecord);
                             localEcrid = localRecord.getAsString(ECRID);
