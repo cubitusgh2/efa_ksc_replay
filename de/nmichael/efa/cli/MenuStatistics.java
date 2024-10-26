@@ -57,6 +57,7 @@ public class MenuStatistics extends MenuData {
             case xml:
             case pdf:
                 outputOk = true;
+                break;
             default:
             	outputOk = false;
         }
