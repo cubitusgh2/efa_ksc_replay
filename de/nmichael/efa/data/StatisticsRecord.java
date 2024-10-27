@@ -264,6 +264,9 @@ public class StatisticsRecord extends DataRecord implements IItemListener {
 
     private static final int ARRAY_STRINGLIST_VALUES = 1;
     private static final int ARRAY_STRINGLIST_DISPLAY = 2;
+    
+    private static final String DEFAULT_GUI_CSV_COLUMN_SEPARATOR = "|";
+    private static final String DEFAULT_GUI_CSV_QUOTE = "";
 
     public enum StatisticCategory {
         UNKNOWN,
@@ -360,6 +363,7 @@ public class StatisticsRecord extends DataRecord implements IItemListener {
     private ItemTypeMultiSelectList<String> itemShowOtherFields;
     private ItemTypeMultiSelectList<String> itemAggrFields;
     private ItemTypeFile itemOutputFile;
+    private ItemTypeLabel itemOutputFileHINT;
     private ItemTypeStringList itemOutputEncoding;
     private ItemTypeBoolean itemOutputHtmlUpdateTable;
     private ItemTypeString itemOutputCsvSeparator;
@@ -2418,7 +2422,7 @@ public class StatisticsRecord extends DataRecord implements IItemListener {
     public String getOutputCsvSeparator() {
         String separator = getString(OUTPUTCSVSEPARATOR);
         if (separator == null || separator.length() == 0) {
-            return "|";
+            return DEFAULT_GUI_CSV_COLUMN_SEPARATOR;
         }
         return separator;
     }
@@ -2429,7 +2433,7 @@ public class StatisticsRecord extends DataRecord implements IItemListener {
     public String getOutputCsvQuotes() {
         String quotes = getString(OUTPUTCSVQUOTES);
         if (quotes == null) {
-            return "";
+            return DEFAULT_GUI_CSV_QUOTE;
         }
         return quotes;
     }
@@ -2869,6 +2873,8 @@ public class StatisticsRecord extends DataRecord implements IItemListener {
                 International.onlyFor("Alle Zielbereiche ausgeben", "de")));
 
         // CAT_OUTPUT
+        v.add(item = addHint("HINT_"+StatisticsRecord.OUTPUTFILE, IItemType.TYPE_PUBLIC, CAT_OUTPUT, "<html>"+International.getStringWithMnemonic("STATISTICS_RELATIVE_PATHS_HINT")+"</html>", 3, 0, 10));
+        this.itemOutputFileHINT = (ItemTypeLabel) item;
         v.add(item = new ItemTypeStringList(StatisticsRecord.OUTPUTTYPE, getOutputType(),
                 getOutputTypes(ARRAY_STRINGLIST_VALUES), getOutputTypes(ARRAY_STRINGLIST_DISPLAY),
                 IItemType.TYPE_PUBLIC, CAT_OUTPUT,
@@ -3588,6 +3594,15 @@ public class StatisticsRecord extends DataRecord implements IItemListener {
             sEmailAddresses = Email.getEmailAddressFromMailtoString(sOutputFile.toLowerCase());
             sOutputFile = Daten.efaTmpDirectory + "output_" + System.currentTimeMillis() + getOutputExtension();
         }
+        
+        // if the filename is present, check for symbolic links at the beginning of the path
+        // ~/output.txt    ->/home/username/output.txt 
+        // ./output.txt    -> efa_data_directory/output.txt
+        // just like in efaCLI data import/export function (MenuData.java)
+        
+        sOutputFile = EfaUtil.extendFilenameWithRelativePath(sOutputFile);
+        sOutputFile = EfaUtil.correctFilePath(sOutputFile);
+        
         sOutputDir = (new File(sOutputFile)).getParent();
         if (sOutputDir == null || sOutputDir.length() == 0) { // shouldn't happen, just in case...
             sOutputDir = Daten.efaTmpDirectory;
@@ -4112,6 +4127,7 @@ public class StatisticsRecord extends DataRecord implements IItemListener {
             itemOutputFile.setVisible(output != OutputTypes.internal &&
                     output != OutputTypes.internaltxt &&
                     output != OutputTypes.efawett);
+            itemOutputFileHINT.setVisible(itemOutputFile.isVisible());
         }
         if (itemOutputFtpButton != null) {
             itemOutputFtpButton.setVisible(output != OutputTypes.internal &&
