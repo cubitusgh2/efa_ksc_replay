@@ -121,9 +121,9 @@ public class WeatherWidget extends Widget {
 		mainPanel.add(titlePanel, new GridBagConstraints(0, 0, /*3*/4, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2,2,2,2), 0, 0));
 		
 		
-		//addCurrentWeather();
+		addCurrentWeather();
 
-		addForeCast();
+		//addForeCast();
 		
 		
 	}
@@ -137,7 +137,7 @@ public class WeatherWidget extends Widget {
 		curWeather_temp.setText("28 °C");
 		curWeather_temp.setHorizontalTextPosition(SwingConstants.LEFT);
 		
-		curWeather_icon.setIcon(ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_WEATHER_227_64));
+		curWeather_icon.setIcon(ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_WEATHER_116_64));
 		
 		curWeather_minTemp.setText("Min: 14 °C");
 		curWeather_minTemp.setForeground(mainPanel.getForeground());

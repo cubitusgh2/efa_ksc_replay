@@ -20,6 +20,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
+import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -193,6 +194,7 @@ public class ClockAndSunlightWidget extends Widget {
 
 	mainPanel = new JPanel();
 	mainPanel.setLayout(new GridBagLayout());
+	mainPanel.setBorder(BorderFactory.createEmptyBorder(2, 0, 8, 0));
 	sunPanel.setLayout(new GridBagLayout());
 	sunPanel.setOpaque(false);
 	Boolean isHorzLayout=getLayout().equals(LAYOUT_HORIZONTAL);
