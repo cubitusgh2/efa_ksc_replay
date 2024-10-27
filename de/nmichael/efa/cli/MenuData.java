@@ -10,8 +10,10 @@
 
 package de.nmichael.efa.cli;
 
+import java.io.File;
 import java.nio.charset.Charset;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Hashtable;
 import java.util.Locale;
 import java.util.Stack;
@@ -44,6 +46,9 @@ public class MenuData extends MenuBase {
 	private static final String EXPORT_OPTION_ENCODING = "encoding";
 	private static final String EXPORT_OPTION_LOCALE = "csvlocale";
 	
+	private static final String CSV_DEFAULT_COLUMN_SEPARATOR = "|";
+	private static final String CSV_DEFAULT_QUOTE = "\"";
+	
     public static final String CMD_LIST   = "list";
     public static final String CMD_SHOW   = "show";
     public static final String CMD_EXPORT = "export";
@@ -66,15 +71,26 @@ public class MenuData extends MenuBase {
         cli.loginfo("ENCODING   - Any encoding, e.g. ISO-8859-1 or UTF-8. UTF-8 is default.");
         cli.loginfo("LOCALE     - Any ISO-Code for a country, e.g. DE or EN" );
         cli.loginfo("");
-        cli.loginfo("Format		- csv_bom_utf8 is neccessary for some spreadsheet programs to read UTF8-based CSV files.");
+        cli.loginfo("Format	    - csv_bom_utf8 is neccessary for some spreadsheet programs to read UTF8-based CSV files.");
         cli.loginfo("");
         cli.loginfo("csvsep     - CSV field separator. A single character.");
-        cli.loginfo("             Default for import and export: ;");
-        cli.loginfo("csvquote   - CSV quote for text fields." );
-        cli.loginfo("             Default for import and export: \" ");
+        cli.loginfo("             Default for import and export: "+CSV_DEFAULT_COLUMN_SEPARATOR);
+        cli.loginfo("csvquote   - CSV quote for text fields.");
+        cli.loginfo("             Default for import and export: "+CSV_DEFAULT_QUOTE);
         cli.loginfo("");
         cli.loginfo("             If you want to set csvquote to empty, specify csvquote=  ");
         cli.loginfo("");
+        cli.loginfo("<filename> - filename.ext        -> "+Daten.efaTmpDirectory+"filename.ext");
+        cli.loginfo("             path/filename.ext   -> "+Daten.efaConfig.getValueEfaUserDirectory()+"path"+File.separator+"filename.ext");
+        cli.loginfo("             ./path/filename.ext -> "+Daten.efaConfig.getValueEfaUserDirectory()+"path"+File.separator+"filename.ext");
+        cli.loginfo("             ~/path/filename.ext -> "+Daten.userHomeDir+"path"+File.separator+"filename.ext");
+        cli.loginfo("             You can also use absolute paths for the filename. The directories in the path must exist.");
+        cli.loginfo("");
+        if (File.separator.equals("\\")) {//show hint only on windows systems
+        	cli.loginfo("             Windows: In efaCLI INTERACTIVE mode, use double \\\\ as path separators (like c:\\\\temp\\\\filename.ext)");
+        	cli.loginfo("");
+        }
+        	
     }
 
     public void list(String args) {
@@ -150,18 +166,20 @@ public class MenuData extends MenuBase {
         Hashtable<String,String> options = getOptionsFromArgs(args);
         args = removeOptionsFromArgs(args);
 
-        String csvSeparator=";";
-        String csvQuote="\"";
+        String csvSeparator=CSV_DEFAULT_COLUMN_SEPARATOR;
+        String csvQuote=CSV_DEFAULT_QUOTE;
         Locale csvLocale = null;  // if no locale is specified, the standard of the system is used.
         String emailSubj="";
         String filename = args;
 
         //if user forgets to specify a filename, we cannot proceed.
-        if (filename == null || filename.isEmpty()) {
+        if (filename == null || filename.trim().isEmpty()) {
             cli.loginfo("No filename specified. Cannot export data.");
             return;
         }
         
+        filename = extendAndCorrectFilePath(filename);
+
         //------ get file format. xml is standard, if no other is set.
         DataExport.Format format = DataExport.Format.xml;
         if (options.get(EXPORT_OPTION_FORMAT) != null && options.get(EXPORT_OPTION_FORMAT).equalsIgnoreCase("csv")) {
@@ -189,11 +207,11 @@ public class MenuData extends MenuBase {
         }
 
         //------ get Email subject, default and user specified 
-        emailSubj="EfaCLI "+filename+" export " + ZonedDateTime.now().toString();
+        emailSubj="EfaCLI "+EfaUtil.getFilenameWithoutPath(filename)+" export " + ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS).toOffsetDateTime().toString();
         if (options.get(EXPORT_OPTION_EMAILSUBJECT)!=null) {
         	emailSubj=options.get(EXPORT_OPTION_EMAILSUBJECT);
         	if (emailSubj.isEmpty()) {
-        		emailSubj="EfaCLI Export " + ZonedDateTime.now().toString();
+        		emailSubj="EfaCLI Export " + ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS).toOffsetDateTime().toString();
         	}
         }
 
@@ -238,6 +256,25 @@ public class MenuData extends MenuBase {
 
         }        
     }
+
+	private String extendAndCorrectFilePath(String filename) {
+
+		if (filename!=null) {
+			String newFilename=EfaUtil.extendFilenameWithRelativePath(filename);
+			
+	        if (!newFilename.equals(filename)) {
+	            cli.loginfo("Filename '"+filename+ "' extended to '"+newFilename+"'");
+	            filename=newFilename;
+	        }
+	
+	        newFilename=EfaUtil.correctFilePath(filename);
+	        if (!newFilename.equals(filename)) {
+	            cli.loginfo("Filename '"+filename+ "' corrected to '"+newFilename+"'");
+	            filename=newFilename;
+	        }
+		}
+		return filename;
+	}
 
     public void importData(String args) {
         if (storageObject == null) {
@@ -303,6 +340,8 @@ public class MenuData extends MenuBase {
             entryNo = DataImport.ENTRYNO_DUPLICATE_SKIP;
         }
 
+        filename = extendAndCorrectFilePath(filename);
+        
         cli.loginfo("Importing data ...");
         DataImport imp = new DataImport(storageObject, filename, encoding, csep, cquo,
                 importMode, updMode, entryNo,

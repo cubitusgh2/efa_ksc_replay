@@ -7,6 +7,7 @@
         <DownloadSize>TODO</DownloadSize>
         <Changes lang="de">
             <ChangeItem>Neu: efaBths Listen: Farbicons für Bootslisten werden geglättet dargestellt.</ChangeItem>
+            <ChangeItem>Neu: Hinweise in EfaConfig usw. werden passend zum efaFlatlaf mit abgerundeten Ecken dargestellt.</ChangeItem>
 			<ChangeItem>Neu: Neuer Dialog für Erfassung von Wanderfahrten (Multisession), wenn mehrere Leute im eigenen Boot zu einer gemeinsamen Fahrt aufbrechen. Konfigurierbar in efaConfig.</ChangeItem>
             <ChangeItem>Neu: Autovervollständigungs-Listen: bei der Suche nach Teilbegriff wird immer der Eintrag vorselektiert, der mit dem Suchbegriff beginnt.</ChangeItem>
             <ChangeItem>Neu: Dialog für Bootsreservierungen in efaBths ist breiter und hat die Schaltflächen über der Tabelle (Aktualisierte Version).</ChangeItem>
@@ -24,9 +25,12 @@
             <ChangeItem>Neu: Adminmodus/Vereinsarbeit: Filterfeld erhält automatisch den Fokus.</ChangeItem>
             <ChangeItem>Neu: Adminmodus/Gruppen: In der Tabelle dargestellte Gruppen zeigen ihre Farbe an.</ChangeItem>
             <ChangeItem>Neu: Adminmodus/Dialoge: Das Filter-Textfeld erhält einen gelben Hintergrund, wenn es den Fokus erhält.</ChangeItem>
+            <ChangeItem>Neu: Adminmodus/Statistiken: Statistiken mit Dateiexport können relative Pfadnamen verwenden.</ChangeItem>
             <ChangeItem>Neu: CSV DatenExport: Erzeugte CSV-Dateien lassen sich besser mit aktuellen Tabellenkalkulationen verarbeiten, wenn Format 'CSV (mit BOM)' gewählt wird.</ChangeItem>
+            <ChangeItem>Neu: CSV DatenExport: efaCLI Standards für Spaltentrennzeichen (|) und Text-Trennzeichen (") bleiben unverändert für Abwärtskompatibilität</ChangeItem>
             <ChangeItem>Neu: CSV DatenExport: efaCLI mit erweiterten Parametern für Datenexport.</ChangeItem>
             <ChangeItem>Neu: CSV DatenExport: efaCLI mit Export für Vereinsarbeit.</ChangeItem>
+			<ChangeItem>Neu: CSV Datenexport: efaCLI Export mit relativen Dateinamen für ./ = Efa Datenverzeichnis und ~/ = Home-Verzeichnis des aktuellen Benutzers.</ChangeItem>
             <ChangeItem>Neu: CSV DatenImport: CSV-Dateien in UTF-8 mit BOM (aus Tabellenkalkulationen) lassen sich importieren.</ChangeItem>
 			<ChangeItem>Neu: Bessere Sortierung in den Tabellen für die Bearbeitung von Bootsreservierungen, Personen, Booten... etc. wenn nach einer anderen Spalte sortiert wird.</ChangeItem>
             <ChangeItem>Neu: Backup: efa.log Datei kann mit gesichert werden (wird aber nicht wiederhergestellt)</ChangeItem>
@@ -39,12 +43,21 @@
             <ChangeItem>BugFix: In Beta-Versionen wird im Admin-Modus nicht mehr beständig die Aktualisierung der Gewässerliste angeboten.</ChangeItem>
             <ChangeItem>BugFix: Versteckte Option für "efa immer im Vordergrund" wird wieder angezeigt.</ChangeItem>
             <ChangeItem>BugFix: Wenn ein Backup efa-Konfigurationsdaten wiederherstellt, dann wird zum Neustart von EFA aufgefordert. Hierdurch wird verhindert, dass der Audit Task beim Öffnen des Projekts Daten korrigiert, weil er ggfs. nicht geladene TYPEN oder andere Konfigurationsdaten (noch) nicht findet.</ChangeItem>
+            <ChangeItem>BugFix: Nullpointer im Audit Task behoben, wenn Reservierungen zu nicht sichtbaren Booten gelöscht werden sollen.</ChangeItem>
+			<ChangeItem>BugFix: Wenn ein Restore auch Konfigurationsdaten wiederherstellt, wird das Projekt nicht neu geladen und der Anwender zum Neustart von efa aufgefordert. Dies sorgt dafür, dass die wiederhergestellten Konfigurationsdaten, Bootstypen etc. direkt zum Einsatz kommen.</ChangeItem>
+			<ChangeItem>BugFix: Admin Dialog: Besseres Layout, wenn ein anstehender Fahrtenbuch- oder Vereinsarbeitswechsel dargestellt wird.</ChangeItem>			
+            <ChangeItem>BugFix: EFA#102: EFA2.4.1#8 Beta: efaCLI Export: bisherige Standards für Feld- und Text-Trennzeichen sollen bestehen bleiben (für Abwärtskompatiblität)</ChangeItem>
+            <ChangeItem>BugFix: EFA#106: EFA2.4.1#8 Beta: efaCLI Export: Betreff der versandten Mail beinhaltet unnötige Zeitzonen-Angabe</ChangeItem>
+            <ChangeItem>BugFix: EFA#107: EFA2.4.1#8 Beta: efaCLI Export: CSV-Exporte ohne absolute Pfadangabe landen im Efa-Hauptverzeichnis</ChangeItem>
+            <ChangeItem>BugFix: EFA#103: EFA2.4.1#8 Beta: efaCLI Statistiken: lassen sich über efaCLI nicht mehr erstellen.</ChangeItem>
+            <ChangeItem>BugFix: EFA#104: EFA2.4.1#8 Beta: Rechtschreibfehler in DE, efaConfig: Bootshaus -&gt; Benachrichtigungen</ChangeItem>
             <ChangeItem>BugFix: efaCloud: Kein Nullpointer-Fehler mehr beim Betreten des Admin-Modus, wenn kein Projekt geöffnet ist.</ChangeItem>
             <ChangeItem>BugFix: efaCloud: Im Debug Modus werden keine unnötigen Nullpointer-Exceptions mehr ins Log geschrieben. https://github.com/nicmichael/efa/issues/138</ChangeItem>
             <ChangeItem>Code: Refactoring: Unnötige Imports entfernt.</ChangeItem>          
         </Changes>
         <Changes lang="en">
             <ChangeItem>New: efaBths boatlists: Icons for boat groups are rendered aliased.</ChangeItem>
+            <ChangeItem>New: Hints in efaconfig now have round borders, fitting to the new efaFlatLaf look.</ChangeItem>
 			<ChangeItem>New: New dialog for input of multiple similar sessions (multiple persons go on the same trip with their own boat)</ChangeItem>
             <ChangeItem>New: Popup-Lists: when searching in partial text mode, the preselected entry is now the first of the result set that BEGINS with the search text.</ChangeItem>
             <ChangeItem>New: EfaBths: Boat reservations dialog in landscape mode: Buttons above the table, dialog has a bigger width.</ChangeItem>
@@ -62,9 +75,12 @@
             <ChangeItem>New: Admin mode/Clubwork: Filter text field automatically gets focused.</ChangeItem>
             <ChangeItem>New: Admin mode/Dialogs: Filter text field gets yellow background if focused..</ChangeItem>
             <ChangeItem>New: Admin mode/Groups: Groups show their respective color in the table.</ChangeItem>
-            <ChangeItem>New: CSV export: Created files are more suitable for processing in spreadsheet programs, especially in localized variants. CSV gets a BOM, if UTF-8 charset is chosen.</ChangeItem>
+			<ChangeItem>New: Admin mode/Statistics: Support for relative file paths when exporting into files.</ChangeItem>
+            <ChangeItem>New: CSV export: Created files are more suitable for processing in spreadsheet programs, especially in localized variants.</ChangeItem>
+            <ChangeItem>Neu: CSV export: efaCLI former standards for CSV column delimiter (|) and CSV-quote(") stay unchanged due to backwards compatiblity for existing export batches.</ChangeItem>            
             <ChangeItem>New: CSV export: efaCLI has extended parameters for data export.</ChangeItem>
             <ChangeItem>New: CSV export: efaCLI can export clubwork.</ChangeItem>
+            <ChangeItem>New: CSV export: efaCLI Export allows specification of relative paths for exports and imports ./ = Efa data directory,  ~/ = home directory of current user.</ChangeItem>
             <ChangeItem>New: CSV import: UTF-8 CSV files with BOM (created by spreadsheets programs) can be used for import.</ChangeItem>
 			<ChangeItem>New: Better sorting of items in the tables for editing boat reservations, persons, boats... when sorting by another column.</ChangeItem>
             <ChangeItem>New: Backup: efa.log file can be added to the items which are included in the backup.</ChangeItem>
@@ -74,6 +90,14 @@
             <ChangeItem>BugFix: In beta versions there are no more questions for updateing the waters list in admin mode.</ChangeItem>
             <ChangeItem>BugFix: Hidden option for "efa always on top" gets shown again.</ChangeItem>
             <ChangeItem>BugFix: If efa configuration data gets restored from a backup, the user is informed to restart efa. By this accidental changes by audit task are avoided (which may take place as the audit task may not find restored config data before efa gets restarted.)</ChangeItem>
+            <ChangeItem>BugFix: Fixed nullpointer in audit task when deleting reservations for invisible boats.</ChangeItem>
+			<ChangeItem>BugFix: If a restore of a backup restores config items, the project will NOT be reloaded, but the user gets a request to restart efa. This ensures that config data is loaded before the audit task starts up and performs unwanted changes.</ChangeItem>
+			<ChangeItem>BugFix: Admin Dialog: Better layout for showing upcoming automatic logbook or clubwork switch.</ChangeItem>
+            <ChangeItem>BugFix: EFA#102: EFA2.4.1#8 Beta: efaCLI Export: current standards for CSV delimiter and CSV quote shall remain for backwards compatibility</ChangeItem>
+            <ChangeItem>BugFix: EFA#106: EFA2.4.1#8 Beta: efaCLI Export: Topic of mails contain unneccesary timezone descriptions</ChangeItem>
+            <ChangeItem>BugFix: EFA#107: EFA2.4.1#8 Beta: efaCLI Export: CSV export without absolute paths create files in efa main directory</ChangeItem>
+            <ChangeItem>BugFix: EFA#103: EFA2.4.1#8 Beta: efaCLI Statistics: Statistics could not be created any more.</ChangeItem>
+            <ChangeItem>BugFix: EFA#104: EFA2.4.1#8 Beta: typo in DE, efaConfig: Boathouse-&gt; Notifications</ChangeItem>
             <ChangeItem>BugFix: efaCloud: No more nullpointer exception when entering admin mode and no open project.</ChangeItem>
             <ChangeItem>BugFix: efaCloud: No more exceptions logged in debug mode. https://github.com/nicmichael/efa/issues/138 </ChangeItem>
             <ChangeItem>Code: Refactoring: Removed unused import statemens.</ChangeItem>          
