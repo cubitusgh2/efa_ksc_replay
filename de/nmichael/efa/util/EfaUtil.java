@@ -2359,7 +2359,60 @@ public class EfaUtil {
     	blue=Math.max(0, blue-(int)Math.round(green*percent/100));
         return new Color(red, green, blue);	
     }
+
+    /**
+     * If a filename starts with a symbolic item, this function extends the filename's path
+     * to the absolute path of the corresponding directory.
+     * 
+     * ./   --> efaDataDirectory
+     * ~/   --> user home direcotry
+     * 
+     * @param filename
+     * @return filename with symbolic links replaced by absolute paths. If no symbolic link is at the start of the filename, the filename is returned unchanged. 
+     */
+    public static String extendFilenameWithRelativePath(String filename) {
+    	if (filename!=null) {
+		    if (filename.startsWith("./") || filename.startsWith(".\\")) {
+		    	// ./ or .\ specify relative path to data directory.
+		    	filename=Daten.efaConfig.getValueEfaUserDirectory()+filename.substring(2);
+		    }
+		    
+		    if (filename.startsWith("~/") || filename.startsWith("~\\")) {
+		    	filename=Daten.userHomeDir + filename.substring(2);
+		    }
+    	}
+	    return filename;
+    }
     
+    /**
+     * Repairs filenames. 
+     * If a filename does not contain a path element, the efa tmp directory path is added as prefix.
+     * If the filename points to a windows d:filename.txt, the path is corrected to d:\filename.txt.
+     * @param filename
+     * @return
+     */
+	public static String correctFilePath(String filename) {
+		if (filename!=null) {
+
+			String filePath=EfaUtil.getPathOfFile(filename);
+			if (filePath == null || filePath.trim().isEmpty()){
+	        	//filename does not contain a path element? use efa temp dir as path.
+	        	return Daten.efaTmpDirectory+filename; //efaTmpDirecory always has a path separator char as suffix. so we don't need one here.
+			}	
+
+			if (!new File(filePath).isAbsolute()) {
+				//relative Pfade zum efa-Datenverzeichnis erstellen.
+				return Daten.efaConfig.getValueEfaUserDirectory()+filePath+File.separator+getNameOfFile(filename);
+			} 
+			
+			if (!filePath.endsWith(File.separator)) {
+        		filePath = filePath+File.separator;
+        		return filePath +new File(filename).getName();
+			}
+    	}
+       
+		return filename;
+	}    
     
     public static void main(String args[]) {
         String text = "abc & def";

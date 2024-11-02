@@ -21,6 +21,9 @@ public class StatisticCSVWriter extends StatisticWriter {
     private String quotes;
     private int linelength = 0;
 
+    private static final String DEFAULT_CSV_COLUMN_SEPARATOR = "|";
+    private static final String DEFAULT_CSV_QUOTE = null;
+    
     public StatisticCSVWriter(StatisticsRecord sr, StatisticsData[] sd) {
         super(sr, sd);
         this.encoding = sr.sOutputEncoding;
@@ -30,10 +33,10 @@ public class StatisticCSVWriter extends StatisticWriter {
             this.encoding = Daten.ENCODING_UTF;
         }
         if (this.separator == null || this.separator.length() == 0) {
-            this.separator = "|";
+            this.separator = DEFAULT_CSV_COLUMN_SEPARATOR;
         }
         if (this.quotes != null && this.quotes.length() == 0) {
-            this.quotes = null;
+            this.quotes = DEFAULT_CSV_QUOTE;
         }
     }
 
