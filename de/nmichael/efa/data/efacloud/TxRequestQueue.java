@@ -736,9 +736,7 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
                                 efaCloudUrl));
             }
             txq.setState(QUEUE_IS_DISCONNECTED);
-            TaskManager.RequestMessage rq = Transaction.createIamRequest(queues.get(TX_BUSY_QUEUE_INDEX),
-                    getCredentials());
-            iam.sendRequest(rq);
+            txq.registerStateChangeRequest(RQ_QUEUE_RESUME);
         }
     }
 
