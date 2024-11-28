@@ -69,8 +69,8 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
     public static final char TX_QUOTATION = '"';
     public static final String URL_API_LOCATION = "/api/posttx.php";
 
-    // ms with which the queue timer starts processing requests. Use 3 seconds to ensure the project has settled.
-    private static final int QUEUE_TIMER_START_DELAY = 3000;
+    // ms with which the queue timer starts processing requests. Use 15 seconds to ensure the project has settled.
+    private static final int QUEUE_TIMER_START_DELAY = 15000;
     // ms after which the queue timer processes the next set of requests
     static final int QUEUE_TIMER_TRIGGER_INTERVAL = 300;
     // Count of polls to run a lowa request. Multiply with QUEUE_TIMER_TRIGGER_INTERVAL for te time

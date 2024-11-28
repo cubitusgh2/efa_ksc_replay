@@ -35,7 +35,7 @@ class SynchControl {
     // The names of the tables which allow the key to be modified upon server side insert
     static final String[] tables_with_key_fixing_allowed = TableBuilder.fixid_allowed.split(" ");
     static final long clockoffsetBuffer = 600000L; // max number of millis which client clock may be offset, 10 mins
-    static final long synch_upload_look_back_ms = 5 * 24 * 3600000L; // period in past to check for upload
+    static final long synch_upload_look_back_ms = 15 * 24 * 3600000L; // period in past to check for upload
     static final long surely_newer_after_ms = 60000L; // one-minute time difference accepted for timestamps server <-> client
 
     long lastSynchStartedMillis;
