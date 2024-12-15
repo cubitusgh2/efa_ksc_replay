@@ -133,7 +133,7 @@ public class WeatherWidget extends Widget {
 		curWeather_temp = new JLabel();
 		curWeather_temp.setForeground(mainPanel.getForeground());
 		curWeather_temp.setFont(mainPanel.getFont().deriveFont((float) (Daten.efaConfig.getValueEfaDirekt_BthsFontSize()+10)));
-		curWeather_temp.setFont(curWeather_temp.getFont().deriveFont(Font.BOLD));
+		//curWeather_temp.setFont(curWeather_temp.getFont().deriveFont(Font.BOLD));
 		curWeather_temp.setText("28 °C");
 		curWeather_temp.setHorizontalTextPosition(SwingConstants.LEFT);
 		
