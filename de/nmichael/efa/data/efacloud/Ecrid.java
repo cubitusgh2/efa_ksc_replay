@@ -26,7 +26,7 @@ public class Ecrid {
     public static String generate() {
         SecureRandom random = new SecureRandom();
         byte[] bytes = new byte[9];
-        String ecrid = "";
+        String ecrid;
         do {
             random.nextBytes(bytes);
             int repSlashInt = Math.abs(random.nextInt()) % 62;
@@ -48,10 +48,12 @@ public class Ecrid {
             DataKey dataKey = dataKeyIterator.getFirst();
             while (dataKey != null) {
                 DataRecord dataRecord = storageObject.data().get(dataKey);
-                String ecrid = dataRecord.getAsText(ECRID_FIELDNAME);
-                if ((ecrid != null) && (ecrid.length() == 12))
-                    iEcrids.put(ecrid, dataRecord);
-                dataKey = dataKeyIterator.getNext();
+                if (dataRecord.isField(ECRID_FIELDNAME)) {
+                    String ecrid = dataRecord.getAsText(ECRID_FIELDNAME);
+                    if ((ecrid != null) && (ecrid.length() == 12))
+                        iEcrids.put(ecrid, dataRecord);
+                    dataKey = dataKeyIterator.getNext();
+                }
             }
         } catch (EfaException e) {
             // do nothing
