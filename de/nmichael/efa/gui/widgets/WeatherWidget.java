@@ -38,7 +38,8 @@ public class WeatherWidget extends Widget {
     static final String TEMP_CELSIUS              = "CELSIUS";
     static final String TEMP_FAHRENHEIT           = "FAHRENHEIT";
     
-    private RoundedPanel mainPanel = new RoundedPanel();
+    private JPanel mainPanel = new JPanel();
+    private RoundedPanel roundPanel = new RoundedPanel();
     private RoundedPanel titlePanel = new RoundedPanel();
     private JLabel titleLabel = new JLabel();
     private JLabel curWeather_temp = new JLabel();
@@ -101,12 +102,16 @@ public class WeatherWidget extends Widget {
 
 	@Override
 	public void construct() {
-		mainPanel = new RoundedPanel();
-		mainPanel.setLayout(new GridBagLayout());
-		mainPanel.setBackground(Daten.efaConfig.getToolTipBackgroundColor());
-		mainPanel.setForeground(Daten.efaConfig.getToolTipForegroundColor());
-		mainPanel.setBorder(new RoundedBorder(mainPanel.getForeground()));
-		
+		mainPanel = new JPanel();
+		mainPanel.setLayout(new GridBagLayout());		
+		roundPanel = new RoundedPanel();
+		roundPanel.setLayout(new GridBagLayout());
+		roundPanel.setBackground(Daten.efaConfig.getToolTipBackgroundColor());
+		roundPanel.setForeground(Daten.efaConfig.getToolTipForegroundColor());
+		roundPanel.setBorder(new RoundedBorder(mainPanel.getForeground()));
+
+		mainPanel.add(roundPanel, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0,0,0,0), 0, 0));
+
 		titlePanel = new RoundedPanel();
 		titlePanel.setLayout(new GridBagLayout());
 		titlePanel.setBackground(Daten.efaConfig.getToolTipHeaderBackgroundColor());
@@ -119,12 +124,12 @@ public class WeatherWidget extends Widget {
 		
 		titlePanel.add(titleLabel, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2,2,2,2), 0, 0));
 
-		mainPanel.add(titlePanel, new GridBagConstraints(0, 0, /*3*/4, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2,2,2,2), 0, 0));
-		mainPanel.setMinimumSize(new Dimension(240,120));;
+		roundPanel.add(titlePanel, new GridBagConstraints(0, 0, /*3*/4, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2,2,2,2), 0, 0));
+		roundPanel.setMinimumSize(new Dimension(240,120));;
 		//mainPanel.setPreferredSize(new Dimension(240,140));
-		//addCurrentWeather();
+		addCurrentWeather();
 
-		addForeCast();
+		//addForeCast();
 		
 		
 	}
@@ -152,23 +157,23 @@ public class WeatherWidget extends Widget {
 		curWeather_wind.setForeground(mainPanel.getForeground());
 		curWeather_wind.setHorizontalTextPosition(SwingConstants.CENTER);
 		
-		mainPanel.add(curWeather_temp, new GridBagConstraints(0, 1, 1, 2, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2,4,2,4), 0, 0));
+		roundPanel.add(curWeather_temp, new GridBagConstraints(0, 1, 1, 2, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2,4,2,4), 0, 0));
 
-		mainPanel.add(curWeather_icon, new GridBagConstraints(1, 1, 1, 2, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0,4,0,4), 0, 0));
+		roundPanel.add(curWeather_icon, new GridBagConstraints(1, 1, 1, 2, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0,4,0,4), 0, 0));
 
-		mainPanel.add(curWeather_minTemp, new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0, GridBagConstraints.SOUTHEAST, GridBagConstraints.NONE, new Insets(4,4,0,4), 0, 0));
-		mainPanel.add(curWeather_maxTemp, new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0, GridBagConstraints.EAST, GridBagConstraints.NONE, new Insets(0,4,0,4), 0, 0));
-		mainPanel.add(curWeather_wind,    new GridBagConstraints(0, 3, 3, 1, 0.0, 0.0, GridBagConstraints.NORTH, GridBagConstraints.VERTICAL, new Insets(0,2,0,2), 0, 0));
+		roundPanel.add(curWeather_minTemp, new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0, GridBagConstraints.SOUTHEAST, GridBagConstraints.NONE, new Insets(4,4,0,4), 0, 0));
+		roundPanel.add(curWeather_maxTemp, new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0, GridBagConstraints.EAST, GridBagConstraints.NONE, new Insets(0,4,0,4), 0, 0));
+		roundPanel.add(curWeather_wind,    new GridBagConstraints(0, 3, 3, 1, 0.0, 0.0, GridBagConstraints.NORTH, GridBagConstraints.VERTICAL, new Insets(0,2,0,2), 0, 0));
 	}
 
 	private void addForeCast() {
-		mainPanel.add(addForeCastPanel("14:00", ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_WEATHER_116_48), "28 °C"),
+		roundPanel.add(addForeCastPanel("14:00", ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_WEATHER_116_48), "28 °C"),
 				 new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(4,2,2,18), 0, 0));
-		mainPanel.add(addForeCastPanel("16:00", ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_WEATHER_113_48), "24 °C"),
+		roundPanel.add(addForeCastPanel("16:00", ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_WEATHER_113_48), "24 °C"),
 				 new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2,0,2,18), 0, 0));
-		mainPanel.add(addForeCastPanel("18:00", ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_WEATHER_320_48), "20 °C"),
+		roundPanel.add(addForeCastPanel("18:00", ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_WEATHER_320_48), "20 °C"),
 				 new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2,0,2,18), 0, 0));
-		mainPanel.add(addForeCastPanel("20:00", ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_WEATHER_386_48), "18 °C"),
+		roundPanel.add(addForeCastPanel("20:00", ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_WEATHER_386_48), "18 °C"),
 				 new GridBagConstraints(3, 1, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2,0,2,4), 0, 0));
 		
 		

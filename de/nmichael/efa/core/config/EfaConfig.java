@@ -1785,7 +1785,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_WIDGETS, CATEGORY_WIDGET_NEWS),
 					"Scroll Speed"));			
 
-			widgets = Widget.getAllWidgets();
+			widgets = Widget.getAllWidgets(true);
 			for (int i = 0; widgets != null && i < widgets.size(); i++) {
 				IWidget w = widgets.get(i);
 				IItemType[] params = w.getParameters();

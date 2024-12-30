@@ -10,15 +10,26 @@
 
 package de.nmichael.efa.gui.widgets;
 
+import java.awt.BorderLayout;
+import java.awt.GridBagConstraints;
+import java.awt.Insets;
+import java.util.Vector;
+
+import javax.swing.JComponent;
+import javax.swing.JPanel;
+import javax.swing.SwingConstants;
+
 import de.nmichael.efa.core.config.EfaConfig;
-import de.nmichael.efa.core.items.*;
+import de.nmichael.efa.core.items.IItemType;
+import de.nmichael.efa.core.items.ItemTypeBoolean;
+import de.nmichael.efa.core.items.ItemTypeInteger;
+import de.nmichael.efa.core.items.ItemTypeLabel;
+import de.nmichael.efa.core.items.ItemTypeLabelHeader;
+import de.nmichael.efa.core.items.ItemTypeStringList;
 import de.nmichael.efa.gui.ImagesAndIcons;
 import de.nmichael.efa.gui.util.RoundedBorder;
-import de.nmichael.efa.util.*;
-import java.util.*;
-import java.awt.*;
-
-import javax.swing.*;
+import de.nmichael.efa.util.International;
+import de.nmichael.efa.util.Logger;
 
 
 public abstract class Widget implements IWidget {
@@ -56,12 +67,13 @@ public abstract class Widget implements IWidget {
 
         if (ongui) {
             addParameterInternal(new ItemTypeStringList(PARAM_POSITION, POSITION_BOTTOM,
-                    new String[]{POSITION_TOP, POSITION_BOTTOM, POSITION_LEFT, POSITION_RIGHT, POSITION_CENTER},
+                    new String[]{POSITION_TOP, POSITION_BOTTOM, POSITION_LEFT, POSITION_RIGHT, POSITION_CENTER, POSITION_MULTIWIDGET},
                     new String[]{International.getString("oben"),
                         International.getString("unten"),
                         International.getString("links"),
                         International.getString("rechts"),
-                        International.getString("mitte")
+                        International.getString("mitte"),
+                        International.getString("MultiWidget")
                     },
                     IItemType.TYPE_PUBLIC, "",
                     International.getString("Position")));
@@ -217,7 +229,7 @@ public abstract class Widget implements IWidget {
         }
     }
 
-    public void show(JPanel panel, String orientation) {
+    public void show(JPanel panel, String orientation, boolean onMultiWidget) {
         if (!ongui) {
             return;
         }
@@ -225,37 +237,50 @@ public abstract class Widget implements IWidget {
         construct();
         JComponent comp = getComponent();
         if (comp != null) {
-        	if (orientation.equals(BorderLayout.CENTER)) {
-	            if (panel.getComponentCount()==0) {
-	            	panel.add(comp, BorderLayout.NORTH);
-	            } else if (panel.getComponentCount()==1){
-	            	panel.add(comp, BorderLayout.CENTER);
-	            } else {
-	            	panel.add(comp, BorderLayout.SOUTH);
-	            }
+        	if (!onMultiWidget) {
+	        	if (orientation.equals(BorderLayout.CENTER)) {
+		            if (panel.getComponentCount()==0) {
+		            	panel.add(comp, BorderLayout.NORTH);
+		            } else if (panel.getComponentCount()==1){
+		            	panel.add(comp, BorderLayout.CENTER);
+		            } else {
+		            	panel.add(comp, BorderLayout.SOUTH);
+		            }
+	        	} else {
+	        		panel.add(comp, orientation);
+	        	}
         	} else {
         		panel.add(comp, orientation);
         	}
-        	
         }
     }
 
-    public static String[] getAllWidgetClassNames() {
-        return new String[] {
-            MultiWidgetContainer.class.getCanonicalName(),
-            ClockAndSunlightWidget.class.getCanonicalName(),
-            WeatherWidget.class.getCanonicalName(),
-            HTMLWidget.class.getCanonicalName(),
-            AlertWidget.class.getCanonicalName()
-        };
+    public static Vector <String> getAllWidgetClassNames() {
+        Vector <String>result = new Vector<String>();
+        result.add(ClockAndSunlightWidget.class.getCanonicalName());
+        result.add(WeatherWidget.class.getCanonicalName());
+        result.add(HTMLWidget.class.getCanonicalName());
+        result.add(AlertWidget.class.getCanonicalName());
+        return result;
     }
-
-    public static Vector<IWidget> getAllWidgets() {
-        String[] classNames = getAllWidgetClassNames();
+    
+    public static Vector <String> getMultiWidgetClassName(){
+        Vector <String>result = new Vector<String>();
+        result.add(MultiWidgetContainer.class.getCanonicalName());
+        return result;
+    }
+    
+    public static Vector<IWidget> getAllWidgets(boolean withMultiWidget) {
+        Vector <String> classNames = getAllWidgetClassNames();
+        
+        if (withMultiWidget) {
+        	classNames.add(0,MultiWidgetContainer.class.getCanonicalName());
+        }
+        
         Vector<IWidget> widgets = new Vector<IWidget>();
-        for (int i=0; i<classNames.length; i++) {
+        for (int i=0; i<classNames.size(); i++) {
             try {
-                IWidget w = (IWidget)Widget.class.forName(classNames[i]).newInstance();
+                IWidget w = (IWidget)Widget.class.forName(classNames.get(i)).newInstance();
                 if (w != null) {
                     widgets.add(w);
                 }
@@ -265,4 +290,21 @@ public abstract class Widget implements IWidget {
         }
         return widgets;
     }
+    
+    public static Vector <IWidget> getMultiWidget(){
+    	Vector <String> classNames = getMultiWidgetClassName();
+        Vector<IWidget> widgets = new Vector<IWidget>();
+        for (int i=0; i<classNames.size(); i++) {
+            try {
+                IWidget w = (IWidget)Widget.class.forName(classNames.get(i)).newInstance();
+                if (w != null) {
+                    widgets.add(w);
+                }
+            } catch(Exception e) {
+                Logger.logdebug(e);
+            }
+        }
+        return widgets;    	
+    }
+    
 }
