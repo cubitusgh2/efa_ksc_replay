@@ -264,17 +264,21 @@ public abstract class Widget implements IWidget {
         return result;
     }
     
-    public static Vector <String> getMultiWidgetClassName(){
+    public static Vector <String> getMultiWidgetClassNames(){
         Vector <String>result = new Vector<String>();
         result.add(MultiWidgetContainer.class.getCanonicalName());
         return result;
+    }
+    
+    public static String getMultiWidgetClassName() {
+    	return MultiWidgetContainer.class.getCanonicalName();
     }
     
     public static Vector<IWidget> getAllWidgets(boolean withMultiWidget) {
         Vector <String> classNames = getAllWidgetClassNames();
         
         if (withMultiWidget) {
-        	classNames.add(0,MultiWidgetContainer.class.getCanonicalName());
+        	classNames.add(0,getMultiWidgetClassName());
         }
         
         Vector<IWidget> widgets = new Vector<IWidget>();
@@ -292,7 +296,7 @@ public abstract class Widget implements IWidget {
     }
     
     public static Vector <IWidget> getMultiWidget(){
-    	Vector <String> classNames = getMultiWidgetClassName();
+    	Vector <String> classNames = getMultiWidgetClassNames();
         Vector<IWidget> widgets = new Vector<IWidget>();
         for (int i=0; i<classNames.size(); i++) {
             try {

@@ -127,9 +127,9 @@ public class WeatherWidget extends Widget {
 		roundPanel.add(titlePanel, new GridBagConstraints(0, 0, /*3*/4, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2,2,2,2), 0, 0));
 		roundPanel.setMinimumSize(new Dimension(240,120));;
 		//mainPanel.setPreferredSize(new Dimension(240,140));
-		addCurrentWeather();
+		//addCurrentWeather();
 
-		//addForeCast();
+		addForeCast();
 		
 		
 	}
