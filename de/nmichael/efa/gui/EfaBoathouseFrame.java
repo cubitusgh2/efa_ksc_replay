@@ -1026,7 +1026,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
                     params[j].parseValue(Daten.efaConfig.getExternalGuiItem(params[j].getName()).toString());
                 }
             }
-            widgets.add(multiWidget);
+
             
             // find all enabled widgets
             widgets = new Vector<IWidget>();
@@ -1072,7 +1072,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
                 	multiWidgetUse=true;
                 }
             }
-
+            widgets.add(multiWidget);            
             if (multiWidgetUse==false) {
             	multiWidget.getComponent().setVisible(false);
             }
