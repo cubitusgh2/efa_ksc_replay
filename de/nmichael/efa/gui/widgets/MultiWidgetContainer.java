@@ -1,6 +1,7 @@
 package de.nmichael.efa.gui.widgets;
 
 import java.awt.CardLayout;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -12,10 +13,10 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
-import de.nmichael.efa.Daten;
 import de.nmichael.efa.core.items.IItemType;
 import de.nmichael.efa.core.items.ItemTypeInteger;
 import de.nmichael.efa.data.LogbookRecord;
+import de.nmichael.efa.gui.ImagesAndIcons;
 import de.nmichael.efa.util.EfaUtil;
 import de.nmichael.efa.util.International;
 /*
@@ -84,16 +85,14 @@ public class MultiWidgetContainer extends Widget {
 		 //  right:  button, vertically centered
 		 
 		 mainPanel.setLayout(new GridBagLayout());
-		 JButton leftButton=new JButton("\u25c0");
-		 JButton rightButton = new JButton("\u25b6");
-		 leftButton.setForeground(mainPanel.getBackground().darker());
-		 leftButton.setFont(leftButton.getFont().deriveFont((float)(Daten.efaConfig.getValueEfaDirekt_BthsTableFontSize()+0.0)));
-		 rightButton.setFont(leftButton.getFont());
-		 rightButton.setForeground(mainPanel.getBackground().darker());
-		 /*leftButton.setMinimumSize(new Dimension(40,70));
+		 JButton leftButton=new JButton();
+		 JButton rightButton = new JButton();
+		 leftButton.setIcon(ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_WIDGET_ARROW_LEFT));
+		 rightButton.setIcon(ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_WIDGET_ARROW_RIGHT));		 		 
+		 leftButton.setMinimumSize(new Dimension(30,60));
 		 leftButton.setPreferredSize(leftButton.getMinimumSize());
 		 rightButton.setMinimumSize(leftButton.getMinimumSize());
-		 rightButton.setPreferredSize(rightButton.getMinimumSize());*/		 
+		 rightButton.setPreferredSize(rightButton.getMinimumSize());		 
 		 mainPanel.add(leftButton,  new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2,2,2,2), 0, 0)); 
 		 mainPanel.add(cardPanel,   new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(2,2,2,2), 0, 0));
 		 mainPanel.add(rightButton, new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2,2,2,2), 0, 0)); 
