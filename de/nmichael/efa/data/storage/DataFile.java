@@ -243,8 +243,8 @@ public abstract class DataFile extends DataAccess {
                 saveStorageObject();
             }
             String fName = filename.substring(filename.lastIndexOf('.') + 1);
-            if (TableBuilder.tablenames.contains(fName))
-                if (Daten.project.getProjectStorageType() == IDataAccess.TYPE_EFA_CLOUD)
+            if ((Daten.project != null) && (Daten.project.getProjectStorageType() == IDataAccess.TYPE_EFA_CLOUD)
+                && TableBuilder.tablenames.contains(fName))
                     Ecrid.addAll(this.getPersistence());
         } catch(Exception e) {
             if (logex) {
