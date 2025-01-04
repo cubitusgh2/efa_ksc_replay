@@ -69,8 +69,8 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
     public static final char TX_QUOTATION = '"';
     public static final String URL_API_LOCATION = "/api/posttx.php";
 
-    // ms with which the queue timer starts processing requests. Use 3 seconds to ensure the project has settled.
-    private static final int QUEUE_TIMER_START_DELAY = 3000;
+    // ms with which the queue timer starts processing requests. Use 15 seconds to ensure the project has settled.
+    private static final int QUEUE_TIMER_START_DELAY = 15000;
     // ms after which the queue timer processes the next set of requests
     static final int QUEUE_TIMER_TRIGGER_INTERVAL = 300;
     // Count of polls to run a lowa request. Multiply with QUEUE_TIMER_TRIGGER_INTERVAL for te time
@@ -427,6 +427,7 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
         	// there may be no more element... an then an exception occurs. This may be as efacloud thread is running in background,
         	// and so the queue items are processed in background.
         	// as this function is used for efaBths/efaBase header only, we do not need to document an exception here.
+
         }
         String txID = (tx == null) ? "" : "#" + tx.ID + " ";
         return (efaCloudStatus.isEmpty() ? "" : efaCloudStatus+ " - " ) + txID + getQueueSize(TX_BUSY_QUEUE_INDEX) + "|" +
@@ -744,9 +745,7 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
                                 efaCloudUrl));
             }
             txq.setState(QUEUE_IS_DISCONNECTED);
-            TaskManager.RequestMessage rq = Transaction.createIamRequest(queues.get(TX_BUSY_QUEUE_INDEX),
-                    getCredentials());
-            iam.sendRequest(rq);
+            txq.registerStateChangeRequest(RQ_QUEUE_RESUME);
         }
     }
 
