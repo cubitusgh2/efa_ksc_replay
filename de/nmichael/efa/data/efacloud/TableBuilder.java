@@ -212,24 +212,25 @@ public class TableBuilder {
         allowedMismatches.put("efa2statistics", 0);  // All may change
     }
     public static final String fixid_allowed = "efa2logbook efa2messages efa2boatdamages efa2boatreservations";
-    public static final ArrayList<String> tablenames = new ArrayList<>();
+    
+    public static final HashSet<String> tablenamesWithEcrids = new HashSet<String>();
     static {
-        tablenames.add("efa2autoincrement");
-        tablenames.add("efa2boatdamages");
-        tablenames.add("efa2boatreservations");
-        tablenames.add("efa2boats");
-        tablenames.add("efa2boatstatus");
-        tablenames.add("efa2crews");
-        tablenames.add("efa2destinantions");
-        tablenames.add("efa2fahrtenabzeichen");
-        tablenames.add("efa2groups");
-        tablenames.add("efa2logbook");
-        tablenames.add("efa2messages");
-        tablenames.add("efa2persons");
-        tablenames.add("efa2sessiongroups");
-        tablenames.add("efa2statistics");
-        tablenames.add("efa2status");
-        tablenames.add("efa2waters");
+    	tablenamesWithEcrids.add("efa2autoincrement");
+    	tablenamesWithEcrids.add("efa2boatdamages");
+    	tablenamesWithEcrids.add("efa2boatreservations");
+    	tablenamesWithEcrids.add("efa2boats");
+    	tablenamesWithEcrids.add("efa2boatstatus");
+    	tablenamesWithEcrids.add("efa2crews");
+    	tablenamesWithEcrids.add("efa2destinantions");
+    	tablenamesWithEcrids.add("efa2fahrtenabzeichen");
+    	tablenamesWithEcrids.add("efa2groups");
+    	tablenamesWithEcrids.add("efa2logbook");
+    	tablenamesWithEcrids.add("efa2messages");
+    	tablenamesWithEcrids.add("efa2persons");
+    	tablenamesWithEcrids.add("efa2sessiongroups");
+    	tablenamesWithEcrids.add("efa2statistics");
+    	tablenamesWithEcrids.add("efa2status");
+    	tablenamesWithEcrids.add("efa2waters");
     }
 
     // cache to hold all special fields for checking when building the tables
