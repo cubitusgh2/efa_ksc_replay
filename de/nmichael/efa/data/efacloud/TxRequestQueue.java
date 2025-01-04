@@ -427,7 +427,6 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
         	// there may be no more element... an then an exception occurs. This may be as efacloud thread is running in background,
         	// and so the queue items are processed in background.
         	// as this function is used for efaBths/efaBase header only, we do not need to document an exception here.
-
         }
         String txID = (tx == null) ? "" : "#" + tx.ID + " ";
         return (efaCloudStatus.isEmpty() ? "" : efaCloudStatus+ " - " ) + txID + getQueueSize(TX_BUSY_QUEUE_INDEX) + "|" +
