@@ -244,7 +244,7 @@ public abstract class DataFile extends DataAccess {
             }
             String fName = filename.substring(filename.lastIndexOf('.') + 1);
             if ((Daten.project != null) && (Daten.project.getProjectStorageType() == IDataAccess.TYPE_EFA_CLOUD)
-                && TableBuilder.tablenames.contains(fName))
+                && TableBuilder.tablenamesWithEcrids.contains(fName))
                     Ecrid.addAll(this.getPersistence());
         } catch(Exception e) {
             if (logex) {
