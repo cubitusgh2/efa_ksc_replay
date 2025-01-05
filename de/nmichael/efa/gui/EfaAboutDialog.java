@@ -9,13 +9,36 @@
  */
 package de.nmichael.efa.gui;
 
-import de.nmichael.efa.*;
-import de.nmichael.efa.util.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Frame;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.MouseEvent;
+import java.io.File;
+import java.util.Locale;
+import java.util.ResourceBundle;
+import java.util.Vector;
+
+import javax.swing.JDialog;
+import javax.swing.JEditorPane;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.SwingConstants;
+
+import de.nmichael.efa.Daten;
 import de.nmichael.efa.util.Dialog;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import java.util.*;
+import de.nmichael.efa.util.EfaUtil;
+import de.nmichael.efa.util.HtmlFactory;
+import de.nmichael.efa.util.International;
+import de.nmichael.efa.util.Logger;
 
 
 public class EfaAboutDialog extends BaseDialog {
@@ -37,24 +60,28 @@ public class EfaAboutDialog extends BaseDialog {
     JLabel gplLabel = new JLabel();
     JTabbedPane tabbedPane = new JTabbedPane();
     JPanel systemInfoPanel = new JPanel();
-    JScrollPane jScrollPane1 = new JScrollPane();
+    JScrollPane systemInfoScrollPane = new JScrollPane();
     JTextArea efaInfosText = new JTextArea();
     BorderLayout borderLayout3 = new BorderLayout();
     JLabel efaBirthdayLabel = new JLabel();
     JPanel dankePanel = new JPanel();
     JPanel languagePanel = new JPanel();
+    JPanel changelogPanel = new JPanel();
+    JScrollPane changelogScrollPane = new JScrollPane();
+    JEditorPane changelogText = new JEditorPane();
     BorderLayout borderLayout4 = new BorderLayout();
     BorderLayout borderLayout5 = new BorderLayout();
     BorderLayout borderLayout6 = new BorderLayout();
-    JScrollPane jScrollPane2 = new JScrollPane();
-    JScrollPane jScrollPane3 = new JScrollPane();
+    BorderLayout borderLayout7 = new BorderLayout();
+    JScrollPane dankeScrollPane = new JScrollPane();
+    JScrollPane languageScrollPane = new JScrollPane();
     JTextArea dankeText = new JTextArea();
     JTextArea languagesText = new JTextArea();
     JLabel devNoteLabel = new JLabel();
     
     JPanel librariesPanel = new JPanel();
     JTextArea librariesText = new JTextArea();
-    JScrollPane jScrollPane4 = new JScrollPane();
+    JScrollPane librariesScrollPane = new JScrollPane();
     
     public EfaAboutDialog(Frame parent) {
         super(parent, Daten.EFA_LONGNAME, International.getStringWithMnemonic("Schließen"));
@@ -72,32 +99,40 @@ public class EfaAboutDialog extends BaseDialog {
         mainPanel.setLayout(new BorderLayout());
         aboutEfaPanel.setLayout(new GridBagLayout());
         systemInfoPanel.setLayout(borderLayout3);
-        jScrollPane1.setPreferredSize(new Dimension(400, 300));
+        systemInfoScrollPane.setPreferredSize(new Dimension(400, 300));
         dankePanel.setLayout(borderLayout4);
         languagePanel.setLayout(borderLayout5);
         librariesPanel.setLayout(borderLayout6);
+        changelogPanel.setLayout(borderLayout7);
         
         iniAboutEfaPanel();
         iniEfaSystemInfos();
         iniDanksagungenPanel();
         iniTranslationsPanel();
         iniBibliothekenPanel();
+        iniChangelogPanel();
         
         
         tabbedPane.add(aboutEfaPanel, International.getString("Über efa"));
+        tabbedPane.add(changelogPanel, International.getString("Aenderungsprotokoll"));
         tabbedPane.add(systemInfoPanel, International.getString("Systeminformationen"));
         tabbedPane.add(languagePanel, International.getString("Sprachen"));
         tabbedPane.add(dankePanel, International.getString("Danksagungen"));
         tabbedPane.add(librariesPanel, International.getString("Bibliotheken"));
 
-        systemInfoPanel.add(jScrollPane1, BorderLayout.CENTER);
-        dankePanel.add(jScrollPane2, BorderLayout.CENTER);
-        languagePanel.add(jScrollPane3, BorderLayout.CENTER);
-        librariesPanel.add(jScrollPane4, BorderLayout.CENTER);
-        jScrollPane2.getViewport().add(dankeText, null);
-        jScrollPane3.getViewport().add(languagesText, null);
-        jScrollPane4.getViewport().add(librariesText, null);
-        jScrollPane4.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        systemInfoPanel.add(systemInfoScrollPane, BorderLayout.CENTER);
+        dankePanel.add(dankeScrollPane, BorderLayout.CENTER);
+        languagePanel.add(languageScrollPane, BorderLayout.CENTER);
+        librariesPanel.add(librariesScrollPane, BorderLayout.CENTER);
+        changelogPanel.add(changelogScrollPane, BorderLayout.CENTER);
+        
+        dankeScrollPane.getViewport().add(dankeText, null);
+        languageScrollPane.getViewport().add(languagesText, null);
+        librariesScrollPane.getViewport().add(librariesText, null);
+        librariesScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        changelogScrollPane.getViewport().add(changelogText, null);
+        changelogScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        changelogScrollPane.setPreferredSize(new Dimension(400, 300));
         mainPanel.add(tabbedPane, BorderLayout.CENTER);
 
     }
@@ -121,7 +156,7 @@ public class EfaAboutDialog extends BaseDialog {
         }
         languagesText.setEditable(false);
         languagesText.append(International.getString("efa wurde in die folgenden Sprachen übersetzt:") + "\n\n" + translations + "\n"
-                + International.getString("Bitte unterstütze uns bei der Übersetzung in weitere Sprachen!") + "\n" + Daten.EFADEVURL);
+                + International.getString("Bitte unterstütze uns bei der Übersetzung in weitere Sprachen!"));
 	}
 
 	private void iniDanksagungenPanel() {
@@ -168,6 +203,31 @@ public class EfaAboutDialog extends BaseDialog {
 		librariesText.append("CompoundIcon by Tips4Java\n\thttps://github.com/tips4java/tips4java/blob/main/source/CompoundIcon.java\n\t Licensed under MIT License.\n\n");
 	}	
 	
+	private void iniChangelogPanel() {
+		changelogText.setEditable(false);
+		changelogText.setContentType("text/html");
+		changelogText.setCaretPosition(0);
+		
+		File changelogfile;
+		try {
+			changelogfile = new File(Daten.efaDocDirectory+"changelog_"+International.getLanguageID().toLowerCase() +".html");
+			if (!changelogfile.canRead()) {
+				changelogfile = new File(Daten.efaDocDirectory+"changelog_en.html");
+			}
+			if (!changelogfile.canRead()) {
+				changelogfile=null;
+				changelogText.setText("This should show the content of "+Daten.efaDocDirectory+"changelog_en.html");	
+			}
+			if (changelogfile!=null) {
+				changelogText.setPage(changelogfile.toURI().toURL());
+			}
+		} catch (Exception e) {
+			Logger.logdebug(e);
+			changelogText.setText("This should show the content of "+Daten.efaDocDirectory+"changelog_en.html");
+		}
+		
+	}
+	
 	private void iniEfaSystemInfos() {
 		Vector <String>infos = Daten.getEfaInfos();
         for (int i = 0; infos != null && i < infos.size(); i++) {
@@ -211,7 +271,7 @@ public class EfaAboutDialog extends BaseDialog {
 	            efaInfosText.append((String) htmlCSSRules.get(i) + "\n");
 	        }
         }
-        jScrollPane1.getViewport().add(efaInfosText, null);
+        systemInfoScrollPane.getViewport().add(efaInfosText, null);
         efaInfosText.setCaretPosition(0);
         efaInfosText.setEditable(false);
 	}
