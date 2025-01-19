@@ -133,6 +133,13 @@ import de.nmichael.efa.util.Mnemonics;
  *          it is only shown if any other widget's location is set to "MultiWidget"
  *          and it is positioned on row 200, as multiwidget should always be bottommost widget,
  *          e.g. below the clock.
+ *          
+ * southpanel:
+ *     - Center: WidgetBottomPanel
+ *     - South: 
+ *     	  - statusLabel (for Boat info)
+ *        - news label (for red ticker info) 
+ *          
  */
 public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
 
@@ -647,6 +654,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         boatsNotAvailableList.displayOnGui(this, boatsNotAvailablePanel, BorderLayout.SOUTH);
         eastPanel.setLayout(new BorderLayout());
         eastPanel.add(boatsNotAvailablePanel, BorderLayout.CENTER);
+       
     }
 
 	private void iniGuiHeaderColors() {

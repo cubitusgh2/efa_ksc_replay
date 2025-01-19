@@ -12,6 +12,7 @@ package de.nmichael.efa.gui.widgets;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.FontMetrics;
 
 import javax.swing.JComponent;
@@ -35,6 +36,7 @@ public class NewsMiniWidget {
         label.setHorizontalAlignment(SwingConstants.CENTER);
         label.setHorizontalTextPosition(SwingConstants.CENTER);
         label.setVisible(false);
+        label.setFont(label.getFont().deriveFont(Font.BOLD));
         newsUpdater = new NewsUpdater();
         newsUpdater.start();
     }

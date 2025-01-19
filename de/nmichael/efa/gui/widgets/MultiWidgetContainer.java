@@ -106,7 +106,24 @@ public class MultiWidgetContainer extends Widget {
 			    public void mouseEntered(MouseEvent e) {
 			    	panelUpdater.interrupt();
 			    }
-			});
+		 });
+		 
+		 leftButton.addMouseListener(new MouseAdapter() {
+			    //entering the control with the mouse shall restart the auto-update-timer, so the user has time to run some action...
+			 	@Override
+			    public void mouseEntered(MouseEvent e) {
+			    	panelUpdater.interrupt();
+			    }
+		 });
+
+		 rightButton.addMouseListener(new MouseAdapter() {
+			    //entering the control with the mouse shall restart the auto-update-timer, so the user has time to run some action...
+			 	@Override
+			    public void mouseEntered(MouseEvent e) {
+			    	panelUpdater.interrupt();
+			    }	 
+		 });
+
 		 
     	try {
             panelUpdater = new MultiWidgetPanelUpdater(cardLayout, cardPanel, this.getUpdateInterval());
