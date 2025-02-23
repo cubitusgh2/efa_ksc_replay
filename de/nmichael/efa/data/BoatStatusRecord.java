@@ -401,24 +401,67 @@ public class BoatStatusRecord extends DataRecord {
     }
 
     public TableItemHeader[] getGuiTableHeader() {
-        TableItemHeader[] header = new TableItemHeader[5];
-        header[0] = new TableItemHeader(International.getString("Boot"));
-        header[1] = new TableItemHeader(International.getString("Basis-Status"));
-        header[2] = new TableItemHeader(International.getString("aktueller Status"));
-        header[3] = new TableItemHeader(International.getString("Bemerkung"));
-        header[4] = new TableItemHeader(International.getString("Eigentümer"));
+        
+    	boolean multipleBoathouses = false;
+        try {
+            multipleBoathouses = (getPersistence().getProject().getNumberOfBoathouses() > 1);
+        } catch(Exception eingore) {
+            EfaUtil.foo();
+        }
+        
+        int cols = 5;
+        if (multipleBoathouses) {cols++;}
+        
+        TableItemHeader[] header = new TableItemHeader[cols];
+        int col=0;
+        header[col++] = new TableItemHeader(International.getString("Boot"));
+        if (multipleBoathouses) {
+            header[col++] = new TableItemHeader(International.getString("Bootshaus"));
+        }
+        header[col++] = new TableItemHeader(International.getString("Basis-Status"));
+        header[col++] = new TableItemHeader(International.getString("aktueller Status"));
+        header[col++] = new TableItemHeader(International.getString("Bemerkung"));
+        header[col++] = new TableItemHeader(International.getString("Eigentümer"));
         return header;
     }
 
     public TableItem[] getGuiTableItems() {
-        TableItem[] items = new TableItem[5];
-        items[0] = new TableItem(getBoatName());
-        items[1] = new TableItem(getStatusDescription(getBaseStatus()));
-        items[2] = new TableItem(getStatusDescription(getCurrentStatus()));
-        items[3] = new TableItem(getComment());
-        items[4] = new TableItem(getBoatOwner());
+    	
+        boolean multipleBoathouses = false;
+        try {
+            multipleBoathouses = (getPersistence().getProject().getNumberOfBoathouses() > 1);
+        } catch(Exception eingore) {
+            EfaUtil.foo();
+        }
+        int cols = 5;
+        if (multipleBoathouses) {
+            cols++;
+        }
+        int col=0;
+        TableItem[] items = new TableItem[cols];
+        items[col++] = new TableItem(getBoatName());
+        if (multipleBoathouses) {
+            items[col++] = new TableItem(getOnlyInBoathouseName());
+        }        
+        items[col++] = new TableItem(getStatusDescription(getBaseStatus()));
+        items[col++] = new TableItem(getStatusDescription(getCurrentStatus()));
+        items[col++] = new TableItem(getComment());
+        items[col++] = new TableItem(getBoatOwner());
         return items;
     }
+    
+    public String getOnlyInBoathouseName() {
+        int id = getOnlyInBoathouseIdAsInt();
+        if (id <= 0) {
+            return null;
+        }
+        try {
+            return getPersistence().getProject().getBoathouseName(id);
+        } catch(Exception e) {
+            Logger.logdebug(e);
+        }
+        return International.getString("Bootshaus") + " " + id;
+    }    
 
     public static String getStatusDescription(String stype) {
         if (stype == null) {

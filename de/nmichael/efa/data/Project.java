@@ -9,9 +9,12 @@
 package de.nmichael.efa.data;
 
 import java.io.File;
+import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Set;
+import java.util.UUID;
 import java.util.Vector;
 
 import de.nmichael.efa.Daten;
@@ -34,12 +37,12 @@ import de.nmichael.efa.data.types.DataTypeDate;
 import de.nmichael.efa.ex.EfaException;
 import de.nmichael.efa.ex.EfaModifyException;
 import de.nmichael.efa.util.Dialog;
+import de.nmichael.efa.util.EfaSortStringComparator;
+import de.nmichael.efa.util.EfaSortStringDescComparator;
 import de.nmichael.efa.util.EfaUtil;
 import de.nmichael.efa.util.International;
 import de.nmichael.efa.util.LogString;
 import de.nmichael.efa.util.Logger;
-import java.net.InetAddress;
-import java.util.UUID;
 
 // @i18n complete
 public class Project extends StorageObject {
@@ -359,7 +362,7 @@ public class Project extends StorageObject {
             return true;
         }
         if (getProjectStorageType() == IDataAccess.TYPE_EFA_CLOUD) {
-            TxRequestQueue.getInstance(getProjectRecord().getEfaCoudURL(), getProjectStorageUsername(),
+            TxRequestQueue.getInstance(getProjectRecord().getEfaCloudURL(), getProjectStorageUsername(),
                     getProjectStoragePassword(), getProjectStorageLocation());
         }
         try {
@@ -509,23 +512,37 @@ public class Project extends StorageObject {
                             Project p = new Project(name);
                             p.open(false);
                             StringBuffer description = new StringBuffer();
-                            description.append("<b>" + International.getString("Projekt") + ":</b> <b style=\"color:blue\">" + name + "</b><br>");
+                            description.append("<b>" + International.getString("Projekt") + ":</b> <b style=\"color:blue\">" + name + " </b><b> "+getProjectDataType(p)+"</b><br>");
                             if (p.getProjectDescription() != null) {
-                                description.append(p.getProjectDescription() + "<br>");
+                                description.append("<i>"+p.getProjectDescription() + "</i><br>");
                             }
-                            String[] logbooks = p.getAllLogbookNames();
-                            if (logbooks != null) {
-                                description.append(International.getString("Fahrtenbücher") + ": ");
-                                for (int j = 0; j < logbooks.length; j++) {
-                                    description.append((j > 0 ? ", " : "") + logbooks[j]);
-                                }
+                            
+                            if (p.getProjectStorageType() == IDataAccess.TYPE_EFA_REMOTE) {
+                                description.append(International.getString("Remote-Projektname") + ": "+p.getProjectRemoteProjectName()+"<br>");
+                            } else {
+                            
+	                            String[] logbooks = p.getAllLogbookNames();
+	                            if (logbooks != null) {
+	                                description.append(International.getString("Fahrtenbücher") + ": ");
+	                                for (int j = 0; j < logbooks.length; j++) {
+	                                    description.append((j > 0 ? ", " : "") + logbooks[j]);
+	                                }
+	                            }
+	                            String[] clubworkNames = p.getAllClubworkNames();
+	                            if (clubworkNames != null) {
+	                                description.append("<br>" +
+	                                        International.getString("Vereinsarbeit") + ": ");
+	                                for (int j = 0; j < clubworkNames.length; j++) {
+	                                    description.append((j > 0 ? ", " : "") + clubworkNames[j]);
+	                                }
+	                            }
                             }
-                            String[] clubworkNames = p.getAllClubworkNames();
-                            if (clubworkNames != null) {
+                            String[] boatHouseNames = p.getAllBoathouseNames();
+                            if (boatHouseNames != null && boatHouseNames.length>1) {
                                 description.append("<br>" +
-                                        International.getString("Vereinsarbeit") + ": ");
-                                for (int j = 0; j < clubworkNames.length; j++) {
-                                    description.append((j > 0 ? ", " : "") + clubworkNames[j]);
+                                        International.getString("Bootshäuser") + ": ");
+                                for (int j = 0; j < boatHouseNames.length; j++) {
+                                    description.append((j > 0 ? ", " : "") + boatHouseNames[j]);
                                 }
                             }
                             items.put(name, "<html>"+description.toString()+"</html>");
@@ -539,6 +556,28 @@ public class Project extends StorageObject {
         return items;
     }
 
+    private static String getProjectDataType(Project p) {
+    	if (p!=null) {
+    		switch (p.getProjectStorageType()) {
+
+    		case IDataAccess.TYPE_FILE_XML:
+				return "";
+
+    		case IDataAccess.TYPE_EFA_CLOUD:
+   				return "("+International.getString("efaCloud")+": "+p.getProjectEfaCloudURL()+")";
+
+    		case IDataAccess.TYPE_EFA_REMOTE:
+   				return (p.getProjectEfaOnlineConnect() ? "(efaRemote + efaOnline: " : "(efaRemote: ")+  p.getProjectStorageLocation() +")";
+
+    		default:
+  	    		return "";
+    		}
+    	} else {
+    		return "";
+    	}
+    		
+    }
+  
     public Hashtable<String, String> getLogbooks() {
         Hashtable<String, String> items = new Hashtable<String, String>();
         String[] logbooks = getAllLogbookNames();
@@ -547,7 +586,9 @@ public class Project extends StorageObject {
             if (r != null) {
                 String name = "<b>" + International.getString("Fahrtenbuch") + ":</b> <b><font color=blue>" + logbooks[i] + "</font></b><br>";
                 String description = (r.getDescription() != null && r.getDescription().length() > 0 ? r.getDescription() + " " : "");
-                description += "(" + r.getStartDate().toString() + " - " + r.getEndDate() + ")";
+                description += "(" + r.getStartDate().toString() + " - " + r.getEndDate() + ")";/*
+                description += (r.getBoathouseIdentifier()!=null ? r.getBoathouseIdentifier() : "");
+                description += (r.getBoathouseId() != IDataAccess.UNDEFINED_INT ? r.getBoathouseId() : "");*/
                 items.put(logbooks[i], "<html>"+name + description+"</html>");
             }
         }
@@ -1145,11 +1186,18 @@ public class Project extends StorageObject {
                 if (r != null && r.getType() != null
                         && r.getType().equals(ProjectRecord.TYPE_LOGBOOK)
                         && r.getName() != null && r.getName().length() > 0) {
-                    a.add(r.getName());
+                	DataTypeDate dat=r.getStartDate();
+                	String datString=dat.getYear()+EfaUtil.int2String(dat.getMonth(),2)+EfaUtil.int2String(dat.getDay(),2);
+                    a.add(datString+r.getName()); // add a YMD-Date of the startDate as prefix
                 }
                 k = it.getNext();
             }
-            return a.toArray(new String[0]);
+            a.sort(new EfaSortStringDescComparator());
+            String[] retVal=a.toArray(new String[0]);
+            for (int i=0;i<retVal.length;i++) {
+            	retVal[i]=retVal[i].substring(8); // cut the date which is prefix
+            }
+            return retVal;
         } catch (Exception e) {
             Logger.logdebug(e);
             return null;
@@ -1170,11 +1218,18 @@ public class Project extends StorageObject {
                 if (r != null && r.getType() != null
                         && r.getType().equals(ProjectRecord.TYPE_CLUBWORK)
                         && r.getName() != null && r.getName().length() > 0) {
-                    a.add(r.getName());
+                	DataTypeDate dat=r.getStartDate();
+                	String datString=dat.getYear()+EfaUtil.int2String(dat.getMonth(),2)+EfaUtil.int2String(dat.getDay(),2);
+                    a.add(datString+r.getName()); // add a YMD-Date of the startDate as prefix
                 }
                 k = it.getNext();
             }
-            return a.toArray(new String[0]);
+            a.sort(new EfaSortStringDescComparator());
+            String[] retVal=a.toArray(new String[0]);
+            for (int i=0;i<retVal.length;i++) {
+            	retVal[i]=retVal[i].substring(8); // cut the date which is prefix
+            }
+            return retVal;
         } catch (Exception e) {
             Logger.logdebug(e);
             return null;
@@ -1221,6 +1276,7 @@ public class Project extends StorageObject {
                 }
                 k = it.getNext();
             }
+            a.sort(new EfaSortStringComparator());
             return a.toArray(new String[0]);
         } catch (Exception e) {
             Logger.logdebug(e);
@@ -2042,6 +2098,10 @@ public class Project extends StorageObject {
         return getProjectRecord().getRemoteProjectName();
     }
 
+    public String getProjectEfaCloudURL() {
+    	return getProjectRecord().getEfaCloudURL();
+    }
+    
     public boolean getProjectEfaOnlineConnect() {
         return getProjectRecord().getEfaOnlineConnect();
     }

@@ -7,7 +7,6 @@ package de.nmichael.efa.core.config;
 
 import java.awt.Color;
 import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -15,8 +14,6 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Vector;
 
-import javax.swing.BorderFactory;
-import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.plaf.ColorUIResource;
 
@@ -38,7 +35,6 @@ import de.nmichael.efa.core.items.ItemTypeImage;
 import de.nmichael.efa.core.items.ItemTypeInteger;
 import de.nmichael.efa.core.items.ItemTypeItemList;
 import de.nmichael.efa.core.items.ItemTypeLabel;
-import de.nmichael.efa.core.items.ItemTypeLabelHeader;
 import de.nmichael.efa.core.items.ItemTypeLong;
 import de.nmichael.efa.core.items.ItemTypeMultiSelectList;
 import de.nmichael.efa.core.items.ItemTypePassword;
@@ -60,8 +56,7 @@ import de.nmichael.efa.data.types.DataTypeList;
 import de.nmichael.efa.data.types.DataTypeTime;
 import de.nmichael.efa.ex.EfaException;
 import de.nmichael.efa.gui.BaseTabbedDialog;
-import de.nmichael.efa.gui.ImagesAndIcons;
-import de.nmichael.efa.gui.util.RoundedBorder;
+import de.nmichael.efa.gui.EfaGuiUtils;
 import de.nmichael.efa.gui.widgets.AlertWidget;
 import de.nmichael.efa.gui.widgets.IWidget;
 import de.nmichael.efa.gui.widgets.Widget;
@@ -120,7 +115,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 	// specially for efaTYPE values
 	// Boat types, gender types, etc.
 
-	private static final String NOT_STORED_ITEM_PREFIX = "_";
+	public static final String NOT_STORED_ITEM_PREFIX = "_";
 
 	private static final int STRINGLIST_VALUES = 1;
 	private static final int STRINGLIST_DISPLAY = 2;
@@ -1936,13 +1931,9 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 	 *                   in?
 	 */
 	private IItemType addHeader(String uniqueName, int type, String category, String caption, int gridWidth) {
-		// ensure that the header value does not get saved in efaConfig file by adding a
-		// special prefix
-		IItemType item = new ItemTypeLabelHeader(NOT_STORED_ITEM_PREFIX + uniqueName, type, category, " " + caption);
-		item.setPadding(0, 0, 10, 10);
-		item.setFieldGrid(3, GridBagConstraints.EAST, GridBagConstraints.BOTH);
+		IItemType item = EfaGuiUtils.createHeader(uniqueName, type, category, caption, gridWidth); 
 		addParameter(item);
-		return item;
+		return item; 
 	}
 
 	/**
@@ -1962,26 +1953,15 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 	 */
 	private IItemType addDescription(String uniqueName, int type, String category, String caption, int gridWidth,
 			int padBefore, int padAfter) {
-		// ensure that the description value does not get saved in efaConfig file by
-		// adding a special prefix
-		IItemType item = new ItemTypeLabel(NOT_STORED_ITEM_PREFIX + uniqueName, type, category, caption);
-		item.setPadding(0, 0, padBefore, padAfter);
-		item.setFieldGrid(3, GridBagConstraints.EAST, GridBagConstraints.BOTH);
+		IItemType item = EfaGuiUtils.createDescription(uniqueName, type, category, caption, gridWidth, padBefore, padAfter);
 		addParameter(item);
 		return item;
 	}
 
 	private IItemType addHint(String uniqueName, int type, String category, String caption, int gridWidth,
 			int padBefore, int padAfter) {
-		//if caption starts with html, do not have a blank as a prefix as this will disable html rendering.
-		ItemTypeLabel item = (ItemTypeLabel) addDescription(uniqueName, type, category, (caption.startsWith("<html>") ? caption : " "+caption), gridWidth,
-				padBefore, padAfter);
-		item.setImage(ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_INFO));
-		item.setImagePosition(SwingConstants.TRAILING); // info icon should be first, the text trailing.
-		item.setBackgroundColor(hintBackgroundColor);
-		item.setBorder(new RoundedBorder(hintBorderColor));
-		item.setHorizontalAlignment(SwingConstants.LEFT);
-		item.setRoundShape(true);
+		IItemType item = EfaGuiUtils.createHint(uniqueName, type, category, caption, gridWidth, padBefore, padAfter);
+		addParameter(item);
 		return item;
 	}
 
@@ -3410,7 +3390,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
  */
 	private String getDefaultFont() {
 		// get only installed ui-capable fonts.
-		Vector uiFonts = EfaUtil.makeFontFamilyVector(true, null);
+		Vector <String> uiFonts = EfaUtil.makeFontFamilyVector(true, null);
 		
 		String uiFontsString=uiFonts.toString().toLowerCase();
 		
@@ -3494,8 +3474,8 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 
 		addParameter(kanuEfb_boatTypes = new ItemTypeMultiSelectList<String>("KanuEfbBoatTypes",
 				getCanoeBoatTypes(getValue("KanuEfbBoatTypes")),
-				Daten.efaTypes.makeBoatTypeArray(EfaTypes.ARRAY_STRINGLIST_VALUES),
-				Daten.efaTypes.makeBoatTypeArray(EfaTypes.ARRAY_STRINGLIST_DISPLAY),
+				EfaTypes.makeBoatTypeArray(EfaTypes.ARRAY_STRINGLIST_VALUES),
+				EfaTypes.makeBoatTypeArray(EfaTypes.ARRAY_STRINGLIST_DISPLAY),
 				getValueUseFunctionalityCanoeingGermany() ? IItemType.TYPE_PUBLIC : IItemType.TYPE_EXPERT,
 				BaseTabbedDialog.makeCategory(CATEGORY_SYNC, CATEGORY_KANUEFB),
 				International.onlyFor("Fahrten mit folgenden Bootstypen mit Kanu-eFB synchronisieren", "de")));

@@ -48,9 +48,11 @@ public class Ecrid {
             DataKey dataKey = dataKeyIterator.getFirst();
             while (dataKey != null) {
                 DataRecord dataRecord = storageObject.data().get(dataKey);
-                String ecrid = dataRecord.getAsText(ECRID_FIELDNAME);
-                if ((ecrid != null) && (ecrid.length() == 12))
-                    iEcrids.put(ecrid, dataRecord);
+                if (dataRecord.isField(ECRID_FIELDNAME)) {
+	                String ecrid = dataRecord.getAsText(ECRID_FIELDNAME);
+	                if ((ecrid != null) && (ecrid.length() == 12))
+	                    iEcrids.put(ecrid, dataRecord);
+                }
                 dataKey = dataKeyIterator.getNext();
             }
         } catch (EfaException e) {

@@ -193,7 +193,7 @@ public class DataExportDialog extends BaseDialog {
         mainPanel.add(selectedFieldsScrollPane, BorderLayout.CENTER);
 
         
-		IItemType hint = addHint("DataExportCSVHint", IItemType.TYPE_PUBLIC,
+		IItemType hint = EfaGuiUtils.createHint("DataExportCSVHint", IItemType.TYPE_PUBLIC,
 				null,
 				International.getString(
 						"CSV-Export für Tabellenkalkulationen: Bei UTF-8 Zeichensatz 'CSV-Datei (mit BOM)' verwenden."),

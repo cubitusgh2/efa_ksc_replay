@@ -10,15 +10,20 @@
 
 package de.nmichael.efa.gui.widgets;
 
-import de.nmichael.efa.core.config.EfaConfig;
-import de.nmichael.efa.core.items.*;
-import de.nmichael.efa.gui.ImagesAndIcons;
-import de.nmichael.efa.gui.util.RoundedBorder;
-import de.nmichael.efa.util.*;
-import java.util.*;
-import java.awt.*;
+import java.awt.GridBagConstraints;
+import java.awt.Insets;
+import java.util.Vector;
 
-import javax.swing.*;
+import javax.swing.JComponent;
+import javax.swing.JPanel;
+
+import de.nmichael.efa.core.items.IItemType;
+import de.nmichael.efa.core.items.ItemTypeBoolean;
+import de.nmichael.efa.core.items.ItemTypeInteger;
+import de.nmichael.efa.core.items.ItemTypeStringList;
+import de.nmichael.efa.gui.EfaGuiUtils;
+import de.nmichael.efa.util.International;
+import de.nmichael.efa.util.Logger;
 
 
 public abstract class Widget implements IWidget {
@@ -26,8 +31,6 @@ public abstract class Widget implements IWidget {
     public static final String PARAM_ENABLED        = "Enabled";
     public static final String PARAM_POSITION       = "Position";
     public static final String PARAM_UPDATEINTERVAL = "UpdateInterval";
-    public static final String NOT_STORED_ITEM_PREFIX ="_";
-    private static Color hintBackgroundColor= new Color(171,206,241);
     
     String name;
     String description;
@@ -90,13 +93,19 @@ public abstract class Widget implements IWidget {
      * @param gridWidth How many GridBagLayout cells shall this header be placed in?
      */
     protected IItemType addHeader(String uniqueName, int type, String category, String caption, int gridWidth) {
-    	IItemType item = new ItemTypeLabelHeader(NOT_STORED_ITEM_PREFIX+uniqueName, type, category, " "+caption);
-        item.setPadding(0, 0, 10, 10);
-        item.setFieldGrid(3,GridBagConstraints.EAST, GridBagConstraints.BOTH);
+    	IItemType item = EfaGuiUtils.createHeader(uniqueName, type, category, caption, gridWidth);
         addParameterInternal(item);
         return item;
     }
 
+    
+    protected IItemType addHint(String uniqueName, int type, String category, String caption, int gridWidth,
+			int padBefore, int padAfter) {
+    	IItemType item = EfaGuiUtils.createHint(uniqueName, type, category, caption, gridWidth, padBefore, padAfter);
+        addParameterInternal(item);
+        return item;
+    }
+    
     /**
      * Adds a description item in an efa widget config. This description value is not safed within efaConfig.
      * There is no word-wrap for the caption.
@@ -110,25 +119,11 @@ public abstract class Widget implements IWidget {
      * @param gridWidth How many GridBagLayout cells shall this description be placed in?
      */      
     protected IItemType addDescription(String uniqueName, int type, String category, String caption, int gridWidth, int padBefore, int padAfter) {
-    	IItemType item = new ItemTypeLabel(NOT_STORED_ITEM_PREFIX+uniqueName, type, category, caption);
-        item.setPadding(0, 0, padBefore, padAfter);
-        item.setFieldGrid(3,GridBagConstraints.EAST, GridBagConstraints.BOTH);
+    	IItemType item = EfaGuiUtils.createDescription(uniqueName, type, category, caption, gridWidth, padBefore, padAfter);
         addParameterInternal(item);
         return item;
     }
-    
-    protected IItemType addHint(String uniqueName, int type, String category, String caption, int gridWidth, int padBefore, int padAfter) {
-    	ItemTypeLabel item = (ItemTypeLabel) addDescription(uniqueName, type, category, " "+caption, gridWidth, padBefore,padAfter);
-		item.setImage(ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_INFO));
-		item.setImagePosition(SwingConstants.TRAILING); // info icon should be first, the text trailing.
-		item.setBackgroundColor(EfaConfig.hintBackgroundColor);
-		item.setBorder(new RoundedBorder(EfaConfig.hintBorderColor));
-		item.setHorizontalAlignment(SwingConstants.LEFT);
-		item.setRoundShape(true);
-		return item;
-    }
-    
-
+  
     IItemType getParameterInternal(String internalName) {
         String name = getParameterName(internalName);
         for (int i=0; i<parameters.size(); i++) {

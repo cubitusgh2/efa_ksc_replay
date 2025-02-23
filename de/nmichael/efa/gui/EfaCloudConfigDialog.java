@@ -109,7 +109,7 @@ public class EfaCloudConfigDialog extends BaseTabbedDialog implements IItemListe
                 item.setName("efaCloudPassword");
                 item.setNotNull(true);
                 guiItems.add(
-                        item = new ItemTypeString(ProjectRecord.EFACLOUDURL, p.getEfaCoudURL(), IItemType.TYPE_PUBLIC,
+                        item = new ItemTypeString(ProjectRecord.EFACLOUDURL, p.getEfaCloudURL(), IItemType.TYPE_PUBLIC,
                                 category, International.getString("URL des efaCloud Servers")));
                 item.setPadding(0, 0, 0, 0);
                 item.setFieldGrid(2, GridBagConstraints.CENTER, GridBagConstraints.NONE);

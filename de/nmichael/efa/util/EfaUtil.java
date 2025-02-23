@@ -639,11 +639,11 @@ public class EfaUtil {
         if (s == null) {
             return null;
         }
-        Vector v;
+        Vector <String> v;
         if (s.length() > 0) {
             v = split(s, sep);
         } else {
-            v = new Vector();
+            v = new Vector<String>();
         }
         String[] aa = new String[v.size()];
         for (int ii = 0; ii < v.size(); ii++) {
@@ -684,11 +684,11 @@ public class EfaUtil {
         if (s == null) {
             return null;
         }
-        Vector v;
+        Vector <String> v;
         if (s.length() > 0) {
             v = split(s, sep);
         } else {
-            v = new Vector();
+            v = new Vector<String>();
         }
         int[] aa = new int[v.size()];
         for (int ii = 0; ii < v.size(); ii++) {
@@ -1146,7 +1146,7 @@ public class EfaUtil {
     }
 
     // zu einem gegebenen OriginalNamen s aus einer Datenliste l alle passenden Synonymnamen heraussuchen
-    public static Vector org2syn(Synonyme l, String s) {
+    public static Vector <String> org2syn(Synonyme l, String s) {
         if (l == null || s == null) {
             return null;
         }

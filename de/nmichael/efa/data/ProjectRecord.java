@@ -303,8 +303,7 @@ public class ProjectRecord extends DataRecord  {
     public void setStorageLocation(String storageLocation) {
         setString(STORAGELOCATION, storageLocation);
     }
-
-    public String getEfaCloudURL() { return getString(EFACLOUDURL); }
+    
     public void setEfaCloudURL(String efaCloudURL) {
         setString(EFACLOUDURL, efaCloudURL);
     }
@@ -563,7 +562,7 @@ public class ProjectRecord extends DataRecord  {
         return getString(REMOTEPROJECTNAME);
     }
 
-    public String getEfaCoudURL() {
+    public String getEfaCloudURL() {
         return getString(EFACLOUDURL);
     }
 
@@ -830,7 +829,7 @@ public class ProjectRecord extends DataRecord  {
                         ((ItemTypeString) item).setNotNull(true);
                     }
                     if (getStorageType() == IDataAccess.TYPE_EFA_CLOUD) {
-                        v.add(item = new ItemTypeString(ProjectRecord.EFACLOUDURL, getEfaCoudURL(),
+                        v.add(item = new ItemTypeString(ProjectRecord.EFACLOUDURL, getEfaCloudURL(),
                                 IItemType.TYPE_PUBLIC, category,
                                 International.getString("URL des efaCloud Servers")));
                         ((ItemTypeString) item).setNotNull(true);
