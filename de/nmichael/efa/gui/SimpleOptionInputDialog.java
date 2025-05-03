@@ -21,7 +21,7 @@ import java.util.*;
 // @i18n complete
 public class SimpleOptionInputDialog extends SimpleInputDialog implements IItemListener {
 
-    public static final int OPTION_OK = 0;
+	public static final int OPTION_OK = 0;
     public static final int OPTION_CANCEL = 1;
     public static final int OPTION_NONE = 2;
 
@@ -54,10 +54,10 @@ public class SimpleOptionInputDialog extends SimpleInputDialog implements IItemL
             for (int i=0; i<optionButtonAction.length; i++) {
                 switch(optionButtonAction[i]) {
                     case OPTION_OK:
-                        optionButtonIcons[i] = "button_accept.png";
+                        optionButtonIcons[i] = IMAGE_ACCEPT;
                         break;
                     case OPTION_CANCEL:
-                        optionButtonIcons[i] = "button_cancel.png";
+                        optionButtonIcons[i] = IMAGE_CANCEL;
                         break;
                 }
             }
@@ -87,6 +87,12 @@ public class SimpleOptionInputDialog extends SimpleInputDialog implements IItemL
             });
             buttonPanel.add(button);
             buttonActions.put(button, optionButtonAction[i]);
+            
+            // choose the last button in the list with OPTION_OK as default button 
+            if (optionButtonAction[i]==OPTION_OK) {
+            	this.getRootPane().setDefaultButton(button);
+            }
+            
             if (optionButtonIcons != null && optionButtonIcons.length > i &&
                 optionButtonIcons[i] != null) {
                 button.setIcon(getIcon(optionButtonIcons[i]));

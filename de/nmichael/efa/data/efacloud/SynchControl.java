@@ -17,6 +17,7 @@ import de.nmichael.efa.data.storage.DataKey;
 import de.nmichael.efa.data.storage.DataKeyIterator;
 import de.nmichael.efa.data.storage.DataRecord;
 import de.nmichael.efa.data.storage.EfaCloudStorage;
+import de.nmichael.efa.data.storage.IDataAccess;
 import de.nmichael.efa.data.types.DataTypeIntString;
 import de.nmichael.efa.ex.EfaException;
 import de.nmichael.efa.util.International;
@@ -27,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 
+import static de.nmichael.efa.data.LogbookRecord.*;
 import static de.nmichael.efa.data.efacloud.TxRequestQueue.*;
 
 class SynchControl {
@@ -34,7 +36,7 @@ class SynchControl {
     // The names of the tables which allow the key to be modified upon server side insert
     static final String[] tables_with_key_fixing_allowed = TableBuilder.fixid_allowed.split(" ");
     static final long clockoffsetBuffer = 600000L; // max number of millis which client clock may be offset, 10 mins
-    static final long synch_upload_look_back_ms = 30 * 24 * 3600000L; // period in past to check for upload
+    static final long synch_upload_look_back_ms = 5 * 24 * 3600000L; // period in past to check for upload
     static final long surely_newer_after_ms = 600000L; // delta of LastModified to indicate for sure a newer record
 
     long timeOfLastSynch;
@@ -42,6 +44,12 @@ class SynchControl {
     boolean synch_upload = false;
     boolean synch_upload_all = false;
     boolean synch_download_all = false;
+    // efaCloudRolleBths is true if the efacloud user role is that of a boathouse. If true, this will enforce
+    // pre-modification checks during download synchronization
+    boolean efaCloudRolleBths = true;
+    // isBoathouseApp is true, if this s run as efaBoathouse. This will enforce pre-modification checks during download
+    // synchronization
+    boolean isBoathouseApp = true;
 
     int table_fixing_index = -1;
     ArrayList<String> tables_to_synchronize = new ArrayList<String>();
@@ -77,16 +85,29 @@ class SynchControl {
      * @param tablename      the name of the affected table
      * @param dataKey        the datakey of the affected record
      * @param logStateChange set true to start entry with STATECHANGE rather than SYNCH
+     * @param isError        set true to log a synchronization error in the respective file.
      */
-    void logSynchMessage(String logMessage, String tablename, DataKey dataKey, boolean logStateChange) {
+    private void logSynchMessage(String logMessage, String tablename, DataKey dataKey, boolean logStateChange, boolean isError) {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String dataKeyStr = (dataKey == null) ? "" : " - " + dataKey.toString();
         String info = (logStateChange) ? "STATECHANGE " : "SYNCH ";
         String dateString = format.format(new Date()) + " INFO state, [" + tablename + dataKeyStr + "]: " + info + logMessage;
-        String path = TxRequestQueue.logFilePath;
+        String path = (isError) ? synchErrorFilePath : TxRequestQueue.logFilePath;
         // truncate log files,
         File f = new File(path);
         TextResource.writeContents(path, dateString, (f.length() <= 200000) || (!f.renameTo(new File(path + ".previous"))));
+    }
+
+    /**
+     * Write a log message to the synch log.
+     *
+     * @param logMessage     the message to be written
+     * @param tablename      the name of the affected table
+     * @param dataKey        the datakey of the affected record
+     * @param logStateChange set true to start entry with STATECHANGE rather than SYNCH
+     */
+    void logSynchMessage(String logMessage, String tablename, DataKey dataKey, boolean logStateChange) {
+        logSynchMessage(logMessage, tablename, dataKey, logStateChange, false);
     }
 
     /**
@@ -99,7 +120,7 @@ class SynchControl {
         table_fixing_index = 0;
         keyFixingTxCount = 0;
         synch_upload_all = synch_request == TxRequestQueue.RQ_QUEUE_START_SYNCH_UPLOAD_ALL;
-        synch_upload = synch_request == TxRequestQueue.RQ_QUEUE_START_SYNCH_UPLOAD || synch_upload_all;
+        synch_upload = (synch_request == TxRequestQueue.RQ_QUEUE_START_SYNCH_UPLOAD) || synch_upload_all;
         synch_download_all = !synch_upload && (timeOfLastSynch < clockoffsetBuffer);
         String synchMessage = (synch_upload) ? International
                 .getString("Synchronisation client to server (upload) starting") : International
@@ -216,9 +237,11 @@ class SynchControl {
                     i++;
                 }
             } catch (Exception e) {
-                txq.logApiMessage(International
+                String errorMessage = International
                         .getMessage("Ausnahmefehler beim Versuch einen Schlüssel zu korrigieren in {Tabelle}: {Fehler}.",
-                                tx.tablename, e.getMessage()), 1);
+                                tx.tablename, e.getMessage());
+                txq.logApiMessage(errorMessage, 1);
+                logSynchMessage(errorMessage, tx.tablename, oldDr.getKey(), false, true);
             } finally {
                 efaCloudStorage.releaseGlobalLock(globalLock);
                 efaCloudStorage.setPreModifyRecordCallbackEnabled(true);
@@ -400,7 +423,7 @@ class SynchControl {
                                             "Update-Konflikt bei Datensatz in der {type}-Synchronisation. Unterschiedlich sind: {fields}",
                                             "Download", preUpdateRecordsCompareResult) +
                                             " " + International.getString("Bitte bereinige den Datensatz manuell."), tx.tablename,
-                                    localRecord.getKey(), false);
+                                    localRecord.getKey(), false, true);
 
                         // Run update. This update will use the LastModified and ChangeCount of the record to make
                         // it a true copy of the server side record.
@@ -415,10 +438,12 @@ class SynchControl {
                                         "Lokale Replikation des Datensatzes nach {modification} auf dem Server.",
                                         lastModification), tx.tablename, returnedRecord.getKey(), false);
                             } catch (EfaException e) {
-                                txq.logApiMessage(International.getMessage(
+                                String errorMessage = International.getMessage(
                                         "Ausnahmefehler bei der lokalen Modifikation eines Datensatzes in {Tabelle} ",
                                         tx.tablename) + "\n" + returnedRecord.encodeAsString() + "\n" + e.getMessage() +
-                                        "\n" + e.getStackTraceAsString(), 1);
+                                        "\n" + e.getStackTraceAsString();
+                                txq.logApiMessage(errorMessage, 1);
+                                logSynchMessage(errorMessage, tx.tablename, returnedRecord.getKey(), false, true);
                             } finally {
                                 efaCloudStorage.releaseGlobalLock(globalLock);
                             }
@@ -463,7 +488,8 @@ class SynchControl {
     /**
      * Compares two records whether it is probable that one is the update of the other. If three or more data fields
      * differ, it is not believed that one is an update of the other and a data update conflict is created instead of
-     * updating.
+     * updating. Exception is made, if neither the role of the efaCloudUser is "bths" nor the application mode efaBths,
+     * to ensure proper download synchronisation when using efa at home sporadically.
      *
      * @param dr1 DataRecord one to compare
      * @param dr2 DataRecord two to compare
@@ -471,6 +497,8 @@ class SynchControl {
      * @return empty String, if the records are of the same type and differ in only a tolerable amount of data fields
      */
     private String preUpdateRecordsCompare(DataRecord dr1, DataRecord dr2, String tablename) {
+        if (!efaCloudRolleBths && !isBoathouseApp)
+            return "";
         if ((dr1 == null) || (dr2 == null) || (dr1.getClass() != dr2.getClass()))
             return "type mismatch";
         // if archiving is executed or an archived record is restored, do not check for mismatches
@@ -479,10 +507,19 @@ class SynchControl {
         if (tablename.equalsIgnoreCase("efa2persons") ||
                 tablename.equalsIgnoreCase("efa2clubwork")) archiveIDcarrier = "LastName";
         if (tablename.equalsIgnoreCase("efa2messages")) archiveIDcarrier = "Subject";
-        String ln1 = dr1.getAsString(archiveIDcarrier);
-        String ln2 = dr2.getAsString(archiveIDcarrier);
-        if (((ln1 != null) && ln1.startsWith("archiveID:")) || ((ln2 != null) && ln2.startsWith("archiveID:")))
-                return "";
+        
+        //Bugfix EFA#74 / https://github.com/nicmichael/efa/issues/138
+        //looking for values in fields which do not exist causes debug exception logging.
+        //this is excessive in this place. So we check if the field name we are looking for exists in the data record
+        //only check for archiveID: in the field record if the archiveIDcarrier field exists.
+        
+        if (dr1.isField(archiveIDcarrier)) {
+        	String ln1 = dr1.getAsString(archiveIDcarrier);
+            String ln2 = dr2.getAsString(archiveIDcarrier);
+            if (((ln1 != null) && ln1.startsWith("archiveID:")) || ((ln2 != null) && ln2.startsWith("archiveID:")))
+                    return "";        	
+        }
+    
         int allowedMismatches = (TableBuilder.allowedMismatches.get(tablename) == null) ?
                 TableBuilder.allowedMismatchesDefault : TableBuilder.allowedMismatches.get(tablename);
         if (allowedMismatches == 0) return "";    // no check required: e.g. case fahrtenhefte
@@ -506,6 +543,25 @@ class SynchControl {
                     diff++;
                 }
             }
+        }
+        // special and most common case of an efa logbook record: If multiple names are replaced by UUIDs, it is still
+        // the same record, although many fields did change. Identity therefore is checked on EntryId, BoatId, Date,
+        // StartTime and EndTime
+        if (tablename.equalsIgnoreCase("efa2logbook") && (diff >= allowedMismatches)) {
+            String dr1Str = (dr1.getAsString(ENTRYID) == null) ? "null" : dr1.getAsString(ENTRYID) + ",";
+            dr1Str += (dr1.getAsString(DATE) == null) ? "null" : dr1.getAsString(DATE) + ",";
+            dr1Str += (dr1.getAsString(BOATID) == null) ? "null" : dr1.getAsString(BOATID) + ",";
+            dr1Str += (dr1.getAsString(STARTTIME) == null) ? "null" : dr1.getAsString(STARTTIME) + ",";
+            dr1Str += (dr1.getAsString(ENDTIME) == null) ? "null" : dr1.getAsString(ENDTIME);
+            String dr2Str = (dr2.getAsString(ENTRYID) == null) ? "null" : dr2.getAsString(ENTRYID) + ",";
+            dr2Str += (dr2.getAsString(DATE) == null) ? "null" : dr2.getAsString(DATE) + ",";
+            dr2Str += (dr2.getAsString(BOATID) == null) ? "null" : dr2.getAsString(BOATID) + ",";
+            dr2Str += (dr2.getAsString(STARTTIME) == null) ? "null" : dr2.getAsString(STARTTIME) + ",";
+            dr2Str += (dr2.getAsString(ENDTIME) == null) ? "null" : dr2.getAsString(ENDTIME);
+            if (dr1Str.equalsIgnoreCase(dr2Str))
+                return "";
+            else
+                return fieldList.toString();
         }
         return (diff <= allowedMismatches) ? "" : fieldList.toString();
     }

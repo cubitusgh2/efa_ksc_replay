@@ -12,8 +12,6 @@ package de.nmichael.efa.gui;
 
 import de.nmichael.efa.core.items.*;
 import de.nmichael.efa.util.*;
-import de.nmichael.efa.core.config.*;
-import de.nmichael.efa.data.storage.IDataAccess;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -254,7 +252,7 @@ public abstract class BaseTabbedDialog extends BaseDialog {
 
     }
 
-    private int recursiveBuildGui(Hashtable<String,Hashtable> categories,
+    protected int recursiveBuildGui(Hashtable<String,Hashtable> categories,
                                    Hashtable<String,Vector<IItemType>> items,
                                    String catKey,
                                    JComponent currentPane,

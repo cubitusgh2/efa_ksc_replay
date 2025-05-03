@@ -12,7 +12,6 @@ package de.nmichael.efa.core.items;
 
 import de.nmichael.efa.util.*;
 import de.nmichael.efa.util.Dialog;
-import de.nmichael.efa.gui.BaseDialog;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -72,7 +71,7 @@ public class ItemTypeTextArea extends ItemType {
             ((JTextArea) field).setWrapStyleWord(true);
             ((JTextArea) field).setLineWrap(true);
         }
-        field.setEnabled(isEnabled && isEditable);
+        field.setEnabled(isEnabled /*&& isEditable*/);
         scrollPane.getViewport().add(field, null);        
         if (backgroundColor != null) {
             field.setBackground(backgroundColor);
