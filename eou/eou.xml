@@ -1,6 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <efaOnlineUpdate>
 	<Version>
+        <VersionID>2.5.1#10</VersionID>
+        <ReleaseDate>22.02.2026</ReleaseDate>
+        <DownloadUrl>TODO</DownloadUrl>
+        <DownloadSize>TODO</DownloadSize>
+     	<MinimumJavaVersion>1.8</MinimumJavaVersion>
+		<MinimumEfaCloudVersion>2.3.3</MinimumEfaCloudVersion>
+        <ShowNotice lang="de">Basiert auf 2.5.0_01.</ShowNotice>
+        <ShowNotice lang="de">Wenn efaCloud eingesetzt wird, muss der Server mindestens Version 2.3.3 unterstützen. EfaCloud 2.4.0_12 und höher werden empfohlen.</ShowNotice>
+        <ShowNotice lang="en">Based on 2.5.0_01.</ShowNotice>
+        <ShowNotice lang="en">If you use efaCloud, make sure your server at least supports efaCloud Version 2.3.3. It is recommended to upgrade to EfaCloud 2.4.0_12 or above.</ShowNotice>
+        <Changes lang="de">
+        	<ChangeItem>Bugfix: Plugin-Menü/Schaltfläche entfernt. Plugins werden zukünftig immer zusammen mit der EFA-Installation ausgeliefert.</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+			<ChangeItem>Bugfix: Removed "Plugin" menu/button from efa. Plugins get delivered with the standard efa distribution package, so no need to install plugins afterwards in efa.</ChangeItem>
+        </Changes>
+	</Version>
+	<Version>
         <VersionID>2.5.1#9</VersionID>
         <ReleaseDate>19.02.2026</ReleaseDate>
         <DownloadUrl>TODO</DownloadUrl>

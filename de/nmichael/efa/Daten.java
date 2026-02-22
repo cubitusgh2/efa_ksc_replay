@@ -78,9 +78,9 @@ public class Daten {
 	public final static String VERSION = "2.5.1"; // Version für die Ausgabe (z.B. 2.1.0, kann aber
 																	// auch Zusätze wie "alpha" o.ä. enthalten)
 
-	public final static String VERSIONID = "2.5.1_#9"; // VersionsID: Format: "X.Y.Z_MM"; final-Version z.B. 1.4.0_00;
+	public final static String VERSIONID = "2.5.1_#10"; // VersionsID: Format: "X.Y.Z_MM"; final-Version z.B. 1.4.0_00;
 														// beta-Version z.B. 1.4.0_#1  //# is not good, is used in efa.data.Waters 
-	public final static String VERSIONRELEASEDATE = "19.02.2026"; // Release Date: TT.MM.JJJJ
+	public final static String VERSIONRELEASEDATE = "22.02.2026"; // Release Date: TT.MM.JJJJ
 	public final static String MAJORVERSION = "2";
 	public final static String PROGRAMMID = "EFA.251"; // Versions-ID für Wettbewerbsmeldungen
 	public final static String PROGRAMMID_DRV = "EFADRV.251"; // Versions-ID für Wettbewerbsmeldungen
@@ -1520,7 +1520,17 @@ public class Daten {
 			}
 		}
 
-		// efa Plugin-Infos
+		/* efa Plugin-Infos
+		 * As of efa 2.5.1, the efa plugin infos are for information only in the efaAbout dialog.
+		 * The possibility to install plugins from efa.nmichael.de has been removed, as the 
+		 * plugins are always included in the distribution of efa - there is simply no need to download plugins afterwards.
+		 * 
+		 * The plugin info is not outdated yet, as the libraries/plugins need to be within the classpath
+		 * so that java can instantiate them. If the libraries cannot be found, some functions of efa may fail.
+		 * To be able to debug this (detect that the libraries can be instantiated), this code is still neccesary.
+		 * 
+		 * Also plugins.xml needs to be updated as well when adding new libraries.
+		 */
 		if (pluginInfos) {
 			try {
 				File dir = new File(Daten.efaPluginDirectory);

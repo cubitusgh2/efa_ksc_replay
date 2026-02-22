@@ -124,7 +124,6 @@ public class ImagesAndIcons {
 	public static final String IMAGE_MENU_MESSAGES = "menu_messages.png";
 	public static final String IMAGE_MENU_PASSWORD = "menu_password.png";
 	public static final String IMAGE_MENU_PERSONS = "menu_persons.png";
-	public static final String IMAGE_MENU_PLUGINS = "menu_plugins.png";
 	public static final String IMAGE_MENU_PROJECTS = "menu_projects.png";
 	public static final String IMAGE_MENU_SESSIONGROUPS = "menu_sessiongroups.png";
 	public static final String IMAGE_MENU_STATISTICS = "menu_statistics.png";

@@ -1,4 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+	As of efa 2.5.1, the efa plugin infos are for information only in the efaAbout dialog.
+	The possibility to install plugins from efa.nmichael.de has been removed, as the 
+	plugins are always included in the distribution of efa - there is simply no need to download plugins afterwards.
+	
+	The plugin info is not outdated yet, as the libraries/plugins need to be within the classpath
+	so that java can instantiate them. If the libraries cannot be found, some functions of efa may fail.
+	To be able to debug this (detect that the libraries can be instantiated), this code is still neccesary.
+		
+ -->
 <Plugins>
 
     <Plugin name="ftp">
