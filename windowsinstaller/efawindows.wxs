@@ -1,0 +1,78 @@
+<?xml version="1.0"?>
+<!--
+  This is a basic WiX installer for efa2. It installs the main jar file and creates shortcuts on the desktop and start menu.
+  The installer is designed to be compatible with Windows 7 and later.
+  It cannot install java itself, but latter in the start process of efa, 
+  a java version check is performed and if no suitable java version is found, the user is prompted to install java.
+
+  To create the msi files in the linux-based build process, the WiX toolset needs to be installed 
+  and the candle and light commands need to be run with this .wxs file as input.
+  
+  apt install wixl-data msitools
+
+-->  
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <!-- Upgrade Code needs to be unique for all efa2 versions, so that an upgrade is possible.-->
+  <?define UpgradeCodeForEfaTwoFamily="{YOURGUID-GOES-HERE-9586-B92717D03E90}"?>
+  
+  <!-- The efa version is set by the build script -->
+  <?define version="1.0.0"?>
+  <?define productName="efa2"?>
+
+  <!-- The product id with only question marks will be replaced by a new UUID each time the installer is creatred. -->
+  <Product
+      Id="????????-????-????-????-????????????"
+      Name="$(var.productName)"
+      Language="1033"
+      Version="$(var.version)"
+      Manufacturer="efa2 electronic Logbook"
+      UpgradeCode="$(var.UpgradeCodeForEfaTwoFamily)">
+
+    <!-- Compatibility with Windows 7: InstallerVersion 200 -->
+    <Package 
+    	ID="????????-????-????-????-????????????"
+    	Description="Installer for efa2"
+    	InstallerVersion="200" 
+    	Compressed="yes" 
+    	InstallScope="perUser"/>
+
+    <Media Id="1" Cabinet="product.cab" EmbedCab="yes"/>
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <!-- Install in %LOCALAPPDATA%\MyApp so that efa2 can use it's own update mechanism later-->
+      <Directory Id="LocalAppDataFolder">
+        <Directory Id="INSTALLFOLDER" Name="$(var.productName)">
+          <Component Id="MainExecutable" Guid="PUT-GUID-HERE-2">
+            <File Id="MyAppJar" Source="../build/myapp.jar" KeyPath="yes"/>
+          </Component>
+        </Directory>
+      </Directory>
+
+      <Directory Id="DesktopFolder" Name="Desktop">
+        <Component Id="DesktopShortcut" Guid="PUT-GUID-HERE-3">
+          <Shortcut
+            Id="MyAppShortcut"
+            Name="MyApp"
+            Description="Start MyApp"
+            Target="[INSTALLFOLDER]myapp.jar"
+            WorkingDirectory="INSTALLFOLDER"/>
+          <RegistryValue Root="HKCU" Key="Software\MyApp" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        </Component>
+      </Directory>
+    </Directory>
+    
+    <Icon Id="efaBthsIcon" SourceFile="../root/efa.ico"/>
+    <Icon Id="efaBaseIcon" SourceFile="../root/efa.ico"/>
+    
+    <Feature Id="MainFeature" Title="MyApp" Level="1">
+      <ComponentRef Id="MainJar"/>
+      <ComponentRef Id="efaBthsBat"/>
+      <ComponentRef Id="efaBaseBat"/>
+      <ComponentRef Id="DesktopShortcutBths"/>
+      <ComponentRef Id="DesktopShortcutBase"/>
+      <ComponentRef Id="StartMenuBths"/>
+      <ComponentRef Id="StartMenuBase"/>
+    </Feature>
+
+  </Product>
+</Wix>
