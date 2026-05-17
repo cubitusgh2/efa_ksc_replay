@@ -74,7 +74,7 @@ TARGET=1.8
 
 #EFA SOURCE AND OTHER RESOURCES
 EFABASE=/home/efa/efadev
-EFASRC=$EFABASE/src
+EFASRC=$EFABASE/src/
 EFADOC=$EFABASE/src/help/main
 EFACFG=$EFABASE/src/cfg
 EFAFMT=$EFABASE/src/fmt
@@ -97,10 +97,13 @@ SRCBACKUP=/home/efa/Backup
 EFAWINDSETUP=$EFABASE/winmedia
 
 CLASSPATH=$MAKEDIST_JAVA:$MAKEDIST_TOOLS
-CLASSPATH=$CLASSPATH:$PLUGINS/ftp/edtftpj.jar:$CLASSPATH:$PLUGINS/ftp/jsch-0.1.55.jar:$PLUGINS/help/jh.jar:$PLUGINS/jsuntimes/jsuntimes.jar:$PLUGINS/mail/javax.mail.jar:$PLUGINS/mail/activation.jar:$PLUGINS/flatlaf/flatlaf-3.6.jar
+CLASSPATH=$CLASSPATH:$PLUGINS/ftp/edtftpj.jar:$CLASSPATH:$PLUGINS/ftp/jsch-0.1.55.jar:$PLUGINS/help/jh.jar:$PLUGINS/jsuntimes/jsuntimes.jar:$PLUGINS/mail/javax.mail.jar:$PLUGINS/mail/activation.jar:
+CLASSPATH=$CLASSPATH:$PLUGINS/flatlaf/flatlaf-3.6.jar
 CLASSPATH=$CLASSPATH:$PLUGINS/pdf/avalon-framework.jar:$PLUGINS/pdf/batik-all.jar:$PLUGINS/pdf/commons-io.jar:$PLUGINS/pdf/commons-logging.jar:$PLUGINS/pdf/fop.jar:$PLUGINS/pdf/xmlgraphics-commons.jar
 CLASSPATH=$CLASSPATH:$PLUGINS/weather/commons-codec.jar:$PLUGINS/weather/signpost-core.jar
 CLASSPATH=$CLASSPATH:$PLUGINS/json/json-20250517.jar
+
+echo $CLASSPATH
 
 if [ -d ${MAKEDIST:?} ] ; then
   rm -fR ${MAKEDIST:?}
@@ -146,7 +149,7 @@ cd ${MAKEDIST_JAVA:?}
 rm ~/compile.log
 for f in `cat  ${MAKEDIST:?}/dirlist.tmp`
 do
-  $JAVAC -target $TARGET -source $TARGET -classpath $CLASSPATH $f/*.java >>~/compile.log 2>&1 || exit 1
+  $JAVAC -target $TARGET -source $TARGET -classpath $CLASSPATH $f/*.java >~/compile.log 2>&1 || exit 1
   rm $f/*.java
 done
 rm -f ${MAKEDIST:?}/dirlist.tmp
@@ -200,7 +203,7 @@ cp ${PLUGINS:?}/ftp/edtftpj.jar ${MAKEDIST_PLUGINS:?}/
 cp ${PLUGINS:?}/ftp/jsch-0.1.55.jar ${MAKEDIST_PLUGINS:?}/
 cp ${PLUGINS:?}/weather/commons-codec.jar ${MAKEDIST_PLUGINS:?}/
 cp ${PLUGINS:?}/weather/signpost-core.jar ${MAKEDIST_PLUGINS:?}/
-cp ${PLUGINS:?}/flatlaf/flatlaf-*.jar ${MAKEDIST_PLUGINS:?}/
+cp ${PLUGINS:?}/flatlaf/flatlaf*.jar ${MAKEDIST_PLUGINS:?}/
 cp ${PLUGINS:?}/json/json*.jar ${MAKEDIST_PLUGINS:?}/
 
 echo "Copying Config Files ..."
@@ -299,6 +302,11 @@ rm -f ${DIST:?}/efa${VERSION:?}.tar
 zip -r ${DIST:?}/efa${VERSION:?}.zip .
 tar cfv ${DIST:?}/efa${VERSION:?}.tar .
 
+#Github needs the eou.xml as asset for each version, so that efa online update
+#can search for update info for each release. So we include the eou.xml file for publishing on github
+cp ${EFASRC}/eou/eou.xml ${DIST:?}/efa${VERSION:?}/eou.xml
+
+#Preapare windows release files.
 if [ "$VERSIONID" != "" ] ; then
   mkdir ${EFAVERSIONS}/${VERSIONID}
   cp ${DIST:?}/efa${VERSION:?}.zip ${EFAVERSIONS}/${VERSIONID}/
