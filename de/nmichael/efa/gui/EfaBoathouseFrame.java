@@ -483,13 +483,12 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
 	    	                    try {
 	    	                        // cancel runs synchronously and blocks until finished
 	    	                    	EfaBoathouseFrame.this.cancel(null, EFA_EXIT_REASON_SYSTEM, null, false);
-	    	                    	// yay, system exit has been done, now we can count down the latch 
-	    	                    	// and let the shutdown hook finish and the JVM to exit.
-	    	                        latch.countDown();
 	    	                    } catch (Throwable t) {
 	    	                    	Logger.log(Logger.ERROR, Logger.MSG_GENERIC_ERROR,"Exception in shutdown hook: " +
 	    	        	            		t.getLocalizedMessage());
 	    	                    } finally {
+	    	                    	// yay, system exit has been done, now we can count down the latch 
+	    	                    	// and let the shutdown hook finish and the JVM to exit.
 	    	                        latch.countDown();
 	    	                    }
 	    	                }
@@ -508,6 +507,8 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
 	    	            if (!completed) {
 	    	                Logger.log(Logger.WARNING, Logger.MSG_GENERIC_ERROR, "Shutdown: cancel() did not finish within timeout.");
 	    	            }
+    	        	} else {
+    	        		
     	        	}
     	        } catch (Throwable t) {
     	            Logger.log(Logger.ERROR, Logger.MSG_GENERIC_ERROR, "Exception in shutdown hook: " +
@@ -1481,9 +1482,9 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
 //        if (e != null) {
 //            super.processWindowEvent(e);
 //        }
+        super.cancel();
         Logger.log(Logger.INFO, Logger.MSG_EVT_EFAEXIT,
                 International.getMessage("Programmende durch {originator}", who));
-        super.cancel();
         Daten.haltProgram(exitCode);
         return true;
     }
