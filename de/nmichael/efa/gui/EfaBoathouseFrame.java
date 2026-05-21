@@ -506,6 +506,8 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
 	    	            }
 	    	            if (!completed) {
 	    	                Logger.log(Logger.WARNING, Logger.MSG_GENERIC_ERROR, "Shutdown: cancel() did not finish within timeout.");
+	    	    			//this line is neccessary as other wise efa will assume that it hasn't been shut down correctly.
+	    	                Logger.log(Logger.INFO, Logger.MSG_CORE_HALT, International.getString("PROGRAMMENDE"));
 	    	            }
     	        	} else {
     	        		
