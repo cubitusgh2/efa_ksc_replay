@@ -469,6 +469,8 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     	    @Override
     	    public void run() {
     	        try {
+	        		Daten.setShutdownHookRunning();
+
     	        	/* The shutdown hook is called when the JVM is shutting down because of a call to System.exit() 
     	        	   or when the user clicks the close button of the window.
     	        	   The cancel() method sets isShutdownRequested to true once it is called.
@@ -476,6 +478,8 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     	        	   so the code will only be run if isShutdownRequested is false.
     	        	 */
     	        	if (!Daten.isShutdownRequested()) {
+    	        		// in practice, this code is only run under linux as windows always closes the main window first, 
+    	        		// which calls cancel() and sets isShutdownRequested to true, before the shutdown hooks are called.
 	    	        	final CountDownLatch latch = new CountDownLatch(1);
 	    	            Runnable r = new Runnable() {
 	    	                @Override
@@ -509,16 +513,19 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
 	    	    			//this line is neccessary as other wise efa will assume that it hasn't been shut down correctly.
 	    	                Logger.log(Logger.INFO, Logger.MSG_CORE_HALT, International.getString("PROGRAMMENDE"));
 	    	            }
+	        	        System.exit(Daten.getShutdownExitCode()); 
     	        	} else {
     	        		
     	        	}
+
     	        } catch (Throwable t) {
     	            Logger.log(Logger.ERROR, Logger.MSG_GENERIC_ERROR, "Exception in shutdown hook: " +
     	            		t.getLocalizedMessage());
     	        }
-    	    }
-    	});
 
+    	   }
+    	});
+    	
 	}
     
     private void iniApplication() {
