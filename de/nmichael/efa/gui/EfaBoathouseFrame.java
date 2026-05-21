@@ -513,7 +513,9 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
 	    	    			//this line is neccessary as other wise efa will assume that it hasn't been shut down correctly.
 	    	                Logger.log(Logger.INFO, Logger.MSG_CORE_HALT, International.getString("PROGRAMMENDE"));
 	    	            }
-	        	        System.exit(Daten.getShutdownExitCode()); 
+	    	            // we cannot call System.exit here because that would be a deadlock.
+	    	            // Runtime.halt() returns the desired ShutdownExitCode.
+	        	        Runtime.getRuntime().halt(Daten.getShutdownExitCode()); 
     	        	} else {
     	        		
     	        	}
