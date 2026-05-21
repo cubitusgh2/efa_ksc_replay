@@ -291,8 +291,20 @@ public class Daten {
 	// if not, flatLaf-3.2.5.jar may be missing in classpath.
 	public static Boolean flatLafInitializationOK = false;
 	
-	public static Boolean isShutdownRequested=false;
+	private static Boolean isShutdownRequested=false;
 
+	public static synchronized void requestShutdown() {
+		isShutdownRequested = true;
+	}
+	
+	public static synchronized void resetShutdownRequest() {
+		isShutdownRequested = false;
+	}
+	
+	public static synchronized boolean isShutdownRequested() {
+		return isShutdownRequested;
+	}
+	
 	// Applikations- PID
 	public static String applPID = "XXXXX"; // will be set in iniBase(...)
 
