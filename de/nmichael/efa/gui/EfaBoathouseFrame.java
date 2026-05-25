@@ -340,7 +340,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         setIconImage(EfaGuiUtils.getEfaMainIcon());
         mainPanel.setLayout(new GridBagLayout());
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-        setResizable(true);
+        setResizable(false);
         this.addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowClosing(WindowEvent e) {
                 this_windowClosing(e);
