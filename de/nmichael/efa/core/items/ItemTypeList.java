@@ -104,8 +104,8 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         private boolean cellHasFocus;
 
         private final int iconGap = 6;
-        private final int rightPadding = 6;
-        private final int leftPadding = HORZ_SINGLE_BORDER; // nutzt bestehende Konstante
+        private final int rightPadding = 12;
+        private final int leftPadding = 8; // nutzt bestehende Konstante
         private final int reservedGapBetweenSides = 40; // <-- gewünschte 40px whitespace
         private static final int SELECTION_ARC = 9; // z.B. 8px; ändere Wert nach Wunsch
         private static final int SELECTION_ARC_SEPARATOR = 14; // größerer Wert für Separatoren, damit sie sich besser abheben
@@ -119,12 +119,22 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         Color listBackground;
         Color selBg = javax.swing.UIManager.getColor("List.selectionBackground");
         Color selFg = javax.swing.UIManager.getColor("List.selectionForeground");
+        Color inActiveSelBg = javax.swing.UIManager.getColor("List.selectionInactiveBackground");
         
         private final Color grayColor = new Color(136, 136, 136); // #888888
 
         public FastTwoColumnListCellRenderer() {
             setOpaque(true);
             setBorder(_emptyBorder);
+           
+            if (Daten.javaVersionInt >= 9) {
+				// On Java 9 and above, we can rely on the desktop hints for optimal text rendering, which may include subpixel anti-aliasing if supported by the OS and font.
+            	desktopHints = Toolkit.getDefaultToolkit().getDesktopProperty("awt.font.desktophints");
+            } // else desktophints remain null
+            
+            if (Daten.lookAndFeel.endsWith(Daten.LAF_METAL) || Daten.lookAndFeel.endsWith(Daten.LAF_WINDOWS) || Daten.lookAndFeel.endsWith(Daten.LAF_WINDOWS_CLASSIC)) {
+            	inActiveSelBg = selBg;
+            }
         }
 
         @Override
@@ -152,20 +162,15 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
             fmStandard = getFontMetrics(fontStandard);
             fmBold = getFontMetrics(fontBold);
             
-            if (Daten.javaVersionInt >= 9) {
-				// On Java 9 and above, we can rely on the desktop hints for optimal text rendering, which may include subpixel anti-aliasing if supported by the OS and font.
-            	desktopHints = Toolkit.getDefaultToolkit().getDesktopProperty("awt.font.desktophints");
-            } // else desktophints remain null
-            
             int prefH = Math.max(fmStandard.getHeight() + 6, (iconHeight > 0 ? iconHeight + 4 : 0));
-            setPreferredSize(new Dimension(fieldWidth, prefH));
+            setPreferredSize(new Dimension(fieldWidth, prefH+4)); // +4 for vertical padding
 
             return this;
         }
 
         protected void paintComponent(java.awt.Graphics g0) {
             // We intentionally paint everything here on our own (no HTML).
-        	// this is neccesary because with lot of boats which show secondary and tertiary informations,
+        	// this is necessary because with lot of boats which show secondary and tertiary informations,
         	// the performance of HTML rendering is very bad on a Raspberry Pi 3b. With this custom rendering, 
         	// we can achieve a very good performance even with 300 boats and secondary and tertiary information.
         	
@@ -234,11 +239,15 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
             	// The text is drawn centered and in bold.
                 if (!isSelected) {
                     g.setColor(_separatorBackground);
-                     g.fillRoundRect(4, 1, w-8, h-1, SELECTION_ARC_SEPARATOR, SELECTION_ARC_SEPARATOR);
+                     g.fillRoundRect(6, 1, w-12, h-1, SELECTION_ARC_SEPARATOR, SELECTION_ARC_SEPARATOR);
                 } else {
-                    g.setColor(selBg != null ? selBg : this.getBackground());
+                	if (cellHasFocus) {
+                		g.setColor(selBg != null ? selBg : this.getBackground());
+                	} else {
+                		g.setColor(inActiveSelBg != null ? inActiveSelBg : this.getBackground());
+                	}
                     // Abgerundete Selektion zeichnen
-                    g.fillRoundRect(4, 1, w-8, h-1, SELECTION_ARC_SEPARATOR, SELECTION_ARC_SEPARATOR);
+                    g.fillRoundRect(6, 1, w-12, h-1, SELECTION_ARC_SEPARATOR, SELECTION_ARC_SEPARATOR);
                 }
             } else {
                 // Standard entry: show rounded selection if selected, otherwise normal background.
@@ -246,7 +255,11 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
                 	//Draw white background first to avoid color bleeding on rounded corners when selection background is not opaque
                     g.setColor(listBackground);
                     g.fillRect(0, 1, w, h-1);
-                    g.setColor(selBg != null ? selBg : getBackground());
+                    if (cellHasFocus) {
+                    	g.setColor(selBg != null ? selBg : getBackground());
+                    } else {
+                    	g.setColor(inActiveSelBg != null ? inActiveSelBg : this.getBackground());
+                    }
                     g.fillRoundRect(4, 1, w-8, h-1, SELECTION_ARC_SEPARATOR, SELECTION_ARC_SEPARATOR);
                 } else {
                     g.setColor(listBackground);
