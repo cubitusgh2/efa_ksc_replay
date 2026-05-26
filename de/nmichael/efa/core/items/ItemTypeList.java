@@ -88,7 +88,6 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     protected static final String LIST_SECTION_STRING_START = LIST_SECTION_STRING + "  ";
     protected static final String LIST_SECTION_STRING_END = "  " + LIST_SECTION_STRING;
     //Spacings for pretty rendering
-    private static final int SPACING_BOATNAME_SECONDPART  = 60; //60 pixels
 	private static final int HORZ_SINGLE_BORDER=5;
 	private static Border _emptyBorder = new EmptyBorder(2, HORZ_SINGLE_BORDER, 2, HORZ_SINGLE_BORDER);
 	private Color _separatorBackground = new Color(240,240,240);
@@ -103,12 +102,13 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         private boolean isSelected;
         private boolean cellHasFocus;
 
-        private final int iconGap = 6;
-        private final int rightPadding = 12;
-        private final int leftPadding = 8; // nutzt bestehende Konstante
-        private final int reservedGapBetweenSides = 40; // <-- gewünschte 40px whitespace
-        private static final int SELECTION_ARC = 9; // z.B. 8px; ändere Wert nach Wunsch
-        private static final int SELECTION_ARC_SEPARATOR = 14; // größerer Wert für Separatoren, damit sie sich besser abheben
+        private final static int iconGap = 6;
+        private final static int selectionBarPadding = 6; // padding inside the selection bar for better visuals
+        private final static int rightPadding = 12;
+        private final static int leftPadding = 12; 
+        private final static int verticalPaddingBetweenList = 2; //shall be a round number, 2 means one pixel above, one below the text.
+        private final static int reservedGapBetweenSides = 40; // <-- gewünschte 40px whitespace
+        private static final int SELECTION_ARC = 14; // größerer Wert für Separatoren, damit sie sich besser abheben
         
         Font fontStandard ;
         Font fontBold ;
@@ -163,7 +163,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
             fmBold = getFontMetrics(fontBold);
             
             int prefH = Math.max(fmStandard.getHeight() + 6, (iconHeight > 0 ? iconHeight + 4 : 0));
-            setPreferredSize(new Dimension(fieldWidth, prefH+4)); // +4 for vertical padding
+            setPreferredSize(new Dimension(fieldWidth, prefH+verticalPaddingBetweenList)); // +4 for vertical padding
 
             return this;
         }
@@ -239,7 +239,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
             	// The text is drawn centered and in bold.
                 if (!isSelected) {
                     g.setColor(_separatorBackground);
-                     g.fillRoundRect(6, 1, w-12, h-1, SELECTION_ARC_SEPARATOR, SELECTION_ARC_SEPARATOR);
+                     g.fillRoundRect(selectionBarPadding, 1, w-(selectionBarPadding*2), h-1, SELECTION_ARC, SELECTION_ARC);
                 } else {
                 	if (cellHasFocus) {
                 		g.setColor(selBg != null ? selBg : this.getBackground());
@@ -247,7 +247,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
                 		g.setColor(inActiveSelBg != null ? inActiveSelBg : this.getBackground());
                 	}
                     // Abgerundete Selektion zeichnen
-                    g.fillRoundRect(6, 1, w-12, h-1, SELECTION_ARC_SEPARATOR, SELECTION_ARC_SEPARATOR);
+                    g.fillRoundRect(selectionBarPadding, 1, w-(selectionBarPadding*2), h-1, SELECTION_ARC, SELECTION_ARC);
                 }
             } else {
                 // Standard entry: show rounded selection if selected, otherwise normal background.
@@ -260,7 +260,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
                     } else {
                     	g.setColor(inActiveSelBg != null ? inActiveSelBg : this.getBackground());
                     }
-                    g.fillRoundRect(4, 1, w-8, h-1, SELECTION_ARC_SEPARATOR, SELECTION_ARC_SEPARATOR);
+                    g.fillRoundRect(selectionBarPadding, 1, w-(selectionBarPadding*2), h-1, SELECTION_ARC, SELECTION_ARC);
                 } else {
                     g.setColor(listBackground);
                     g.fillRect(0, 0, w, h);
@@ -640,6 +640,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 	        filterTextField.addKeyListener(this);
 	        filterTextField.putClientProperty("caretWidth", 3);
 	        filterTextField.setMargin(new Insets(0,2,0,0));
+	        Dialog.setPreferredSize(filterTextField, 150, 21);
 	        updateLastFilterChange();
         }
         popup = new JPopupMenu();

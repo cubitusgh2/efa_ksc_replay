@@ -249,7 +249,7 @@ public abstract class BaseTabbedDialog extends BaseDialog {
         // select an item to focus
         Vector<IItemType> v = itemsPerCategory.get( (selectedPanel != null ? selectedPanel : cats[0]));
         for (int i=0; v != null && i<v.size(); i++) {
-            if (!(v.get(i) instanceof ItemTypeLabel) && v.get(i).isVisible() && v.get(i).isEditable()) {
+            if (!(v.get(i) instanceof ItemTypeLabel) && v.get(i).isVisible() && v.get(i).isEditable() && v.get(i).isEnabled() ) {
                 if (focusItem == null) {
                     setRequestFocus(v.get(i));
                 }

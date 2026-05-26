@@ -165,18 +165,7 @@ public class VersionizedDataEditDialog extends UnversionizedDataEditDialog imple
                 versions = new Hashtable<Integer,DataRecord>();
                 for (int i=0; i<recs.length; i++) {
                     DataRecord r = recs[i];
-                    //StringBuilder content = new StringBuilder();
-                    //String boldStart = (r.getKey().equals(dataRecord.getKey()) ? "<b style=\"font-color:blue\">" : "");
-                    //String boldEnd = (r.getKey().equals(dataRecord.getKey()) ? "</b>" : "");
-                    //String bgcol = (r.getKey().equals(dataRecord.getKey()) ? " style=\"background-color:#ffffaa;\"" : "");
-                    //content.append("<table width=\"100%\" style=\"border-width:1px; font-family:sans-serif; font-size:12pt; padding:0px; margin:0px;\"><tr>");
-                    //content.append("<td width=\"20%\"" + bgcol + " cellpadding=\"0\">" + boldStart + International.getString("Version") + " " + (i+1) + boldEnd + "</td>");
-                    //content.append("<td width=\"38%\"" + bgcol + " cellpadding=\"0\">" + boldStart + r.getValidFromTimeString() + boldEnd + "</td>");
-                    //content.append("<td width=\"4%\"" + bgcol + " cellpadding=\"0\">" + boldStart + "-" + boldEnd + "</td>");
-                    //content.append("<td width=\"38%\"" + bgcol + " cellpadding=\"0\">" + boldStart + r.getValidUntilTimeString() + boldEnd + "</td>");
-                    //content.append("</table>");
                     String key = getListKey(i);
-                    //items.put(key, content.toString());
                     boolean selected = r.getKey().equals(dataRecord.getKey());
                     TableItem[] content = new TableItem[3];
                     content[0] = new TableItem(Integer.toString(i+1), selected);
@@ -242,7 +231,7 @@ public class VersionizedDataEditDialog extends UnversionizedDataEditDialog imple
 				//than the current screen size allows.
 				JScrollPane scrollPane = new JScrollPane(innerPanel);
 				scrollPane.setBorder(BorderFactory.createEmptyBorder(4,4,4,4));
-				scrollPane.setPreferredSize(EfaGuiUtils.getTabPanelPreferredSize(otherPanelHeight ,  this));
+				scrollPane.setPreferredSize(EfaGuiUtils.getTabPanelPreferredSize(otherPanelHeight ,  this, 1100, 900));
 				scrollPane.getVerticalScrollBar().setUnitIncrement(12);
 				innerPanel.setLayout(new GridBagLayout());
 				panel.setLayout(new BorderLayout());
