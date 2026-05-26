@@ -334,12 +334,8 @@ public class EfaGuiUtils {
     	
     	// No size configured for dialogs or even efaBths window? 
     	// then use screen height/width as base
-    	if (maxDlgW<=0) {
-    		maxDlgW=Math.min(s.width-80,1400);
-    	}
-    	if (maxDlgH<=0) {
-    		maxDlgH=Math.min(s.height-((numCats+1)*25), 900);
-    	}
+   		maxDlgW=Math.min(s.width-80,1200);
+   		maxDlgH=Math.min(s.height-((numCats+1)*25), 900);
     	
 		return new Dimension(
 				(int) Math.round(maxDlgW*.85), 
