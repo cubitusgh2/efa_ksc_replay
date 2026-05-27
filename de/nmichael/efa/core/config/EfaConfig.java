@@ -1484,21 +1484,21 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					International.getString("Verzögerung, bis Tooltip ausgeblendet wird (msec)")));
 
 			// additional fields in boatlist
-			addHeader("efaGuiBoathouseBoatListsAddFieldsHeader", IItemType.TYPE_EXPERT,
+			addHeader("efaGuiBoathouseBoatListsAddFieldsHeader", IItemType.TYPE_PUBLIC,
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI_BOATLIST),
 					International.getString("Zusätzliche Felder in der Bootsliste"), 3);
 			
 			addParameter(efaDirekt_BoathouseExtBoatField1 = new ItemTypeStringList("efaGuiBoathouseBoatListsAddFieldsBoat1",
 					"", 
 					makeExtdFieldsArray(STRINGLIST_VALUES, boatExtFields),
-					makeExtdFieldsArray(STRINGLIST_DISPLAY, boatExtFields), IItemType.TYPE_EXPERT,
+					makeExtdFieldsArray(STRINGLIST_DISPLAY, boatExtFields), IItemType.TYPE_PUBLIC,
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI_BOATLIST),
 					International.getString("Bootsliste - Zusatzfeld 1")));
 
 			addParameter(efaDirekt_BoathouseExtBoatField2 = new ItemTypeStringList("efaGuiBoathouseBoatListsAddFieldsBoat2", 
 					"", 
 					makeExtdFieldsArray(STRINGLIST_VALUES, boatExtFields),
-					makeExtdFieldsArray(STRINGLIST_DISPLAY, boatExtFields), IItemType.TYPE_EXPERT,
+					makeExtdFieldsArray(STRINGLIST_DISPLAY, boatExtFields), IItemType.TYPE_PUBLIC,
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI_BOATLIST),
 					International.getString("Bootsliste - Zusatzfeld 2")));
 			efaDirekt_BoathouseExtBoatField2.setPadding(0, 0, 0, 20);
@@ -1506,19 +1506,19 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 			addParameter(efaDirekt_BoathouseExtPersonField1 = new ItemTypeStringList("efaGuiBoathouseBoatListsAddFieldsPerson1", 
 					"",
 					makeExtdFieldsArray(STRINGLIST_VALUES, personExtFields),
-					makeExtdFieldsArray(STRINGLIST_DISPLAY, personExtFields), IItemType.TYPE_EXPERT,
+					makeExtdFieldsArray(STRINGLIST_DISPLAY, personExtFields), IItemType.TYPE_PUBLIC,
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI_BOATLIST),
 					International.getString("Personenliste - Zusatzfeld 1")));
 
 			addParameter(efaDirekt_BoathouseExtPersonField2 = new ItemTypeStringList("efaGuiBoathouseBoatListsAddFieldsPerson2", 
 					"",
 					makeExtdFieldsArray(STRINGLIST_VALUES, personExtFields),
-					makeExtdFieldsArray(STRINGLIST_DISPLAY, personExtFields), IItemType.TYPE_EXPERT,
+					makeExtdFieldsArray(STRINGLIST_DISPLAY, personExtFields), IItemType.TYPE_PUBLIC,
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI_BOATLIST),
 					International.getString("Personenliste - Zusatzfeld 2")));
 
 			addParameter(efaDirekt_ExtendedFieldsOnFirstPageInEditDialog = new ItemTypeBoolean(
-					"efaGuiBoathouseBoatListsExtdFieldsOnFirstPageInEditDialog", true, IItemType.TYPE_EXPERT,
+					"efaGuiBoathouseBoatListsExtdFieldsOnFirstPageInEditDialog", true, IItemType.TYPE_PUBLIC,
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI_BOATLIST), International.getString(
 							"In Bearbeitungsdialogen die ausgewählten Felder auf der ersten Seite darstellen")));			
 			

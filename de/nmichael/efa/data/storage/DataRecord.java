@@ -560,15 +560,33 @@ public abstract class DataRecord implements Cloneable, Comparable {
         
     }
 
+    /**
+	 * Returns a string with all field values separated by ";".
+	 * This is intended to used ONLY for filtering (checkbox filter set to "true") of records in the DataListDialog.
+	 * Do not use this for any other purpose, as the output format is not defined and may change without notice.
+	 * 
+	 * The field order is the same as defined in the respective DataRecord subclass.
+	 * Fields with empty or null values are not included in the output.
+	 * Also, some technical fields are not included in the output (LastModified, ChangeCount, ValidFrom, InvalidFrom, Invisible, Deleted).
+	 */
     public String getAllFieldsAsSeparatedText() {
         StringBuilder b = new StringBuilder();
         for (int i=0; i<getFieldCount(); i++) {
             if (b.length() > 1) {
                 b.append(";");
             }
-            String v = getAsText(getFieldName(i));
-            if (v != null && v.length() > 0) {
-                b.append(v);
+            String fieldName = getFieldName(i);
+            if (fieldName!= null && fieldName.length() > 0 
+            		&& !fieldName.equals(LASTMODIFIED)
+            		&& !fieldName.equals(CHANGECOUNT) 
+            		&& !fieldName.equals(VALIDFROM) 
+            		&& !fieldName.equals(INVALIDFROM) 
+            		&& !fieldName.equals(INVISIBLE) 
+            		&& !fieldName.equals(DELETED)) {
+	            String v = getAsText(fieldName);
+	            if (v != null && v.length() > 0) {
+	                b.append(v);
+	            }
             }
         }
         return b.toString();

@@ -231,7 +231,7 @@ public class VersionizedDataEditDialog extends UnversionizedDataEditDialog imple
 				//than the current screen size allows.
 				JScrollPane scrollPane = new JScrollPane(innerPanel);
 				scrollPane.setBorder(BorderFactory.createEmptyBorder(4,4,4,4));
-				scrollPane.setPreferredSize(EfaGuiUtils.getTabPanelPreferredSize(otherPanelHeight ,  this, 1100, 900));
+				scrollPane.setPreferredSize(EfaGuiUtils.getTabPanelPreferredSize(otherPanelHeight , this, 1000, 730));
 				scrollPane.getVerticalScrollBar().setUnitIncrement(12);
 				innerPanel.setLayout(new GridBagLayout());
 				panel.setLayout(new BorderLayout());
