@@ -937,7 +937,7 @@ public class PersonRecord extends DataRecord implements IItemFactory {
             items[1] = new TableItem(getFirstName());
         }
 
-        String tooltip = createTooltipForGroups();
+        String tooltip = createTooltipForGroups(hasExtension);
         if (hasExtension) {
 			items[2] = new TableItem(getPersonExtension(false));
 			items[2].setToolTipText(tooltip);
@@ -1007,10 +1007,10 @@ public class PersonRecord extends DataRecord implements IItemFactory {
 		theEntry.setToolTipText(tooltipForGroups);
     }
     
-    private String createTooltipForGroups() {
+    private String createTooltipForGroups(boolean withExtension) {
     	String groupNames = this.getGroupsAsNameString();
     	String efbID = getString(PersonRecord.EFBID);
-    	if ((groupNames!=null && !groupNames.isEmpty()) || efbID!=null ) {
+    	if ((groupNames!=null && !groupNames.isEmpty()) || efbID!=null || withExtension) {
        		String toolTipBgColorText=(Daten.efaConfig.getToolTipSpecialColors() ? "bgcolor=\"#"+EfaUtil.getColor(Daten.efaConfig.getToolTipHeaderBackgroundColor())+"\"": "");
        		String toolTipFontColorOpeningTag = (Daten.efaConfig.getToolTipSpecialColors() ? "<font color=\"#"+EfaUtil.getColor(Daten.efaConfig.getToolTipHeaderForegroundColor())+"\">": "");
        		String toolTipFontColorClosingTag = (Daten.efaConfig.getToolTipSpecialColors() ? "</font>": "");
