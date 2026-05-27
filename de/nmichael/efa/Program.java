@@ -220,7 +220,12 @@ public class Program {
             Daten.efaRunning.closeServer();
             Daten.efaRunning.stopDataLockThread();
         }
-        System.exit(exitCode);
+        Daten.setShutdownExitCode(exitCode);
+        if (!Daten.isShutdownHookActuallyRunning()){
+        	//when ShutdownHook is running, we shall not call System.exit() here
+        	//because the Shutdownhook will call System.exit() itself.
+        	System.exit(exitCode);
+        }
     }
 
 }

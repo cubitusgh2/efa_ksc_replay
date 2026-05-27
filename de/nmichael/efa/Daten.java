@@ -292,8 +292,42 @@ public class Daten {
 	// if not, flatLaf-3.2.5.jar may be missing in classpath.
 	public static Boolean flatLafInitializationOK = false;
 	
-	public static Boolean isShutdownRequested=false;
+	private static Boolean isShutdownRequested=false;
+	private static Boolean isShutdownHookRunning=false;
+	private static int shutdownExitCode=0;
 
+	public static synchronized void requestShutdown() {
+		isShutdownRequested = true;
+	}
+	
+	public static synchronized void resetShutdownRequest() {
+		isShutdownRequested = false;
+	}
+	
+	public static synchronized boolean isShutdownRequested() {
+		return isShutdownRequested;
+	}
+	
+	public static synchronized void setShutdownHookRunning() {
+		isShutdownHookRunning = true;
+	}
+	
+	public static synchronized void resetShutdownHookRunning() {
+		isShutdownHookRunning = false;
+	}
+	
+	public static synchronized boolean isShutdownHookActuallyRunning() {
+		return isShutdownHookRunning;
+	}
+	
+	public static synchronized void setShutdownExitCode(int exitCode) {
+		shutdownExitCode = exitCode;
+	}
+	
+	public static synchronized int getShutdownExitCode() {
+		return shutdownExitCode;
+	}
+	
 	// Applikations- PID
 	public static String applPID = "XXXXX"; // will be set in iniBase(...)
 
@@ -426,7 +460,12 @@ public class Daten {
 		if (program != null) {
 			program.exit(exitCode);
 		} else {
-			System.exit(exitCode);
+			Daten.setShutdownExitCode(exitCode);
+        	//when ShutdownHook is running, we shall not call System.exit() here
+        	//because the Shutdownhook will call System.exit() itself.
+			if (!Daten.isShutdownHookActuallyRunning()) {
+				System.exit(exitCode);
+			} 
 		}
 	}
 

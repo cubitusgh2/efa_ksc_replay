@@ -908,7 +908,8 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
                         case RQ_QUEUE_START_SYNCH_UPLOAD:
                         case RQ_QUEUE_START_SYNCH_UPLOAD_ALL:
                             // Obsolete from 2.3.1: case RQ_QUEUE_START_SYNCH_DELETE:
-                            if ((currentState == QUEUE_IS_WORKING) || (currentState == QUEUE_IS_IDLE)) {
+                        	//EFA_131: Don't start synchronisation if there is a shutdown request running.
+                            if (!Daten.isShutdownRequested() && ((currentState == QUEUE_IS_WORKING) || (currentState == QUEUE_IS_IDLE))) {
                                 if ((queues.get(TX_PENDING_QUEUE_INDEX).size() == 0) &&
                                         (queues.get(TX_BUSY_QUEUE_INDEX).size() == 0)) {
                                     // prepare synchronization
