@@ -352,7 +352,7 @@ public class EfaGuiUtils {
 		}
 		
     	int maxDlgW=Daten.efaConfig.getValueMaxDialogWidth();
-    	int maxDlgH=Daten.efaConfig.getValueMaxDialogHeight()-20;
+    	int maxDlgH=Daten.efaConfig.getValueMaxDialogHeight()-60;
     	
     	//no max size for dialogs set? have a look at configured maximum screen width/height
     	if (maxDlgW<=0) {
@@ -379,12 +379,9 @@ public class EfaGuiUtils {
     	
     	// No size configured for dialogs or even efaBths window? 
     	// then use screen height/width as base
-    	if (maxDlgW<=0) {
-    		maxDlgW=Math.min(s.width-80,intendedMaxWidth);
-    	}
-    	if (maxDlgH<=0) {
-    		maxDlgH=Math.min(s.height-((1+1)*25), intendedMaxHeight);
-    	}
+    	maxDlgW=Math.min(s.width-80,intendedMaxWidth);
+
+    	maxDlgH=Math.min(s.height-((1+1)*25), intendedMaxHeight);
     	
 		return new Dimension(
 				(int) Math.round(maxDlgW), 

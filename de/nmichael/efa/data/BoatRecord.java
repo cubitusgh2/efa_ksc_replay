@@ -28,6 +28,7 @@ import javax.swing.JDialog;
 
 import de.nmichael.efa.Daten;
 import de.nmichael.efa.core.config.AdminRecord;
+import de.nmichael.efa.core.config.EfaConfig;
 import de.nmichael.efa.core.config.EfaTypes;
 import de.nmichael.efa.core.items.IItemFactory;
 import de.nmichael.efa.core.items.IItemListenerDataRecordTable;
@@ -1012,6 +1013,52 @@ public class BoatRecord extends DataRecord implements IItemFactory, IItemListene
         return super.getAsText(fieldName);
     }
 
+    
+    /**
+	 * Returns a string with all field values separated by ";".
+	 * This is intended to used ONLY for filtering (checkbox filter set to "true") of records in the DataListDialog.
+	 * Do not use this for any other purpose, as the output format is not defined and may change without notice.
+	 * 
+	 * The field order is the same as defined in the respective DataRecord subclass.
+	 * Fields with empty or null values are not included in the output.
+	 * Also, some technical fields are not included in the output (LastModified, ChangeCount, ValidFrom, InvalidFrom, Invisible, Deleted).
+	 * 
+	 * Extension: for the weight field, the weight unit is added to the value, e.g. "500kg", 
+	 * if the weight is greater than 0 and a default weight unit is defined in the configuration.
+	 */
+    @Override
+    public String getAllFieldsAsSeparatedText() {
+        StringBuilder b = new StringBuilder();
+        for (int i=0; i<getFieldCount(); i++) {
+            if (b.length() > 1) {
+                b.append(";");
+            }
+            String fieldName = getFieldName(i);
+            if (fieldName!= null && fieldName.length() > 0 
+            		&& !fieldName.equals(LASTMODIFIED)
+            		&& !fieldName.equals(CHANGECOUNT) 
+            		&& !fieldName.equals(VALIDFROM) 
+            		&& !fieldName.equals(INVALIDFROM) 
+            		&& !fieldName.equals(INVISIBLE) 
+            		&& !fieldName.equals(DELETED)) {
+            		String v=null;
+            		if (fieldName.equals(MAXCREWWEIGHT)) {
+            			int w = getMaxCrewWeight();
+            			if (w > 0) {
+            				v = Integer.toString(w).concat(Daten.efaConfig.getValueDefaultWeightUnit());
+            			}
+            		} else {
+            			v = getAsText(fieldName);
+            		}
+		            if (v != null && v.length() > 0) {
+		                b.append(v);
+		            }
+            }
+        }
+        return b.toString();
+
+	}
+    
     public boolean setFromText(String fieldName, String value) {
         if (fieldName.equals(TYPEVARIANT)) {
             DataTypeList list = DataTypeList.parseList(value, IDataAccess.DATA_INTEGER);
@@ -1283,16 +1330,35 @@ public class BoatRecord extends DataRecord implements IItemFactory, IItemListene
     }    
 
     public TableItemHeader[] getGuiTableHeader() {
-        TableItemHeader[] header = new TableItemHeader[3];
-        header[0] = new TableItemHeader(International.getString("Name"));
-        header[1] = new TableItemHeader(International.getString("Bootstyp"));
-        header[2] = new TableItemHeader(International.getString("Eigentümer"));
-        return header;
+    	if (isBoatExtensionSetupAvailable()) {
+	    	TableItemHeader[] header = new TableItemHeader[4];
+	        header[0] = new TableItemHeader(International.getString("Name"));
+	        header[1] = new TableItemHeader(International.getString("Erweiterung"));
+	        header[2] = new TableItemHeader(International.getString("Bootstyp"));
+	        header[3] = new TableItemHeader(International.getString("Eigentümer"));
+	        return header;
+    	}
+    	else {
+	    	TableItemHeader[] header = new TableItemHeader[3];
+	        header[0] = new TableItemHeader(International.getString("Name"));
+	        header[1] = new TableItemHeader(International.getString("Bootstyp"));
+	        header[2] = new TableItemHeader(International.getString("Eigentümer"));
+	        return header;
+    	}
     }
 
+    private boolean isBoatExtensionSetupAvailable() {
+		return Daten.efaConfig.getValueEfaDirektBoathouseExtBoatField1().length() > 0 ||
+				Daten.efaConfig.getValueEfaDirektBoathouseExtBoatField2().length() > 0;
+	}
+    
     public TableItem[] getGuiTableItems() {
-        TableItem[] items = new TableItem[3];
+        
+        Boolean hasExtension = isBoatExtensionSetupAvailable();
+
+        TableItem[] items= new TableItem[hasExtension ? 4 : 3];
         items[0] = new TableItem(getQualifiedName());
+        
         String type = "";
         if (getNumberOfVariants() > 0) {
             type = getDetailedBoatType(0);
@@ -1300,26 +1366,87 @@ public class BoatRecord extends DataRecord implements IItemFactory, IItemListene
         if (getNumberOfVariants() > 1) {
             type = type + " ...";
         }
-        items[1] = new TableItem(type);
-        items[2] = new TableItem(getOwner());
+        String tooltip = this.createTooltipForGroups(hasExtension);
+        if (hasExtension) {
+        	items[1] = new TableItem(getBoatExtension(false));
+        	items[1].setToolTipText(tooltip);
+        }
+        items[hasExtension ? 2 : 1] = new TableItem(type);
+        items[hasExtension ? 3 : 2] = new TableItem(getOwner());
         items[0].addIcon(this.createGroupPieIcon(16,16));
-        items[0].setToolTipText(this.createTooltipForGroups());
+        items[0].setToolTipText(tooltip);
         return items;
     }
 
-    private ImageIcon createGroupPieIcon(int iconWidth, int iconHeight) {
+    private String getBoatExtension(boolean withFieldNames) {
+    	StringBuilder result = new StringBuilder(200);
+    	String field1Name = Daten.efaConfig.getValueEfaDirektBoathouseExtBoatField1();
+    	String field2Name = Daten.efaConfig.getValueEfaDirektBoathouseExtBoatField2();
+    	String field1Value=null;
+    	String field2Value=null;
+    	String field1DisplayName="";
+    	String field2DisplayName="";
+    	
+    	if (field1Name.length() > 0) {
+			field1Value = getAsString(field1Name);
+			if (field1Value !=null && field1Name.equals(BoatRecord.MAXCREWWEIGHT)) {
+				field1Value=field1Value.concat(Daten.efaConfig.getValueDefaultWeightUnit());
+			}
+			if (withFieldNames && field1Value != null && !field1Value.isEmpty()) {
+				field1DisplayName = EfaConfig.boatExtFields.get(field1Name);
+			}
+		}
+    	if (field2Name.length() > 0) {
+			field2Value = getAsString(field2Name);
+			if (field2Value !=null && field2Name.equals(BoatRecord.MAXCREWWEIGHT)) {
+				field2Value=field2Value.concat(Daten.efaConfig.getValueDefaultWeightUnit());
+			}
+			if (withFieldNames && field2Value != null && !field2Value.isEmpty()) {
+				field2DisplayName = EfaConfig.boatExtFields.get(field2Name);
+			}
+		}
+    	
+		if ((field1Value!=null && !field1Value.isEmpty()) || (field2Value!=null && !field2Value.isEmpty())) {
+			if (withFieldNames) {       		
+				result.append((field1Value!=null && !field1Value.isEmpty() ? "<tr><td align=left>"+field1DisplayName + "</td><td>" + field1Value +"</td></tr>" : ""));
+				result.append((field2Value!=null && !field2Value.isEmpty() ? "<tr><td align=left>"+field2DisplayName + "</td><td>" + field2Value +"</td></tr>" : ""));
+
+			} else {
+				result.append((field1Value!=null 
+					? field1Value.concat((field2Value!=null ? ", " + field2Value : "")) 
+					: (field2Value!=null ? field2Value : "")));
+			}
+		}
+		
+    	return result.toString();
+	}
+
+	private ImageIcon createGroupPieIcon(int iconWidth, int iconHeight) {
     	 Color[] colors = this.getBoatGroupsPieColors(null); 
     	 return (colors !=null ? EfaUtil.createColorPieIcon(colors, iconWidth, iconHeight) : null);
     }
     
-    private String createTooltipForGroups() {
+    private String createTooltipForGroups(Boolean hasExtension) {
     	String result = this.getAllowedGroupsAsNameString(System.currentTimeMillis());
-    	if (result!=null && !result.isEmpty()) {
-    		return International.getString("Gruppen")+":\n   "+result;
+    	if ((result!=null && !result.isEmpty())||hasExtension) {
+       		String toolTipBgColorText=(Daten.efaConfig.getToolTipSpecialColors() ? "bgcolor=\"#"+EfaUtil.getColor(Daten.efaConfig.getToolTipHeaderBackgroundColor())+"\"": "");
+       		String toolTipFontColorOpeningTag = (Daten.efaConfig.getToolTipSpecialColors() ? "<font color=\"#"+EfaUtil.getColor(Daten.efaConfig.getToolTipHeaderForegroundColor())+"\">": "");
+       		String toolTipFontColorClosingTag = (Daten.efaConfig.getToolTipSpecialColors() ? "</font>": "");
+    		
+    		StringBuilder sb = new StringBuilder(200);
+    		sb.append("<html><body><table border=0><tr ")
+    		.append(toolTipBgColorText)
+    		.append("><td align=left><b>")
+    		.append(toolTipFontColorOpeningTag).append(EfaUtil.escapeHtml(getQualifiedName())).append("</b></td></tr>"); // to ensure multi-line tooltip
+    		sb.append(toolTipFontColorClosingTag).append(getBoatExtension(true)); // with field names
+    		if (result!=null && !result.isEmpty()) {
+    			sb.append("<tr><td align=left>").append(International.getString("Gruppen")).append("</td><td>"+EfaUtil.escapeHtml(result)+"</td></tr>");
+    		}
+    		return sb.toString();
+    		//return this.getQualifiedName()+ International.getString("Gruppen")+":\n   "+result;
     	} else {
     		return null;
     	}
-    		
     }
     
     /**

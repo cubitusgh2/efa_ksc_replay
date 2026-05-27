@@ -561,8 +561,7 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
    	    			}
    	    		}
 
-   	    		StringBuilder sbResult = new StringBuilder(200);
-   	    		//concat is the fastest way to build strings
+   	    		StringBuilder sbResult = new StringBuilder(300);
    	    		sbResult.append("<html><body><table border=\"0\"><tr ");
    	    		sbResult.append(this.cacheToolTipBgColorText);
    	    		sbResult.append("><td align=\"left\"><b>");
@@ -661,9 +660,6 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
 						.append("</td></tr>");
 					}
 	    		}
-		    		
-
-
    	    	
    	    		sbResult.append("</table></body></html>");
    	    		return sbResult.toString();

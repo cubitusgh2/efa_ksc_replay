@@ -20,6 +20,7 @@ import javax.swing.ImageIcon;
 
 import de.nmichael.efa.Daten;
 import de.nmichael.efa.core.config.AdminRecord;
+import de.nmichael.efa.core.config.EfaConfig;
 import de.nmichael.efa.core.config.EfaTypes;
 import de.nmichael.efa.core.items.IItemFactory;
 import de.nmichael.efa.core.items.IItemType;
@@ -490,6 +491,23 @@ public class PersonRecord extends DataRecord implements IItemFactory {
         return groups.getGroupsForPerson(getId(), getValidFrom(), getInvalidFrom() - 1);
     }
 
+    public Vector<String> getGroupListAsVector() {
+		GroupRecord[] groupList = getGroupList();
+		Vector<String> v = new Vector<String>();
+		for (int i = 0; groupList != null && i < groupList.length; i++) {
+			v.add(groupList[i].getQualifiedName());
+		}
+		return v;
+	}
+    
+    public String getGroupsAsNameString() {
+        Vector<String> v = getGroupListAsVector();
+        if (v == null || v.size() == 0) {
+            return "";
+        }
+        return EfaUtil.vector2string(v, ", ");
+    }
+    
     public void setFreeUse1(String s) {
         setString(FREEUSE1, s);
     }
@@ -885,70 +903,132 @@ public class PersonRecord extends DataRecord implements IItemFactory {
     	return defaultCategory;
     }    
     
+    private boolean isPersonExtensionSetupAvailable() {
+		return Daten.efaConfig.getValueEfaDirektBoathouseExtPersonField1().length() > 0 ||
+				Daten.efaConfig.getValueEfaDirektBoathouseExtPersonField2().length() > 0;
+	}
     public TableItemHeader[] getGuiTableHeader() {
-        TableItemHeader[] header = new TableItemHeader[4];
+    	Boolean hasExtension = isPersonExtensionSetupAvailable();
+        TableItemHeader[] header = new TableItemHeader[hasExtension ? 5 : 4];
+        
         if (Daten.efaConfig.getValueNameFormatIsFirstNameFirst()) {
             header[0] = new TableItemHeader(International.getString("Vorname"));
             header[1] = new TableItemHeader(International.getString("Nachname"));
-            header[2] = new TableItemHeader(International.getString("Geburtstag"));
-            header[3] = new TableItemHeader(International.getString("Status"));
         } else {
             header[0] = new TableItemHeader(International.getString("Nachname"));
             header[1] = new TableItemHeader(International.getString("Vorname"));
-            header[2] = new TableItemHeader(International.getString("Geburtstag"));
-            header[3] = new TableItemHeader(International.getString("Status"));
-        }
+		}
+        if (hasExtension) {
+			header[2] = new TableItemHeader(International.getString("Erweiterung"));
+		} 
+        header[hasExtension ? 3 : 2] = new TableItemHeader(International.getString("Geburtstag"));
+        header[hasExtension ? 4 : 3] = new TableItemHeader(International.getString("Status"));
         return header;
     }
 
     public TableItem[] getGuiTableItems() {
-        TableItem[] items = new TableItem[4];
+    	Boolean hasExtension = isPersonExtensionSetupAvailable();
+        TableItem[] items = new TableItem[hasExtension ? 5 : 4];
         if (Daten.efaConfig.getValueNameFormatIsFirstNameFirst()) {
             items[0] = new TableItem(getFirstName());
             items[1] = new TableItem(getLastName());
-            items[2] = new TableItem(getBirthday());
-            items[3] = new TableItem(getStatusName());
         } else {
             items[0] = new TableItem(getLastName());
             items[1] = new TableItem(getFirstName());
-            items[2] = new TableItem(getBirthday());
-            items[3] = new TableItem(getStatusName());
         }
-        setIconAndTooltipForEFBSyncAndGroups(items[0]);
+
+        String tooltip = createTooltipForGroups();
+        if (hasExtension) {
+			items[2] = new TableItem(getPersonExtension(false));
+			items[2].setToolTipText(tooltip);
+		} 
+
+        items[hasExtension ? 3 : 2] = new TableItem(getBirthday());
+        items[hasExtension ? 4 : 3] = new TableItem(getStatusName());
+
+        setIconAndTooltipForEFBSyncAndGroups(items[0], tooltip); // set icon and tooltip for the first column (name), so that it is visible even if the extension column is not shown
+        items[1].setToolTipText(tooltip); // set tooltip for the second column as well, so that it is visible even if the first column is not wide enough to show the full tooltip
         return items;
     }
+    
+    private String getPersonExtension(boolean withFieldNames) {
+    	StringBuilder result = new StringBuilder(200);
+    	String field1Name = Daten.efaConfig.getValueEfaDirektBoathouseExtPersonField1();
+    	String field2Name = Daten.efaConfig.getValueEfaDirektBoathouseExtPersonField2();
+    	String field1Value=null;
+    	String field2Value=null;
+    	String field1DisplayName="";
+    	String field2DisplayName="";
+    	
+    	if (field1Name.length() > 0) {
+			field1Value = getAsString(field1Name);
+			
+			if (withFieldNames && field1Value != null && !field1Value.isEmpty()) {
+				field1DisplayName = EfaConfig.personExtFields.get(field1Name);
+			}
+		}
+    	if (field2Name.length() > 0) {
+			field2Value = getAsString(field2Name);
+
+			if (withFieldNames && field2Value != null && !field2Value.isEmpty()) {
+				field2DisplayName = EfaConfig.personExtFields.get(field2Name);
+			}
+		}
+    	
+		if ((field1Value!=null && !field1Value.isEmpty()) || (field2Value!=null && !field2Value.isEmpty())) {
+			if (withFieldNames) {
+				result.append((field1Value!=null && !field1Value.isEmpty() ? "<tr><td align=left>"+field1DisplayName + "</td><td>" + field1Value +"</td></tr>" : ""));
+				result.append((field2Value!=null && !field2Value.isEmpty() ? "<tr><td align=left>"+field2DisplayName + "</td><td>" + field2Value +"</td></tr>" : ""));
+			} else {
+				result.append((field1Value!=null 
+					? field1Value.concat((field2Value!=null ? ", " + field2Value : "")) 
+					: (field2Value!=null ? field2Value : "")));
+			}
+		}
+		
+    	return result.toString();
+	}
     
     /**
      * Adds the EFBSync Icon for persons where the efbID is filled.
      * Adds a tooltip with the efbID to those persons.
      * @param theEntry TableItem for the person.
      */
-    private void setIconAndTooltipForEFBSyncAndGroups(TableItem theEntry) {
-    	String result = null;
+    private void setIconAndTooltipForEFBSyncAndGroups(TableItem theEntry, String tooltipForGroups) {
     	String efbID = getString(PersonRecord.EFBID);
     	if (efbID!=null) {
     		theEntry.addIcon(ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_MENU_EFBSYNC));
-    		result = "EFB Sync mit ID: "+efbID;
     	}
-
     	GroupRecord[] personGroups = getGroupList();
     	
     	if (personGroups != null && personGroups.length>0) {
     		theEntry.addIcon(createGroupPieIcon(personGroups, 16,16));
-			String addendum=International.getString("Gruppen")+":\n";
-			int count=0;
-    		for (int i=0; i<personGroups.length; i++) {
-    			addendum = addendum + (count++ == 0 ? "   " : "\n   ") + personGroups[i].getName();
-    		}
-    		if (result!=null) {
-    			result = result +"\n"+addendum;
-    		} else  {
-    			result = addendum;
-    		}
     	}
+		theEntry.setToolTipText(tooltipForGroups);
+    }
     
-		theEntry.setToolTipText(result);
-    
+    private String createTooltipForGroups() {
+    	String groupNames = this.getGroupsAsNameString();
+    	String efbID = getString(PersonRecord.EFBID);
+    	if ((groupNames!=null && !groupNames.isEmpty()) || efbID!=null ) {
+       		String toolTipBgColorText=(Daten.efaConfig.getToolTipSpecialColors() ? "bgcolor=\"#"+EfaUtil.getColor(Daten.efaConfig.getToolTipHeaderBackgroundColor())+"\"": "");
+       		String toolTipFontColorOpeningTag = (Daten.efaConfig.getToolTipSpecialColors() ? "<font color=\"#"+EfaUtil.getColor(Daten.efaConfig.getToolTipHeaderForegroundColor())+"\">": "");
+       		String toolTipFontColorClosingTag = (Daten.efaConfig.getToolTipSpecialColors() ? "</font>": "");
+    		
+    		StringBuilder sb = new StringBuilder(200);
+    		sb.append("<html><body><table border=0><tr ")
+    		.append(toolTipBgColorText)
+    		.append("><td align=left><b>")
+    		.append(toolTipFontColorOpeningTag).append(EfaUtil.escapeHtml(getQualifiedName())).append("</b></td></tr>"); // to ensure multi-line tooltip
+    		sb.append(toolTipFontColorClosingTag);
+    		sb.append(groupNames!=null && !groupNames.isEmpty() ? "<tr><td align=left>"+International.getString("Gruppen")+"</td><td>"+EfaUtil.escapeHtml(groupNames)+"</td></tr>" : "");
+    		sb.append(getPersonExtension(true)); // with field names
+    		sb.append(efbID!=null ? "<tr><td align=left>"+"Kanu-EFB ID"+"</td><td>"+EfaUtil.escapeHtml(efbID)+"</td></tr>" : ""); // add efbID to tooltip, if available
+    		return sb.toString();
+    		//return this.getQualifiedName()+ International.getString("Gruppen")+":\n   "+result;
+    	} else {
+    		return null;
+    	}
     }
 
    

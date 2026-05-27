@@ -327,7 +327,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 
             // Compute maximum pixels available for secondary given reserved gap of 40px
             // Secondary must start at xSecLeft >= x + leftWidth + reservedGapBetweenSides
-            int maxSecPx = rightX - (x + leftWidth + reservedGapBetweenSides);
+            int maxSecPx = rightX - (x + leftWidth + reservedGapBetweenSides + selectionBarPadding); // also consider selection bar padding to avoid overlap with rounded corners
             String secToDraw = secondary;
 
             if (maxSecPx <= 0) {
@@ -362,8 +362,21 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
                 // add width of three spaces
                 int spacesW = fmStandard.stringWidth("   ");
                 int xTertiary = xAfterPrimary + spacesW;
+                
+                String tertToDraw = tertiaryPart;
+                int maxTertPx = rightX - (xTertiary + selectionBarPadding);
+                if (maxTertPx <= 0) {
+                    // no space for secondary (even zero), don't draw it
+                    tertToDraw = "";
+                } else {
+                    // truncate secondary to maxSecPx if necessary
+                    if (fmStandard.stringWidth(tertiaryPart) > maxTertPx) {
+                        // reuse outer class truncateToWidth (available because we're inner class)
+                        tertToDraw = truncateToWidth(fmStandard, tertiaryPart, maxTertPx);
+                    }
+                }
                 g.setColor(tertiaryColor);
-                g.drawString(tertiaryPart, xTertiary, yText);
+                g.drawString(tertToDraw, xTertiary, yText);
             } else {
                 // only primary
                 g.setColor(normalFg);
@@ -505,7 +518,8 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 
     public void addItem(String text, String toolTipText, String secondaryItem, String tertiaryItem, Object object, boolean separator, char separatorHotkey,
             String image, Color[] colors) {
-        data.addElement(new ItemTypeListData(text, toolTipText, secondaryItem, tertiaryItem, object, separator, separatorHotkey, image, colors));
+		data.addElement(new ItemTypeListData(text, toolTipText, secondaryItem, tertiaryItem, object, separator,
+				separatorHotkey, image, colors));
         filter();
     }
 

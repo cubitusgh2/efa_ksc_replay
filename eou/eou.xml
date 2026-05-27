@@ -2,7 +2,7 @@
 <efaOnlineUpdate>
 <Version>
         <VersionID>2.5.3#2</VersionID>
-        <ReleaseDate>26.05.2026</ReleaseDate>
+        <ReleaseDate>27.05.2026</ReleaseDate>
         <DownloadUrl>TODO</DownloadUrl>
         <DownloadSize>TODO</DownloadSize>
      	<MinimumJavaVersion>1.8</MinimumJavaVersion>
@@ -11,15 +11,19 @@
         <ShowNotice lang="en">If you use efaCloud, make sure your server at least supports efaCloud Version 2.3.3. It is recommended to upgrade to EfaCloud 2.4.0_12 or above.</ShowNotice>
         <Changes lang="de">
         	<ChangeItem>Neu: EfaConfig: Bootshauslisten haben eine eigenständige Sektion in Bootshaus&gt;Bootslisten</ChangeItem>
+        	<ChangeItem>Neu: Admin-Bereich: Liste der Boote und Personen zeigen bei Bedarf eine Spalte mit den Zusatzfeldern an, und zeigen die Zusatzfelder im Tooltipp.</ChangeItem>
         	<ChangeItem>Bugfix: Besseres Layout für Bootshauslisten (mehr Abstände, Filter-Textfelder haben Standardhöhe von 21 pix)</ChangeItem>
-        	<ChangeItem>Bugfix: Größenbeschränkung der Größe von VersionizedDataEditDialog (Boote, Personen, Gruppen) auf max. 1100x900 und AdminEditDialog auf 700x700 Pixel</ChangeItem>
+        	<ChangeItem>Bugfix: Größenbeschränkung der Größe von VersionizedDataEditDialog (Boote, Personen, Gruppen) auf max. 1000x700 und AdminEditDialog auf 700x700 Pixel</ChangeItem>
 			<ChangeItem>Bugfix: Einige Dialoge schlossen sich nicht beim Betätigen von ESC</ChangeItem>
+			<ChangeItem>Bugfix: Admin-Bereich: Suche in den Dataedit-Dialogen sucht nicht mehr in technischen Feldern</ChangeItem>
         </Changes>
         <Changes lang="en">
         	<ChangeItem>New: EfaConfig: Boathouse lists have their own section in Boathouse&gt;Boat lists</ChangeItem>
+        	<ChangeItem>New: Admin area: Boat and person lists optionally show a column with the additional fields, and show the additional fields in the tooltip.</ChangeItem>
         	<ChangeItem>Bugfix: Improved layout for boathouse lists (more spacing, filter text fields have a default height of 21 pixels)</ChangeItem>
-        	<ChangeItem>Bugfix: Size restriction of versionized data edit dialogs (boats, persons, groups) to max. 1100x900 and admin edit dialog to 700x700 pixels</ChangeItem>
+        	<ChangeItem>Bugfix: Size restriction of versionized data edit dialogs (boats, persons, groups) to max. 1000x700 and admin edit dialog to 700x700 pixels</ChangeItem>
         	<ChangeItem>Bugfix: Some dialogs did not close when pressing ESC</ChangeItem>
+        	<ChangeItem>Bugfix: Admin area: Search in the data edit dialogs no longer searches in technical fields</ChangeItem>
         </Changes>
 	</Version>
 	<Version>
