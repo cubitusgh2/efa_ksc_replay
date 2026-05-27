@@ -34,12 +34,13 @@ import java.util.Hashtable;
 import java.util.Stack;
 import java.util.UUID;
 import java.util.Vector;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenuBar;
 import javax.swing.JPanel;
@@ -452,7 +453,86 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         }
     }
 
+    /** 
+     * Installs a shutdown hook that tries to call cancel() on the EDT when the JVM is shutting down.
+     * Under Windows, shutting down a java program via task manager or some sort of kill / taskkill command,
+     * the swing application FIRST closes the main window and THEN calls the shutdown hooks (wich are also called from System.exit(N).
+     * Under Linux, we need to create a shutdown hook so that cancel() is called when shutting down the VM via kill signal.
+     * 
+     * This shutdown hook waits up to 10 seconds for cancel() to complete. This should also be enough time for efaCloud Sync task
+     * to complete if it is running, as it is usually very fast and runs every 5 minutes. 
+     * If cancel() does not complete within the timeout, a warning is logged and the JVM continues shutting down.
+     */
+    private void installShutdownHook() {
+
+    	Runtime.getRuntime().addShutdownHook(new Thread() {
+    	    @Override
+    	    public void run() {
+    	        try {
+	        		Daten.setShutdownHookRunning();
+
+    	        	/* The shutdown hook is called when the JVM is shutting down because of a call to System.exit() 
+    	        	   or when the user clicks the close button of the window.
+    	        	   The cancel() method sets isShutdownRequested to true once it is called.
+    	        	   We do not want the shutdown hook to be run when cancel() allready has been called, 
+    	        	   so the code will only be run if isShutdownRequested is false.
+    	        	 */
+    	        	if (!Daten.isShutdownRequested()) {
+    	        		// in practice, this code is only run under linux as windows always closes the main window first, 
+    	        		// which calls cancel() and sets isShutdownRequested to true, before the shutdown hooks are called.
+	    	        	final CountDownLatch latch = new CountDownLatch(1);
+	    	            Runnable r = new Runnable() {
+	    	                @Override
+	    	                public void run() {
+	    	                    try {
+	    	                        // cancel runs synchronously and blocks until finished
+	    	                    	EfaBoathouseFrame.this.cancel(null, EFA_EXIT_REASON_SYSTEM, null, false);
+	    	                    } catch (Throwable t) {
+	    	                    	Logger.log(Logger.ERROR, Logger.MSG_GENERIC_ERROR,"Exception in shutdown hook: " +
+	    	        	            		t.getLocalizedMessage());
+	    	                    } finally {
+	    	                    	// yay, system exit has been done, now we can count down the latch 
+	    	                    	// and let the shutdown hook finish and the JVM to exit.
+	    	                        latch.countDown();
+	    	                    }
+	    	                }
+	    	            };
+	
+	    	            // The actual shutdown hook thread is not the EDT, so we need to post a Runnable to the EDT to call cancel() there,
+	    	            // Post to EDT and wait max 15 seconds for completion
+	    	            SwingUtilities.invokeLater(r);
+	    	            boolean completed = false;
+	    	            try {
+	    	                completed = latch.await(15000, TimeUnit.MILLISECONDS);
+	    	            } catch (InterruptedException ie) {
+	    	                Logger.logdebug(ie);
+	    	                Thread.currentThread().interrupt();
+	    	            }
+	    	            if (!completed) {
+	    	                Logger.log(Logger.WARNING, Logger.MSG_GENERIC_ERROR, "Shutdown: cancel() did not finish within timeout.");
+	    	    			//this line is neccessary as other wise efa will assume that it hasn't been shut down correctly.
+	    	                Logger.log(Logger.INFO, Logger.MSG_CORE_HALT, International.getString("PROGRAMMENDE"));
+	    	            }
+	    	            // we cannot call System.exit here because that would be a deadlock.
+	    	            // Runtime.halt() returns the desired ShutdownExitCode.
+	        	        Runtime.getRuntime().halt(Daten.getShutdownExitCode()); 
+    	        	} else {
+    	        		
+    	        	}
+
+    	        } catch (Throwable t) {
+    	            Logger.log(Logger.ERROR, Logger.MSG_GENERIC_ERROR, "Exception in shutdown hook: " +
+    	            		t.getLocalizedMessage());
+    	        }
+
+    	   }
+    	});
+    	
+	}
+    
     private void iniApplication() {
+    	installShutdownHook();
+
         openProject((AdminRecord)null);
         openProjectLogbookClubwork();
 
@@ -1300,11 +1380,47 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         return cancel(null, EFA_EXIT_REASON_USER, null, false);
     }
 
+    private String getRequestOriginator(int reason, AdminRecord admin) {
+		String who = "unknown";
+		switch (reason) {
+			case EFA_EXIT_REASON_USER:
+				if (admin != null) {
+					who = International.getString("Admin") + "=" + admin.getName();
+				} else {
+					who = International.getString("Nutzer");
+				}
+				break;
+			case EFA_EXIT_REASON_TIME:
+			case EFA_EXIT_REASON_IDLE:
+				who = International.getString("Zeitsteuerung");
+				who += " (" + (reason == EFA_EXIT_REASON_TIME ? "time" : "idle") + ")";
+				break;
+			case EFA_EXIT_REASON_OOME:
+				who = International.getString("Speicherüberwachung");
+				break;
+			case EFA_EXIT_REASON_AUTORESTART:
+				who = International.getString("Automatischer Neustart");
+				break;
+			case EFA_EXIT_REASON_ONLINEUPDATE:
+				who = International.getString("Online-Update");
+				break;
+			case EFA_EXIT_REASON_SYSTEM:
+				who = "Shutdown Hook / System signal";
+				break;
+		}
+		return who;
+	}
+    
     public boolean cancel(WindowEvent e, int reason, AdminRecord admin, boolean restart) {
         Dialog.IGNORE_WINDOW_STACK_CHECKS = true;
         int exitCode = 0;
-        String who = "unknown";
-        Daten.isShutdownRequested=true;
+        Daten.requestShutdown();
+        // Under Windows and JDK8, we cannot detect if the system shutdown has been initiated by the user or by the system. 
+        // so under windows, all shutdowns initiated by the operating system itself (e.g. due to update or shutdown) 
+        // will be logged as "Programmende durch Nutzer".
+        String who = getRequestOriginator(reason, admin);
+        Logger.log(Logger.INFO, Logger.MSG_EVT_EFAEXIT_REQUESTED,
+				International.getMessage("Programmende durch {originator} angefordert", who));
         switch (reason) {
             case EFA_EXIT_REASON_USER: // manuelles Beenden von efa
                 boolean byUser;
@@ -1314,7 +1430,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
                             admin = AdminLoginDialog.login(this, International.getString("Beenden von efa"));
                             if (admin == null) {
                                 Dialog.IGNORE_WINDOW_STACK_CHECKS = false;
-                                Daten.isShutdownRequested=false;
+                                Daten.resetShutdownRequest(); // we no longer want to shut down, as the user cancelled the admin login
                                 return false;
                             }
                         }
@@ -1365,7 +1481,9 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
                 who = International.getString("Online-Update");
                 break;
             case EFA_EXIT_REASON_SYSTEM:
-            	who = "System Signal";
+            	// Under Windows and JDK8, we cannot detect if the system shutdown has been initiated by the user or by the system.
+            	// so this only is run on Linux/MacOs systems.
+            	who = "Shutdown Hook / System signal";
             	break;
         }
         if (restart) {
@@ -1375,9 +1493,9 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
 //        if (e != null) {
 //            super.processWindowEvent(e);
 //        }
+        super.cancel();
         Logger.log(Logger.INFO, Logger.MSG_EVT_EFAEXIT,
                 International.getMessage("Programmende durch {originator}", who));
-        super.cancel();
         Daten.haltProgram(exitCode);
         return true;
     }
