@@ -12,10 +12,12 @@
         <ShowNotice lang="en">Based on 2.5.0_01.</ShowNotice>
         <ShowNotice lang="en">If you use efaCloud, make sure your server at least supports efaCloud Version 2.3.3. It is recommended to upgrade to EfaCloud 2.4.0_12 or above.</ShowNotice>
         <Changes lang="de">
+        	<ChangeItem>Bugfix: Fahrt beenden: Bei einer Mehrtagesfahrt mit identischer Start- und Endzeit (z.B. beides um 12:00 Uhr) wird nun auch das Enddatum bei der Prüfung der Fahrtdauer berücksichtigt. Hierdurch weniger Fehlermeldungen beim Beenden einer Fahrt.</ChangeItem>
         	<ChangeItem>Bugfix: Vereinsarbeit: Es wird bei Erfassung und Bearbeitung von Vereinsarbeit geprüft, ob das Datum im zulässigen Bereich liegt.</ChangeItem>
         	<ChangeItem>Bugfix: Vereinsarbeit: Es wird in der Liste der Vereinsarbeit immer der Name angezeigt, den das Mitglied zum Zeitpunkt der Erfassung hatte. Dadurch wird bei Vereinsarbeit für inzwischen beendete Mitglieder wieder der Name angezeigt.</ChangeItem>
         </Changes>
         <Changes lang="en">
+        	<ChangeItem>Bugfix: Finishing a session: For multi-day sessions with identical start and end times (e.g., both at 12:00am), the end date is now also considered when checking the session duration. This results in fewer error messages when ending a session.</ChangeItem>
 			<ChangeItem>Bugfix: Clubwork: When recording and editing clubwork, the date is checked to ensure it falls within the allowed range.</ChangeItem>
 			<ChangeItem>Bugfix: Clubwork: The clubwork list now always displays the name the member had at the time of recording. This means that for former members the name for the clubwork record is displayed correctly.</ChangeItem>
         </Changes>

@@ -340,6 +340,12 @@ public class DataTypeDate implements Cloneable, Comparable<DataTypeDate> {
                 (r1From >= r2From && r1To <= r2To);
     }
 
+    public static long getDifferenceInMinutes(DataTypeDate fromDate, DataTypeTime fromTime, DataTypeDate toDate, DataTypeTime toTime) {
+		long from = fromDate.getTimestamp(fromTime);
+		long to = toDate.getTimestamp(toTime);
+		return (to - from) / (60 * 1000);
+	}
+    
     public static DataTypeDate[] getRangeOverlap(DataTypeDate r1From, DataTypeDate r1To, DataTypeDate r2From, DataTypeDate r2To) throws Exception {
         DataTypeDate[] range = new DataTypeDate[2];
         if(r1From.isAfter(r1To) || r2From.isAfter(r2To)) {
