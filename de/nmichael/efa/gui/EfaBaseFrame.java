@@ -2387,7 +2387,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
                     efaBoathouseAction.boatStatus = efaBoathouseAction.boat.getBoatStatus();
                 }
                 boolean success = efaBoathouseFrame.checkStartSessionForBoat(efaBoathouseAction,
-                        entryno.getValueFromField(), checkMode);
+                        entryno.getValueFromField(), checkMode, null);
                 if (!success) {
                     efaBoathouseAction.boat = null; // otherwise next check would fail
                     boat.requestFocus();

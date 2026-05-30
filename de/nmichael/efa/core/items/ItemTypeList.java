@@ -1172,6 +1172,17 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 	        			break;
 	        		}
 	        	}
+	        	
+	        	//we also want to remove all consecutive section strings at the beginning of the list, as they do not make sense without entries in between
+	        	for (int i= theModel.getSize()-1; i>=0;i--) {
+	        		if (theModel.getElementAt(i).separator){
+	        			if ((i<theModel.getSize()-1) && (theModel.getElementAt(i+1).separator)) {
+	        					//we have found two section strings in a row: remove the first one
+	        					theModel.removeElementAt(i);
+	        			}
+	        		}
+	        	}	        	
+	        	
 		        list.setModel(theModel);
 		     } else {
 		    	list.setModel(data);

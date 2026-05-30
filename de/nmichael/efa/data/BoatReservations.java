@@ -16,6 +16,7 @@ import java.util.Vector;
 
 import de.nmichael.efa.Daten;
 import de.nmichael.efa.data.storage.DataKey;
+import de.nmichael.efa.data.storage.DataKeyIterator;
 import de.nmichael.efa.data.storage.DataRecord;
 import de.nmichael.efa.data.storage.MetaData;
 import de.nmichael.efa.data.storage.StorageObject;
@@ -117,6 +118,45 @@ public class BoatReservations extends StorageObject {
         return a;
     }
 
+    public ArrayList<BoatReservationRecord> getPersonReservations(UUID personId, DataTypeDate startDate, DataTypeTime startTime, boolean onlyOneSeaterBoats) {
+        try {
+            // get all boat reservations...
+            DataKeyIterator it = data().getStaticIterator();
+            DataKey k = it.getFirst();
+            ArrayList<BoatReservationRecord> resultReservations = new ArrayList<BoatReservationRecord>();
+
+            // and run through all of them and look for records matching the personID.
+            while (k != null) {
+                BoatReservationRecord brr = (BoatReservationRecord) data().get(k);
+                if (brr != null) {
+                    UUID pid = brr.getPersonId();
+                    if (pid != null && pid.equals(personId)
+                            && (brr.getReservationValidInMinutes(startDate.getTimestamp(startTime), 300) >= 0)) {
+                        // reservation matches the personID, and it is valid today.
+                        // so we take this reservation into the list of potential results
+                    	if (onlyOneSeaterBoats) {
+                    		if (brr.getBoat().isOneSeaterBoat()) {
+                    			resultReservations.add(brr);
+                    		}
+                    	} else {
+                    		resultReservations.add(brr);
+                    	}
+                    }
+                }
+                // advance iterator to next key 
+                k = it.getNext();
+            }
+
+            //BoatReservationRecord[] recs = resultReservations.toArray(new BoatReservationRecord[resultReservations.size()]);
+            return resultReservations;
+            //return recs;
+        } catch (Exception e) {
+            Logger.logdebug(e);
+            return null;
+        }
+    }
+
+       
     public int purgeObsoleteReservations(UUID boatId, long now) {
         BoatReservationRecord[] reservations = getBoatReservations(boatId);
         int purged = 0;
@@ -134,7 +174,6 @@ public class BoatReservations extends StorageObject {
         }
         return purged;
     }
-
     
     private String buildOverlappingReservationInfo(BoatReservationRecord reservation) {
         String result = "";

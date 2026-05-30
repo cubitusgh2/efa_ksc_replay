@@ -7,17 +7,23 @@
         <DownloadSize>TODO</DownloadSize>
      	<MinimumJavaVersion>1.8</MinimumJavaVersion>
 		<MinimumEfaCloudVersion>2.3.3</MinimumEfaCloudVersion>
-        <ShowNotice lang="de">Basiert auf 2.5.0_01.</ShowNotice>
         <ShowNotice lang="de">Wenn efaCloud eingesetzt wird, muss der Server mindestens Version 2.3.3 unterstützen. EfaCloud 2.4.0_12 und höher werden empfohlen.</ShowNotice>
-        <ShowNotice lang="en">Based on 2.5.0_01.</ShowNotice>
         <ShowNotice lang="en">If you use efaCloud, make sure your server at least supports efaCloud Version 2.3.3. It is recommended to upgrade to EfaCloud 2.4.0_12 or above.</ShowNotice>
         <Changes lang="de">
+        	<ChangeItem>Neu: Multisession-Fahrtanlage: Wird ein Personenname eingetragen, und liegt für die Person zum eingetragenen Startzeitpunkt eine Einsitzer-Reservierung vor, so wird der Bootsname automatisch befüllt. Liegt parallel für die Person ein Standard-Boot vor, so kann der Nutzer wählen, welcher Bootsname übernommen werden soll.</ChangeItem>
+			<ChangeItem>Bugfix: Multisession-Fahrtanlage: Es wird keine Warnung zur zeitgleich offenen Reservierung für ein Boot mehr angezeigt, wenn das Boot mit der reservierenden Person unterwegs sein wird.</ChangeItem>
+        	<ChangeItem>Bugfix: Boote auf Fahrt: Zeigt jetzt immer den Kommentar zur offenen Fahrt an(wer ist mit dem Boot seit wann unterwegs), statt bei einer zeitgleich vorliegenden Reservierung den Reservierungsinhalt anzuzeigen.</ChangeItem>
         	<ChangeItem>Bugfix: Fahrt beenden: Bei einer Mehrtagesfahrt mit identischer Start- und Endzeit (z.B. beides um 12:00 Uhr) wird nun auch das Enddatum bei der Prüfung der Fahrtdauer berücksichtigt. Hierdurch weniger Fehlermeldungen beim Beenden einer Fahrt.</ChangeItem>
+        	<ChangeItem>Bugfix: Bootslisten in efaBootshaus: Bei der Filterung werden keine leeren Sektionen mehr angezeigt.</ChangeItem>
         	<ChangeItem>Bugfix: Vereinsarbeit: Es wird bei Erfassung und Bearbeitung von Vereinsarbeit geprüft, ob das Datum im zulässigen Bereich liegt.</ChangeItem>
         	<ChangeItem>Bugfix: Vereinsarbeit: Es wird in der Liste der Vereinsarbeit immer der Name angezeigt, den das Mitglied zum Zeitpunkt der Erfassung hatte. Dadurch wird bei Vereinsarbeit für inzwischen beendete Mitglieder wieder der Name angezeigt.</ChangeItem>
         </Changes>
         <Changes lang="en">
+        	<ChangeItem>New: Multi-session entry: If a person's name is entered, and a reservation for a single-seater boat exists for that person at the specified start time, the boat name is automatically populated. If a standard boat is also assigned to that person concurrently, the user may choose which boat name to apply.</ChangeItem>
+			<ChangeItem>Bugfix: Multi-session entry: No longer shows a warning about a reservation for a boat at the same time if the reservation is for that person and the specific start date and time.</ChangeItem>	
+        	<ChangeItem>Bugfix: Boats on session: Now always shows the comment for the open session (who is on the boat since when), instead of showing the reservation content if there is a reservation with the same time.</ChangeItem>
         	<ChangeItem>Bugfix: Finishing a session: For multi-day sessions with identical start and end times (e.g., both at 12:00am), the end date is now also considered when checking the session duration. This results in fewer error messages when ending a session.</ChangeItem>
+			<ChangeItem>Bugfix: Boat lists in efaBoathouse: Empty sections are no longer displayed when filtering.</ChangeItem>
 			<ChangeItem>Bugfix: Clubwork: When recording and editing clubwork, the date is checked to ensure it falls within the allowed range.</ChangeItem>
 			<ChangeItem>Bugfix: Clubwork: The clubwork list now always displays the name the member had at the time of recording. This means that for former members the name for the clubwork record is displayed correctly.</ChangeItem>
         </Changes>
@@ -38,8 +44,8 @@
         	<ChangeItem>Neu: efaBths kann über efaCLI neu gestartet (efaCLI.sh command restartefa) bzw. beendet werden (efaCLI.sh command shutdownefa).</ChangeItem>
         	<ChangeItem>Bugfix: Besseres Layout für Bootshauslisten (mehr Abstände, Filter-Textfelder haben Standardhöhe von 21 pix)</ChangeItem>
         	<ChangeItem>Bugfix: Größenbeschränkung der Größe von VersionizedDataEditDialog (Boote, Personen, Gruppen) auf max. 1000x700 und AdminEditDialog auf 700x700 Pixel</ChangeItem>
-			    <ChangeItem>Bugfix: Einige Dialoge schlossen sich nicht beim Betätigen von ESC</ChangeItem>
-			    <ChangeItem>Bugfix: Admin-Bereich: Suche in den Dataedit-Dialogen sucht nicht mehr in technischen Feldern</ChangeItem>
+			<ChangeItem>Bugfix: Einige Dialoge schlossen sich nicht beim Betätigen von ESC</ChangeItem>
+			<ChangeItem>Bugfix: Admin-Bereich: Suche in den Dataedit-Dialogen sucht nicht mehr in technischen Feldern</ChangeItem>
         </Changes>
         <Changes lang="en">
         	<ChangeItem>New: EfaConfig: Boathouse lists have their own section in Boathouse&gt;Boat lists</ChangeItem>
@@ -66,7 +72,7 @@
         	<ChangeItem>Neu: Bootshaus: Personenliste in "Verfügbare Personen" kann den Personennamen um max. zwei Felder erweitern. Sie werden auch im Tooltipp angezeigt, und es kann nach den Feldern gefiltert werden. Die Felder sind in efaConfig konfigurierbar.</ChangeItem>
         	<ChangeItem>Neu: Person/Boot bearbeiten Dialog: Die in der Bootsliste/Personenliste zusätzlich angezeigten Felder können bei Bedarf auf der ersten Registerkarte im "Bearbeiten" Dialog angezeigt werden.</ChangeItem>
         	<ChangeItem>Neu: Performance-Optimierung für die Bootslisten in efaBootshaus.</ChangeItem>
-        	<Changeitem>Neu: Zweispaltige Darstellung für Bootslisten in efaBootshaus ist nun Standard, da die Performance der Bootslisten nicht mehr durch die Zwei-Spalten-Darstellung eingeschränkt ist. Einspaltige Darstellung der Bootslisten entfällt.</Changeitem>
+        	<ChangeItem>Neu: Zweispaltige Darstellung für Bootslisten in efaBootshaus ist nun Standard, da die Performance der Bootslisten nicht mehr durch die Zwei-Spalten-Darstellung eingeschränkt ist. Einspaltige Darstellung der Bootslisten entfällt.</ChangeItem>
         	<ChangeItem>Bugfix: Person/Boot/Ziel/Gruppe bearbeiten Dialog: Scrollbars werden INNERHALB der Registerkarten angezeigt, wenn diese zu voll werden.</ChangeItem>
         </Changes>
         <Changes lang="en">
@@ -74,7 +80,7 @@
         	<ChangeItem>New: Boathouse: "Available persons" list can be extended by up to two additional fields. They are also shown in the tooltip, and can be used for filtering. The fields are configurable in efaConfig.</ChangeItem>
         	<ChangeItem>New: Edit person/boat dialog: The additional fields shown in the boat/person lists can optionally be shown on the first tab of the edit dialog.</ChangeItem>
         	<ChangeItem>New: Performance optimization for boat lists in efaBoathouse.</ChangeItem>
-        	<Changeitem>New: Two-Column layout for the boatlists in efaBths is now standard, as the performance of the boatlists is no longer affected by using two-column layout. The option to use the former one-column layout is discarded.</Changeitem>
+        	<ChangeItem>New: Two-Column layout for the boatlists in efaBths is now standard, as the performance of the boatlists is no longer affected by using two-column layout. The option to use the former one-column layout is discarded.</ChangeItem>
         	<ChangeItem>Bugfix: Edit person/boat/destination/group dialog: Scrollbars are now shown INSIDE the tabs if they get too full.</ChangeItem>
         </Changes>
 	</Version>
@@ -236,7 +242,7 @@
             <ChangeItem>Neu: Widget: Wetter-Widget: Reihenfolge der Felder in der Oberfläche verbessert.</ChangeItem>
             <ChangeItem>Neu: Widget: Wetter-Widget: Bessere Formatierung von Fließkommazahlen kleiner 1.</ChangeItem>
             <ChangeItem>Neu: Widget: Wetter-Widget: Benutzerefinierte Farben für Wetterwidget.</ChangeItem>
-            <Changeitem>Bugfix: Widget: HTML-Widget: Bessere Behandlung des Standard-Browsers auf Linux/RASPIan. Verwendet internen Browser als Fallback, wenn externer Browser nicht geöffnet werden kann.</Changeitem>
+            <ChangeItem>Bugfix: Widget: HTML-Widget: Bessere Behandlung des Standard-Browsers auf Linux/RASPIan. Verwendet internen Browser als Fallback, wenn externer Browser nicht geöffnet werden kann.</ChangeItem>
         </Changes>
         <Changes lang="en">
             <ChangeItem>New: Widget: HTML-Widget: Clicking in the area of the HTML widget opens a Popup window that closes automatically after 90 seconds.</ChangeItem>
@@ -247,7 +253,7 @@
             <ChangeItem>New: Widget: Weather-Widget: Optimized order of parameter fields in the GUI.</ChangeItem>
             <ChangeItem>New: Widget: Weather-Widget: Optimized rendering of double values &lt; 1.</ChangeItem>
             <ChangeItem>New: Widget: Weather-Widget: Colors are customizable.</ChangeItem>
-			<Changeitem>Bugfix: Widget: HTML-Widget: Handle default browser on Linux/RASPIan. Open internal browser if external browser fails.</Changeitem>
+			<ChangeItem>Bugfix: Widget: HTML-Widget: Handle default browser on Linux/RASPIan. Open internal browser if external browser fails.</ChangeItem>
         </Changes>
 	</Version>
     <Version>
@@ -697,7 +703,7 @@
         <ReleaseDate>05.04.2024</ReleaseDate>
         <DownloadUrl>http://efa.nmichael.de/download/efa240.zip</DownloadUrl>
         <DownloadSize>6547777</DownloadSize>
-		<MinimumJavaVersion>1.8</MinimumJavaVersion>^
+		<MinimumJavaVersion>1.8</MinimumJavaVersion>
 		<ShowNotice lang="de">Nach dem Update auf 2.4.0 ist ein Neustart des Rechners erforderlich. Ein Neustart von efa selbst reicht nicht aus.</ShowNotice>
         <ShowNotice lang="en">After updating to 2.4.0, you must restart your computer. Restarting efa itself is not sufficient.</ShowNotice>
         <Changes lang="de">
@@ -829,19 +835,6 @@
             <ChangeItem>BugFix: [efaCloud] Cannot convert an existing project to efaCloud then efaCloud credential fields are empty</ChangeItem>
         </Changes>
 	</Version>	
-	<Version>
-        <VersionID>2.3.3_02</VersionID>
-        <ReleaseDate>26.11.2023</ReleaseDate>
-        <DownloadUrl>http://efa.nmichael.de/download/efa233.zip</DownloadUrl>
-        <DownloadSize>4546237</DownloadSize>
-		<MinimumJavaVersion>1.8</MinimumJavaVersion>
-        <Changes lang="de">
-            <ChangeItem>BugFix: Unerwuenschtes Dialogfenster bei Automatischen Ablauefen angezeigt</ChangeItem>
-        </Changes>
-        <Changes lang="en">
-            <ChangeItem>BugFix: Unwanted Dialog window shown during cron job executions</ChangeItem>
-        </Changes>
-    </Version>
     <Version>
         <VersionID>2.3.3_03</VersionID>
         <ReleaseDate>01.01.2024</ReleaseDate>
@@ -932,7 +925,7 @@
         <Changes lang="en">
             <ChangeItem>New: efa 2.3.3. requires at least Java Vesion 8</ChangeItem>
             <ChangeItem>New: Boat reservations (both one-time and weekly reservations) can now be filtered by date</ChangeItem>
-            <Changeitem>New: Kanu-EFB synchonisation refactored, can be configured in more detail</Changeitem>
+            <ChangeItem>New: Kanu-EFB synchonisation refactored, can be configured in more detail</ChangeItem>
             <ChangeItem>New: Boathouse shows two-column lists (can be disabled)</ChangeItem>
             <ChangeItem>New: Boathouse shows today's reservations for available boats(can be disabled)</ChangeItem>
             <ChangeItem>New: Boathouse shows tooltips for items (can be disabled)</ChangeItem>

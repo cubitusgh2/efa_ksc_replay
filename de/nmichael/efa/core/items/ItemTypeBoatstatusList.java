@@ -46,7 +46,6 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
     public static final int SEATS_OTHER = 99;
     public static final String TYPE_OTHER = "";
     public static final String RIGGER_OTHER = "";
-    private static final String STR_DESTINATION_DELIMITER=     	"     -> ";
     EfaBoathouseFrame efaBoathouseFrame;
     private String STR_RESERVIERT_FUER=International.getString("Reserviert für").toLowerCase();
     private String STR_BOOTSSCHADEN=International.getString("Bootsschaden");
