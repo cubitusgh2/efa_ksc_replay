@@ -141,33 +141,33 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         yPos++;
 
         // Date, Enddate, optionally a button to append end date
-        date = new ItemTypeDate(LogbookRecord.DATE, new DataTypeDate(), IItemType.TYPE_PUBLIC, null, International.getStringWithMnemonic("Datum"));
-        date.showWeekday(true);
-        date.setFieldSize(100, FIELD_HEIGHT);
-        date.setLabelGrid(1, GridBagConstraints.EAST, GridBagConstraints.NONE);
-        date.setFieldGrid(1, GridBagConstraints.WEST, GridBagConstraints.NONE);
-        date.setWeekdayGrid(2, GridBagConstraints.WEST, GridBagConstraints.NONE);
-        date.setBackgroundColorWhenFocused(Daten.efaConfig.getValueEfaDirekt_colorizeInputField() ? Color.yellow : null);
-        date.displayOnGui(this, mainInputPanel, 0, yPos);
-        date.registerItemListener(this);
+        startDate = new ItemTypeDate(LogbookRecord.DATE, new DataTypeDate(), IItemType.TYPE_PUBLIC, null, International.getStringWithMnemonic("Datum"));
+        startDate.showWeekday(true);
+        startDate.setFieldSize(100, FIELD_HEIGHT);
+        startDate.setLabelGrid(1, GridBagConstraints.EAST, GridBagConstraints.NONE);
+        startDate.setFieldGrid(1, GridBagConstraints.WEST, GridBagConstraints.NONE);
+        startDate.setWeekdayGrid(2, GridBagConstraints.WEST, GridBagConstraints.NONE);
+        startDate.setBackgroundColorWhenFocused(Daten.efaConfig.getValueEfaDirekt_colorizeInputField() ? Color.yellow : null);
+        startDate.displayOnGui(this, mainInputPanel, 0, yPos);
+        startDate.registerItemListener(this);
         
         // End Date
-        enddate = new ItemTypeDate(LogbookRecord.ENDDATE, new DataTypeDate(), IItemType.TYPE_PUBLIC, null, International.getStringWithMnemonic("bis"));
-        enddate.setMustBeAfter(date, false);
-        enddate.showWeekday(true);
-        enddate.setFieldSize(100, FIELD_HEIGHT);
-        enddate.setLabelGrid(1, GridBagConstraints.EAST, GridBagConstraints.NONE);
-        enddate.setFieldGrid(2, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL);
-        enddate.setWeekdayGrid(1, GridBagConstraints.WEST, GridBagConstraints.NONE);
-        enddate.showOptional(true);
+        endDate = new ItemTypeDate(LogbookRecord.ENDDATE, new DataTypeDate(), IItemType.TYPE_PUBLIC, null, International.getStringWithMnemonic("bis"));
+        endDate.setMustBeAfter(startDate, false);
+        endDate.showWeekday(true);
+        endDate.setFieldSize(100, FIELD_HEIGHT);
+        endDate.setLabelGrid(1, GridBagConstraints.EAST, GridBagConstraints.NONE);
+        endDate.setFieldGrid(2, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL);
+        endDate.setWeekdayGrid(1, GridBagConstraints.WEST, GridBagConstraints.NONE);
+        endDate.showOptional(true);
         if (isModeBoathouse()) {
-            enddate.setOptionalButtonText("+ " + International.getString("Enddatum"));
+            endDate.setOptionalButtonText("+ " + International.getString("Enddatum"));
         }
-        enddate.setBackgroundColorWhenFocused(Daten.efaConfig.getValueEfaDirekt_colorizeInputField() ? Color.yellow : null);
-        enddate.displayOnGui(this, mainInputPanel, 4, yPos);
-        enddate.registerItemListener(this);
+        endDate.setBackgroundColorWhenFocused(Daten.efaConfig.getValueEfaDirekt_colorizeInputField() ? Color.yellow : null);
+        endDate.displayOnGui(this, mainInputPanel, 4, yPos);
+        endDate.registerItemListener(this);
         if (isModeBoathouse() && !Daten.efaConfig.getValueAllowEnterEndDate()) {
-            enddate.setVisible(false);
+            endDate.setVisible(false);
         }
 
         yPos++;
@@ -366,7 +366,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 
         createAllUnusedElements();
         
-        destination.setValidAt(date, starttime);
+        destination.setValidAt(startDate, starttime);
         
         Dimension dim = mainPanel.getMinimumSize();
         dim.height = dim.height + ADD_HEIGHT_TO_DIALOG;
@@ -406,11 +406,11 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
     	if (mode == MODE_BOATHOUSE_START_MULTISESSION) {
 	    	// set Date
 	        String d = EfaUtil.getCurrentTimeStampDD_MM_YYYY();
-	        date.parseAndShowValue(d);
+	        startDate.parseAndShowValue(d);
 	        updateTimeInfoFields();
-	        date.setUnchanged();
+	        startDate.setUnchanged();
 	        if (isModeFull()) {
-	            date.setSelection(0, Integer.MAX_VALUE);
+	            startDate.setSelection(0, Integer.MAX_VALUE);
 	        }
 	        
 	        setTime(starttime, Daten.efaConfig.getValueEfaDirekt_plusMinutenAbfahrt(), null);
@@ -429,13 +429,13 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 	        
 	        updateTimeInfoFields();
     	} else if (mode == MODE_BOATHOUSE_LATEENTRY_MULTISESSION) {
-            date.parseAndShowValue(EfaUtil.getCurrentTimeStampDD_MM_YYYY());
+            startDate.parseAndShowValue(EfaUtil.getCurrentTimeStampDD_MM_YYYY());
             updateTimeInfoFields();
 	        if (isModeFull()) {
-	            date.setSelection(0, Integer.MAX_VALUE);
+	            startDate.setSelection(0, Integer.MAX_VALUE);
 	        }
             
-            setFieldEnabled(true, true, date);
+            setFieldEnabled(true, true, startDate);
             setFieldEnabled(true, true, starttime);
             setFieldEnabled(true, true, endtime);
             setFieldEnabled(true, true, destination);
@@ -446,7 +446,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
             
     	}
 
-        setRequestFocus(date);
+        setRequestFocus(startDate);
     }
     
     
@@ -509,14 +509,14 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         	items[0] = getGuiAutoComplete(itemName+STR_NAME_LOOKUP, International.getString("Name"), this.autoCompleteListPersons);
 	        items[0].setFieldSize(200, -1);
 	        items[0].setBackgroundColorWhenFocused(Daten.efaConfig.getValueEfaDirekt_colorizeInputField() ? Color.yellow : null);
-	        items[0].setValidAt(date, starttime);
+	        items[0].setValidAt(startDate, starttime);
 	        items[0].registerItemListener(this);
 	        
 	    // Boat
         	items[1] = getGuiAutoComplete(itemName+STR_BOAT_LOOKUP, STR_SPACER+International.getString("Boot"), this.autoCompleteListBoats);
 	        items[1].setFieldSize(200, -1);
 	        items[1].setBackgroundColorWhenFocused(Daten.efaConfig.getValueEfaDirekt_colorizeInputField() ? Color.yellow : null);
-	        items[1].setValidAt(date, starttime);
+	        items[1].setValidAt(startDate, starttime);
 
 	        items[0].setOtherField(items[1]);
 	        
@@ -1538,7 +1538,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         	
         	for (int icurUncertainBoat =0; icurUncertainBoat<uncertainBoatFields.size(); icurUncertainBoat++) {
         		
-        	    long timePreferredValidity = LogbookRecord.getValidAtTimestamp(this.date.getDate(),
+        	    long timePreferredValidity = LogbookRecord.getValidAtTimestamp(this.startDate.getDate(),
                            (this.starttime != null ? this.starttime.getTime() : null));
         	    
         	    String boatName = uncertainBoatFields.get(icurUncertainBoat).getValueFromField();
