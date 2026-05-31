@@ -582,17 +582,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         // if a popup menu already exists, remove all elements and rebuild the popup menu.
         if (popup!=null) {
 	        popup.removeAll();
-	        for (int i = 0; actions != null && i < actions.length; i++) {
-	        	if (actions[i].equals(EfaGuiUtils.MENU_SEPARATOR)) {
-	        		popup.addSeparator();
-	        	} else {
-		            JMenuItem menuItem = new JMenuItem(actions[i].substring(1));
-		            menuItem.setActionCommand(EfaMouseListener.EVENT_POPUP_CLICKED + "_" + actions[i].substring(0, 1));
-		            menuItem.addActionListener(this);
-		            popup.add(menuItem);
-		            menuItem.setIcon(getIconFromActionID(actions[i].substring(0, 1)));
-	        	}
-	        }
+	        buildPopupMenu();
 	        if (popupListener!=null) {
 	        	popupListener.setPopupMenu(popup);
 	        }
@@ -631,6 +621,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 	        updateLastFilterChange();
         }
         popup = new JPopupMenu();
+        
         //Vertical scrollbar shall be shown always, because better ListCellRendering does not work optically well when
         //scrollbar is shown only when needed
         scrollPane = new JScrollPane(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
@@ -673,13 +664,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         scrollPane.setPreferredSize(new Dimension(fieldWidth, fieldHeight));
-        for (int i = 0; actions != null && i < actions.length; i++) {
-            JMenuItem menuItem = new JMenuItem(actions[i].substring(1));
-            menuItem.setActionCommand(EfaMouseListener.EVENT_POPUP_CLICKED + "_" + actions[i].substring(0, 1));
-            menuItem.addActionListener(this);
-            popup.add(menuItem);
-            menuItem.setIcon(getIconFromActionID(actions[i].substring(0, 1)));
-        }
+        buildPopupMenu(); //popupItems has been initialized earlier
         // KeyListeners entfernen, damit unter Java 1.4.x nicht automatisch gescrollt wird, sondern durch den eigenen Algorithmus
         try {
             KeyListener[] kl = list.getKeyListeners();
@@ -770,6 +755,24 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         
         return mypanel;
     }
+
+	private void buildPopupMenu() {
+		if (popup!=null) {
+			popup.removeAll();
+		}
+			
+		for (int i = 0; actions != null && i < actions.length; i++) {
+        	if (actions[i].equals(EfaGuiUtils.MENU_SEPARATOR)) {
+        		popup.addSeparator();
+        	} else {
+	            JMenuItem menuItem = new JMenuItem(actions[i].substring(1));
+	            menuItem.setActionCommand(EfaMouseListener.EVENT_POPUP_CLICKED + "_" + actions[i].substring(0, 1));
+	            menuItem.addActionListener(this);
+	            popup.add(menuItem);
+	            menuItem.setIcon(getIconFromActionID(actions[i].substring(0, 1)));
+        	}
+        }
+	}
 
     private Icon getIconFromActionID(String actionID) {
     	if (actionID.equals("1")) return ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_ACTION_START_SESSION);
