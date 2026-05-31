@@ -43,6 +43,7 @@ import javax.swing.JList;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JPopupMenu.Separator;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.ListModel;
@@ -582,11 +583,15 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         if (popup!=null) {
 	        popup.removeAll();
 	        for (int i = 0; actions != null && i < actions.length; i++) {
-	            JMenuItem menuItem = new JMenuItem(actions[i].substring(1));
-	            menuItem.setActionCommand(EfaMouseListener.EVENT_POPUP_CLICKED + "_" + actions[i].substring(0, 1));
-	            menuItem.addActionListener(this);
-	            popup.add(menuItem);
-	            menuItem.setIcon(getIconFromActionID(actions[i].substring(0, 1)));
+	        	if (actions[i].equals(EfaGuiUtils.MENU_SEPARATOR)) {
+	        		popup.addSeparator();
+	        	} else {
+		            JMenuItem menuItem = new JMenuItem(actions[i].substring(1));
+		            menuItem.setActionCommand(EfaMouseListener.EVENT_POPUP_CLICKED + "_" + actions[i].substring(0, 1));
+		            menuItem.addActionListener(this);
+		            popup.add(menuItem);
+		            menuItem.setIcon(getIconFromActionID(actions[i].substring(0, 1)));
+	        	}
 	        }
 	        if (popupListener!=null) {
 	        	popupListener.setPopupMenu(popup);

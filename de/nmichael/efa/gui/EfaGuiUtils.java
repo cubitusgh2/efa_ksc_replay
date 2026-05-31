@@ -51,6 +51,7 @@ import de.nmichael.efa.util.Logger;
 public class EfaGuiUtils {
 	
 
+	public static final String MENU_SEPARATOR = "---------";
 	private static Object desktopHints;
 	
 	public static ItemTypeLabel createHint(String uniqueName, int type, String category, String caption, int gridWidth,
