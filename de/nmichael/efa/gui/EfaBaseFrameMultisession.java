@@ -429,6 +429,10 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 	        setFieldEnabled(true, true, destination);
 	        setFieldEnabled(false, false, distance);
 	        setFieldEnabled(true, true, comments);
+	        // if Multisession start and a person has been selected from available persons
+	        if (efaBoathouseAction!=null && efaBoathouseAction.person!=null) {
+	        	setPersonNameForRow(0, efaBoathouseAction.person.getQualifiedName());
+	        }
 	        
 	        updateTimeInfoFields();
     	} else if (mode == MODE_BOATHOUSE_LATEENTRY_MULTISESSION) {
@@ -566,8 +570,8 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 				                	// a standard boat AND a reservation - which boat should we take?
 				                	int chosenOption = Dialog.auswahlDialog(International.getString("Boot auswählen"), 
 				                			International.getMessage("Für die Person {person} gibt es eine aktuelle Reservierung und ein Standardboot. Welches Boot soll eingetragen werden?", person.getQualifiedName()),
-				                			International.getString("Reservierung") + ":  "+personsCurrentReservationBoat.getQualifiedName()+"  ",
-				                			International.getString("Standard-Boot")+ ":  "+personsStandardBoat.getQualifiedName()+"  ", true);
+				                			International.getString("Reservierung") + ":  "+personsCurrentReservationBoat.getQualifiedName(),
+				                			International.getString("Standard-Boot")+ ":  "+personsStandardBoat.getQualifiedName());
 				                	
 				                	if (chosenOption==0) {
 				                		//reservation
@@ -820,6 +824,18 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
     	} catch (Exception e) {
     		Logger.logdebug(e);
     		return false;
+    	}
+    }
+    
+    private void setPersonNameForRow(int iRow, String personName) {
+    	try {
+	    	if (iRow>=0 && iRow<nameAndBoat.getItemCount())  {
+	    		ItemTypeStringAutoComplete[] acItem= (ItemTypeStringAutoComplete[])nameAndBoat.getItems(iRow);
+		    	ItemTypeStringAutoComplete curName= acItem[0];
+		    	curName.setValue(personName);
+	    	}
+    	} catch (Exception e) {
+    		Logger.logdebug(e);
     	}
     }
     

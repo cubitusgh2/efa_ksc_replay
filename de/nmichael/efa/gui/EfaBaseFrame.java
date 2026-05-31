@@ -4857,8 +4857,8 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
             	// a standard boat AND a reservation - which boat should we take?
             	int chosenOption = Dialog.auswahlDialog(International.getString("Boot auswählen"), 
             			International.getMessage("Für die Person {person} gibt es eine aktuelle Reservierung und ein Standardboot. Welches Boot soll eingetragen werden?", item.person.getQualifiedName()),
-            			International.getString("Reservierung") + ":  "+personsCurrentReservationBoat.getQualifiedName()+"  ",
-            			International.getString("Standard-Boot")+ ":  "+personsStandardBoat.getQualifiedName()+"  ", true);
+            			International.getString("Reservierung") + ":  "+personsCurrentReservationBoat.getQualifiedName(),
+            			International.getString("Standard-Boot")+ ":  "+personsStandardBoat.getQualifiedName(), false);
             	
             	if (chosenOption==0) {
             		//reservation

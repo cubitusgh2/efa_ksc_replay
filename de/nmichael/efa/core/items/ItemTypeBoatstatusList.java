@@ -70,6 +70,20 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
         this.efaBoathouseFrame = efaBoathouseFrame;
     }
     
+    public void setPersonStatusData(Vector<PersonRecord> v, String other) {
+        Vector<ItemTypeListData> vdata = sortMemberList(v);
+        if (other != null) {
+        	BoatListItem item= new BoatListItem();
+        	item.text = other;
+        	vdata.add(0, new ItemTypeListData(other, null, null, null, item, false, -1));
+            this.other_item_text=other;
+        }
+        clearIncrementalSearch();
+        list.setSelectedIndex(-1);
+        setItems(vdata);
+        showValue();
+    }
+    
     public void setBoatStatusData(Vector<BoatStatusRecord> v, Logbook logbook, String other, Vector <BoatReservationRecord> todaysReservations) {
         Vector<ItemTypeListData> vdata = sortBootsList(v, logbook, todaysReservations);
         if (other != null) {
@@ -779,18 +793,6 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
     	}
     	return null;
     }
-    
-    public void setPersonStatusData(Vector<PersonRecord> v, String other) {
-        Vector<ItemTypeListData> vdata = sortMemberList(v);
-        if (other != null) {
-            vdata.add(0, new ItemTypeListData(other, other, null, null, null, false, -1));
-            this.other_item_text=other;
-        }
-        clearIncrementalSearch();
-        list.setSelectedIndex(-1);
-        setItems(vdata);
-        showValue();
-    }
 
     Vector sortMemberList(Vector<PersonRecord> v) {
         if (v == null || v.size() == 0) {
@@ -850,7 +852,7 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
                 tmp.add(new ItemTypeListData(name, 
 					    (buildToolTips ? getPersonToolTip(name, (BoatString) a[i], nameExtension) : ""), 
 	            		(nameExtension!=null ? nameExtension.getAsCommaSeparatedList() : null),
-	            		null, a[i].getRecord(),  false, SEATS_OTHER));
+	            		null, a[i].getRecord(), false, SEATS_OTHER));
             }
         }
         // Convert back to Vector for compatibility
