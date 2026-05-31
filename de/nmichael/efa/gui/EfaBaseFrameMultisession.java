@@ -9,6 +9,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.UUID;
 import java.util.Vector;
@@ -38,6 +39,8 @@ import de.nmichael.efa.core.items.ItemTypeStringAutoComplete;
 import de.nmichael.efa.core.items.ItemTypeStringList;
 import de.nmichael.efa.core.items.ItemTypeTime;
 import de.nmichael.efa.data.BoatRecord;
+import de.nmichael.efa.data.BoatReservationRecord;
+import de.nmichael.efa.data.BoatReservations;
 import de.nmichael.efa.data.Boats;
 import de.nmichael.efa.data.DestinationRecord;
 import de.nmichael.efa.data.GroupRecord;
@@ -426,6 +429,10 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 	        setFieldEnabled(true, true, destination);
 	        setFieldEnabled(false, false, distance);
 	        setFieldEnabled(true, true, comments);
+	        // if Multisession start and a person has been selected from available persons
+	        if (efaBoathouseAction!=null && efaBoathouseAction.person!=null) {
+	        	setPersonNameForRow(0, efaBoathouseAction.person.getQualifiedName());
+	        }
 	        
 	        updateTimeInfoFields();
     	} else if (mode == MODE_BOATHOUSE_LATEENTRY_MULTISESSION) {
@@ -499,7 +506,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 	 * Where boat only contains single person boats.
 	 * 
 	 * The Name field knows the Boat field as "other" field. 
-	 * This is neccesary for the feature "auto fill in the person's standard boat, if available".
+	 * This is necessary for the feature "auto fill in the person's standard boat, if available".
 	 * And it is used by the itemListenerAction()
 	 */
     public IItemType[] getDefaultItems(String itemName) {
@@ -551,13 +558,47 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 							//Obtain the person's standard boat
 	                		PersonRecord person = Daten.project.getPersons(false).getPerson(field.getValue(), System.currentTimeMillis());
 							if (person!=null) {
-				                BoatRecord r = Daten.project.getBoats(false).getBoat(
+				                BoatRecord personsStandardBoat = Daten.project.getBoats(false).getBoat(
 				                        person.getDefaultBoatId(), System.currentTimeMillis());	
-				                if (r!=null) {
-				                	if (field.getOtherField().getAutoCompleteData().getDataVisible().contains(r.getQualifiedName())) {
-				                		field.getOtherField().setValue(r.getQualifiedName());
-				                	}
-			                	}
+				                
+				                //get Person's reservations, one-seater only in this use case.
+				                //get all reservations of the current person, all boat types
+				                BoatReservationRecord personsCurrentReservation = getCurrentOrNextReservationForPerson(person.getId(),true);
+				                BoatRecord personsCurrentReservationBoat = (personsCurrentReservation!=null? personsCurrentReservation.getBoat():null);
+				                
+				                if ((personsCurrentReservationBoat != null) && (personsStandardBoat != null)){
+				                	// a standard boat AND a reservation - which boat should we take?
+				                	int chosenOption = Dialog.auswahlDialog(International.getString("Boot auswählen"), 
+				                			International.getMessage("Für die Person {person} gibt es eine aktuelle Reservierung und ein Standardboot. Welches Boot soll eingetragen werden?", person.getQualifiedName()),
+				                			International.getString("Reservierung") + ":  "+personsCurrentReservationBoat.getQualifiedName(),
+				                			International.getString("Standard-Boot")+ ":  "+personsStandardBoat.getQualifiedName());
+				                	
+				                	if (chosenOption==0) {
+				                		//reservation
+				                		personsStandardBoat=null;
+					                } else if (chosenOption==1) {
+				                		//standard boat
+					                	personsCurrentReservationBoat=null;
+					                } else {
+					                	// user selected cancel
+					                	personsStandardBoat=null;
+					                	personsCurrentReservationBoat=null;
+					                }
+				                }
+				                field.getOtherField().setToolTipText(null);//default value
+				                if ((personsCurrentReservationBoat != null) || (personsStandardBoat != null)){
+					                if (personsCurrentReservationBoat!=null) {
+					                	if (field.getOtherField().getAutoCompleteData().getDataVisible().contains(personsCurrentReservationBoat.getQualifiedName())) {
+					                		field.getOtherField().setValue(personsCurrentReservationBoat.getQualifiedName());
+					                		field.getOtherField().setToolTipText(International.getString("Vorbelegung aus Reservierung")+": \n\n"+personsCurrentReservation.getAsUserText());
+					                	}			                						                		
+					                } else if (personsStandardBoat!=null) {
+					                	if (field.getOtherField().getAutoCompleteData().getDataVisible().contains(personsStandardBoat.getQualifiedName())) {
+					                		field.getOtherField().setValue(personsStandardBoat.getQualifiedName());
+					                		field.getOtherField().setToolTipText(International.getString("Vorbelegung mit Standardboot"));
+					                	}
+					                }
+				                }
 			                }
 	                	}
 					}
@@ -572,7 +613,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 		    super.itemListenerAction(item, event);
         }
 	}	    
-    
+
 	/**
 	 * Create an ItemTypeAutoComplete 
 	 * @param name Name of the field
@@ -783,6 +824,18 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
     	} catch (Exception e) {
     		Logger.logdebug(e);
     		return false;
+    	}
+    }
+    
+    private void setPersonNameForRow(int iRow, String personName) {
+    	try {
+	    	if (iRow>=0 && iRow<nameAndBoat.getItemCount())  {
+	    		ItemTypeStringAutoComplete[] acItem= (ItemTypeStringAutoComplete[])nameAndBoat.getItems(iRow);
+		    	ItemTypeStringAutoComplete curName= acItem[0];
+		    	curName.setValue(personName);
+	    	}
+    	} catch (Exception e) {
+    		Logger.logdebug(e);
     	}
     }
     
@@ -1099,6 +1152,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 	    for (int iCurNameAndBoat =0; iCurNameAndBoat<nameAndBoat.getItemCount(); iCurNameAndBoat++) {
 	    	ItemTypeStringAutoComplete[] acItem= (ItemTypeStringAutoComplete[])nameAndBoat.getItems(iCurNameAndBoat);
 	    	ItemTypeStringAutoComplete curBoat = acItem[1];    	
+	    	ItemTypeStringAutoComplete curName = acItem[0];
     	
 	        if (getMode() == MODE_BOATHOUSE_START_MULTISESSION ) { // avoid if mode lateentry
 	            int checkMode = 2;
@@ -1112,7 +1166,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 		                // update boat status (may have changed since we opened the dialog)
 		                efaBoathouseAction.boatStatus = efaBoathouseAction.boat.getBoatStatus();
 		            }
-		            boolean success = efaBoathouseFrame.checkStartSessionForBoat(efaBoathouseAction, "0", checkMode);
+		            boolean success = efaBoathouseFrame.checkStartSessionForBoat(efaBoathouseAction, "0", checkMode, curName.getValueFromField());
 		            if (!success) {
 		                efaBoathouseAction.boat = null; // otherwise next check would fail
 		                curBoat.requestFocus();

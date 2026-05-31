@@ -46,7 +46,6 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
     public static final int SEATS_OTHER = 99;
     public static final String TYPE_OTHER = "";
     public static final String RIGGER_OTHER = "";
-    private static final String STR_DESTINATION_DELIMITER=     	"     -> ";
     EfaBoathouseFrame efaBoathouseFrame;
     private String STR_RESERVIERT_FUER=International.getString("Reserviert für").toLowerCase();
     private String STR_BOOTSSCHADEN=International.getString("Bootsschaden");
@@ -69,6 +68,20 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
             EfaBoathouseFrame efaBoathouseFrame, boolean showFilterField) {
         super(name, type, category, description, showFilterField);
         this.efaBoathouseFrame = efaBoathouseFrame;
+    }
+    
+    public void setPersonStatusData(Vector<PersonRecord> v, String other) {
+        Vector<ItemTypeListData> vdata = sortMemberList(v);
+        if (other != null) {
+        	BoatListItem item= new BoatListItem();
+        	item.text = other;
+        	vdata.add(0, new ItemTypeListData(other, null, null, null, item, false, -1));
+            this.other_item_text=other;
+        }
+        clearIncrementalSearch();
+        list.setSelectedIndex(-1);
+        setItems(vdata);
+        showValue();
     }
     
     public void setBoatStatusData(Vector<BoatStatusRecord> v, Logbook logbook, String other, Vector <BoatReservationRecord> todaysReservations) {
@@ -780,18 +793,6 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
     	}
     	return null;
     }
-    
-    public void setPersonStatusData(Vector<PersonRecord> v, String other) {
-        Vector<ItemTypeListData> vdata = sortMemberList(v);
-        if (other != null) {
-            vdata.add(0, new ItemTypeListData(other, other, null, null, null, false, -1));
-            this.other_item_text=other;
-        }
-        clearIncrementalSearch();
-        list.setSelectedIndex(-1);
-        setItems(vdata);
-        showValue();
-    }
 
     Vector sortMemberList(Vector<PersonRecord> v) {
         if (v == null || v.size() == 0) {
@@ -851,7 +852,7 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
                 tmp.add(new ItemTypeListData(name, 
 					    (buildToolTips ? getPersonToolTip(name, (BoatString) a[i], nameExtension) : ""), 
 	            		(nameExtension!=null ? nameExtension.getAsCommaSeparatedList() : null),
-	            		null, a[i].getRecord(),  false, SEATS_OTHER));
+	            		null, a[i].getRecord(), false, SEATS_OTHER));
             }
         }
         // Convert back to Vector for compatibility

@@ -43,6 +43,7 @@ import javax.swing.JList;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JPopupMenu.Separator;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.ListModel;
@@ -57,6 +58,7 @@ import javax.swing.event.DocumentListener;
 
 import de.nmichael.efa.Daten;
 import de.nmichael.efa.gui.BaseDialog;
+import de.nmichael.efa.gui.EfaGuiUtils;
 import de.nmichael.efa.gui.ImagesAndIcons;
 import de.nmichael.efa.gui.util.EfaMouseListener;
 import de.nmichael.efa.gui.util.RoundedBorder;
@@ -110,11 +112,10 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         private final static int reservedGapBetweenSides = 40; // <-- gewünschte 40px whitespace
         private static final int SELECTION_ARC = 14; // größerer Wert für Separatoren, damit sie sich besser abheben
         
-        Font fontStandard ;
-        Font fontBold ;
-        FontMetrics fmStandard ;
-        FontMetrics fmBold ;
-        Object desktopHints=null;
+        Font fontStandard;
+        Font fontBold;
+        FontMetrics fmStandard;
+        FontMetrics fmBold;
         
         Color listBackground;
         Color selBg = javax.swing.UIManager.getColor("List.selectionBackground");
@@ -127,11 +128,6 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
             setOpaque(true);
             setBorder(_emptyBorder);
            
-            if (Daten.javaVersionInt >= 9) {
-				// On Java 9 and above, we can rely on the desktop hints for optimal text rendering, which may include subpixel anti-aliasing if supported by the OS and font.
-            	desktopHints = Toolkit.getDefaultToolkit().getDesktopProperty("awt.font.desktophints");
-            } // else desktophints remain null
-            
             if (Daten.lookAndFeel.endsWith(Daten.LAF_METAL) || Daten.lookAndFeel.endsWith(Daten.LAF_WINDOWS) || Daten.lookAndFeel.endsWith(Daten.LAF_WINDOWS_CLASSIC)) {
             	inActiveSelBg = selBg;
             }
@@ -197,34 +193,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         	 */
             Graphics2D g = (Graphics2D) g0;
 
-            // Handle font aliasing hints.
-            if (desktopHints!=null && desktopHints instanceof Map) {
-				// Java 9+ has better font rendering and less bugs on aliasing, so we can rely on the desktop hints for optimal text rendering.
-
-	            // RenderingHints.KEY_TEXT_ANTIALIASING would enable standard aliasing without using 
-	            // the the operation system's special renderings like LCD Subpixel rendering. This would lead to thicker text, which may be desirable for some users, 
-	            // but it would look inconsistent with the rest of the Swing GUI. 
-	            // On Java9 and above, "awt.font.desktophints" is applied, which contains text antialiasing hints set by JVM and operating system. 
-	            
-                @SuppressWarnings("unchecked")
-                Map<Object,Object> hints = (Map<Object,Object>) desktopHints;
-                for (Map.Entry<Object,Object> e : hints.entrySet()) {
-                    Object key = e.getKey();
-                    Object value = e.getValue();
-                    if (key instanceof RenderingHints.Key && value != null) {
-                        g.setRenderingHint((RenderingHints.Key) key, value);
-                    }
-                }
-            } else {
-				// For Java 8 and below, or if desktopHints could not be obtained, 
-            	// we enable standard text antialiasing for better text quality, even if it may be a bit thicker. 
-				// This is a tradeoff to avoid very bad font rendering on Java 8, especially on Windows.
-				g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-			}
-            
-            // For graphics, use standard aliasing for smooth shapes (round borders)
-            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            
+            EfaGuiUtils.setStandardRenderingHints(g);
             if (currentItem == null) {
                 super.paintComponent(g);
                 return;
@@ -614,11 +583,15 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         if (popup!=null) {
 	        popup.removeAll();
 	        for (int i = 0; actions != null && i < actions.length; i++) {
-	            JMenuItem menuItem = new JMenuItem(actions[i].substring(1));
-	            menuItem.setActionCommand(EfaMouseListener.EVENT_POPUP_CLICKED + "_" + actions[i].substring(0, 1));
-	            menuItem.addActionListener(this);
-	            popup.add(menuItem);
-	            menuItem.setIcon(getIconFromActionID(actions[i].substring(0, 1)));
+	        	if (actions[i].equals(EfaGuiUtils.MENU_SEPARATOR)) {
+	        		popup.addSeparator();
+	        	} else {
+		            JMenuItem menuItem = new JMenuItem(actions[i].substring(1));
+		            menuItem.setActionCommand(EfaMouseListener.EVENT_POPUP_CLICKED + "_" + actions[i].substring(0, 1));
+		            menuItem.addActionListener(this);
+		            popup.add(menuItem);
+		            menuItem.setIcon(getIconFromActionID(actions[i].substring(0, 1)));
+	        	}
 	        }
 	        if (popupListener!=null) {
 	        	popupListener.setPopupMenu(popup);
@@ -1172,6 +1145,17 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
 	        			break;
 	        		}
 	        	}
+	        	
+	        	//we also want to remove all consecutive section strings at the beginning of the list, as they do not make sense without entries in between
+	        	for (int i= theModel.getSize()-1; i>=0;i--) {
+	        		if (theModel.getElementAt(i).separator){
+	        			if ((i<theModel.getSize()-1) && (theModel.getElementAt(i+1).separator)) {
+	        					//we have found two section strings in a row: remove the first one
+	        					theModel.removeElementAt(i);
+	        			}
+	        		}
+	        	}	        	
+	        	
 		        list.setModel(theModel);
 		     } else {
 		    	list.setModel(data);

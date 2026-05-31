@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
+
+  <!-- Root element -->
+  <xs:element name="efaOnlineUpdate">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="Version" type="VersionType" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- Version block: fixed order, DownloadUrl optional -->
+  <xs:complexType name="VersionType">
+    <xs:sequence>
+      <xs:element name="VersionID" type="VersionIDType"/>
+      <xs:element name="ReleaseDate" type="DateDDMMYYYY"/>
+      <xs:element name="DownloadUrl" type="xs:string" minOccurs="0"/>
+      <xs:element name="DownloadSize" type="DownloadSizeType" minOccurs="0"/>
+      <xs:element name="MinimumJavaVersion" type="VersionTokenType" minOccurs="0"/>
+      <xs:element name="MinimumEfaCloudVersion" type="VersionTokenType" minOccurs="0"/>
+
+      <!-- fixed order: first zero-or-more ShowNotice, then zero-or-more Changes -->
+      <xs:element name="ShowNotice" type="LocalizedTextType" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="Changes" type="ChangesType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Localized free text with required lang attribute -->
+  <xs:complexType name="LocalizedTextType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="lang" type="LangCodeType" use="required"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
+  <!-- Changes element (has required lang attribute and many ChangeItem children) -->
+  <xs:complexType name="ChangesType">
+    <xs:sequence>
+      <xs:element name="ChangeItem" type="xs:string" minOccurs="1" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="lang" type="LangCodeType" use="required"/>
+  </xs:complexType>
+
+  <!-- Date DD.MM.YYYY (XSD regex: use [0-9] rather than \d) -->
+  <xs:simpleType name="DateDDMMYYYY">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[0-9]{2}\.[0-9]{2}\.[0-9]{4}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- VersionID: XSD-compatible regex
+       Example allowed formats: 2.5.3  2.5.3#3  2.3.3_02  2.3.3_02#1  2.1.1_#1 etc.
+       Pattern (XSD): [0-9]+\.[0-9]+\.[0-9]+(_([0-9]+|#[0-9]+))?(#[0-9]+)?
+  -->
+  <xs:simpleType name="VersionIDType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[0-9]+\.[0-9]+\.[0-9]+(_([0-9]+|#[0-9]+))?(#[0-9]+)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Generic small version token (e.g. "1.8", "2.3.3") -->
+  <xs:simpleType name="VersionTokenType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[0-9]+(\.[0-9]+)*"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- DownloadSize: either a non-negative integer (bytes) OR the literal "TODO" -->
+  <xs:simpleType name="DownloadSizeType">
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base="xs:nonNegativeInteger"/>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="TODO"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+
+  <!-- Language code: two-lowercase optionally -COUNTRY (e.g. de, en, en-US) -->
+  <xs:simpleType name="LangCodeType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[a-z]{2}(-[A-Z]{2})?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+</xs:schema>

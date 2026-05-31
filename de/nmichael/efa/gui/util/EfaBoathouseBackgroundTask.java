@@ -518,12 +518,16 @@ public class EfaBoathouseBackgroundTask extends Thread {
                                     boatStatusRecord.setShowInList(boatStatusRecord.getBaseStatus());
                                 }
                             }
+                            // only set reservation comment if boat is not on the water. 
+                            // If boat is on the water, the reservation comment would be confusing, as we would expect the comment
+                            // to show who is on the water.
+                            String s = International.getMessage("reserviert für {name} ({reason}) {from_to}",
+                                    reservations[0].getPersonAsName(),
+                                    reservations[0].getReason(),
+                                    reservations[0].getReservationTimeDescription());
+                            boatStatusRecord.setComment(s);
                         }
-                        String s = International.getMessage("reserviert für {name} ({reason}) {from_to}",
-                                reservations[0].getPersonAsName(),
-                                reservations[0].getReason(),
-                                reservations[0].getReservationTimeDescription());
-                        boatStatusRecord.setComment(s);
+
                     }
 
                     // find all current damages
