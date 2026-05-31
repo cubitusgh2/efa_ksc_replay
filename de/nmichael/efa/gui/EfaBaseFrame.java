@@ -2136,7 +2136,21 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         }
     }
     
-
+	protected BoatReservationRecord getCurrentOrNextReservationForPerson(UUID personId, boolean oneSeaterOnly ) {
+		BoatReservations boatReservations = Daten.project.getBoatReservations(false);
+		int lookAheadTime=Daten.efaConfig.getValueEfaDirekt_resLookAheadTime();
+		// get all reservations on the day of startdate of our person.
+		ArrayList<BoatReservationRecord> reservations = boatReservations.getPersonReservations(personId, startDate.getDate(), starttime.getTime(), lookAheadTime, oneSeaterOnly);
+		if (reservations!=null && reservations.size()>=1) {
+			//at least one one-seater reservation is available, 
+			//but we will only take the first
+			return reservations.get(0);
+		}
+		//otherwise
+		return null; 
+	}
+    
+    
     // =========================================================================
     // Save Entry Checks
     // =========================================================================
@@ -4827,17 +4841,52 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
             currentBoatUpdateGui();
             setRequestFocus(boat);
         }
+        //user starts a session cased on a person record
         if (item.person != null) {
             crew[0].parseAndShowValue(item.person.getQualifiedName());
-            if (item.person.getDefaultBoatId() != null) {
-                BoatRecord r = Daten.project.getBoats(false).getBoat(
-                        item.person.getDefaultBoatId(), System.currentTimeMillis());
-                if (r != null) {
-                    boat.parseAndShowValue(r.getQualifiedName());
-                    currentBoatUpdateGui();
-                    setRequestFocus(starttime);
-                }
+            
+            //Obtain the person's standard boat
+            BoatRecord personsStandardBoat = Daten.project.getBoats(false).getBoat(
+                    item.person.getDefaultBoatId(), System.currentTimeMillis());	
+             
+            //get all reservations of the current person, all boat types
+            BoatReservationRecord personsCurrentReservation = getCurrentOrNextReservationForPerson(item.person.getId(),false);
+            BoatRecord personsCurrentReservationBoat = (personsCurrentReservation!=null? personsCurrentReservation.getBoat():null);
+                
+            if ((personsCurrentReservationBoat != null) && (personsStandardBoat != null)){
+            	// a standard boat AND a reservation - which boat should we take?
+            	int chosenOption = Dialog.auswahlDialog(International.getString("Boot auswählen"), 
+            			International.getMessage("Für die Person {person} gibt es eine aktuelle Reservierung und ein Standardboot. Welches Boot soll eingetragen werden?", item.person.getQualifiedName()),
+            			International.getString("Reservierung") + ":  "+personsCurrentReservationBoat.getQualifiedName()+"  ",
+            			International.getString("Standard-Boot")+ ":  "+personsStandardBoat.getQualifiedName()+"  ", true);
+            	
+            	if (chosenOption==0) {
+            		//reservation
+            		personsStandardBoat=null;
+            	} else if (chosenOption==1) {
+            		//standard boat
+            		personsCurrentReservationBoat=null;
+            	} else {
+            		//user selected cancel
+            		personsStandardBoat=null;
+            		personsCurrentReservationBoat=null;
+            	}
             }
+            boat.setToolTipText(null);//default
+            // if available, set boat name
+            if (personsStandardBoat != null || personsCurrentReservationBoat !=null) {
+                if (personsStandardBoat!=null) {
+                	boat.parseAndShowValue(personsStandardBoat.getQualifiedName());
+                	boat.setToolTipText(International.getString("Vorbelegung mit Standardboot"));
+                } else {
+                	boat.parseAndShowValue(personsCurrentReservationBoat.getQualifiedName()); 
+                	boat.setToolTipText(International.getString("Vorbelegung aus Reservierung")+": \n\n" +personsCurrentReservation.getAsUserText());
+                }
+                	
+                currentBoatUpdateGui();
+                setRequestFocus(starttime);
+            }
+            
         }
     }
 
@@ -5282,6 +5331,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         if (focusItem != null) {
             focusItem.requestFocus();
         }
+
     }
 
     private void efaBoathouseHideEfaFrame() {

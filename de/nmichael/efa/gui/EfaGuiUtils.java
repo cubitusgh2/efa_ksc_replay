@@ -16,22 +16,23 @@ import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.Frame;
+import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.Image;
-import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JViewport;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
@@ -48,7 +49,10 @@ import de.nmichael.efa.util.Logger;
  * This class provides common code to create GUI Elements like Headers, Hints and Descriptions. 
  */
 public class EfaGuiUtils {
+	
 
+	private static Object desktopHints;
+	
 	public static ItemTypeLabel createHint(String uniqueName, int type, String category, String caption, int gridWidth,
 			int padBefore, int padAfter) {
 		//if caption starts with html, do not have a blank as a prefix as this will disable html rendering.
@@ -391,6 +395,45 @@ public class EfaGuiUtils {
     public static int getSubCatCount(String strCategory) {
     	String[] subCats=strCategory.split(":");
     	return subCats.length;
+    }
+    
+    
+    public static void setStandardRenderingHints(Graphics2D g) {
+        // Handle font aliasing hints.
+    	if (desktopHints==null) {
+            if (Daten.javaVersionInt >= 9) {
+				// On Java 9 and above, we can rely on the desktop hints for optimal text rendering, which may include subpixel anti-aliasing if supported by the OS and font.
+            	desktopHints = Toolkit.getDefaultToolkit().getDesktopProperty("awt.font.desktophints");
+            } // else desktophints remain null
+    	}
+	
+        if (desktopHints!=null && desktopHints instanceof Map) {
+			// Java 9+ has better font rendering and less bugs on aliasing, so we can rely on the desktop hints for optimal text rendering.
+
+            // RenderingHints.KEY_TEXT_ANTIALIASING would enable standard aliasing without using 
+            // the the operation system's special renderings like LCD Subpixel rendering. This would lead to thicker text, which may be desirable for some users, 
+            // but it would look inconsistent with the rest of the Swing GUI. 
+            // On Java9 and above, "awt.font.desktophints" is applied, which contains text antialiasing hints set by JVM and operating system. 
+            
+            @SuppressWarnings("unchecked")
+            Map<Object,Object> hints = (Map<Object,Object>) desktopHints;
+            for (Map.Entry<Object,Object> e : hints.entrySet()) {
+                Object key = e.getKey();
+                Object value = e.getValue();
+                if (key instanceof RenderingHints.Key && value != null) {
+                    g.setRenderingHint((RenderingHints.Key) key, value);
+                }
+            }
+        } else {
+			// For Java 8 and below, or if desktopHints could not be obtained, 
+        	// we enable standard text antialiasing for better text quality, even if it may be a bit thicker. 
+			// This is a tradeoff to avoid very bad font rendering on Java 8, especially on Windows.
+			g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+		}
+        
+        // For graphics, use standard aliasing for smooth shapes (round borders)
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        
     }
 	
 }

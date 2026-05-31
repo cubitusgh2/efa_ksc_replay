@@ -557,7 +557,10 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 				                BoatRecord personsStandardBoat = Daten.project.getBoats(false).getBoat(
 				                        person.getDefaultBoatId(), System.currentTimeMillis());	
 				                
-				                BoatRecord personsCurrentReservationBoat = getOneSeaterBoatByCurrentReservation(person.getId());
+				                //get Person's reservations, one-seater only in this use case.
+				                //get all reservations of the current person, all boat types
+				                BoatReservationRecord personsCurrentReservation = getCurrentOrNextReservationForPerson(person.getId(),true);
+				                BoatRecord personsCurrentReservationBoat = (personsCurrentReservation!=null? personsCurrentReservation.getBoat():null);
 				                
 				                if ((personsCurrentReservationBoat != null) && (personsStandardBoat != null)){
 				                	// a standard boat AND a reservation - which boat should we take?
@@ -567,27 +570,30 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 				                			International.getString("Standard-Boot")+ ":  "+personsStandardBoat.getQualifiedName()+"  ", true);
 				                	
 				                	if (chosenOption==0) {
-				                		//Reservierung
+				                		//reservation
+				                		personsStandardBoat=null;
+					                } else if (chosenOption==1) {
+				                		//standard boat
+					                	personsCurrentReservationBoat=null;
+					                } else {
+					                	// user selected cancel
+					                	personsStandardBoat=null;
+					                	personsCurrentReservationBoat=null;
+					                }
+				                }
+				                field.getOtherField().setToolTipText(null);//default value
+				                if ((personsCurrentReservationBoat != null) || (personsStandardBoat != null)){
+					                if (personsCurrentReservationBoat!=null) {
 					                	if (field.getOtherField().getAutoCompleteData().getDataVisible().contains(personsCurrentReservationBoat.getQualifiedName())) {
 					                		field.getOtherField().setValue(personsCurrentReservationBoat.getQualifiedName());
-					                	}
-					                } else if (chosenOption==1) {
-				                		//Standardboot
+					                		field.getOtherField().setToolTipText(International.getString("Vorbelegung aus Reservierung")+": \n\n"+personsCurrentReservation.getAsUserText());
+					                	}			                						                		
+					                } else if (personsStandardBoat!=null) {
 					                	if (field.getOtherField().getAutoCompleteData().getDataVisible().contains(personsStandardBoat.getQualifiedName())) {
 					                		field.getOtherField().setValue(personsStandardBoat.getQualifiedName());
+					                		field.getOtherField().setToolTipText(International.getString("Vorbelegung mit Standardboot"));
 					                	}
-				                	} else {
-				                		// do nothing, user must specify on his own which boat
-				                		EfaUtil.foo();
-				                	}
-			                	} else if (personsCurrentReservationBoat!=null) {
-				                	if (field.getOtherField().getAutoCompleteData().getDataVisible().contains(personsCurrentReservationBoat.getQualifiedName())) {
-				                		field.getOtherField().setValue(personsCurrentReservationBoat.getQualifiedName());
-				                	}			                						                		
-				                } else if (personsStandardBoat!=null) {
-				                	if (field.getOtherField().getAutoCompleteData().getDataVisible().contains(personsStandardBoat.getQualifiedName())) {
-				                		field.getOtherField().setValue(personsStandardBoat.getQualifiedName());
-				                	}
+					                }
 				                }
 			                }
 	                	}
@@ -603,20 +609,6 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 		    super.itemListenerAction(item, event);
         }
 	}	    
-    
-	private BoatRecord getOneSeaterBoatByCurrentReservation(UUID personId) {
-		BoatReservations boatReservations = Daten.project.getBoatReservations(false);
-		// get all reservations on the day of startdate of our person.
-		ArrayList<BoatReservationRecord> reservations = boatReservations.getPersonReservations(personId, startDate.getDate(), starttime.getTime(), true);
-		if (reservations!=null && reservations.size()>=1) {
-			//at least one one-seater reservation is available, 
-			//but we will only take the first
-			BoatReservationRecord brr = reservations.get(0);
-			return brr.getBoat();
-		}
-		//otherwise
-		return null; 
-	}
 
 	/**
 	 * Create an ItemTypeAutoComplete 
