@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <efaOnlineUpdate>
 	<Version>
-        <VersionID>2.5.3#3</VersionID>
+        <VersionID>2.5.3#4</VersionID>
         <ReleaseDate>31.05.2026</ReleaseDate>
         <DownloadUrl>TODO</DownloadUrl>
         <DownloadSize>TODO</DownloadSize>
@@ -17,7 +17,7 @@
         	<ChangeItem>Bugfix: Boote auf Fahrt: Zeigt jetzt immer den Kommentar zur offenen Fahrt an(wer ist mit dem Boot seit wann unterwegs), statt bei einer zeitgleich vorliegenden Reservierung den Reservierungsinhalt anzuzeigen.</ChangeItem>
         	<ChangeItem>Bugfix: Fahrt beenden: Bei einer Mehrtagesfahrt mit identischer Start- und Endzeit (z.B. beides um 12:00 Uhr) wird nun auch das Enddatum bei der Prüfung der Fahrtdauer berücksichtigt. Hierdurch weniger Fehlermeldungen beim Beenden einer Fahrt.</ChangeItem>
         	<ChangeItem>Bugfix: Bootslisten in efaBootshaus: Bei der Filterung werden keine leeren Sektionen mehr angezeigt.</ChangeItem>
-        	<ChangeItem>Bugfix: Bootslisten in efaBootshaus: Die Popup-Menüs sind durch Separatoren optisch strukturiert.</ChangeItem>
+        	<ChangeItem>Bugfix: Bootslisten in efaBootshaus: Die Popup-Menüs sind durch Separatoren optisch strukturiert (mit Buxfix)).</ChangeItem>
         	<ChangeItem>Bugfix: Personenliste in efaBootshaus: Bei Auswahl von &lt;andere Person&gt; sind die üblichen Aktionen (z.B. Fahrt beginnen, Bootsreservierungen...) wieder möglich.</ChangeItem>
         	<ChangeItem>Bugfix: Vereinsarbeit: Es wird bei Erfassung und Bearbeitung von Vereinsarbeit geprüft, ob das Datum im zulässigen Bereich liegt.</ChangeItem>
         	<ChangeItem>Bugfix: Vereinsarbeit: Es wird in der Liste der Vereinsarbeit immer der Name angezeigt, den das Mitglied zum Zeitpunkt der Erfassung hatte. Dadurch wird bei Vereinsarbeit für inzwischen beendete Mitglieder wieder der Name angezeigt.</ChangeItem>
@@ -30,7 +30,7 @@
         	<ChangeItem>Bugfix: Boats on session: Now always shows the comment for the open session (who is on the boat since when), instead of showing the reservation content if there is a reservation with the same time.</ChangeItem>
         	<ChangeItem>Bugfix: Finishing a session: For multi-day sessions with identical start and end times (e.g., both at 12:00am), the end date is now also considered when checking the session duration. This results in fewer error messages when ending a session.</ChangeItem>
 			<ChangeItem>Bugfix: Boat lists in efaBoathouse: Empty sections are no longer displayed when filtering.</ChangeItem>
-        	<ChangeItem>Bugfix: Boat lists in efaBoathouse: Popup menus are optically structured by adding separators.</ChangeItem>
+        	<ChangeItem>Bugfix: Boat lists in efaBoathouse: Popup menus are optically structured by adding separators (including bugfix).</ChangeItem>
         	<ChangeItem>Bugfix: Person list in efaBootshouse: when selecting &lt;other person&gt; the common actions (like "Start session", "Boat reservations") are available again, avoiding unnecessary messages to the user.</ChangeItem>
 			<ChangeItem>Bugfix: Clubwork: When recording and editing clubwork, the date is checked to ensure it falls within the allowed range.</ChangeItem>
 			<ChangeItem>Bugfix: Clubwork: The clubwork list now always displays the name the member had at the time of recording. This means that for former members the name for the clubwork record is displayed correctly.</ChangeItem>
