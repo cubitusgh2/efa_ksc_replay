@@ -582,4 +582,12 @@ public class DataTypeDate implements Cloneable, Comparable<DataTypeDate> {
         return units;
     }
 
+	public static DataTypeDate getStartOfYear() {
+		return new DataTypeDate (01,01,DataTypeDate.today().getYear());
+	}
+
+	public static DataTypeDate getEndOfYear() {
+		return new DataTypeDate (31,12,DataTypeDate.today().getYear());
+	}
+
 }
