@@ -70,8 +70,7 @@ public class ClubworkRecord extends DataRecord implements IItemFactory {
     public static final String[] IDX_DATE_NAME_NAMEAFFIX = new String[]{FIRSTLASTNAME, NAMEAFFIX, WORKDATE};
     private static Pattern qnamePattern = Pattern.compile("(.+) \\(([^\\(\\)]+)\\)");
     
-    private DataTypeDate clubworkPeriodStartDate;
-    private DataTypeDate clubworkPeriodEndDate;
+    private Clubwork clubworkPersistence=null;
     
     public static void initialize() {
         Vector<String> f = new Vector<String>();
@@ -109,15 +108,10 @@ public class ClubworkRecord extends DataRecord implements IItemFactory {
 
     public ClubworkRecord(Clubwork clubwork, MetaData metaData) {
         super(clubwork, metaData);
-        //in initialisation phases, clubwork may not be open (yet),
-        //and even if it is open, it is not yet finally open until the project has been set.
-        if (clubwork.isOpen() && clubwork.getProjectRecord()!=null) {
-        	// we need to store the clubwork's period to check wether the
-        	// date when entering new clubwork is within this period.
-        	// we don't store the clubwork object as such, as we only need start and end date.
-        	clubworkPeriodStartDate = clubwork.getStartDate();
-        	clubworkPeriodEndDate = clubwork.getEndDate();
-        }
+        // we save the clubworkbook for later use in getGuiItems. 
+        // we do not save the clubworkbook startdate and enddate here, as this leads to problems
+        // within efaRemote, e.g. backups via efaCLI.
+        clubworkPersistence = clubwork;
     }
 
     public DataRecord createDataRecord() { // used for cloning
@@ -152,8 +146,18 @@ public class ClubworkRecord extends DataRecord implements IItemFactory {
         // nothing to do (this column in virtual)
     }
 
+    private long getWorkDateTimeStamp() {
+    	DataTypeDate myWorkDate = this.getWorkDate();
+    	if (myWorkDate!=null && myWorkDate.isSet()) {
+    		return myWorkDate.getTimestamp(DataTypeTime.time000000());
+    	} else {
+    		//if no workdate is set, it is the current day and time.
+    		return System.currentTimeMillis();
+    	}
+    }
+    
     public String getFirstName() {
-        PersonRecord pr = tryGetPerson(PERSONID, getWorkDate().getTimestamp(DataTypeTime.time000000()));
+        PersonRecord pr = tryGetPerson(PERSONID, getWorkDateTimeStamp());
         return pr != null ? pr.getFirstName() : null;
     }
 
@@ -162,7 +166,7 @@ public class ClubworkRecord extends DataRecord implements IItemFactory {
     }
 
     public String getLastName() {
-        PersonRecord pr = tryGetPerson(PERSONID, getWorkDate().getTimestamp(DataTypeTime.time000000()));
+        PersonRecord pr = tryGetPerson(PERSONID, getWorkDateTimeStamp());
         return pr != null ? pr.getLastName() : null;
     }
 
@@ -171,7 +175,7 @@ public class ClubworkRecord extends DataRecord implements IItemFactory {
     }
 
     public String getFirstLastName() {
-        PersonRecord pr = tryGetPerson(PERSONID, getWorkDate().getTimestamp(DataTypeTime.time000000()));
+        PersonRecord pr = tryGetPerson(PERSONID, getWorkDateTimeStamp());
         return pr != null ? pr.getFirstLastName() : null;
     }
 
@@ -180,7 +184,7 @@ public class ClubworkRecord extends DataRecord implements IItemFactory {
     }
 
     public String getNameAffix() {
-        PersonRecord pr = tryGetPerson(PERSONID, getWorkDate().getTimestamp(DataTypeTime.time000000()));
+        PersonRecord pr = tryGetPerson(PERSONID, getWorkDateTimeStamp());
         return pr != null ? pr.getNameAffix() : null;
     }
 
@@ -360,7 +364,7 @@ public class ClubworkRecord extends DataRecord implements IItemFactory {
 
     public String getAsText(String fieldName) {
         if (fieldName.equals(PERSONID)) {
-            return getPersonAsName(PERSONID, getWorkDate().getTimestamp(DataTypeTime.time000000()));
+            return getPersonAsName(PERSONID, getWorkDateTimeStamp());
         }
         if (fieldName.equals(APPROVED)) {
             return getApprovedAsText();
@@ -428,18 +432,22 @@ public class ClubworkRecord extends DataRecord implements IItemFactory {
          * On the other hand, the only way to check for the clubwork date to be within the clubwork period,
          * is to use the mustBeBefore and mustBeAfter attributes, as they are called by IItemtype.isValidInput().
          * 
-         * So... we add two INVISIBLE ItemTypeDate attributes, which store the clubwork period start and end date.
+         * So... we add two INVISIBLE = TYPE_INTERNAL ItemTypeDate attributes, which store the clubwork period start and end date.
          * And tell the WorkDate Field that its value must be between these two.
-         * The 
          * 
-         * Kinda hacky stuff, but it works and it is conform to efa's framework.
+         * Kinda hacky stuff, but it works and it is absolutely conform to efa's framework.
          */
         
-        v.add(clubworkPeriodStart = new ItemTypeDate(WORKDATE+"_ClubworkStart", this.clubworkPeriodStartDate,
+        //get start and end date of the clubworkbook, or start and end of the current year.
+        //the latter should never happen as we only get GuiItems for Clubworkbook files which exist.
+        DataTypeDate clubworkPeriodStartDate = clubworkPersistence!=null ? clubworkPersistence.getStartDate() : DataTypeDate.getStartOfYear();
+        DataTypeDate clubworkPeriodEndDate = clubworkPersistence != null ? clubworkPersistence.getEndDate()   : DataTypeDate.getEndOfYear();
+        
+        v.add(clubworkPeriodStart = new ItemTypeDate(WORKDATE+"_ClubworkStart", clubworkPeriodStartDate,
                 IItemType.TYPE_INTERNAL, CAT_BASEDATA, International.getString("Datum")));
         clubworkPeriodStart.setVisible(false);
 
-        v.add(clubworkPeriodEnd = new ItemTypeDate(WORKDATE+"_ClubworkEnd", this.clubworkPeriodEndDate,
+        v.add(clubworkPeriodEnd = new ItemTypeDate(WORKDATE+"_ClubworkEnd", clubworkPeriodEndDate,
                 IItemType.TYPE_INTERNAL, CAT_BASEDATA, International.getString("Datum")));
         clubworkPeriodEnd.setVisible(false);
         
