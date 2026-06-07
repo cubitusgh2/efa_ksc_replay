@@ -795,6 +795,12 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
             popup.setVisible(false);
         }
     }
+    
+    public void showPopup() {
+        if (popup != null) {
+            popup.setVisible(true);
+        }	
+    }
 
     public void clearSelection() {
         try {
