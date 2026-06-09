@@ -1,6 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <efaOnlineUpdate>
 	<Version>
+        <VersionID>2.5.3#6</VersionID>
+        <ReleaseDate>09.06.2026</ReleaseDate>
+        <DownloadUrl>TODO</DownloadUrl>
+        <DownloadSize>TODO</DownloadSize>
+     	<MinimumJavaVersion>1.8</MinimumJavaVersion>
+		<MinimumEfaCloudVersion>2.3.3</MinimumEfaCloudVersion>
+        <ShowNotice lang="de">Wenn efaCloud eingesetzt wird, muss der Server mindestens Version 2.3.3 unterstützen. EfaCloud 2.4.0_12 und höher werden empfohlen.</ShowNotice>
+        <ShowNotice lang="en">If you use efaCloud, make sure your server at least supports efaCloud Version 2.3.3. It is recommended to upgrade to EfaCloud 2.4.0_12 or above.</ShowNotice>
+        <Changes lang="de">
+        	<ChangeItem>Neu: EfaConfig: Im Bereich "Sprache und Region" neue Funktion eingefügt, die "Freie Verwendung" Felder umzubenennen. Diese Umbenennung bleibt über efa-Updates hinweg stabil.</ChangeItem>
+        	<ChangeItem>BugFix: Der Dialog nach einem Doppelklick auf ein Bootslisten-Element beinhaltet keine "----" Elemente mehr.</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+        	<ChangeItem>New: In the "Language and Region" section of efaConfig, a new option to rename the "Free Use" fields is added. This renaming remains stable across efa updates.</ChangeItem>
+        	<ChangeItem>BugFix: The dialog after double-clicking a boat list item no longer contains "----" items.</ChangeItem>
+        </Changes>
+	</Version>
+	<Version>
         <VersionID>2.5.3#5</VersionID>
         <ReleaseDate>02.06.2026</ReleaseDate>
         <DownloadUrl>TODO</DownloadUrl>

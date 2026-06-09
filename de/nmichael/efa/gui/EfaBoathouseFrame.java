@@ -37,6 +37,7 @@ import java.util.Vector;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import javax.help.Popup;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
@@ -732,10 +733,10 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         personsAvailableList.setFieldSize(200, 400);
         boatsOnTheWaterList.setFieldSize(200, 300);
         boatsNotAvailableList.setFieldSize(200, 100);
-        boatsAvailableList.setPopupActions(getListActions(1, null));
-        personsAvailableList.setPopupActions(getListActions(101, null));
-        boatsOnTheWaterList.setPopupActions(getListActions(2, null));
-        boatsNotAvailableList.setPopupActions(getListActions(3, null));
+        boatsAvailableList.setPopupActions(getListActions(1, null,true));
+        personsAvailableList.setPopupActions(getListActions(101, null,true));
+        boatsOnTheWaterList.setPopupActions(getListActions(2, null,true));
+        boatsNotAvailableList.setPopupActions(getListActions(3, null,true));
         boatsAvailableList.registerItemListener(this);
         personsAvailableList.registerItemListener(this);
         boatsOnTheWaterList.registerItemListener(this);
@@ -1533,7 +1534,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
      * @param r
      * @return
      */
-    private String[] getListActions(int listnr, DataRecord r) {
+    private String[] getListActions(int listnr, DataRecord r, Boolean withSeparator) {
 
     	String currentLogbookName = null;
     	String recordLogbookName = null;
@@ -1572,7 +1573,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             if (listnr == 1) {
             	//for available boats, there are additional items
                 listItems.add(ACTIONID_LATEENTRY + International.getString("Nachtrag"));
-                listItems.add(EfaGuiUtils.MENU_SEPARATOR);
+                if (withSeparator) {listItems.add(EfaGuiUtils.MENU_SEPARATOR);}
             	if (Daten.efaConfig.getValueEfaDirekt_butBootsreservierungen().getValueShow()) {
                     listItems.add(ACTIONID_BOATRESERVATIONS + boatReserve);
                 }
@@ -1580,13 +1581,13 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             	if (Daten.efaConfig.getValueEfaDirekt_showBootsschadenButton()) {
                     listItems.add(ACTIONID_BOATDAMAGES + International.getString("Bootsschaden melden"));
                 }
-            	listItems.add(EfaGuiUtils.MENU_SEPARATOR);
+            	if (withSeparator) {listItems.add(EfaGuiUtils.MENU_SEPARATOR);}
                 listItems.add(ACTIONID_BOATINFOS + International.getString("Bootsinfos"));
                 listItems.add(ACTIONID_LASTBOATUSAGE + International.getString("Letzte Benutzung"));
                 
             } else if (listnr == 101) {
                 listItems.add(ACTIONID_LATEENTRY + International.getString("Nachtrag"));
-                listItems.add(EfaGuiUtils.MENU_SEPARATOR);
+                if (withSeparator) {listItems.add(EfaGuiUtils.MENU_SEPARATOR);}
                 if (Daten.efaConfig.getValueEfaDirekt_butBootsreservierungen().getValueShow()) {
                     listItems.add(ACTIONID_BOATRESERVATIONS + International.getString("Bootsreservierungen"));
                 }
@@ -1598,13 +1599,13 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             listItems.add(ACTIONID_LATEENTRY + International.getString("Nachtrag"));
             if (r==null || (rb!=null && currentLogbookName!=null && recordLogbookName!=null && currentLogbookName.equalsIgnoreCase(recordLogbookName))) {
             	// the boat on the water must be in our own logbook to do something with the session
-            	listItems.add(EfaGuiUtils.MENU_SEPARATOR);
+            	if (withSeparator) {listItems.add(EfaGuiUtils.MENU_SEPARATOR);}
             	listItems.add(ACTIONID_FINISHSESSION + finishSession);
 	            listItems.add(ACTIONID_STARTSESSIONCORRECT + International.getString("Eintrag ändern"));
 	            listItems.add(ACTIONID_ABORTSESSION + International.getString("Fahrt abbrechen"));
             }
             if (Daten.efaConfig.getValueEfaDirekt_butBootsreservierungen().getValueShow()) {
-                listItems.add(EfaGuiUtils.MENU_SEPARATOR);
+            	if (withSeparator) {listItems.add(EfaGuiUtils.MENU_SEPARATOR);}
                 listItems.add(ACTIONID_BOATRESERVATIONS + boatReserve);
             }
             if (Daten.efaConfig.getValueEfaDirekt_showBootsschadenButton()) {
@@ -1621,20 +1622,20 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         	
         	if (r==null || (currentLogbookName!=null && recordLogbookName!=null && currentLogbookName.equalsIgnoreCase(recordLogbookName))) {
                 if (Daten.efaConfig.getValueEfaDirekt_wafaRegattaBooteAufFahrtNichtVerfuegbar()) {
-                    listItems.add(EfaGuiUtils.MENU_SEPARATOR);
+                	if (withSeparator) {listItems.add(EfaGuiUtils.MENU_SEPARATOR);}
 	                listItems.add(ACTIONID_FINISHSESSION + finishSession);
 	                listItems.add(ACTIONID_ABORTSESSION + International.getString("Fahrt abbrechen"));
 	            }
         	}
             listItems.add(ACTIONID_LATEENTRY + International.getString("Nachtrag"));
             if (Daten.efaConfig.getValueEfaDirekt_butBootsreservierungen().getValueShow()) {
-                listItems.add(EfaGuiUtils.MENU_SEPARATOR);
+            	if (withSeparator) {listItems.add(EfaGuiUtils.MENU_SEPARATOR);}
                 listItems.add(ACTIONID_BOATRESERVATIONS + boatReserve);
             }
             if (Daten.efaConfig.getValueEfaDirekt_showBootsschadenButton()) {
                 listItems.add(ACTIONID_BOATDAMAGES + International.getString("Bootsschaden melden"));
             }
-            listItems.add(EfaGuiUtils.MENU_SEPARATOR);
+            if (withSeparator) {listItems.add(EfaGuiUtils.MENU_SEPARATOR);}
             listItems.add(ACTIONID_BOATINFOS + International.getString("Bootsinfos"));
             listItems.add(ACTIONID_LASTBOATUSAGE + International.getString("Letzte Benutzung"));
             return listItems.toArray(new String[0]);
@@ -1927,7 +1928,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
                     }
                     return true;
                 } else {
-                    Dialog.error(LogString.fileOpenFailed(clubworkName, International.getString("Vereinarbeit")));
+                    Dialog.error(LogString.fileOpenFailed(clubworkName, International.getString("Vereinsarbeit")));
                 }
             }
             return false;
@@ -2236,10 +2237,10 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
                 if (bli!=null) {
                 	if (bli.boatStatus != null) {
                 		//we do not need to provide the specific list, as the actions get determined by the boatstatus of the selected item.
-                		((ItemTypeBoatstatusList)item).setPopupActions(getListActions(-1, bli.boatStatus));
+                		((ItemTypeBoatstatusList)item).setPopupActions(getListActions(-1, bli.boatStatus,true));
                 	} else if (bli.person!= null) {
                 		//in the person list, there is no boat item. And the List type is set to 101
-                		((ItemTypeBoatstatusList)item).setPopupActions(getListActions(101, null));
+                		((ItemTypeBoatstatusList)item).setPopupActions(getListActions(101, null, true));
                 	}
                 }            	
             }
@@ -2332,7 +2333,6 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         if (r == null) {
             return;
         }
-
         if (listnr == 1
                 && Daten.efaConfig.getValueEfaDirekt_listAllowToggleBoatsPersons()
                 && toggleAvailableBoatsToPersons.isSelected()) {
@@ -2340,7 +2340,11 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             return;
         }
 
-        String[] actions = getListActions(listnr, r);
+        String[] actions = getListActions(listnr, r,false);//no separators
+        if (actions == null || actions.length == 0) {
+            return;
+        }
+        
         if (actions == null || actions.length == 0) {
             return;
         }
@@ -2349,6 +2353,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             myActions[i] = actions[i].substring(1);
         }
         myActions[myActions.length - 1] = International.getString("Nichts");
+
         int selection = Dialog.auswahlDialog(International.getString("Boot") + " " + name,
                 International.getMessage("Was möchtest Du mit dem Boot {boat} machen?", name),
                 myActions);
