@@ -899,7 +899,7 @@ public class BoatRecord extends DataRecord implements IItemFactory, IItemListene
             items[0] = new ItemTypeInteger(BoatRecord.TYPEVARIANT, 0, 0, Integer.MAX_VALUE,
                     IItemType.TYPE_INTERNAL, CAT_BASEDATA, International.getString("Variante"));
             items[1] = new ItemTypeString(BoatRecord.TYPEDESCRIPTION, "",
-                    IItemType.TYPE_PUBLIC, CAT_BASEDATA, International.getString("Beschreibung"));
+                    IItemType.TYPE_PUBLIC, CAT_BASEDATA, International.getString("Beschreibung(BoatRecord)"));
             items[2] = new ItemTypeStringList(BoatRecord.TYPETYPE, Daten.efaTypes.TYPE_BOAT_OTHER,
                     EfaTypes.makeBoatTypeArray(EfaTypes.ARRAY_STRINGLIST_VALUES), EfaTypes.makeBoatTypeArray(EfaTypes.ARRAY_STRINGLIST_DISPLAY),
                     IItemType.TYPE_PUBLIC, CAT_BASEDATA,
@@ -1284,11 +1284,11 @@ public class BoatRecord extends DataRecord implements IItemFactory, IItemListene
 
         // CAT_FREEUSE
         v.add(item = new ItemTypeString(BoatRecord.FREEUSE1, getFreeUse1(),
-                IItemType.TYPE_PUBLIC, getCategoryForExtField(BoatRecord.FREEUSE1, CAT_FREEUSE), International.getString("Boot Freie Verwendung 1")));
+                IItemType.TYPE_PUBLIC, getCategoryForExtField(BoatRecord.FREEUSE1, CAT_FREEUSE), International.getString("Freie_Verwendung_1(Boatrecord)")));
         v.add(item = new ItemTypeString(BoatRecord.FREEUSE2, getFreeUse2(),
-                IItemType.TYPE_PUBLIC, getCategoryForExtField(BoatRecord.FREEUSE2, CAT_FREEUSE), International.getString("Boot Freie Verwendung 2")));
+                IItemType.TYPE_PUBLIC, getCategoryForExtField(BoatRecord.FREEUSE2, CAT_FREEUSE), International.getString("Freie_Verwendung_2(Boatrecord)")));
         v.add(item = new ItemTypeString(BoatRecord.FREEUSE3, getFreeUse3(),
-                IItemType.TYPE_PUBLIC, getCategoryForExtField(BoatRecord.FREEUSE3, CAT_FREEUSE), International.getString("Boot Freie Verwendung 3")));
+                IItemType.TYPE_PUBLIC, getCategoryForExtField(BoatRecord.FREEUSE3, CAT_FREEUSE), International.getString("Freie_Verwendung_3(Boatrecord)")));
   
         itemList = new Vector<IItemType[]>();
         for (int i=0; i<getNumberOfVariants(); i++) {
