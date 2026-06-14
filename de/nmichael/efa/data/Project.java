@@ -805,7 +805,7 @@ public class Project extends StorageObject {
         return ProjectRecord.getDataKey(ProjectRecord.TYPE_CLUB, null);
     }
 
-    public DataKey getLoogbookRecordKey(String logbookName) {
+    public DataKey getLogbookRecordKey(String logbookName) {
         return ProjectRecord.getDataKey(ProjectRecord.TYPE_LOGBOOK, logbookName);
     }
 
@@ -864,7 +864,7 @@ public class Project extends StorageObject {
     }
 
     public ProjectRecord getLoogbookRecord(String logbookName) {
-        return getRecord(getLoogbookRecordKey(logbookName));
+        return getRecord(getLogbookRecordKey(logbookName));
     }
 
     public ProjectRecord getClubworkBookRecord(String clubworkName) {

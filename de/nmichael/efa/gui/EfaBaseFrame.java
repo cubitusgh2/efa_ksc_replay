@@ -1586,7 +1586,6 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         		!checkBoatNameValid(boat) ||
         		!checkBoatStatus() ||
                 !checkDuplicatePersons() ||
-                !checkPersonsForBoatType() ||
                 !checkCrewNamesValid() ||
                 !checkUnknownNames() ||
                 !checkProperUnknownNames() ||
@@ -1642,6 +1641,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
 
         long lock = 0;
         Exception myE = null;
+        boolean isNewRecordForLogging=false;
         try {
             boolean changeEntryNo = false;
             if (!isNewRecord && currentRecord != null && !currentRecord.getEntryId().toString().equals(entryno.toString())) {
@@ -1688,7 +1688,8 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
                     currentRecord = (LogbookRecord)newRecord;
                 }
             }
-            isNewRecord = false;
+            isNewRecordForLogging = isNewRecord; // safe for later logging
+            isNewRecord = false;//static variable in efaBaseFrame, must be set here
         } catch (Exception e) {
             Logger.log(e);
             myE = e;
@@ -1703,8 +1704,8 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         }
 
         if (isModeFull()) {
-            logAdminEvent(Logger.INFO, (isNewRecord ? Logger.MSG_ADMIN_LOGBOOK_ENTRYADDED : Logger.MSG_ADMIN_LOGBOOK_ENTRYMODIFIED),
-                    (isNewRecord ? International.getString("Eintrag hinzugefügt") : International.getString("Eintrag geändert")) , currentRecord);
+            logAdminEvent(Logger.INFO, (isNewRecordForLogging ? Logger.MSG_ADMIN_LOGBOOK_ENTRYADDED : Logger.MSG_ADMIN_LOGBOOK_ENTRYMODIFIED),
+                    (isNewRecordForLogging ? International.getString("Eintrag hinzugefügt") : International.getString("Eintrag geändert")) , currentRecord);
         }
         return true;
     }
@@ -2990,9 +2991,9 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
     
     protected boolean checkUnknownNames() {
 
-    	return checkUnknownNamesBoat() ||
-    			checkUnknownNamesPerson() ||
-    			checkUnknownNamesDestination() ||
+    	return checkUnknownNamesBoat() &&
+    			checkUnknownNamesPerson() &&
+    			checkUnknownNamesDestination() &&
     			checkUnknownNamesWaters();
     }
     

@@ -1122,7 +1122,7 @@ public class Daten {
 		if (applID != APPL_EFABH) {
 			return;
 		}
-		new RemoteEfaServer(Daten.efaConfig.getValueDataataRemoteEfaServerPort(),
+		new RemoteEfaServer(Daten.efaConfig.getValueDataRemoteEfaServerPort(),
 				Daten.efaConfig.getValueDataRemoteEfaServerEnabled());
 	}
 

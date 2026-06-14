@@ -1832,7 +1832,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					International.getString("Standardeinheit für Gewicht")));
 			
 			addParameter(dateFormat = new ItemTypeStringList("LocaleDateFormat", DataTypeDate.DAY_MONTH_YEAR,
-					DataTypeDate.makeDistanceUnitValueArray(), DataTypeDate.makeDistanceUnitNamesArray(),
+					DataTypeDate.makeDateFormatValueArray(), DataTypeDate.makeDateFormatNamesArray(),
 					IItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_LOCALE),
 					International.getString("Datumsformat")));
 			
@@ -3171,7 +3171,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 		return dataRemoteEfaServerEnabled.getValue();
 	}
 
-	public int getValueDataataRemoteEfaServerPort() {
+	public int getValueDataRemoteEfaServerPort() {
 		return dataRemoteEfaServerPort.getValue();
 	}
 
@@ -3472,7 +3472,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 			newUserData += Daten.fileSep;
 		}
 		boolean changedLang = Daten.efaBaseConfig.language == null || !Daten.efaBaseConfig.language.equals(newLang);
-		boolean changedDateFormat = DataTypeDate.MONTH_DAY_YEAR.equals(dateFormat) == Daten.dateFormatDMY;
+		boolean changedDateFormat = DataTypeDate.MONTH_DAY_YEAR.equals(dateFormat.getValue()) == Daten.dateFormatDMY;
 		boolean changedUserDir = Daten.efaBaseConfig.efaUserDirectory == null
 				|| !Daten.efaBaseConfig.efaUserDirectory.equals(newUserData);
 		if (changedLang || changedUserDir) {
@@ -3516,7 +3516,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 		Daten.trySetEfaBackupDirectory(newBakDir);
 	}
 
-	public boolean setToLanguate(String lang) {
+	public boolean setToLanguage(String lang) {
 		ResourceBundle bundle = null;
 		if (lang != null) {
 			try {

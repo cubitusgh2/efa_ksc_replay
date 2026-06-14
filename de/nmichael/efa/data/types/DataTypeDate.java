@@ -568,14 +568,14 @@ public class DataTypeDate implements Cloneable, Comparable<DataTypeDate> {
         return EfaTypes.TEXT_UNKNOWN;	
     }
 
-    public static String[] makeDistanceUnitValueArray() {
+    public static String[] makeDateFormatValueArray() {
         String[] units = new String[2];
         units[0] = DAY_MONTH_YEAR;
         units[1] = MONTH_DAY_YEAR;
         return units;
     }
 
-    public static String[] makeDistanceUnitNamesArray() {
+    public static String[] makeDateFormatNamesArray() {
         String[] units = new String[2];
         units[0] = DAY_MONTH_YEAR;
         units[1] = MONTH_DAY_YEAR;
