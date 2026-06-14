@@ -1,6 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <efaOnlineUpdate>
 	<Version>
+        <VersionID>2.5.3#7</VersionID>
+        <ReleaseDate>14.06.2026</ReleaseDate>
+        <DownloadUrl>TODO</DownloadUrl>
+        <DownloadSize>TODO</DownloadSize>
+     	<MinimumJavaVersion>1.8</MinimumJavaVersion>
+		<MinimumEfaCloudVersion>2.3.3</MinimumEfaCloudVersion>
+        <ShowNotice lang="de">Wenn efaCloud eingesetzt wird, muss der Server mindestens Version 2.3.3 unterstützen. EfaCloud 2.4.0_12 und höher werden empfohlen.</ShowNotice>
+        <ShowNotice lang="en">If you use efaCloud, make sure your server at least supports efaCloud Version 2.3.3. It is recommended to upgrade to EfaCloud 2.4.0_12 or above.</ShowNotice>
+        <Changes lang="de">
+        	<ChangeItem>Neu: Die Felder "Freie Nutzung" wurden in den Sprachdateien umbenannt.</ChangeItem>
+        	<ChangeItem>Neu: Der Feldname "Beschreibung" wurden für Boote, Personen, Bootsschäden und Vereinsarbeit in den Sprachdateien einzeln aufgeführt, damit sie separat umbenannt werden können.</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+        	<ChangeItem>New: The "Free Use" fields have been renamed in the language files.</ChangeItem>
+        	<ChangeItem>New: The field name "Description" has been listed separately for boats, persons, boat damages and club work in the language files, so that they can be renamed separately.</ChangeItem>
+        </Changes>
+	</Version>
+	<Version>
         <VersionID>2.5.3#6</VersionID>
         <ReleaseDate>09.06.2026</ReleaseDate>
         <DownloadUrl>TODO</DownloadUrl>

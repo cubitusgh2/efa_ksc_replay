@@ -3699,9 +3699,9 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 	private static HashMap<String, String> createBoatExtFieldsMap(){
 		HashMap<String, String>  result = new HashMap<String, String>();
 		result.put(BoatRecord.OWNER, International.getString("Eigentümer"));
-		result.put(BoatRecord.FREEUSE1, International.getString("Boot Freie Verwendung 1"));
-		result.put(BoatRecord.FREEUSE2, International.getString("Boot Freie Verwendung 2"));
-		result.put(BoatRecord.FREEUSE3, International.getString("Boot Freie Verwendung 3"));
+		result.put(BoatRecord.FREEUSE1, International.getString("Freie_Verwendung_1(Boatrecord)"));
+		result.put(BoatRecord.FREEUSE2, International.getString("Freie_Verwendung_2(Boatrecord)"));
+		result.put(BoatRecord.FREEUSE3, International.getString("Freie_Verwendung_3(Boatrecord)"));
 		result.put(BoatRecord.MAXCREWWEIGHT, International.getString("Maximales Mannschaftsgewicht"));
 		return result;
 	}	
@@ -3709,9 +3709,9 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 	private static HashMap<String, String> createPersonExtFieldsMap(){
 		HashMap<String, String>  result = new HashMap<String, String>();
 		result.put(PersonRecord.ASSOCIATION, International.getString("Verein"));
-		result.put(PersonRecord.FREEUSE1, International.getString("Person Freie Verwendung 1"));
-		result.put(PersonRecord.FREEUSE2, International.getString("Person Freie Verwendung 2"));
-		result.put(PersonRecord.FREEUSE3, International.getString("Person Freie Verwendung 3"));
+		result.put(PersonRecord.FREEUSE1, International.getString("Freie_Verwendung_1(Personrecord)"));
+		result.put(PersonRecord.FREEUSE2, International.getString("Freie_Verwendung_2(Personrecord)"));
+		result.put(PersonRecord.FREEUSE3, International.getString("Freie_Verwendung_3(Personrecord)"));
 		result.put(PersonRecord.INPUTSHORTCUT, International.getString("Eingabekürzel"));
 		return result;
 	}
@@ -3724,12 +3724,12 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 	 */
 	public static HashMap<String, String> createBoatPersonExtFieldsLanguagekeys(){
 		HashMap<String, String>  result = new HashMap<String, String>();
-		result.put("BOAT"+BoatRecord.FREEUSE1, "Boot_Freie_Verwendung_1");
-		result.put("BOAT"+BoatRecord.FREEUSE2, "Boot_Freie_Verwendung_2");
-		result.put("BOAT"+BoatRecord.FREEUSE3, "Boot_Freie_Verwendung_3");
-		result.put("PERSON"+PersonRecord.FREEUSE1, "Person_Freie_Verwendung_1");
-		result.put("PERSON"+PersonRecord.FREEUSE2, "Person_Freie_Verwendung_2");
-		result.put("PERSON"+PersonRecord.FREEUSE3, "Person_Freie_Verwendung_3");
+		result.put("BOAT"+BoatRecord.FREEUSE1, "Freie_Verwendung_1(Boatrecord)");
+		result.put("BOAT"+BoatRecord.FREEUSE2, "Freie_Verwendung_2(Boatrecord)");
+		result.put("BOAT"+BoatRecord.FREEUSE3, "Freie_Verwendung_3(Boatrecord)");
+		result.put("PERSON"+PersonRecord.FREEUSE1, "Freie_Verwendung_1(Personrecord)");
+		result.put("PERSON"+PersonRecord.FREEUSE2, "Freie_Verwendung_2(Personrecord)");
+		result.put("PERSON"+PersonRecord.FREEUSE3, "Freie_Verwendung_3(Personrecord)");
 		return result;
 	}	
 	

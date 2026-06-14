@@ -459,7 +459,7 @@ public class ClubworkRecord extends DataRecord implements IItemFactory {
         ((ItemTypeDate)item).setMustBeBefore(clubworkPeriodEnd, true); 
 
         v.add(item = new ItemTypeString(DESCRIPTION, getDescription(),
-                IItemType.TYPE_PUBLIC, CAT_BASEDATA, International.getString("Beschreibung")));
+                IItemType.TYPE_PUBLIC, CAT_BASEDATA, International.getString("Beschreibung(ClubworkRecord)")));
 
         v.add(item = new ItemTypeDouble(HOURS, getHours(), ItemTypeDouble.MIN, ItemTypeDouble.MAX,
                 IItemType.TYPE_PUBLIC, CAT_BASEDATA, International.getString("Stunden")));
@@ -518,7 +518,7 @@ public class ClubworkRecord extends DataRecord implements IItemFactory {
             header[1] = new TableItemHeader(International.getString("Vorname"));
         }
         header[2] = new TableItemHeader(International.getString("Datum"));
-        header[3] = new TableItemHeader(International.getString("Beschreibung"));
+        header[3] = new TableItemHeader(International.getString("Beschreibung(ClubworkRecord)"));
         header[4] = new TableItemHeader(International.getString("Stunden"));
         header[5] = new TableItemHeader(International.getString("Typ"));
         if(Daten.efaConfig.getValueClubworkRequiresApproval()) {
