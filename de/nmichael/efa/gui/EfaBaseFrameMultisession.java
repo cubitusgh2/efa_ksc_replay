@@ -9,7 +9,6 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
-import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.UUID;
 import java.util.Vector;
@@ -19,8 +18,6 @@ import javax.swing.BorderFactory;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
-
-import org.apache.batik.ext.swing.GridBagConstants;
 
 import de.nmichael.efa.Daten;
 import de.nmichael.efa.core.config.AdminRecord;
@@ -40,7 +37,6 @@ import de.nmichael.efa.core.items.ItemTypeStringList;
 import de.nmichael.efa.core.items.ItemTypeTime;
 import de.nmichael.efa.data.BoatRecord;
 import de.nmichael.efa.data.BoatReservationRecord;
-import de.nmichael.efa.data.BoatReservations;
 import de.nmichael.efa.data.Boats;
 import de.nmichael.efa.data.DestinationRecord;
 import de.nmichael.efa.data.GroupRecord;
@@ -267,7 +263,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 		
 		if (!Daten.efaConfig.getValueEfaDirekt_MultisessionLastGuiElemParticipants()){
 		   mainInputPanel.add(teilnehmerUndBoot, new GridBagConstraints(0, yPos, HEADER_WIDTH, 1, 0, 0,
-		                      GridBagConstants.WEST, GridBagConstants.HORIZONTAL, new Insets(0,0,0,0), 0, 0));
+				   GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(0,0,0,0), 0, 0));
 		}
 		yPos++;
 		
@@ -343,7 +339,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         //Alternate layout: put participans after all other GUI elements
 		if (Daten.efaConfig.getValueEfaDirekt_MultisessionLastGuiElemParticipants()){
 			   mainInputPanel.add(teilnehmerUndBoot, new GridBagConstraints(0, yPos, HEADER_WIDTH, 1, 0, 0,
-			                      GridBagConstants.WEST, GridBagConstants.HORIZONTAL, new Insets(0,0,0,0), 0, 0));
+					   GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(0,0,0,0), 0, 0));
 		}
 
                 
@@ -474,7 +470,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         	}
         }
       
-        ProjectRecord pr = Daten.project.getLoogbookRecord(logbook.getName());
+        ProjectRecord pr = Daten.project.getLogbookRecord(logbook.getName());
         if (pr != null) {
             logbookValidFrom = logbook.getValidFrom();
             logbookInvalidFrom = logbook.getInvalidFrom();
@@ -524,6 +520,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 	        items[1].setFieldSize(200, -1);
 	        items[1].setBackgroundColorWhenFocused(Daten.efaConfig.getValueEfaDirekt_colorizeInputField() ? Color.yellow : null);
 	        items[1].setValidAt(startDate, starttime);
+	        //no item listener here: if we change the boat, there is no need to change the name field.
 
 	        items[0].setOtherField(items[1]);
 	        
@@ -817,7 +814,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 	    		ItemTypeStringAutoComplete[] acItem= (ItemTypeStringAutoComplete[])nameAndBoat.getItems(iRow);
 		    	ItemTypeStringAutoComplete curName= acItem[0];
 		    	ItemTypeStringAutoComplete curBoat = acItem[1];    	
-		    	return (!(curName.getValue().trim().isEmpty() && curBoat.getValue().trim().isEmpty()));
+		    	return (!curName.getValue().trim().isEmpty() && !curBoat.getValue().trim().isEmpty());
 	    	} else {
 	    		return false;
 	    	}
@@ -933,7 +930,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
             	theRecord.setCrewId(1, p.getId());
             	theRecord.setCrewName(1, null);
             } else {
-                String s = curName.getValue().toString().trim();
+                String s = curName.getValueFromField().trim();//Todo: prüfe ob hier nicht doch besser .getValue wäre wegen getvaluefromgui..()?
             	theRecord.setCrewName(1, (s.length() == 0 ? null : s) );
             	theRecord.setCrewId(1, null);
             }	    	
@@ -942,10 +939,10 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
             BoatRecord b = findBoat(curBoat, getValidAtTimestamp(theRecord));
             if (b != null) {
             	theRecord.setBoatId(b.getId());
-            	theRecord.setBoatVariant(getOneSeaterBoatVariant(b));
+            	theRecord.setBoatVariant(getOneSeaterBoatVariant(b));//TODO: Prüfen, ob hier 0 oder besser IDataAccess.UNDEFINED_INT korrekt ist!
             	theRecord.setBoatName(null);
             } else {
-                String s = curBoat.toString().trim();
+                String s = curBoat.getValueFromField().trim();//Todo: prüfe ob hier nicht doch besser .getValue wäre wegen getvaluefromgui..()?
                 theRecord.setBoatName( (s.length() == 0 ? null : s) );
                 theRecord.setBoatId(null);
                 theRecord.setBoatVariant(IDataAccess.UNDEFINED_INT);
@@ -971,7 +968,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
             }
         }
         //none of the variants is a OneSeater
-        return 0;
+        return IDataAccess.UNDEFINED_INT;
     }    
     
     public void keyAction(ActionEvent evt) {
@@ -985,8 +982,11 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
     /**
      * AutoComplete fields which are visible: try to autocomplete the item based on the data entered.
      */
+    @Override
     protected void autocompleteAllFields() {
-        try {
+    	// we do not call super implementation, as we do not set the fields which are 
+    	// referenced in the super implementation.
+    	try {
         	
 			if (destination.isVisible()) {
 			    destination.acpwCallback(null);
@@ -1611,7 +1611,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
     			if (aBoat != null) {
     				//now, check if boat is visible, and supports a single-seater variant
     				if ((aBoat.isValidAt(timePreferredValidity)) && (!aBoat.getInvisible()) && (aBoat.isOneSeaterBoat())) {
-    					return true;
+    					continue;// this item is correct, proceed with next one
     				} else {
     					//go to the uncertain field
     					uncertainBoatFields.get(icurUncertainBoat).requestFocus();
@@ -1625,7 +1625,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         	//if we are here, the user specified at least one unknown boat, but none of the uncertain boats could be mapped to a boat in our database.
         	//
         	//we cannot check if it's config is "Single/Skiff", so we return true, so that we can proceed.
-        	return true; // The 
+        	return true;  
         }
         return true; // no boat specified, so no problem with the boats
     }

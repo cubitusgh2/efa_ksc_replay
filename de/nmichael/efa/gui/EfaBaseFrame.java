@@ -1236,7 +1236,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         if (!isModeBoathouse()) {
             Daten.project.setCurrentLogbookEfaBase(logbook.getName());
         }
-        ProjectRecord pr = Daten.project.getLoogbookRecord(logbook.getName());
+        ProjectRecord pr = Daten.project.getLogbookRecord(logbook.getName());
         if (pr != null) {
             logbookValidFrom = logbook.getValidFrom();
             logbookInvalidFrom = logbook.getInvalidFrom();

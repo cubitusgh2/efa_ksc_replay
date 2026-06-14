@@ -1565,7 +1565,7 @@ public class StatisticTask extends ProgressTask {
         }
         String[] names = Daten.project.getAllLogbookNames();
         for (int i = 0; names != null && i < names.length; i++) {
-            ProjectRecord pr = Daten.project.getLoogbookRecord(names[i]);
+            ProjectRecord pr = Daten.project.getLogbookRecord(names[i]);
             if (pr != null) {
                 DataTypeDate lbStart = pr.getStartDate();
                 DataTypeDate lbEnd = pr.getEndDate();

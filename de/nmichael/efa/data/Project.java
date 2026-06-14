@@ -617,7 +617,7 @@ public class Project extends StorageObject {
         Hashtable<String, String> items = new Hashtable<String, String>();
         String[] logbooks = getAllLogbookNames();
         for (int i = 0; logbooks != null && i < logbooks.length; i++) {
-            ProjectRecord r = getLoogbookRecord(logbooks[i]);
+            ProjectRecord r = getLogbookRecord(logbooks[i]);
             if (r != null) {
                 String name = "<b>" + International.getString("Fahrtenbuch") + ":</b> <b><font color=blue>" + logbooks[i] + "</font></b><br>";
                 String description = (r.getDescription() != null && r.getDescription().length() > 0 ? "<i>"+r.getDescription() + "</i><br> " : "");
@@ -863,7 +863,7 @@ public class Project extends StorageObject {
         return r;
     }
 
-    public ProjectRecord getLoogbookRecord(String logbookName) {
+    public ProjectRecord getLogbookRecord(String logbookName) {
         return getRecord(getLogbookRecordKey(logbookName));
     }
 
@@ -1216,7 +1216,7 @@ public class Project extends StorageObject {
     }
 
     public Logbook getLogbook(String logbookName, boolean createNewIfDoesntExist) {
-        ProjectRecord rec = getLoogbookRecord(logbookName);
+        ProjectRecord rec = getLogbookRecord(logbookName);
         if (rec == null) {
             return null;
         }
@@ -2440,7 +2440,7 @@ public class Project extends StorageObject {
             if (((ProjectRecord) record).getType().equals(ProjectRecord.TYPE_BOATHOUSE)) {
                 ProjectRecord r = (ProjectRecord) record;
                 String lName = r.getAutoNewLogbookName();
-                if (lName != null && lName.length() > 0 && getLoogbookRecord(lName) == null) {
+                if (lName != null && lName.length() > 0 && getLogbookRecord(lName) == null) {
                     throw new EfaModifyException(Logger.MSG_DATA_MODIFYEXCEPTION,
                             "Logbook " + lName + " not found!",
                             Thread.currentThread().getStackTrace());

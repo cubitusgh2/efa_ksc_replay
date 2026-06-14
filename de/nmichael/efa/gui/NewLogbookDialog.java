@@ -203,7 +203,7 @@ public class NewLogbookDialog extends StepwiseDialog implements IItemListener {
             ItemTypeString item = (ItemTypeString)getItemByName(LOGBOOKNAME);
             item.getValueFromGui();
             String name = item.getValue();
-            if (Daten.project.getLoogbookRecord(name) != null) {
+            if (Daten.project.getLogbookRecord(name) != null) {
                     Dialog.error(LogString.fileAlreadyExists(name, International.getString("Fahrtenbuch")));
                     item.requestFocus();
                     return false;
