@@ -223,7 +223,7 @@ public class VersionizedDataEditDialog extends UnversionizedDataEditDialog imple
 			JPanel panel = new JPanel();
 			panels.put(panel, thisCatKey);
 			
-			Boolean needsInnerPanel = (cats.length > 1 || subCat.size() > 0);
+			boolean needsInnerPanel = (cats.length > 1 || subCat.size() > 0);
 			JPanel innerPanel = new JPanel();
 			
 			if (needsInnerPanel) {

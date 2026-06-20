@@ -179,7 +179,7 @@ public class HTMLWidgetInstance extends WidgetInstance implements IWidgetInstanc
 
 	}
 
-	private JPanel getHTMLCaptionHeader(String caption, Boolean showMaximize) {
+	private JPanel getHTMLCaptionHeader(String caption, boolean showMaximize) {
 		return WidgetInstance.getLocationHeader(caption, showMaximize, 
 				(this.isColorsActive() ? this.getHeaderBackgroundColor() : null), 
 				(this.isColorsActive() ? this.getHeaderForegroundColor() : null));
@@ -432,7 +432,7 @@ public class HTMLWidgetInstance extends WidgetInstance implements IWidgetInstanc
 		return this.headerforegroundColor;
 	}
 	
-	public void setUseMaximizeButton(Boolean value) {
+	public void setUseMaximizeButton(boolean value) {
 		this.useMaximizeButton=value;
 	}
 	

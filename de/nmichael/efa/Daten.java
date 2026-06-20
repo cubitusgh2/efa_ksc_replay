@@ -290,10 +290,10 @@ public class Daten {
 	// This boolean is set during startup and tells if Flatlaf could be initialized
 	// at all.
 	// if not, flatLaf-3.2.5.jar may be missing in classpath.
-	public static Boolean flatLafInitializationOK = false;
+	public static boolean flatLafInitializationOK = false;
 	
-	private static Boolean isShutdownRequested=false;
-	private static Boolean isShutdownHookRunning=false;
+	private static boolean isShutdownRequested=false;
+	private static boolean isShutdownHookRunning=false;
 	private static int shutdownExitCode=0;
 
 	public static synchronized void requestShutdown() {
@@ -1810,7 +1810,7 @@ public class Daten {
 		}
 	}
 
-	public static Boolean isEfaFlatLafActive() {
+	public static boolean isEfaFlatLafActive() {
 		return (lookAndFeel.endsWith(Daten.LAF_EFAFLAT_LIGHT) || lookAndFeel.endsWith(Daten.LAF_EFAFLAT_DARK));
 	}
 

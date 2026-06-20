@@ -1354,7 +1354,7 @@ public class BoatRecord extends DataRecord implements IItemFactory, IItemListene
     
     public TableItem[] getGuiTableItems() {
         
-        Boolean hasExtension = isBoatExtensionSetupAvailable();
+        boolean hasExtension = isBoatExtensionSetupAvailable();
 
         TableItem[] items= new TableItem[hasExtension ? 4 : 3];
         items[0] = new TableItem(getQualifiedName());
@@ -1426,7 +1426,7 @@ public class BoatRecord extends DataRecord implements IItemFactory, IItemListene
     	 return (colors !=null ? EfaUtil.createColorPieIcon(colors, iconWidth, iconHeight) : null);
     }
     
-    private String createTooltipForGroups(Boolean hasExtension) {
+    private String createTooltipForGroups(boolean hasExtension) {
     	String result = this.getAllowedGroupsAsNameString(System.currentTimeMillis());
     	if ((result!=null && !result.isEmpty())||hasExtension) {
        		String toolTipBgColorText=(Daten.efaConfig.getToolTipSpecialColors() ? "bgcolor=\"#"+EfaUtil.getColor(Daten.efaConfig.getToolTipHeaderBackgroundColor())+"\"": "");

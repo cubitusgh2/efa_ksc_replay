@@ -386,16 +386,23 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         private String truncateToWidth(FontMetrics fm, String s, int maxPx) {
             if (s == null || s.isEmpty()) return s;
             if (fm.stringWidth(s) <= maxPx) return s;
+ 
+            String ell = "\u2026";
+            int ellW = fm.stringWidth(ell);
             int lo = 0, hi = s.length();
+            
             // use a logarithmic search to find the maximum substring that fits within maxPx
+            // and at this point, we know that we NEED to trunkate as s>maxPx
             while (lo < hi) {
                 int mid = (lo + hi + 1) >>> 1;
-                if (fm.stringWidth(s.substring(0, mid)) <= maxPx) lo = mid;
+                int w = fm.stringWidth(s.substring(0, mid)) + ellW;
+                if (w <= maxPx) lo = mid;
                 else hi = mid - 1;
             }
-            if (lo <= 0) return "\u2026";
-            return s.substring(0, lo-1) + "\u2026";
-        }   
+            if (lo <= 0) return ell;
+            return s.substring(0, lo) + ell;
+        }
+
         
     }
 
@@ -1108,7 +1115,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     		
     		DefaultListModel<ItemTypeListData> theModel = new DefaultListModel<ItemTypeList.ItemTypeListData>();
 			String searchString = filterTextField.getText().trim().toLowerCase();
-			Boolean searchStringWithUmlaut = EfaUtil.containsUmlaut(searchString);
+			boolean searchStringWithUmlaut = EfaUtil.containsUmlaut(searchString);
 			
 	        if (!searchString.isEmpty()) {
 	        	

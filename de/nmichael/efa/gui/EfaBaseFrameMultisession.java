@@ -728,7 +728,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         // users have found strange ways of working around completion...
         autocompleteAllFields();
 
-        Boolean checkMultisessionLast=Daten.efaConfig.getValueEfaDirekt_MultisessionLastGuiElemParticipants();
+        boolean checkMultisessionLast=Daten.efaConfig.getValueEfaDirekt_MultisessionLastGuiElemParticipants();
 
         // check all data in the appropriate order of the fields.
         // as user can select where the items for boat/person are located in the GUI, 
@@ -1078,7 +1078,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
         Hashtable<UUID,String> boatHash = new Hashtable<UUID,String>();
         
         String doppelt = null; // Ergebnis doppelt==null heißt ok, doppelt!=null heißt Fehler! ;-)
-        Boolean isPersonDoppelt = false;
+        boolean isPersonDoppelt = false;
     	ItemTypeStringAutoComplete curName= null;
     	ItemTypeStringAutoComplete curBoat = null;
     	

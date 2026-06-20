@@ -407,7 +407,7 @@ public class WeatherWidget extends Widget implements IItemFactory {
         }
 	}
 	
-    public Boolean getWeatherPageVisible(ItemTypeItemList list, int i) {
+    public boolean getWeatherPageVisible(ItemTypeItemList list, int i) {
         try {
             return ((ItemTypeBoolean)list.getItem(i, PARAM_WEATHER_VISIBLE)).getValue();
         } catch(Exception e) {

@@ -57,7 +57,9 @@ public class EfaGuiUtils {
 	public static ItemTypeLabel createHint(String uniqueName, int type, String category, String caption, int gridWidth,
 			int padBefore, int padAfter) {
 		//if caption starts with html, do not have a blank as a prefix as this will disable html rendering.
-		ItemTypeLabel item = (ItemTypeLabel) EfaGuiUtils.createDescription(uniqueName, type, category, (caption.startsWith("<html>") ? caption : " "+caption), gridWidth,
+		String newCaption=(caption==null ? "" : (caption.startsWith("<html>") ? caption : " "+caption));
+		
+		ItemTypeLabel item = (ItemTypeLabel) EfaGuiUtils.createDescription(uniqueName, type, category, newCaption, gridWidth,
 				padBefore, padAfter);
     	item.setStoreItem(false);//hint for other elements not to store this item (to efaconfig for instance)
 		item.setImage(ImagesAndIcons.getIcon(ImagesAndIcons.IMAGE_INFO));
@@ -76,7 +78,7 @@ public class EfaGuiUtils {
 		String resultCaption="<html>";
 		for(int i=0;i<captions.length; i++) {
 			resultCaption+=captions[i];
-			if (captions.length>1 && i<captions.length) {
+			if (captions.length>1 && i<captions.length-1) {
 				resultCaption+="<br>";
 			}
 		}
@@ -95,11 +97,13 @@ public class EfaGuiUtils {
         return createHint(uniqueName, type, category, a, gridWidth, padBefore, padAfter);
 	}
 	
-	
 	// Splits a string word-wise into an array. wordwrap when the next word does not fit into maxWidth pixels.
     private static List<String> splitStringByWidth(String text, int maxWidth, FontMetrics fontMetrics) {
         List<String> lines = new ArrayList<>();
-        String[] words = text.split(" ");
+        if (text == null || text.isEmpty()) {
+            return lines;
+        }
+        String[] words = text.split("\\s+");
         StringBuilder currentLine = new StringBuilder();
 
         for (String word : words) {
@@ -107,10 +111,20 @@ public class EfaGuiUtils {
             int lineWidth = fontMetrics.stringWidth(testLine);
 
             if (lineWidth > maxWidth) {
-                lines.add(currentLine.toString());
-                currentLine = new StringBuilder(word);
+                if (currentLine.length() > 0) {
+                    lines.add(currentLine.toString());
+                    currentLine = new StringBuilder(word);
+                } else {
+                    // einzelnes Wort passt nicht in eine Linie - füge es trotzdem als eigene Linie hinzu
+                    lines.add(word);
+                    currentLine = new StringBuilder();
+                }
             } else {
-                currentLine.append(currentLine.length() == 0 ? word : " " + word);
+                if (currentLine.length() == 0) {
+                    currentLine.append(word);
+                } else {
+                    currentLine.append(" ").append(word);
+                }
             }
         }
 
@@ -120,7 +134,6 @@ public class EfaGuiUtils {
 
         return lines;
     }
-
 	/**
 	 * Adds a description item in an efa GUI. This description value is not safed
 	 * within efaConfig. There is no word-wrap for the caption.
@@ -196,7 +209,8 @@ public class EfaGuiUtils {
             	}
             	
                 try {
-                	String theBrowser = Daten.efaConfig.getValueBrowser().trim();
+                	String theBrowserValue = Daten.efaConfig.getValueBrowser().trim();
+                	String theBrowser = (theBrowserValue!=null ? theBrowserValue.trim() : null);
                 	if (theBrowser!=null && theBrowser.length()>0) {
                 		// use internal browser, if browser config says "INTERN", otherwise start to run the external browser
                 		if (theBrowser.equalsIgnoreCase(BrowserDialog.INTERNAL_BROWSER)) {

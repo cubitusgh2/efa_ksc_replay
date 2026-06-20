@@ -701,7 +701,7 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
             boolean easyFindEntriesWithSpecialCharacters = Daten.efaConfig.getValueEfaDirekt_tabelleEasyfindEntriesWithSpecialCharacters();
             
         	String filterByAnyText = null;
-        	Boolean isFilterTextWithUmlauts=false;
+        	boolean isFilterTextWithUmlauts=false;
             if (filterBySearch != null && searchField != null) {
                 filterBySearch.getValueFromField();
                 searchField.getValueFromGui();
@@ -866,7 +866,7 @@ public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListe
      * 
      * @param value Value to which the internal variable is set
      */
-    public void setIsFilterSet(Boolean value) {
+    public void setIsFilterSet(boolean value) {
     	filterBySearch.setValue(value);
     	updateFilter();
     	updateData();

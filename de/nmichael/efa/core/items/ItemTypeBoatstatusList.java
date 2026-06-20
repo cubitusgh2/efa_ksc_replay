@@ -100,7 +100,7 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
         SwingUtilities.invokeLater(new Runnable() {
   	      public void run() {
             list.revalidate();  
-  	    	  list.repaint();
+  	    	list.repaint();
   	      }
     	});
     }
@@ -173,7 +173,7 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
     	try {
     	// return empty list if no data available.
     	if (v == null || v.size() == 0 || logbook == null) {
-    		return new Vector <ItemTypeListData>();
+    		return new Vector <ItemTypeListData>(0);
         }
 
         long now = System.currentTimeMillis();
@@ -214,8 +214,8 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
             BoatStatusRecord sr = v.get(i);
             DataTypeIntString srEntryNo = sr.getEntryNo();
             String currentStatus = sr.getCurrentStatus();
-            Boolean isCurrentStatusOnTheWater = BoatStatusRecord.STATUS_ONTHEWATER.equals(currentStatus);
-            Boolean isCurrentStatusAvailable = (isCurrentStatusOnTheWater ? false : BoatStatusRecord.STATUS_AVAILABLE.equals(currentStatus));
+            boolean isCurrentStatusOnTheWater = BoatStatusRecord.STATUS_ONTHEWATER.equals(currentStatus);
+            boolean isCurrentStatusAvailable = (isCurrentStatusOnTheWater ? false : BoatStatusRecord.STATUS_AVAILABLE.equals(currentStatus));
             BoatRecord r = boats.getBoat(sr.getBoatId(), now);
             
             HashMap<Integer,Integer> allSeats = new HashMap<Integer,Integer>(); // seats -> variant
@@ -400,7 +400,7 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
         return vv;
         } catch (Exception ee) {
         	Logger.logdebug(ee);
-    		return null;
+        	return new Vector <ItemTypeListData>(0);
     	}
     }
     
@@ -520,7 +520,7 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
  * gets these exceptions, logs them as warning and returns an empty tooltip string.
  * 
  */
-    private String getBoatToolTip(BoatString bs, HashMap<UUID, BoatReservationRecord> nextSingleReservationForBoats, Boolean showReservation, NameExtension extension) {
+    private String getBoatToolTip(BoatString bs, HashMap<UUID, BoatReservationRecord> nextSingleReservationForBoats, boolean showReservation, NameExtension extension) {
 
    		try {
 
@@ -595,7 +595,7 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
    	    			sbResult.append("</td></tr>");
    	    		}
    	    		
-	    		Boolean bSeparateBoatVariant=(!boatComment.isEmpty() || !boatReservation.isEmpty());
+	    		boolean bSeparateBoatVariant=(!boatComment.isEmpty() || !boatReservation.isEmpty());
 	    		
    	    		if (!boatDestination.isEmpty()) {
    	    			//den Text vor der destination entfernen
@@ -707,7 +707,7 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
     	return (nextSingleResForBoats == null ? null : nextSingleResForBoats.get(boatID));
     }
     
-    private String getBoatReservationString(UUID boatID, HashMap<UUID, BoatReservationRecord> nextSingleResForBoats, long lookAheadMinutes, Boolean buildForTooltip) {
+    private String getBoatReservationString(UUID boatID, HashMap<UUID, BoatReservationRecord> nextSingleResForBoats, long lookAheadMinutes, boolean buildForTooltip) {
 
     	//ab hier bauen wir die Reservierungsinfo auf.
         DataTypeDate today = new DataTypeDate(System.currentTimeMillis());
@@ -756,7 +756,7 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
         }
         
     }        
-    private String getSecondaryItem(BoatStatusRecord bs, HashMap<UUID, BoatReservationRecord> nextSingleReservationForBoats, Boolean showDestination, Boolean showReservation) {
+    private String getSecondaryItem(BoatStatusRecord bs, HashMap<UUID, BoatReservationRecord> nextSingleReservationForBoats, boolean showDestination, boolean showReservation) {
     	String showInList = bs.getShowInList();
 
     	if (showReservation && showInList.equals(BoatStatusRecord.STATUS_AVAILABLE)) {
@@ -794,12 +794,12 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
     	return null;
     }
 
-    Vector sortMemberList(Vector<PersonRecord> v) {
+    Vector <ItemTypeListData>sortMemberList(Vector<PersonRecord> v) {
         if (v == null || v.size() == 0) {
-            return v;
+        	return new Vector<ItemTypeListData>(0);
         }
 
-        Boolean buildToolTips = Daten.efaConfig.getValueEfaBoathouseExtdToolTips();
+        boolean buildToolTips = Daten.efaConfig.getValueEfaBoathouseExtdToolTips();
         BoatString[] a = new BoatString[v.size()];
         String name;
         for (int i = 0; i < v.size(); i++) {
@@ -824,8 +824,8 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
         
         String personListField1 = Daten.efaConfig.getValueEfaDirektBoathouseExtPersonField1();
         String personListField2 = Daten.efaConfig.getValueEfaDirektBoathouseExtPersonField2();
-        String personListField1Caption = (!personListField1.isEmpty() ? Daten.efaConfig.personExtFields.get(personListField1) : null);
-        String personListField2Caption = (!personListField2.isEmpty() ? Daten.efaConfig.personExtFields.get(personListField2) : null);
+        String personListField1Caption = (!personListField1.isEmpty() ? EfaConfig.personExtFields.get(personListField1) : null);
+        String personListField2Caption = (!personListField2.isEmpty() ? EfaConfig.personExtFields.get(personListField2) : null);
   		
         boolean buildExtraInfo = (personListField1 != null && !personListField1.isEmpty()) || (personListField2 != null && !personListField2.isEmpty());
         

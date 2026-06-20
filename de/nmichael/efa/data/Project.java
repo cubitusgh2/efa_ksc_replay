@@ -568,7 +568,7 @@ public class Project extends StorageObject {
                                 }
                             }
                             
-                            Boolean currentProject=(Daten.project != null ? p.getName().equals(Daten.project.getName()) : false);
+                            boolean currentProject=(Daten.project != null ? p.getName().equals(Daten.project.getName()) : false);
                             
                             //items.put(name, "<html>"+description.toString()+"</html>");
                             //highlight currently loaded project with green background
@@ -623,7 +623,7 @@ public class Project extends StorageObject {
                 String description = (r.getDescription() != null && r.getDescription().length() > 0 ? "<i>"+r.getDescription() + "</i><br> " : "");
                 description += "(" + r.getStartDate().toString() + " - " + r.getEndDate() + ")";
                 
-                Boolean currentLogbook=(Daten.project != null && Daten.project.getCurrentLogbook() != null 
+                boolean currentLogbook=(Daten.project != null && Daten.project.getCurrentLogbook() != null 
                 		? logbooks[i].equals(Daten.project.getCurrentLogbook().getName() ) 
                 		: false);
                 
@@ -650,7 +650,7 @@ public class Project extends StorageObject {
                 String description = (r.getDescription() != null && r.getDescription().length() > 0 ? r.getDescription() + " " : "");
                 description += "(" + r.getStartDate().toString() + " - " + r.getEndDate() + ")";
                 
-                Boolean currentClubwork=(Daten.project != null && Daten.project.getCurrentClubwork() != null 
+                boolean currentClubwork=(Daten.project != null && Daten.project.getCurrentClubwork() != null 
                 		? clubworks[i].equals(Daten.project.getCurrentClubwork().getName() ) 
                 		: false);
                 

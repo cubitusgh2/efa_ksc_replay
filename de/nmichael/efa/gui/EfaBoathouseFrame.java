@@ -1534,7 +1534,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
      * @param r
      * @return
      */
-    private String[] getListActions(int listnr, DataRecord r, Boolean withSeparator) {
+    private String[] getListActions(int listnr, DataRecord r, boolean withSeparator) {
 
     	String currentLogbookName = null;
     	String recordLogbookName = null;
@@ -2381,7 +2381,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         }
         try {
             String name = null;
-            Boolean isSeparator = false;
+            boolean isSeparator = false;
 
             ItemTypeBoatstatusList.BoatListItem item = null;
             while (item == null) {
@@ -3401,7 +3401,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         isLocked = false;
     }
     
-    private void showStartSessionMultipleDialog(Boolean isLateEntry, ItemTypeBoatstatusList.BoatListItem item) {
+    private void showStartSessionMultipleDialog(boolean isLateEntry, ItemTypeBoatstatusList.BoatListItem item) {
 
     	EfaBaseFrameMultisession myFrame = new EfaBaseFrameMultisession(this,
     			(isLateEntry ? EfaBaseFrame.MODE_BOATHOUSE_LATEENTRY_MULTISESSION : EfaBaseFrame.MODE_BOATHOUSE_START_MULTISESSION)
