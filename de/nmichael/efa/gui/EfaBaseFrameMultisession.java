@@ -930,7 +930,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
             	theRecord.setCrewId(1, p.getId());
             	theRecord.setCrewName(1, null);
             } else {
-                String s = curName.getValueFromField().trim();//Todo: prüfe ob hier nicht doch besser .getValue wäre wegen getvaluefromgui..()?
+                String s = curName.getValueFromField().trim();
             	theRecord.setCrewName(1, (s.length() == 0 ? null : s) );
             	theRecord.setCrewId(1, null);
             }	    	
@@ -939,10 +939,10 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
             BoatRecord b = findBoat(curBoat, getValidAtTimestamp(theRecord));
             if (b != null) {
             	theRecord.setBoatId(b.getId());
-            	theRecord.setBoatVariant(getOneSeaterBoatVariant(b));//TODO: Prüfen, ob hier 0 oder besser IDataAccess.UNDEFINED_INT korrekt ist!
+            	theRecord.setBoatVariant(getOneSeaterBoatVariant(b));
             	theRecord.setBoatName(null);
             } else {
-                String s = curBoat.getValueFromField().trim();//Todo: prüfe ob hier nicht doch besser .getValue wäre wegen getvaluefromgui..()?
+                String s = curBoat.getValueFromField().trim();
                 theRecord.setBoatName( (s.length() == 0 ? null : s) );
                 theRecord.setBoatId(null);
                 theRecord.setBoatVariant(IDataAccess.UNDEFINED_INT);
