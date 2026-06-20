@@ -37,7 +37,6 @@ import java.util.Vector;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import javax.help.Popup;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
@@ -260,7 +259,8 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
 
     public EfaBoathouseFrame() {
         super(null, Daten.EFA_LONGNAME);
-        this.efaBoathouseFrame = this;
+        //set the static variable of class efaBoatHouseFrame to the current instance
+        efaBoathouseFrame = this;
     }
 
     public void _keyAction(ActionEvent evt) {
@@ -1240,7 +1240,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     	//get Instances and put them in our cache.
     	Vector<WidgetInstance> instances = wt.createInstances();
     	widgetInstances.addAll(instances);
-    	Boolean multiWidgetUse=false;
+    	boolean multiWidgetUse=false;
     	
     	for (int i = 0; i<instances.size(); i++) {
     		IWidgetInstance wi = instances.get(i);
@@ -1534,12 +1534,17 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
      * @param r
      * @return
      */
-    private String[] getListActions(int listnr, DataRecord r, Boolean withSeparator) {
+    private String[] getListActions(int listnr, DataRecord r, boolean withSeparator) {
 
     	String currentLogbookName = null;
     	String recordLogbookName = null;
     	BoatStatusRecord rb = null;
-    	currentLogbookName = (Daten.project != null ? Daten.project.getCurrentLogbook().getName() : null);
+    	currentLogbookName = null;
+    	if (Daten.project != null) {
+    	    if (Daten.project.getCurrentLogbook() != null) {
+    	        currentLogbookName = Daten.project.getCurrentLogbook().getName();
+    	    }
+    	}
     	
     	// if a BoatStatusRecord is provided, check it's status and choose the appropriate "list"
     	// as Boats on the water may  also be present in 'not available' list.
@@ -2365,7 +2370,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     void clearAllPopups() {
         boatsAvailableList.clearPopup();
         personsAvailableList.clearPopup();
-        boatsOnTheWaterList.clearPopup();;
+        boatsOnTheWaterList.clearPopup();
         boatsNotAvailableList.clearPopup();
     }
 
@@ -2376,7 +2381,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         }
         try {
             String name = null;
-            Boolean isSeparator = false;
+            boolean isSeparator = false;
 
             ItemTypeBoatstatusList.BoatListItem item = null;
             while (item == null) {
@@ -2651,14 +2656,24 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         if (item.boatStatus != null && item.boatStatus.getBoatId() != null) {
             boatId = item.boatStatus.getBoatId();
         }
-        if (item.boat != null && item.boat.getId() != null) {
-            boatId = item.boatStatus.getBoatId();
+        //Changed code from initial commit: if boat id has not been obtained by boatstatus (because it may be null),
+        //then use the boat id from the boatitem itself. Avoid NPE.
+        //it makes sense to use boatstatus.getboatid() in the first place as the boatlists in efaBoatHouseFrame are
+        //BoatSTATUSLists, not BoatLists.
+        if (boatId == null) {
+	        if (item.boat != null && item.boat.getId() != null) {
+	            boatId = item.boat.getId();
+	        }
         }
         BoatDamageRecord[] damages = (boatId != null ?
                 boatDamages.getBoatDamages(boatId, true, true) : null);
         if (damages != null && damages.length > 0 && BoatDamages.warnDamage(damages[0])) {
+        	
+        	String boatNameForMsg = (item.boatStatus != null ? item.boatStatus.getBoatText()
+                    : (item.boat != null ? item.boat.getQualifiedName() : item.text));
+        	
             if (Dialog.yesNoDialog(International.getString("Bootsschaden gemeldet"),
-                    International.getMessage("Für das Boot {boat} wurde folgender Bootsschaden gemeldet:", item.boatStatus.getBoatText()) + "\n"
+                    International.getMessage("Für das Boot {boat} wurde folgender Bootsschaden gemeldet:", boatNameForMsg) + "\n"
                             + "\""
                             + damages[0].getDescription()
                             + "\"\n"
@@ -3386,7 +3401,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         isLocked = false;
     }
     
-    private void showStartSessionMultipleDialog(Boolean isLateEntry, ItemTypeBoatstatusList.BoatListItem item) {
+    private void showStartSessionMultipleDialog(boolean isLateEntry, ItemTypeBoatstatusList.BoatListItem item) {
 
     	EfaBaseFrameMultisession myFrame = new EfaBaseFrameMultisession(this,
     			(isLateEntry ? EfaBaseFrame.MODE_BOATHOUSE_LATEENTRY_MULTISESSION : EfaBaseFrame.MODE_BOATHOUSE_START_MULTISESSION)
@@ -3407,6 +3422,9 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
 }
 class BoatReservationComparatorByNextOccurrence implements Comparator<BoatReservationRecord> {
 	public int compare(BoatReservationRecord brr1, BoatReservationRecord brr2) {
-		return (int)(brr1.getReservationValidInMinutes(true) - brr2.getReservationValidInMinutes(true));
+		long diff = brr1.getReservationValidInMinutes(true) - brr2.getReservationValidInMinutes(true);
+		if (diff < 0) return -1;
+		if (diff > 0) return 1;
+		return 0;
 	}
 }

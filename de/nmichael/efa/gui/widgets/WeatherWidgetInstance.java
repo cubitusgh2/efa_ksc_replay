@@ -71,7 +71,6 @@ public class WeatherWidgetInstance extends WidgetInstance implements IWidgetInst
 
 	@Override
 	public JComponent getComponent() {
-		// TODO Auto-generated method stub
 		return mainPanel;
 	}
 	

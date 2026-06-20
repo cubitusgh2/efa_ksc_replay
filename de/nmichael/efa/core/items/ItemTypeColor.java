@@ -42,10 +42,10 @@ public class ItemTypeColor extends ItemTypeLabelValue {
     
     private String color;
     private String defaultColor;
-    private Boolean canBeNull;
+    private boolean canBeNull;
 
     public ItemTypeColor(String name, String color, String defaultColor,
-            int type, String category, String description, Boolean canBeNull) {
+            int type, String category, String description, boolean canBeNull) {
         this.name = name;
         this.color = color;
         this.defaultColor = defaultColor;

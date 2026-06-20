@@ -1565,7 +1565,7 @@ public class StatisticTask extends ProgressTask {
         }
         String[] names = Daten.project.getAllLogbookNames();
         for (int i = 0; names != null && i < names.length; i++) {
-            ProjectRecord pr = Daten.project.getLoogbookRecord(names[i]);
+            ProjectRecord pr = Daten.project.getLogbookRecord(names[i]);
             if (pr != null) {
                 DataTypeDate lbStart = pr.getStartDate();
                 DataTypeDate lbEnd = pr.getEndDate();
@@ -2408,7 +2408,7 @@ public class StatisticTask extends ProgressTask {
      * @param mySR StatisticsRecord
      * @return true if statistics are prepared.
      */    
-    private Boolean isStatisticsPrepared(StatisticsRecord mySR) {
+    private boolean isStatisticsPrepared(StatisticsRecord mySR) {
 		if (Daten.isGuiAppl()) {
 			BooleanWrapper statisticsPrepared=new BooleanWrapper(false);
 			try {
@@ -2432,7 +2432,7 @@ public class StatisticTask extends ProgressTask {
      * @param mySR StatisticsRecord
      * @return true if Online Update has been done for the statistics, or no online update was neccessary.
      */
-    private Boolean isOnlineUpdateDone(StatisticsRecord mySR) {
+    private boolean isOnlineUpdateDone(StatisticsRecord mySR) {
 		if (Daten.isGuiAppl()) {
 			BooleanWrapper onlineUpdateDone=new BooleanWrapper(false);
 			
@@ -2585,16 +2585,16 @@ public class StatisticTask extends ProgressTask {
      */
     private class BooleanWrapper {
     	
-    	Boolean innerValue=false;
+    	boolean innerValue=false;
     	
-    	public BooleanWrapper(Boolean value) {
+    	public BooleanWrapper(boolean value) {
     		innerValue=value;
     	}
     	
-    	public void setValue(Boolean value) {
+    	public void setValue(boolean value) {
     		innerValue=value;
     	}
-    	public Boolean getValue() {
+    	public boolean getValue() {
     		return innerValue;
     	}
     }

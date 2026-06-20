@@ -1,6 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <efaOnlineUpdate>
 	<Version>
+        <VersionID>2.5.3#8</VersionID>
+        <ReleaseDate>14.06.2026</ReleaseDate>
+        <DownloadUrl>TODO</DownloadUrl>
+        <DownloadSize>TODO</DownloadSize>
+     	<MinimumJavaVersion>1.8</MinimumJavaVersion>
+		<MinimumEfaCloudVersion>2.3.3</MinimumEfaCloudVersion>
+        <ShowNotice lang="de">Wenn efaCloud eingesetzt wird, muss der Server mindestens Version 2.3.3 unterstützen. EfaCloud 2.4.0_12 und höher werden empfohlen.</ShowNotice>
+        <ShowNotice lang="en">If you use efaCloud, make sure your server at least supports efaCloud Version 2.3.3. It is recommended to upgrade to EfaCloud 2.4.0_12 or above.</ShowNotice>
+        <Changes lang="de">
+        	<ChangeItem>Bugfix: Refactoring/Härtung von efaBaseFrame, efaBoatHouseFrame, efaBoathouseBackgroundTask, efaConfig, efaUtil</ChangeItem>
+        	<ChangeItem>Bugfix: Eintragung/Änderung von Fahrten: die Prüfung auf unbekannte Bootsnamen, Personennamen, Ziele und Gewässer funktioniert nun richtig; sofern konfiguriert, wird das Speichern bei unbekannten Namen in mindestems einen der Felder das Speichern verhindert. (Bug ist neu seit efa 2.5.0/Multisession)</ChangeItem>
+        	<ChangeItem>Bugfix: Eintragung/Änderung von Fahrten: Wenn dies in efaBase oder im Admin-Modus von efaBths erfolgt, so wird die Änderung/Neueintragung durch den Admin passend im Log dokumentiert.</ChangeItem>
+			<ChangeItem>Bugfix: Multisession-Eintragung: eine Name/Boot-Zeile wird jetzt nur dann akzeptiert, wenn Name und Boot BEIDE nicht leer sind.</ChangeItem>
+			<ChangeItem>Bugfix: Multisession-Eintragung: korrekte Prüfung, ob alle eingegebenen Boote Einsitzer-Boote sind.</ChangeItem>
+        	<ChangeItem>Bugfix: Wetterdaten: sind die heruntergeladenen Wetterdaten sehr alt (älter als 7 Stunden), dann konnte es bei der Aktualisierung des Wetterwidgets zu einem Fehler kommen.</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+        	<ChangeItem>Bugfix: Refactoring/hardening of efaBaseFrame, efaBoatHouseFrame, efaBoathouseBackgroundTask, efaConfig, efaUtil</ChangeItem>
+        	<ChangeItem>Bugfix: Entering/editing sessions: The check for unknown boat names, person names, destinations and waters now works correctly; if configured, saving with unknown names in at least one of the fields will be prevented (Bug introduced in efa 2.5.0/Multisession).</ChangeItem>
+			<ChangeItem>Bugfix: Entering/editing sessions: If this is done in efaBase or in admin mode of efaBths, the change/new entry is properly documented in the log by the admin user.</ChangeItem>
+        	<ChangeItem>Bugfix: Multi-session entry: A name/boat line is now only accepted if both name and boat are not empty.</ChangeItem>
+        	<ChangeItem>Bugfix: Multi-session entry: Correct check if all entered boats are single-seater boats.</ChangeItem>
+        	<ChangeItem>Bugfix: Weather data: If the downloaded weather data is very old (older than 7 hours), an error could occur when updating the weather widget.</ChangeItem>
+        </Changes>
+	</Version>
+	<Version>
         <VersionID>2.5.3#7</VersionID>
         <ReleaseDate>14.06.2026</ReleaseDate>
         <DownloadUrl>TODO</DownloadUrl>

@@ -95,7 +95,7 @@ class SynchControl {
         // truncate log files,
         File synchErrorsFile = new File(path);
         
-        Boolean appendLine=true;
+        boolean appendLine=true;
         if (isError) {
         	//log rotation only if we write to synchError.log
 	        //synchErrors.log rotation: if >5 Mb, delete old synchErrors.previous.log file and rename synchErrors.log to synchErrors.log.previous.log

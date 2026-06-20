@@ -52,7 +52,7 @@ public class NewsMiniWidget {
         newsUpdater.setScrollSpeed(scrollSpeed);
     }
 
-    public void setVisible(Boolean value) {
+    public void setVisible(boolean value) {
     	SwingUtilities.invokeLater(new Runnable() {
     		public void run() {
                 mainNewsWidgetPanel.setVisible(value);

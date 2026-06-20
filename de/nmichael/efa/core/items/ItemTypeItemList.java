@@ -141,7 +141,7 @@ public class ItemTypeItemList extends ItemType {
     private boolean appendPositionToEachElement = false;
     private Orientation orientation = Orientation.vertical;
     private StorageType storageType = StorageType.classic;
-    private Boolean showUpDownButtons = false;
+    private boolean showUpDownButtons = false;
     
     public enum Orientation {
         vertical,
@@ -915,11 +915,11 @@ public class ItemTypeItemList extends ItemType {
     	return items.size();
     }
 
-	public Boolean getShowUpDownButtons() {
+	public boolean getShowUpDownButtons() {
 		return showUpDownButtons;
 	}
 
-	public void setShowUpDownButtons(Boolean showUpDownButtons) {
+	public void setShowUpDownButtons(boolean showUpDownButtons) {
 		this.showUpDownButtons = showUpDownButtons;
 	}
 	

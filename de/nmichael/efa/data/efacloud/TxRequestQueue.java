@@ -234,7 +234,7 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
     private Container efaGUIroot;
     private long lastStatsUpload = 0L;
     
-    public Boolean isExtendedDebug = true; //intentionally set to true so that the sync log provides better data traceability.
+    public boolean isExtendedDebug = true; //intentionally set to true so that the sync log provides better data traceability.
 
     /**
      * Get a new transaction ID and increment the counter.
@@ -409,7 +409,7 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
      *
      * @return the state of operation, e. g. TX_QUEUE_WORKING
      */
-    public String getStateForDisplay(Boolean withState) {
+    public String getStateForDisplay(boolean withState) {
     	if (txq==null) 
     		return "";
     	
@@ -486,7 +486,7 @@ public class TxRequestQueue implements TaskManager.RequestDispatcherIF {
         if (type < 2) {
             // truncate log files,
             File efaCloudLogFile = new File(logFilePath);
-            Boolean appendLine=true;
+            boolean appendLine=true;
             
             //efacloud.log rotation: if >5 Mb, delete old efacloud.previous.log file and rename efacloud.log to efacloud.log.previous.log
             if (efaCloudLogFile.length() > EFACLOUD_LOG_MAX_SIZE) {

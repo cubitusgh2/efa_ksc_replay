@@ -376,7 +376,7 @@ public class BoatReservationListDialog extends DataListDialog {
     }
     
     
-    private Boolean isCopyOrBoatChangeAllowed(DataRecord record) {
+    private boolean isCopyOrBoatChangeAllowed(DataRecord record) {
     	BoatReservationRecord br =((BoatReservationRecord)record); 
     	String boatReservationRecordType=br.getType();
     	
@@ -427,7 +427,7 @@ public class BoatReservationListDialog extends DataListDialog {
      * @param record record to create a copy for
      * @return
      */
-    public DataEditDialog createNewDataDialogForCopyOrChangeBootname(JDialog parent, StorageObject persistence, DataRecord baseRecord, int iCurrentRecord, int iCountRecords, Boolean bDoCopy) {
+    public DataEditDialog createNewDataDialogForCopyOrChangeBootname(JDialog parent, StorageObject persistence, DataRecord baseRecord, int iCurrentRecord, int iCountRecords, boolean bDoCopy) {
 
         BoatReservationRecord copyRecord = null;
         BoatReservationRecord originalRecord = (BoatReservationRecord) baseRecord;

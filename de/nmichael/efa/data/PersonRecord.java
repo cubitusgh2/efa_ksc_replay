@@ -908,7 +908,7 @@ public class PersonRecord extends DataRecord implements IItemFactory {
 				Daten.efaConfig.getValueEfaDirektBoathouseExtPersonField2().length() > 0;
 	}
     public TableItemHeader[] getGuiTableHeader() {
-    	Boolean hasExtension = isPersonExtensionSetupAvailable();
+    	boolean hasExtension = isPersonExtensionSetupAvailable();
         TableItemHeader[] header = new TableItemHeader[hasExtension ? 5 : 4];
         
         if (Daten.efaConfig.getValueNameFormatIsFirstNameFirst()) {
@@ -927,7 +927,7 @@ public class PersonRecord extends DataRecord implements IItemFactory {
     }
 
     public TableItem[] getGuiTableItems() {
-    	Boolean hasExtension = isPersonExtensionSetupAvailable();
+    	boolean hasExtension = isPersonExtensionSetupAvailable();
         TableItem[] items = new TableItem[hasExtension ? 5 : 4];
         if (Daten.efaConfig.getValueNameFormatIsFirstNameFirst()) {
             items[0] = new TableItem(getFirstName());

@@ -1110,7 +1110,7 @@ public class Audit extends Thread {
             Boats boats = project.getBoats(false);
             Persons persons = project.getPersons(false);
             Destinations destinations = project.getDestinations(false);
-            ProjectRecord prjLogkoobRec = project.getLoogbookRecord(logbookName);
+            ProjectRecord prjLogkoobRec = project.getLogbookRecord(logbookName);
             SessionGroups sessionGroups = project.getSessionGroups(false);
             BoatStatus boatStatus = project.getBoatStatus(false);
             if (boats.dataAccess.getNumberOfRecords() == 0 ||

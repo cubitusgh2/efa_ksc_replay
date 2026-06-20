@@ -121,7 +121,7 @@ public class HTMLWidget extends Widget implements IWidget, IItemFactory {
         }    	
     }
 
-    public Boolean getHTMLPageVisible(ItemTypeItemList list, int i) {
+    public boolean getHTMLPageVisible(ItemTypeItemList list, int i) {
         try {
             return ((ItemTypeBoolean)list.getItem(i, PARAM_HTMLPAGE_VISIBLE)).getValue();
         } catch(Exception e) {

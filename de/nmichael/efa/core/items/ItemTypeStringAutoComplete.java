@@ -946,7 +946,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString implements AutoCo
     			
     }
     
-    public void setShowButtonFocusable(Boolean value) {
+    public void setShowButtonFocusable(boolean value) {
     	this.showButtonFocusable=value;
     	if (button != null) {
     		button.setFocusable(value);

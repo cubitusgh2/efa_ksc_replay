@@ -78,9 +78,9 @@ public class Daten {
 	public final static String VERSION = "2.5.3"; // Version für die Ausgabe (z.B. 2.1.0, kann aber
 																	// auch Zusätze wie "alpha" o.ä. enthalten)
 
-	public final static String VERSIONID = "2.5.3_#7"; // VersionsID: Format: "X.Y.Z_MM"; final-Version z.B. 1.4.0_00;
+	public final static String VERSIONID = "2.5.3_#8"; // VersionsID: Format: "X.Y.Z_MM"; final-Version z.B. 1.4.0_00;
 														// beta-Version z.B. 1.4.0_#1  //# is not good, is used in efa.data.Waters 
-	public final static String VERSIONRELEASEDATE = "14.06.2026"; // Release Date: TT.MM.JJJJ
+	public final static String VERSIONRELEASEDATE = "20.06.2026"; // Release Date: TT.MM.JJJJ
 	public final static String MAJORVERSION = "2";
 	public final static String PROGRAMMID = "EFA.253"; // Versions-ID für Wettbewerbsmeldungen
 	public final static String PROGRAMMID_DRV = "EFADRV.253"; // Versions-ID für Wettbewerbsmeldungen
@@ -290,10 +290,10 @@ public class Daten {
 	// This boolean is set during startup and tells if Flatlaf could be initialized
 	// at all.
 	// if not, flatLaf-3.2.5.jar may be missing in classpath.
-	public static Boolean flatLafInitializationOK = false;
+	public static boolean flatLafInitializationOK = false;
 	
-	private static Boolean isShutdownRequested=false;
-	private static Boolean isShutdownHookRunning=false;
+	private static boolean isShutdownRequested=false;
+	private static boolean isShutdownHookRunning=false;
 	private static int shutdownExitCode=0;
 
 	public static synchronized void requestShutdown() {
@@ -1122,7 +1122,7 @@ public class Daten {
 		if (applID != APPL_EFABH) {
 			return;
 		}
-		new RemoteEfaServer(Daten.efaConfig.getValueDataataRemoteEfaServerPort(),
+		new RemoteEfaServer(Daten.efaConfig.getValueDataRemoteEfaServerPort(),
 				Daten.efaConfig.getValueDataRemoteEfaServerEnabled());
 	}
 
@@ -1810,7 +1810,7 @@ public class Daten {
 		}
 	}
 
-	public static Boolean isEfaFlatLafActive() {
+	public static boolean isEfaFlatLafActive() {
 		return (lookAndFeel.endsWith(Daten.LAF_EFAFLAT_LIGHT) || lookAndFeel.endsWith(Daten.LAF_EFAFLAT_DARK));
 	}
 

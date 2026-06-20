@@ -1832,7 +1832,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					International.getString("Standardeinheit für Gewicht")));
 			
 			addParameter(dateFormat = new ItemTypeStringList("LocaleDateFormat", DataTypeDate.DAY_MONTH_YEAR,
-					DataTypeDate.makeDistanceUnitValueArray(), DataTypeDate.makeDistanceUnitNamesArray(),
+					DataTypeDate.makeDateFormatValueArray(), DataTypeDate.makeDateFormatNamesArray(),
 					IItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_LOCALE),
 					International.getString("Datumsformat")));
 			
@@ -3119,23 +3119,23 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 		return kanuEfb_SyncTripsAfterDate.getDate();
 	}
 
-	public Boolean getValueKanuEfb_FullSync() {
+	public boolean getValueKanuEfb_FullSync() {
 		return kanuEfb_Fullsync.getValue();
 	}
 	
-	public Boolean getValueKanuEfb_AlwaysShowKanuEFBFields() {
+	public boolean getValueKanuEfb_AlwaysShowKanuEFBFields() {
 		return kanuEfb_AlwaysShowKanuEFBFields.getValue();
 	}
 
-	public Boolean getValueKanuEfb_SyncUnknownBoats() {
+	public boolean getValueKanuEfb_SyncUnknownBoats() {
 		return kanuEfb_SyncUnknownBoats.getValue();
 	}
 
-	public Boolean getValueKanuEfb_TidyXML() {
+	public boolean getValueKanuEfb_TidyXML() {
 		return kanuEfb_TidyXML.getValue();
 	}
 	
-	public Boolean getValueKanuEfb_SyncTripTypePrefix() {
+	public boolean getValueKanuEfb_SyncTripTypePrefix() {
 		return kanuEfb_SyncTripTypePrefix.getValue();
 	}
 
@@ -3171,7 +3171,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 		return dataRemoteEfaServerEnabled.getValue();
 	}
 
-	public int getValueDataataRemoteEfaServerPort() {
+	public int getValueDataRemoteEfaServerPort() {
 		return dataRemoteEfaServerPort.getValue();
 	}
 
@@ -3293,7 +3293,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 		return (myColor != null ? myColor : standardTableAlternatingRowColor);
 	}
 
-	public Boolean getToolTipSpecialColors() {
+	public boolean getToolTipSpecialColors() {
 		return efaGuiToolTipSpecialColors.getValue();
 	}	
 	
@@ -3317,7 +3317,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 		return (myColor != null ? myColor : standardToolTipHeaderForegroundColor);
 	}
 	
-	public Boolean getHeaderUseHighlightColor() {
+	public boolean getHeaderUseHighlightColor() {
 		return efaHeaderUseHighlightColor.getValue();
 	}
 
@@ -3331,7 +3331,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 		return (myColor != null ? myColor : standardTableSelectionForegroundColor);
 	}
 
-	public Boolean getHeaderUseForTabbedPanes() {
+	public boolean getHeaderUseForTabbedPanes() {
 		return efaHeaderUseForTabbedPanes.getValue();
 	}
 
@@ -3339,7 +3339,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 		return weeklyReservationConflictBehaviour.getValue();
 	}
 	
-	public Boolean getValueStatusLeiste() {
+	public boolean getValueStatusLeiste() {
 		return efaDirekt_statusLeiste.getValue();
 	}
 
@@ -3472,7 +3472,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 			newUserData += Daten.fileSep;
 		}
 		boolean changedLang = Daten.efaBaseConfig.language == null || !Daten.efaBaseConfig.language.equals(newLang);
-		boolean changedDateFormat = DataTypeDate.MONTH_DAY_YEAR.equals(dateFormat) == Daten.dateFormatDMY;
+		boolean changedDateFormat = DataTypeDate.MONTH_DAY_YEAR.equals(dateFormat.getValue()) == Daten.dateFormatDMY;
 		boolean changedUserDir = Daten.efaBaseConfig.efaUserDirectory == null
 				|| !Daten.efaBaseConfig.efaUserDirectory.equals(newUserData);
 		if (changedLang || changedUserDir) {
@@ -3516,7 +3516,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 		Daten.trySetEfaBackupDirectory(newBakDir);
 	}
 
-	public boolean setToLanguate(String lang) {
+	public boolean setToLanguage(String lang) {
 		ResourceBundle bundle = null;
 		if (lang != null) {
 			try {
@@ -3743,7 +3743,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 				BaseTabbedDialog.makeCategory(CATEGORY_TYPES, CATEGORY_TYPES_GEND),
 				International.getString("Geschlecht")));
 		
-		Boolean bCanoeingInGermany= (this.getValueUseFunctionalityCanoeingGermany());
+		boolean bCanoeingInGermany= (this.getValueUseFunctionalityCanoeingGermany());
 		if (bCanoeingInGermany) {
 			addHintWordWrap("BOATS_CANOEING_GERMANY_EFBSYNC_HINT", IItemType.TYPE_EXPERT,
 					BaseTabbedDialog.makeCategory(CATEGORY_TYPES, CATEGORY_TYPES_BOAT),
