@@ -10,18 +10,13 @@
 
 package de.nmichael.efa.data.storage;
 
-import java.awt.GridBagConstraints;
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.Vector;
 
-import javax.swing.SwingConstants;
-
 import de.nmichael.efa.Daten;
 import de.nmichael.efa.core.config.AdminRecord;
-import de.nmichael.efa.core.config.EfaConfig;
 import de.nmichael.efa.core.items.IItemType;
-import de.nmichael.efa.core.items.ItemTypeLabel;
 import de.nmichael.efa.core.items.ItemTypeStringAutoComplete;
 import de.nmichael.efa.data.types.DataTypeDate;
 import de.nmichael.efa.data.types.DataTypeDecimal;
@@ -31,9 +26,7 @@ import de.nmichael.efa.data.types.DataTypeList;
 import de.nmichael.efa.data.types.DataTypePasswordCrypted;
 import de.nmichael.efa.data.types.DataTypePasswordHashed;
 import de.nmichael.efa.data.types.DataTypeTime;
-import de.nmichael.efa.gui.ImagesAndIcons;
 import de.nmichael.efa.gui.util.AutoCompleteList;
-import de.nmichael.efa.gui.util.RoundedBorder;
 import de.nmichael.efa.gui.util.TableItem;
 import de.nmichael.efa.gui.util.TableItemHeader;
 import de.nmichael.efa.util.EfaUtil;

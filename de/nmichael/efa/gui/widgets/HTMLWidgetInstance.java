@@ -25,7 +25,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.text.html.HTMLDocument;
 import javax.swing.text.html.HTMLEditorKit;
 
-import de.nmichael.efa.Daten;
 import de.nmichael.efa.data.LogbookRecord;
 import de.nmichael.efa.gui.EfaGuiUtils;
 import de.nmichael.efa.gui.util.RoundedBorder;
