@@ -860,9 +860,10 @@ public class StatisticTask extends ProgressTask {
             if (sr.sPublicStatistic && entryPersonExcludeFromPublic) {
                 name = "<" + International.getString("anonym") + ">"; // < and > will be correctly escaped in output!
             }
-            if (sr.sOutputType == StatisticsRecord.OutputTypes.html
-                    || sr.sOutputType == StatisticsRecord.OutputTypes.internal) {
-                if (i == r.getBoatCaptainPosition()) {
+             if (i == r.getBoatCaptainPosition()) {
+                sd.boatCaptainName = name; // Obmann separat mitführen (z.B. für XML-Export)
+                if (sr.sOutputType == StatisticsRecord.OutputTypes.html
+                        || sr.sOutputType == StatisticsRecord.OutputTypes.internal) {
                     name = StatisticWriter.TEXTMARK_BOLDSTART + name + StatisticWriter.TEXTMARK_BOLDEND;
                 }
             }
