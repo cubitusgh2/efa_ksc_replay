@@ -4163,7 +4163,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
 		autoCompleteListPersons.reset();
 		
 		// remove currently used persons	
-		for (int i=0; i<LogbookRecord.CREW_MAX; i++) {
+		for (int i=0; i<=LogbookRecord.CREW_MAX; i++) {
 			//crew(0)=cox crew(1)..crew(24)=crew					
 			removeFromAutoCompleteVisible(getCrewItem(i));
 		}
