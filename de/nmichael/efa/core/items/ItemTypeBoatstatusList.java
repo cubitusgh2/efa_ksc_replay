@@ -908,6 +908,10 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
 
     }
     
+    public boolean hasListOrFilterFocus() {
+    	return this.hasFocus() || list.hasFocus(); 
+    }
+    
     public BoatListItem getSelectedBoatListItem() {
         if (list == null || list.isSelectionEmpty()) {
             return null;

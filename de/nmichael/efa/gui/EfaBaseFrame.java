@@ -967,6 +967,22 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         return t;
     }
 
+    protected long getValidAtTimestamp(DataTypeDate date, DataTypeTime time) {
+		long t = LogbookRecord.getValidAtTimestamp(date, time);
+		if (t == 0) {
+			t = System.currentTimeMillis();
+		}
+		return t;
+	}
+    
+    /**
+     * Find a person by its name (or association postfix) and a timestamp.
+     * If the person is not valid at that timestamp, we try to find a person with this name 
+     * which is valid at the timestamp of the logbook.
+     * @param item String with the person name (or association postfix)
+     * @param validAt timestamp at which the person should be valid
+     * @return the person record or null if no person could be found
+     */
     protected PersonRecord findPerson(ItemTypeString item, long validAt) {
          try {
             String s = item.getValueFromField().trim();
@@ -985,6 +1001,8 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
                 // some other time for this logbook. It might be that "A" is just another name for
                 // "B" of the same record, which is valid. If there is a "B", we will use that.
                 // That means, even though the user entered "A", we will save the ID, and display "B".
+                // (mostly changes in names over time, and, versions of the same person record,  
+                // are due to corrected typos or marriages)
                 if (validAt > 0 && r == null) {
                     PersonRecord r2 = Daten.project.getPersons(false).getPerson(s, this.logbookValidFrom, logbookInvalidFrom-1, validAt);
                     if (r2 != null) {
@@ -3241,17 +3259,24 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
             long tstmp = getValidAtTimestamp(myRecord);
 
             DataTypeList<UUID> groupIdList = currentBoat.getAllowedGroupIdList();
-            if (groupIdList != null && groupIdList.length() > 0) {
+            Boolean currentBoatHasGroups = (groupIdList != null && groupIdList.length() > 0);
+            
                 String nichtErlaubt = null;
                 int nichtErlaubtAnz = 0;
                 //Vector g = Boote.getGruppen(b);
                 for (int i = 0; i <= LogbookRecord.CREW_MAX; i++) {
+                	// get the person for the crew item.
+                	// if there is no personRecord for the crewitem at the time of the logbook record,
+                	// get the latest possible item for the person (but ignore deleted persons).
+                	// so, persons which have an end date are tested for their latest configuration.
                     PersonRecord p = myRecord.getCrewRecord(i, tstmp);
                     String ptext = myRecord.getCrewName(i);
-                    if (p == null && ptext == null) {
-                        continue;
+                    if (p == null) {
+                    	p = myRecord.getCrewRecordLatest(i);
                     }
+                    
 
+                    
                     if (p != null && p.getBoatUsageBan()) {
                         switch (Dialog.auswahlDialog(International.getString("Bootsbenutzungs-Sperre"),
                             International.getMessage("Für {name} liegt zur Zeit eine Bootsbenutzungs-Sperre vor.", p.getQualifiedName()) +
@@ -3283,8 +3308,12 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
                         }
                     }
 
+                    if (p == null && ptext == null) {
+                        continue;
+                    }
+                    
                     boolean inAnyGroup = false;
-                    if (p != null) {
+                    if (p != null && currentBoatHasGroups) {
                         for (int j = 0; j < groupIdList.length(); j++) {
                             GroupRecord g = groups.findGroupRecord(groupIdList.get(j), tstmp);
                             if (g != null && g.getMemberIdList() != null && g.getMemberIdList().contains(p.getId())) {
@@ -3293,13 +3322,15 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
                             }
                         }
                     }
-                    if (!inAnyGroup) {
+                    if (!inAnyGroup && currentBoatHasGroups) {
                         String name = (p != null ? p.getQualifiedName() : ptext);
                         nichtErlaubt = (nichtErlaubt == null ? name : nichtErlaubt + "\n" + name);
                         nichtErlaubtAnz++;
                     }
-                }
-                if (Daten.efaConfig.getValueCheckAllowedPersonsInBoat() &&
+                } // for each crew member loop end
+                
+                if (currentBoatHasGroups &&
+                	Daten.efaConfig.getValueCheckAllowedPersonsInBoat() &&
                     nichtErlaubtAnz > 0 &&
                     nichtErlaubtAnz > currentBoat.getMaxNotInGroup()) {
                     String erlaubteGruppen = null;
@@ -3342,7 +3373,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
                             return false;                            
                     }
                 }
-            }
+            
 
             // Prüfen, ob mind 1 Ruderer (oder Stm) der Gruppe "mind 1 aus Gruppe" im Boot sitzt
             if (Daten.efaConfig.getValueCheckMinOnePersonsFromGroupInBoat() &&

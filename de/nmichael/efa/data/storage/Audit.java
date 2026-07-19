@@ -104,7 +104,7 @@ public class Audit extends Thread {
         if (id == null) {
             return false;
         }
-        DataKey k = new DataKey(id, null, null);
+        DataKey <UUID, Object, Object>k = new DataKey<>(id, null, null);
         try {
             if (validAt >= 0) {
                 return so.dataAccess.getValidAt(k, validAt) == null;
@@ -142,7 +142,7 @@ public class Audit extends Thread {
 
     private String getNameOfLatestInvalidRecord(UUID id, StorageObject so) {
         try {
-            DataRecord[] recs = so.dataAccess.getValidAny(new DataKey(id, null, null));
+            DataRecord[] recs = so.dataAccess.getValidAny(new DataKey<UUID, Object, Object>(id, null, null));
             long latestValid = -1;
             DataRecord latestRecord = null;
             for (int i=0; recs != null && i<recs.length; i++) {

@@ -748,10 +748,9 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
             !checkMultiSessionNameAndBoatValuesValid()||
             !checkUnknownNames() || 
             !checkProperUnknownNames() ||
-            !checkAllowedPersons() ||
+            //!checkAllowedPersons() || //not applicable for multisession, where person and boat data are in different fields
             !checkAllowedPersonsForBoat() ||
             !checkSinglePersonBoats() ||
-            
 
             !checkDestinationAndOther(!checkMultisessionLast) ||
 	        
@@ -1360,17 +1359,30 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
     protected boolean checkBoatUsageBan(ItemTypeStringAutoComplete theBoat, ItemTypeStringAutoComplete theName) {
         
 	    Groups groups = Daten.project.getGroups(false);
-	    long tstmp = System.currentTimeMillis();
+	    long tstmp = getValidAtTimestamp(startDate.getDate(), starttime.getTime()); // this allows starttime.getTime() to be null, as it will then be set to 00:00:00.000 of the startDate.
 	    
 	    BoatRecord curBoat = findBoat(theBoat, tstmp);
-        PersonRecord curPerson = findPerson(theName, tstmp);
-        
         if (curBoat == null) {
         	return true;
         }
+        
+	    // find a person record for the name and the timestamp of the record. 
+	    // Or if this is not applicable, 
+	    // find a person record for the name and the validity of the logbook.
+        PersonRecord curPerson = findPerson(theName, tstmp); 
+        
+        //if there still is no person found, try to find the latest version of the person with that name, 
+        //as we want to check for a usage ban.
+        if (curPerson == null) {
+        	curPerson = Daten.project.getPersons(false).getPersonLatest(theName.getValueFromField());
+        }
+        
+
 
         DataTypeList<UUID> groupIdList = curBoat.getAllowedGroupIdList();
-        if (groupIdList != null && groupIdList.length() > 0) {
+        Boolean currentBoatHasGroups = (groupIdList != null && groupIdList.length() > 0);
+
+        
             String nichtErlaubt = null;
             int nichtErlaubtAnz = 0;
             String ptext = theName.getValue().toString();
@@ -1400,7 +1412,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
             }
             //check if the person is in any group the boat may be used by
             boolean inAnyGroup = false;
-            if (curPerson!=null) {
+            if (curPerson!=null && currentBoatHasGroups) {
 	            for (int j = 0; j < groupIdList.length(); j++) {
 	                GroupRecord g = groups.findGroupRecord(groupIdList.get(j), tstmp);
 	                if (g != null && g.getMemberIdList() != null && g.getMemberIdList().contains(curPerson.getId())) {
@@ -1410,7 +1422,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 	            }
             }
             
-            if (!inAnyGroup) {
+            if (!inAnyGroup && currentBoatHasGroups) {
                 String name = (curPerson != null ? curPerson.getQualifiedName() : ptext);
                 nichtErlaubt = (nichtErlaubt == null ? name : nichtErlaubt + "\n" + name);
                 nichtErlaubtAnz++;
@@ -1419,7 +1431,8 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
             
             // a boat may be assigned to a group, but may need a participant of another
             // like used by a special crew, but needs at least a member of group "trainers"
-            if (Daten.efaConfig.getValueCheckAllowedPersonsInBoat() &&
+            if (currentBoatHasGroups &&
+            	Daten.efaConfig.getValueCheckAllowedPersonsInBoat() &&
                 nichtErlaubtAnz > 0 &&
                 nichtErlaubtAnz > curBoat.getMaxNotInGroup()) {
                 String erlaubteGruppen = null;
@@ -1456,7 +1469,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
                         return false;                            
                 }
             }
-        }
+        
         return true;
     }
     
@@ -1469,13 +1482,22 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
     protected boolean checkMinPersonsInBoat(ItemTypeStringAutoComplete theBoat, ItemTypeStringAutoComplete theName) {
     	
 	    Groups groups = Daten.project.getGroups(false);
-	    long tstmp = System.currentTimeMillis();
+	    long tstmp = getValidAtTimestamp(startDate.getDate(), starttime.getTime());
 	    
 	    BoatRecord curBoat = findBoat(theBoat, tstmp);
-        PersonRecord curPerson = findPerson(theName, tstmp);
-        
         if (curBoat == null) {
         	return true;
+        }
+        
+	    // find a person record for the name and the timestamp of the record. 
+	    // Or if this is not applicable, 
+	    // find a person record for the name and the validity of the logbook.
+        PersonRecord curPerson = findPerson(theName, tstmp); 
+        
+        //if there still is no person found, try to find the latest version of the person with that name, 
+        //as we want to check for a usage ban.
+        if (curPerson==null) {
+        	curPerson = Daten.project.getPersons(false).getPersonLatest(theName.getValueFromField());
         }
     	
         // Prüfen, ob mind 1 Ruderer (oder Stm) der Gruppe "mind 1 aus Gruppe" im Boot sitzt

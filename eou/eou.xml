@@ -1,6 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <efaOnlineUpdate>
 	<Version>
+        <VersionID>2.5.3#9</VersionID>
+        <ReleaseDate>11.07.2026</ReleaseDate>
+        <DownloadUrl>TODO</DownloadUrl>
+        <DownloadSize>TODO</DownloadSize>
+     	<MinimumJavaVersion>1.8</MinimumJavaVersion>
+		<MinimumEfaCloudVersion>2.3.3</MinimumEfaCloudVersion>
+        <ShowNotice lang="de">Wenn efaCloud eingesetzt wird, muss der Server mindestens Version 2.3.3 unterstützen. EfaCloud 2.4.0_12 und höher werden empfohlen.</ShowNotice>
+        <ShowNotice lang="en">If you use efaCloud, make sure your server at least supports efaCloud Version 2.3.3. It is recommended to upgrade to EfaCloud 2.4.0_12 or above.</ShowNotice>
+        <Changes lang="de">
+        	<ChangeItem>Bugfix: Neue Fahrten/Nachtrag/Multisession: Bootnutzungssperre und Gruppenzugehörigkeiten werden nun auch dann geprüft, wenn: -Boot keinen Gruppen zugeordnet ist -Person nicht mehr gültig ist (mit Ende-Datum)</ChangeItem>
+        	<ChangeItem>Bugfix: Ein paar falsch UTF-8 kodierte Übersetzungen wurden korrigiert.</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+        	<ChangeItem>Bugfix: New sessions/late entry/multisession: Boat usage restrictions and group memberships are now also checked when: -Boat is not assigned to any groups -Person is no longer valid (with end date)</ChangeItem>
+			<ChangeItem>Bugfix: A few incorrectly UTF-8 encoded translations have been corrected.</ChangeItem>
+        </Changes>
+	</Version>
+	<Version>
         <VersionID>2.5.3#8</VersionID>
         <ReleaseDate>14.06.2026</ReleaseDate>
         <DownloadUrl>TODO</DownloadUrl>
