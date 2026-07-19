@@ -10,14 +10,25 @@
 
 package de.nmichael.efa.gui;
 
-import de.nmichael.efa.core.items.*;
-import de.nmichael.efa.util.*;
-import de.nmichael.efa.Daten;
-import de.nmichael.efa.core.config.*;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import java.util.*;
+import java.awt.BorderLayout;
+import java.awt.Frame;
+import java.awt.GridBagLayout;
+import java.awt.event.ActionEvent;
+import java.util.Arrays;
+import java.util.Hashtable;
+import java.util.Vector;
+
+import javax.swing.BorderFactory;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
+
+import de.nmichael.efa.core.config.EfaConfig;
+import de.nmichael.efa.core.items.IItemType;
+import de.nmichael.efa.core.items.ItemTypeHashtable;
+import de.nmichael.efa.util.International;
 
 // @i18n complete
 public class EfaConfigDialog extends BaseTabbedDialog {

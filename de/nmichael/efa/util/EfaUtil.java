@@ -1920,7 +1920,7 @@ public class EfaUtil {
         return sum;
     }
 
-    public static String vector2string(AbstractList v, String sep) {
+    public static String vector2string(AbstractList<?> v, String sep) {
         if (v == null) {
             return null;
         }

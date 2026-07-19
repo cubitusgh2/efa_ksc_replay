@@ -535,13 +535,20 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     	
 	}
     
+    public synchronized boolean isAnyListFocused() {
+    	return (   this.boatsAvailableList.hasListOrFilterFocus()
+    			|| this.boatsOnTheWaterList.hasListOrFilterFocus()
+    			|| this.personsAvailableList.hasListOrFilterFocus() 
+    			);
+    }
+    
     private void iniApplication() {
     	installShutdownHook();
 
         openProject((AdminRecord)null);
         openProjectLogbookClubwork();
 
-        updateBoatLists(true, false);
+        SwingUtilities.invokeLater(() -> updateBoatLists(true,false));
 
         EfaExitFrame.initExitFrame(this);
 
@@ -1726,11 +1733,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             }
             return Daten.project;
         } finally {
-        	SwingUtilities.invokeLater(new Runnable() {
-        		public void run() {
-                    updateProjectLogbookInfo();
-        		}
-        	});             	
+        	SwingUtilities.invokeLater(() -> updateProjectLogbookInfo());
         }
     }
     
@@ -1803,11 +1806,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             }
             return logbook;
         } finally {
-        	SwingUtilities.invokeLater(new Runnable() {
-        		public void run() {
-                    updateProjectLogbookInfo();
-        		}
-        	});             	
+        	SwingUtilities.invokeLater(() -> updateProjectLogbookInfo());
         }
     }
 
@@ -1901,11 +1900,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             return false;
         } finally {
         	//openLogBook can also be called from efaBoatHouseBackgroundTask, so it is secure to call this swing-thread-safe.
-        	SwingUtilities.invokeLater(new Runnable() {
-        		public void run() {
-                    updateProjectLogbookInfo();
-        		}
-        	});        	
+        	SwingUtilities.invokeLater(() -> updateProjectLogbookInfo());
         }
     }
 

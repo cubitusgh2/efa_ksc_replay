@@ -98,11 +98,11 @@ public class NewsMiniWidgetPanel extends RoundedPanel{
         g.dispose();
     }
 
-	private int getOffsetX() {
+	public int getOffsetX() {
 		return offsetX;
 	}
 
-	private void setOffsetX(int offsetX) {
+	public void setOffsetX(int offsetX) {
 		this.offsetX = offsetX;
 	}
 

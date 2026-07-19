@@ -14,9 +14,8 @@ import javax.swing.UIManager;
 
 import de.nmichael.efa.core.config.AdminRecord;
 import de.nmichael.efa.util.EfaUtil;
-import de.nmichael.efa.util.Logger;
 import de.nmichael.efa.util.International;
-import de.nmichael.efa.util.LogString;
+import de.nmichael.efa.util.Logger;
 
 // @i18n complete
 public class Program {

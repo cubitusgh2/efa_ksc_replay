@@ -8,28 +8,54 @@
  */
 package de.nmichael.efa.core.items;
 
-import de.nmichael.efa.Daten;
-import de.nmichael.efa.core.config.AdminRecord;
-import de.nmichael.efa.core.config.EfaConfig;
-import de.nmichael.efa.gui.dataedit.VersionizedDataDeleteDialog;
-import de.nmichael.efa.gui.dataedit.DataEditDialog;
-import de.nmichael.efa.gui.dataedit.UnversionizedDataEditDialog;
-import de.nmichael.efa.util.*;
-import de.nmichael.efa.util.Dialog;
-import de.nmichael.efa.gui.util.*;
-import de.nmichael.efa.data.storage.*;
-import de.nmichael.efa.ex.*;
-import de.nmichael.efa.gui.BaseDialog;
-import de.nmichael.efa.gui.ImagesAndIcons;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
+import java.awt.AWTEvent;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.Window;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Vector;
+
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTable;
+import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 
 import org.apache.batik.ext.swing.GridBagConstants;
 
-import java.util.*;
+import de.nmichael.efa.Daten;
+import de.nmichael.efa.core.config.AdminRecord;
+import de.nmichael.efa.data.storage.DataKey;
+import de.nmichael.efa.data.storage.DataKeyIterator;
+import de.nmichael.efa.data.storage.DataRecord;
+import de.nmichael.efa.data.storage.IDataAccess;
+import de.nmichael.efa.data.storage.StorageObject;
+import de.nmichael.efa.ex.EfaModifyException;
+import de.nmichael.efa.gui.BaseDialog;
+import de.nmichael.efa.gui.ImagesAndIcons;
+import de.nmichael.efa.gui.dataedit.DataEditDialog;
+import de.nmichael.efa.gui.dataedit.UnversionizedDataEditDialog;
+import de.nmichael.efa.gui.dataedit.VersionizedDataDeleteDialog;
+import de.nmichael.efa.gui.util.EfaMouseListener;
+import de.nmichael.efa.gui.util.RoundedPanel;
+import de.nmichael.efa.gui.util.TableItem;
+import de.nmichael.efa.gui.util.TableItemHeader;
+import de.nmichael.efa.util.Dialog;
+import de.nmichael.efa.util.EfaUtil;
+import de.nmichael.efa.util.International;
+import de.nmichael.efa.util.Logger;
 
 // @i18n complete
 public class ItemTypeDataRecordTable extends ItemTypeTable implements IItemListener, KeyListener {
