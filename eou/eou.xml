@@ -1,6 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <efaOnlineUpdate>
 	<Version>
+        <VersionID>2.5.3#10</VersionID>
+        <ReleaseDate>01.08.2026</ReleaseDate>
+        <DownloadUrl>TODO</DownloadUrl>
+        <DownloadSize>TODO</DownloadSize>
+     	<MinimumJavaVersion>1.8</MinimumJavaVersion>
+		<MinimumEfaCloudVersion>2.3.3</MinimumEfaCloudVersion>
+        <ShowNotice lang="de">Wenn efaCloud eingesetzt wird, muss der Server mindestens Version 2.3.3 unterstützen. EfaCloud 2.4.0_12 und höher werden empfohlen.</ShowNotice>
+        <ShowNotice lang="en">If you use efaCloud, make sure your server at least supports efaCloud Version 2.3.3. It is recommended to upgrade to EfaCloud 2.4.0_12 or above.</ShowNotice>
+        <Changes lang="de">
+        	<ChangeItem>Bugfix: efaBase blieb seit efa 2.5.3#3 beim Beenden im Hintergrund hängen. efaBase lässt sich nun wieder korrekt beenden.</ChangeItem>
+        	<ChangeItem>Bugfix: Kleinere Darstellungsfehler bei GUI-Elementen mit abgerundeten Ecken wurden behoben.</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+        	<ChangeItem>Bugfix: efaBase has been hanging in the background since efa 2.5.3#3 when exiting. efaBase can now be exited correctly again.</ChangeItem>
+			<ChangeItem>Bugfix: Minor display errors concerning GUI elements with rounded corners have been fixed.</ChangeItem>
+        </Changes>
+	</Version>
+	<Version>
         <VersionID>2.5.3#9</VersionID>
         <ReleaseDate>19.07.2026</ReleaseDate>
         <DownloadUrl>TODO</DownloadUrl>

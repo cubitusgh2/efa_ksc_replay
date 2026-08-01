@@ -2844,7 +2844,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
      * Checks if a boat item in the available Boat list is selected,
      * and shows the efaBaseFrameMultipleSession dialog if so.
      *  
-     * @param lateEntry Boolean: Late Entry mode true or false?
+     * @param lateEntry boolean: Late Entry mode true or false?
      */
     private void actionForMultiple(boolean lateEntry) {
     	alive();
