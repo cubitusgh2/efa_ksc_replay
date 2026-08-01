@@ -3259,7 +3259,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
             long tstmp = getValidAtTimestamp(myRecord);
 
             DataTypeList<UUID> groupIdList = currentBoat.getAllowedGroupIdList();
-            Boolean currentBoatHasGroups = (groupIdList != null && groupIdList.length() > 0);
+            boolean currentBoatHasGroups = (groupIdList != null && groupIdList.length() > 0);
             
                 String nichtErlaubt = null;
                 int nichtErlaubtAnz = 0;
@@ -4468,7 +4468,8 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
     	return cancel(false);
     }
 
-    public boolean cancel(Boolean keyESCAction) {
+    @Override
+    public boolean cancel(boolean keyESCAction) {
     	
         if (isModeBoathouse()) {
             efaBoathouseHideEfaFrame();

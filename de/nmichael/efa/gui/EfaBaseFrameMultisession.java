@@ -1380,7 +1380,7 @@ public class EfaBaseFrameMultisession extends EfaBaseFrame implements IItemListe
 
 
         DataTypeList<UUID> groupIdList = curBoat.getAllowedGroupIdList();
-        Boolean currentBoatHasGroups = (groupIdList != null && groupIdList.length() > 0);
+        boolean currentBoatHasGroups = (groupIdList != null && groupIdList.length() > 0);
 
         
             String nichtErlaubt = null;
