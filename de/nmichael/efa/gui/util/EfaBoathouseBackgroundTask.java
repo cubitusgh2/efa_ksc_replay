@@ -9,6 +9,7 @@
  */
 package de.nmichael.efa.gui.util;
 
+import java.awt.Component;
 import java.awt.Window;
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -66,6 +67,8 @@ public class EfaBoathouseBackgroundTask extends Thread {
     private long newReservationStatusScn =-1;
 
     private long lastListUpdate = -1;
+	private int nonListFocussedCount;
+	private Component lastFocussedElement;
 
     public EfaBoathouseBackgroundTask(EfaBoathouseFrame efaBoathouseFrame) {
         this.efaBoathouseFrame = efaBoathouseFrame;
@@ -843,16 +846,47 @@ public class EfaBoathouseBackgroundTask extends Thread {
             Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
                     "EfaBoathouseBackgroundTask: checkFocus()");
         }
-        if (this.efaBoathouseFrame != null && this.efaBoathouseFrame.getFocusOwner() == this.efaBoathouseFrame) {
-            // das Frame selbst hat den Fokus: Das soll nicht sein! Gib einer Liste den Fokus!
-        	// This includes swing updates, so we have to use invokeLater to avoid concurrency problems
-        	SwingUtilities.invokeLater(new Runnable() {
-        		public void run() {
-        			if (efaBoathouseFrame!=null) {
-        				efaBoathouseFrame.boatListRequestFocus(0);
+        if (this.efaBoathouseFrame != null) {
+        	if (this.efaBoathouseFrame.getFocusOwner() == this.efaBoathouseFrame) {
+        		nonListFocussedCount=0;
+        		lastFocussedElement = null;
+	            // das Frame selbst hat den Fokus: Das soll nicht sein! Gib einer Liste den Fokus!
+	        	// This includes swing updates, so we have to use invokeLater to avoid concurrency problems
+	        	SwingUtilities.invokeLater(new Runnable() {
+	        		public void run() {
+	        			if (efaBoathouseFrame!=null) {
+	        				efaBoathouseFrame.boatListRequestFocus(0);
+	        			}
+	        		}
+	        	});
+        	} else {
+        		// if no boatlist is focussed, get the last focussed element.
+        		if (!efaBoathouseFrame.isAnyListFocused()) {
+        			nonListFocussedCount++;
+        			if (this.lastFocussedElement != null) {
+        				if (this.lastFocussedElement != efaBoathouseFrame.getFocusOwner()){
+        					// the last focussed element changed, although no boatlist is focussed - 
+        					// user is still active. wait for another 3 minutes before automatically changing focus to a boatlist
+        					nonListFocussedCount=0;
+        				}
+        				this.lastFocussedElement = efaBoathouseFrame.getFocusOwner();
+        			}
+        			
+        			if (nonListFocussedCount>3) {
+        				// same element has focus for more than three minutes, and it is no boatlist?
+        				// change the focus to the list of available boats.
+        				nonListFocussedCount = 0;
+        				lastFocussedElement = null;
+        	        	SwingUtilities.invokeLater(new Runnable() {
+        	        		public void run() {
+        	        			if (efaBoathouseFrame!=null) {
+        	        				efaBoathouseFrame.boatListRequestFocus(1);
+        	        			}
+        	        		}
+        	        	});             				
         			}
         		}
-        	});
+        	}
         }
     }
 
