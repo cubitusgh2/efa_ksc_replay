@@ -10,14 +10,25 @@
 
 package de.nmichael.efa.gui;
 
-import de.nmichael.efa.core.items.*;
-import de.nmichael.efa.util.*;
-import de.nmichael.efa.Daten;
-import de.nmichael.efa.core.config.*;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import java.util.*;
+import java.awt.BorderLayout;
+import java.awt.Frame;
+import java.awt.GridBagLayout;
+import java.awt.event.ActionEvent;
+import java.util.Arrays;
+import java.util.Hashtable;
+import java.util.Vector;
+
+import javax.swing.BorderFactory;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
+
+import de.nmichael.efa.core.config.EfaConfig;
+import de.nmichael.efa.core.items.IItemType;
+import de.nmichael.efa.core.items.ItemTypeHashtable;
+import de.nmichael.efa.util.International;
 
 // @i18n complete
 public class EfaConfigDialog extends BaseTabbedDialog {
@@ -108,73 +119,10 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         return (ItemTypeHashtable<String>)getItem(myEfaConfig.getValueTypesStatus().getName());
     }
 
-    private Frame getParentFrameRecursive(BaseDialog base) {
-    	if (base.getParentFrame()!=null) {
-    		return base.getParentFrame();
-    	} else if (base.getParentJDialog()!=null) {
-    		if (base.getParentJDialog() instanceof BaseDialog) {
-    			return getParentFrameRecursive((BaseDialog) base.getParentJDialog());
-    		} else {
-    			return null;
-    		}
-    	} else { 
-    		return null;
-    	}
-    		
-    }
-    
-    private Dimension getTabPanelPreferredSize(int numCats) {
-    	
-    	
-		Dimension s = Toolkit.getDefaultToolkit().getScreenSize();
-		
-		Dimension efaBthsSize = null;
-		Frame myParentFrame=getParentFrameRecursive(this);
-		if (myParentFrame!=null) {
-			efaBthsSize=myParentFrame.getSize();
-		}
-		
-    	int maxDlgW=Daten.efaConfig.getValueMaxDialogWidth();
-    	int maxDlgH=Daten.efaConfig.getValueMaxDialogHeight()-20;
-    	
-    	//no max size for dialogs set? have a look at configured maximum screen width/height
-    	if (maxDlgW<=0) {
-    		maxDlgW=Daten.efaConfig.getValueScreenWidth();
-    	}
-    	if (maxDlgH<=0) {
-    		maxDlgH=Daten.efaConfig.getValueScreenHeight();
-    	}
-    	
-    	if (maxDlgW<=0 && efaBthsSize!=null) {
-    		maxDlgW = efaBthsSize.width-4;
-    	}
-    	if (maxDlgH<=0 && efaBthsSize!=null) {
-    		maxDlgH = efaBthsSize.height-90;
-    	}
-    	
-    	
-    	// No size configured for dialogs or even efaBths window? 
-    	// then use screen height/width as base
-    	if (maxDlgW<=0) {
-    		maxDlgW=Math.min(s.width-80,1400);
-    	}
-    	if (maxDlgH<=0) {
-    		maxDlgH=Math.min(s.height-((numCats+1)*25), 900);
-    	}
-    	
-    		return new Dimension(
-    				(int) Math.round(maxDlgW*.85), 
-    				(int) Math.round(maxDlgH*.70));
-    }
-    
-    private int getSubCatCount(String strCategory) {
-    	String[] subCats=strCategory.split(":");
-    	return subCats.length;
-    }
     
     // Efa Config Dialogue needs its own recursiveBuildGui...
 	protected int recursiveBuildGui(Hashtable<String, Hashtable> categories, Hashtable<String, Vector<IItemType>> items,
-			String catKey, JComponent currentPane, String selectedPanel) {
+			String catKey, JComponent currentPane, String selectedPanel, int otherPanelHeight) {
 		int itmcnt = 0;
 		int pos = (selectedPanel != null && selectedPanel.length() > 0 ? selectedPanel.indexOf(CATEGORY_SEPARATOR)
 				: -1);
@@ -190,7 +138,7 @@ public class EfaConfigDialog extends BaseTabbedDialog {
 			Hashtable<String, Hashtable> subCat = categories.get(key);
 			if (subCat.size() != 0) {
 				JTabbedPane subTabbedPane = new JTabbedPane();
-				if (recursiveBuildGui(subCat, items, thisCatKey, subTabbedPane, selectNextCat) > 0) {
+				if (recursiveBuildGui(subCat, items, thisCatKey, subTabbedPane, selectNextCat, otherPanelHeight) > 0) {
 					if (currentPane instanceof JTabbedPane) {
 						currentPane.add(subTabbedPane, catName);
 					} else {
@@ -209,7 +157,7 @@ public class EfaConfigDialog extends BaseTabbedDialog {
 				//than the current screen size allows.
 				JScrollPane scrollPane = new JScrollPane(innerPanel);
 		        scrollPane.setBorder(BorderFactory.createEmptyBorder(4,4,4,4));
-				scrollPane.setPreferredSize(getTabPanelPreferredSize(getSubCatCount(thisCatKey)));
+				scrollPane.setPreferredSize(EfaGuiUtils.getTabPanelPreferredSizeEfaConfig(EfaGuiUtils.getSubCatCount(thisCatKey),this));
 				scrollPane.getVerticalScrollBar().setUnitIncrement(12);
 				innerPanel.setLayout(new GridBagLayout());
 				panel.setLayout(new BorderLayout());
