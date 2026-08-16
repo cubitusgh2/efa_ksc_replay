@@ -551,7 +551,7 @@ public class LogbookRecord extends DataRecord {
 	 * @param pos
 	 * @return
 	 */
-    private PersonRecord getPersonRecordLatest(int pos) {
+    private PersonRecord getPersonRecordLatest(int pos, String crewName) {
         try {
             UUID id = null;
             if (pos == 0) {
@@ -562,6 +562,12 @@ public class LogbookRecord extends DataRecord {
             }
             if (id != null) {
                 return getPersistence().getProject().getPersons(false).getPersonLatest(id);
+            } else {
+            	// no person ID found at that position. will try to find the person by Name (if available)
+            	if (crewName != null && crewName.length() > 0) {
+					return getPersistence().getProject().getPersons(false).getPersonLatest(crewName);
+				}
+            	
             }
         } catch(Exception e) {
             Logger.logdebug(e);
@@ -577,8 +583,8 @@ public class LogbookRecord extends DataRecord {
         return getPersonRecord(pos, validAt);
     }
 
-    public PersonRecord getCrewRecordLatest(int pos) {
-    	return getPersonRecordLatest(pos);
+    public PersonRecord getCrewRecordLatest(int pos, String crewName) {
+    	return getPersonRecordLatest(pos, crewName);
     }
     
     public DestinationRecord getDestinationRecord(long validAt) {
