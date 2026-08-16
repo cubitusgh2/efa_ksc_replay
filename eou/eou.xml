@@ -2,7 +2,7 @@
 <efaOnlineUpdate>
 	<Version>
         <VersionID>2.5.3#10</VersionID>
-        <ReleaseDate>15.08.2026</ReleaseDate>
+        <ReleaseDate>16.08.2026</ReleaseDate>
         <DownloadUrl>TODO</DownloadUrl>
         <DownloadSize>TODO</DownloadSize>
      	<MinimumJavaVersion>1.8</MinimumJavaVersion>
@@ -12,12 +12,14 @@
         <Changes lang="de">
         	<ChangeItem>Neu: ist in efaBths drei Minuten lang Inaktivität, erhält die Liste der verfügbaren Boote den Fokus.</ChangeItem>
 			<ChangeItem>Neu: Statistiken: Obmann Feld ist im XML-Export enthalten.</ChangeItem>	
+			<ChangeItem>Bugfix: Bei der Anlage einer Fahrt mit ausgeschiedenen Mitgliedern wird deren letztgültiges Berechtigungsprofil geprüft.</ChangeItem>
         	<ChangeItem>Bugfix: efaBase blieb seit efa 2.5.3#3 beim Beenden im Hintergrund hängen. efaBase lässt sich nun wieder korrekt beenden.</ChangeItem>
         	<ChangeItem>Bugfix: Kleinere Darstellungsfehler bei GUI-Elementen mit abgerundeten Ecken wurden behoben.</ChangeItem>
         </Changes>
         <Changes lang="en">
 			<ChangeItem>New: If there is three minutes of inactivity in efaBths, the list of available boats will receive focus.</ChangeItem>
 			<ChangeItem>New: Statistics: "Boat Captain" field is included in the XML export.</ChangeItem>
+			<ChangeItem>Bugfix: When creating a session with former members, their last valid permission profile is checked.</ChangeItem>
         	<ChangeItem>Bugfix: efaBase has been hanging in the background since efa 2.5.3#3 when exiting. efaBase can now be exited correctly again.</ChangeItem>
 			<ChangeItem>Bugfix: Minor display errors concerning GUI elements with rounded corners have been fixed.</ChangeItem>
         </Changes>

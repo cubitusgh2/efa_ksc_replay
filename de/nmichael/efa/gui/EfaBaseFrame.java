@@ -3272,7 +3272,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
                     PersonRecord p = myRecord.getCrewRecord(i, tstmp);
                     String ptext = myRecord.getCrewName(i);
                     if (p == null) {
-                    	p = myRecord.getCrewRecordLatest(i);
+                    	p = myRecord.getCrewRecordLatest(i, ptext);
                     }
                     
 
