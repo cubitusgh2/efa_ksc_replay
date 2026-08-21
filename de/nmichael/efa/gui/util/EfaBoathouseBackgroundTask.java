@@ -57,8 +57,6 @@ public class EfaBoathouseBackgroundTask extends Thread {
     private boolean isProjectOpen = false;
     private boolean isLocalProject = true;
     private int onceAnHour;
-    private Date date;
-    private Calendar cal;
     private Calendar lockEfa;
     private long lastEfaConfigScn = -1;
     private long lastBoatStatusScn = -1;
@@ -73,9 +71,7 @@ public class EfaBoathouseBackgroundTask extends Thread {
     public EfaBoathouseBackgroundTask(EfaBoathouseFrame efaBoathouseFrame) {
         this.efaBoathouseFrame = efaBoathouseFrame;
         this.onceAnHour = 5; // initial nach 5 Schleifendurchläufen zum ersten Mal hier reingehen
-        this.cal = new GregorianCalendar();
         this.lockEfa = null;
-        this.date = new Date();
     }
 
     public void setEfaLockBegin(DataTypeDate datum, DataTypeTime zeit) {
@@ -680,13 +676,20 @@ public class EfaBoathouseBackgroundTask extends Thread {
             Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
                     "EfaBoathouseBackgroundTask: checkForExitOrRestart()");
         }
+        
+        if (efaBoathouseFrame == null) {
+            return; // Sicherheitsprüfung
+        }
+        
+        long currentTime = System.currentTimeMillis();
+        
         // automatisches, zeitgesteuertes Beenden von efa ?
         if (Daten.efaConfig.getValueEfaDirekt_exitTime().isSet()
-                && System.currentTimeMillis() > Daten.efaStartTime + (Daten.AUTO_EXIT_MIN_RUNTIME + 1) * 60 * 1000) {
+                && currentTime > Daten.efaStartTime + (Daten.AUTO_EXIT_MIN_RUNTIME + 1) * 60 * 1000) {
         	
-            date.setTime(System.currentTimeMillis());
-            cal.setTime(date);
-            int now = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE);
+            Calendar localCal = new GregorianCalendar();
+            localCal.setTimeInMillis(currentTime);
+            int now = localCal.get(Calendar.HOUR_OF_DAY) * 60 + localCal.get(Calendar.MINUTE);
             int exitTime = Daten.efaConfig.getValueEfaDirekt_exitTime().getHour() * 60 + Daten.efaConfig.getValueEfaDirekt_exitTime().getMinute();
             
             if ((now >= exitTime && now < exitTime + Daten.AUTO_EXIT_MIN_RUNTIME) || 
@@ -694,57 +697,84 @@ public class EfaBoathouseBackgroundTask extends Thread {
             
             	Logger.log(Logger.INFO, Logger.MSG_EVT_TIMEBASEDEXIT,
                         International.getString("Eingestellte Uhrzeit zum Beenden von efa erreicht!"));
-                if (System.currentTimeMillis() - efaBoathouseFrame.getLastUserInteraction() < Daten.AUTO_EXIT_MIN_LAST_USED * 60 * 1000) {
-                    Logger.log(Logger.INFO, Logger.MSG_EVT_TIMEBASEDEXITDELAY,
-                            International.getMessage("Beenden von efa wird verzögert, da efa innerhalb der letzten {n} Minuten noch benutzt wurde ...",
-                            Daten.AUTO_EXIT_MIN_LAST_USED));
-                } else {
-                	SwingUtilities.invokeLater(new Runnable() {
-                	      public void run() {
-                              EfaExitFrame.exitEfa(International.getString("Zeitgesteuertes Beenden von efa"), false, EfaBoathouseFrame.EFA_EXIT_REASON_TIME);
-                	      }
-                  	});                	
-                }
+                checkUserActivityAndScheduleExit(EfaBoathouseFrame.EFA_EXIT_REASON_TIME, false,
+                        International.getString("Zeitgesteuertes Beenden von efa"));
+            
             }
         }
 
         // automatisches Beenden nach Inaktivität ?
-        if (Daten.efaConfig.getValueEfaDirekt_exitIdleTime() > 0
-                && System.currentTimeMillis() - efaBoathouseFrame.getLastUserInteraction() > Daten.efaConfig.getValueEfaDirekt_exitIdleTime() * 60 * 1000) {
-            Logger.log(Logger.INFO, Logger.MSG_EVT_INACTIVITYBASEDEXIT,
-                    International.getString("Eingestellte Inaktivitätsdauer zum Beenden von efa erreicht!"));
-            
-        	SwingUtilities.invokeLater(new Runnable() {
-      	      public void run() {
-                  EfaExitFrame.exitEfa(International.getString("Zeitgesteuertes Beenden von efa"), false, EfaBoathouseFrame.EFA_EXIT_REASON_IDLE);
-      	      }
-        	});                
-
+        if (Daten.efaConfig.getValueEfaDirekt_exitIdleTime() > 0) {
+            long lastUserInteraction = getLastUserInteractionSafely();
+            if (lastUserInteraction >= 0 && 
+                currentTime - lastUserInteraction > Daten.efaConfig.getValueEfaDirekt_exitIdleTime() * 60 * 1000) {
+                Logger.log(Logger.INFO, Logger.MSG_EVT_INACTIVITYBASEDEXIT,
+                        International.getString("Eingestellte Inaktivitätsdauer zum Beenden von efa erreicht!"));
+                
+                checkUserActivityAndScheduleExit(EfaBoathouseFrame.EFA_EXIT_REASON_IDLE, false,
+                        International.getString("Zeitgesteuertes Beenden von efa"));
+            }
         }
 
         // automatischer, zeitgesteuerter Neustart von efa ?
         if (Daten.efaConfig.getValueEfaDirekt_restartTime().isSet()
-                && System.currentTimeMillis() > Daten.efaStartTime + (Daten.AUTO_EXIT_MIN_RUNTIME + 1) * 60 * 1000) {
-            date.setTime(System.currentTimeMillis());
-            cal.setTime(date);
-            int now = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE);
+                && currentTime > Daten.efaStartTime + (Daten.AUTO_EXIT_MIN_RUNTIME + 1) * 60 * 1000) {
+        	
+            Calendar localCal = new GregorianCalendar();
+            localCal.setTimeInMillis(currentTime);
+            int now = localCal.get(Calendar.HOUR_OF_DAY) * 60 + localCal.get(Calendar.MINUTE);
             int restartTime = Daten.efaConfig.getValueEfaDirekt_restartTime().getHour() * 60 + Daten.efaConfig.getValueEfaDirekt_restartTime().getMinute();
+            
             if ((now >= restartTime && now < restartTime + Daten.AUTO_EXIT_MIN_RUNTIME) || (now + (24 * 60) >= restartTime && now + (24 * 60) < restartTime + Daten.AUTO_EXIT_MIN_RUNTIME)) {
                 Logger.log(Logger.INFO, Logger.MSG_EVT_TIMEBASEDRESTART, "Automatischer Neustart von efa (einmal täglich).");
-                if (System.currentTimeMillis() - efaBoathouseFrame.getLastUserInteraction() < Daten.AUTO_EXIT_MIN_LAST_USED * 60 * 1000) {
-                    Logger.log(Logger.INFO, Logger.MSG_EVT_TIMEBASEDRESTARTDELAY, "Neustart von efa wird verzögert, da efa innerhalb der letzten " + Daten.AUTO_EXIT_MIN_LAST_USED + " Minuten noch benutzt wurde ...");
-                } else {
-                	SwingUtilities.invokeLater(new Runnable() {
-                	      public void run() {
-                              EfaExitFrame.exitEfa(International.getString("Automatischer Neustart von efa"), true, EfaBoathouseFrame.EFA_EXIT_REASON_AUTORESTART);
-                	      }
-                  	});                     	
-
-                }
+                
+                checkUserActivityAndScheduleExit(EfaBoathouseFrame.EFA_EXIT_REASON_AUTORESTART, true,
+                        International.getString("Automatischer Neustart von efa"));
+                
             }
         }
     }
 
+    /**
+     * Get the last user interaction time from the efaBoathouseFrame, safely handling any exceptions.
+     * @return
+     */
+    private long getLastUserInteractionSafely() {
+        try {
+            if (efaBoathouseFrame != null) {
+                return efaBoathouseFrame.getLastUserInteraction();
+            }
+        } catch (Exception e) {
+            Logger.logdebug(e);
+        }
+        return -1;
+    }
+    
+    /**
+     * Check if user has been active recently, and if not, schedule an exit or restart of efa.
+     * @param exitReason
+     * @param restart
+     * @param message
+     */
+    private void checkUserActivityAndScheduleExit(final int exitReason, final boolean restart, final String message) {
+        long lastUserInteraction = getLastUserInteractionSafely();
+        
+        if (lastUserInteraction >= 0 && 
+            System.currentTimeMillis() - lastUserInteraction < Daten.AUTO_EXIT_MIN_LAST_USED * 60 * 1000) {
+            String delayMsg = restart ? 
+                "Neustart von efa wird verzögert, da efa innerhalb der letzten " + Daten.AUTO_EXIT_MIN_LAST_USED + " Minuten noch benutzt wurde ..." :
+                International.getMessage("Beenden von efa wird verzögert, da efa innerhalb der letzten {n} Minuten noch benutzt wurde ...",
+                        Daten.AUTO_EXIT_MIN_LAST_USED);
+            Logger.log(Logger.INFO, restart ? Logger.MSG_EVT_TIMEBASEDRESTARTDELAY : Logger.MSG_EVT_TIMEBASEDEXITDELAY, delayMsg);
+        } else {
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    EfaExitFrame.exitEfa(message, restart, exitReason);
+                }
+            });
+        }
+    }
+    
     private void checkForLockEfa() {
         if (Logger.isTraceOn(Logger.TT_BACKGROUND, 8)) {
             Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
@@ -766,9 +796,11 @@ public class EfaBoathouseBackgroundTask extends Thread {
         }
 
         if (lockEfa != null) {
-            date.setTime(System.currentTimeMillis());
-            cal.setTime(date);
-            if (cal.after(lockEfa) && efaBoathouseFrame != null) {
+            Date localDate = new Date(System.currentTimeMillis());  // ✅ Lokale Variable
+            Calendar localCal = new GregorianCalendar();           // ✅ Lokale Variable
+            localCal.setTime(localDate);
+            
+            if (localCal.after(lockEfa) && efaBoathouseFrame != null) {
             	SwingUtilities.invokeLater(new Runnable() {
             		public void run() {
             			if (efaBoathouseFrame!=null) {
@@ -788,12 +820,12 @@ public class EfaBoathouseBackgroundTask extends Thread {
         }
         try {
             if (Daten.project != null && Daten.project.isOpen()) {
-                DataTypeDate date = Daten.project.getAutoNewLogbookDate();
-                if (date != null && date.isSet()) {
+                DataTypeDate newLogBookDate = Daten.project.getAutoNewLogbookDate();
+                if (newLogBookDate != null && newLogBookDate.isSet()) {
                     DataTypeDate today = DataTypeDate.today();
-                    if (today.isAfterOrEqual(date)) {
+                    if (today.isAfterOrEqual(newLogBookDate)) {
                         autoOpenNewLogbook();
-                        if (today.getDifferenceDays(date) >= 7) {
+                        if (today.getDifferenceDays(newLogBookDate) >= 7) {
                             // we only delete the logswitch data after 7 days to also give
                             // all remote clients a chance to change the logbook; otherwise,
                             // they wouldn't be able to see the configured date any more and
@@ -816,27 +848,32 @@ public class EfaBoathouseBackgroundTask extends Thread {
             Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
                     "EfaBoathouseBackgroundTask: checkAlwaysInFront()");
         }
-        if (Daten.efaConfig.getValueEfaDirekt_immerImVordergrund() && this.efaBoathouseFrame != null
-                && Dialog.frameCurrent() == this.efaBoathouseFrame) {
-            Window[] windows = this.efaBoathouseFrame.getOwnedWindows();
-            boolean topWindow = true;
-            if (windows != null) {
-                for (int i = 0; i < windows.length; i++) {
-                    if (windows[i] != null && windows[i].isVisible()) {
-                        topWindow = false;
+        if (Daten.efaConfig.getValueEfaDirekt_immerImVordergrund() && this.efaBoathouseFrame != null) {
+        		//Run all in the Swing Event Dispatch Thread to avoid concurrency problems with the GUI
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        if (efaBoathouseFrame == null || Dialog.frameCurrent() != efaBoathouseFrame) {
+                            return;
+                        }
+                        
+                        Window[] windows = efaBoathouseFrame.getOwnedWindows();
+                        boolean topWindow = true;
+                        if (windows != null) {
+                            for (int i = 0; i < windows.length; i++) {
+                                if (windows[i] != null && windows[i].isVisible()) {
+                                    topWindow = false;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        if (topWindow && Daten.efaConfig.getValueEfaDirekt_immerImVordergrundBringToFront()) {
+                        	if (efaBoathouseFrame != null) {
+                        		efaBoathouseFrame.bringFrameToFront();
+                        	}
+                        }
                     }
-                }
-            }
-            if (topWindow && Daten.efaConfig.getValueEfaDirekt_immerImVordergrundBringToFront()) {
-            	// This includes swing updates, so we have to use invokeLater to avoid concurrency problems
-            	SwingUtilities.invokeLater(new Runnable() {
-            		public void run() {
-            			if (efaBoathouseFrame!=null) {
-            				efaBoathouseFrame.bringFrameToFront();
-            			}
-            		}
-            	});
-            }
+                });
         }
 
     }
@@ -847,48 +884,90 @@ public class EfaBoathouseBackgroundTask extends Thread {
                     "EfaBoathouseBackgroundTask: checkFocus()");
         }
         if (this.efaBoathouseFrame != null) {
-        	if (this.efaBoathouseFrame.getFocusOwner() == this.efaBoathouseFrame) {
-        		nonListFocussedCount=0;
-        		lastFocussedElement = null;
-	            // das Frame selbst hat den Fokus: Das soll nicht sein! Gib einer Liste den Fokus!
-	        	// This includes swing updates, so we have to use invokeLater to avoid concurrency problems
-	        	SwingUtilities.invokeLater(new Runnable() {
-	        		public void run() {
-	        			if (efaBoathouseFrame!=null) {
-	        				efaBoathouseFrame.boatListRequestFocus(0);
-	        			}
-	        		}
-	        	});
-        	} else {
-        		// if no boatlist is focussed, get the last focussed element.
-        		if (!efaBoathouseFrame.isAnyListFocused()) {
-        			nonListFocussedCount++;
-        			if (this.lastFocussedElement != null) {
-        				if (this.lastFocussedElement != efaBoathouseFrame.getFocusOwner()){
-        					// the last focussed element changed, although no boatlist is focussed - 
-        					// user is still active. wait for another 3 minutes before automatically changing focus to a boatlist
-        					nonListFocussedCount=0;
-        				}
-        				this.lastFocussedElement = efaBoathouseFrame.getFocusOwner();
-        			}
-        			
-        			if (nonListFocussedCount>3) {
-        				// same element has focus for more than three minutes, and it is no boatlist?
-        				// change the focus to the list of available boats.
-        				nonListFocussedCount = 0;
-        				lastFocussedElement = null;
-        	        	SwingUtilities.invokeLater(new Runnable() {
-        	        		public void run() {
-        	        			if (efaBoathouseFrame!=null) {
-        	        				efaBoathouseFrame.boatListRequestFocus(1);
-        	        			}
-        	        		}
-        	        	});             				
-        			}
-        		}
-        	}
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    if (efaBoathouseFrame == null) return;
+                    
+                    Component focusOwner = efaBoathouseFrame.getFocusOwner();
+                    
+                    // Prüfe, ob es sich um ein Popup handelt
+                    if (focusOwner != null && isPopupComponent(focusOwner)) {
+                        // Das Popup soll seinen Focus behalten!
+                        return;
+                    }
+                    
+                    // Prüfe, ob Frame selbst den Fokus hat
+                    if (focusOwner == efaBoathouseFrame) {
+                        synchronized (EfaBoathouseBackgroundTask.this) {
+                            nonListFocussedCount = 0;
+                            lastFocussedElement = null;
+                        }
+                        efaBoathouseFrame.boatListRequestFocus(0);
+                    } else if (!efaBoathouseFrame.isAnyListFocused()) {
+                        // Keine Liste hat den Fokus
+                        synchronized (EfaBoathouseBackgroundTask.this) {
+                            nonListFocussedCount++;
+                            
+                            // Prüfe, ob sich der Fokus geändert hat
+                            if (lastFocussedElement != null && lastFocussedElement != focusOwner) {
+                                // Fokus hat sich geändert, zurücksetzen
+                                nonListFocussedCount = 0;
+                            }
+                            lastFocussedElement = focusOwner;
+                            
+                            // Nach 3 Minuten (3 Durchläufe) zur Bootsliste wechseln
+                            if (nonListFocussedCount > 3) {
+                                nonListFocussedCount = 0;
+                                lastFocussedElement = null;
+                            }
+                        }
+                        
+                        if (nonListFocussedCount >= 3) {
+                            efaBoathouseFrame.boatListRequestFocus(1);
+                        }
+                    }
+                }
+            });
         }
     }
+
+    /**
+     * Prüft, ob die Komponente ein Popup ist (JPopupMenu, JList im Popup, etc.)
+     */
+    private boolean isPopupComponent(Component comp) {
+        if (comp == null) {
+            return false;
+        }
+        
+        // Prüfe Parent-Hierarchie auf Popup-Komponenten
+        Component current = comp;
+        while (current != null) {
+            // JPopupMenu ist ein eigenständiges Fenster
+            if (current instanceof javax.swing.JPopupMenu) {
+                return true;
+            }
+            
+            // JList in AutoComplete-Popup
+            if (current instanceof javax.swing.JList) {
+                return true;
+            }
+            
+            // JScrollPane (oft in Popups)
+            if (current instanceof javax.swing.JScrollPane) {
+                // Aber nicht, wenn es Teil des Hauptfensters ist
+                javax.swing.JScrollPane sp = (javax.swing.JScrollPane) current;
+                if (sp.getParent() instanceof javax.swing.JPopupMenu) {
+                    return true;
+                }
+            }
+            
+            current = current.getParent();
+        }
+        
+        return false;
+    }
+
+
 
     private void checkMemory() {
         if (Logger.isTraceOn(Logger.TT_BACKGROUND, 8)) {
@@ -898,7 +977,13 @@ public class EfaBoathouseBackgroundTask extends Thread {
         try {
             // System.gc(); // !!! ONLY ENABLE FOR DEBUGGING PURPOSES !!!
             if (de.nmichael.efa.java15.Java15.isMemoryLow(Daten.MIN_FREEMEM_PERCENTAGE, Daten.WARN_FREEMEM_PERCENTAGE)) {
-                efaBoathouseFrame.exitOnLowMemory("EfaBoathouseBackgroundTask: MemoryLow", false);
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        if (efaBoathouseFrame != null) {
+                            efaBoathouseFrame.exitOnLowMemory("EfaBoathouseBackgroundTask: MemoryLow", false);
+                        }
+                    }
+                });
             }
         } catch (UnsupportedClassVersionError e) {
             EfaUtil.foo();
@@ -986,8 +1071,8 @@ public class EfaBoathouseBackgroundTask extends Thread {
     private void remindAdminOfLogbookSwitch() {
         try {
             if (Daten.project != null && Daten.project.isOpen()) {
-                DataTypeDate date = Daten.project.getAutoNewLogbookDate();
-                if (date == null || !date.isSet()) {
+                DataTypeDate newLogBookDate = Daten.project.getAutoNewLogbookDate();
+                if (newLogBookDate == null || !newLogBookDate.isSet()) {
                     Logbook currentLogbook = efaBoathouseFrame.getLogbook();
                     if (currentLogbook != null && currentLogbook.getEndDate() != null &&
                         currentLogbook.getEndDate().isSet()) {
@@ -1034,10 +1119,10 @@ public class EfaBoathouseBackgroundTask extends Thread {
         }
         
         // Logswitch Key (to identify whether we already switched logbooks)
-        String date = (Daten.project.getAutoNewLogbookDate() != null && 
+        String dateString = (Daten.project.getAutoNewLogbookDate() != null && 
                        Daten.project.getAutoNewLogbookDate().isSet() ?
                        Daten.project.getAutoNewLogbookDate().toString() : "");
-        String key = newLogbookName + "~" + date;
+        String key = newLogbookName + "~" + dateString;
         if (key.equals(Daten.project.getLastLogbookSwitch())) {
             // it seems the admin has explicitly opened another (maybe the previous) logbook
             // again, but we have already completed the switch into the configured logbook
