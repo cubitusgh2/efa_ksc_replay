@@ -47,6 +47,7 @@ import javax.swing.ListSelectionModel;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 import javax.swing.ToolTipManager;
+import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
@@ -137,7 +138,8 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         	selBg = (selBg != null ? selBg : new JList().getSelectionBackground());
         	selFg = (selFg != null ? selFg : new JList().getSelectionForeground());
         }
-
+        
+        
         @Override
         public Component getListCellRendererComponent(JList<? extends ItemTypeListData> list,
                                                       ItemTypeListData value,
