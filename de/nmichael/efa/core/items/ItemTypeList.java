@@ -46,6 +46,7 @@ import javax.swing.ListSelectionModel;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 import javax.swing.ToolTipManager;
+import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
@@ -122,12 +123,22 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         public FastTwoColumnListCellRenderer() {
             setOpaque(true);
             setBorder(_emptyBorder);
+            
+            updateCachedColors();
            
-            if (Daten.lookAndFeel.endsWith(Daten.LAF_METAL) || Daten.lookAndFeel.endsWith(Daten.LAF_WINDOWS) || Daten.lookAndFeel.endsWith(Daten.LAF_WINDOWS_CLASSIC)) {
+            if (Daten.lookAndFeel.endsWith(Daten.LAF_METAL) || Daten.lookAndFeel.endsWith(Daten.LAF_WINDOWS) || Daten.lookAndFeel.endsWith(Daten.LAF_WINDOWS_CLASSIC) 
+            		|| Daten.lookAndFeel.endsWith(Daten.LAF_NIMBUS)) {
             	inActiveSelBg = selBg;
             }
+            
         }
 
+        private void updateCachedColors() { 
+        	selBg = (selBg != null ? selBg : new JList().getSelectionBackground());
+        	selFg = (selFg != null ? selFg : new JList().getSelectionForeground());
+        }
+        
+        
         @Override
         public Component getListCellRendererComponent(JList<? extends ItemTypeListData> list,
                                                       ItemTypeListData value,
