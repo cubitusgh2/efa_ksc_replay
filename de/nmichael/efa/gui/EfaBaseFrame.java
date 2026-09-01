@@ -5360,7 +5360,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         packFrame("efaBoathouseShowEfaFrame(Component)");
         efaBoathouseSetFixedLocation(-1, -1);
         showMe();
-        toFront();
+        //toFront();
         if (focusItem != null) {
             focusItem.requestFocus();
         }
