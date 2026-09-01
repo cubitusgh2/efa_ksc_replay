@@ -1,6 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <efaOnlineUpdate>
 	<Version>
+        <VersionID>2.5.3#11</VersionID>
+        <ReleaseDate>01.09.2026</ReleaseDate>
+        <DownloadUrl>TODO</DownloadUrl>
+        <DownloadSize>TODO</DownloadSize>
+     	<MinimumJavaVersion>1.8</MinimumJavaVersion>
+		<MinimumEfaCloudVersion>2.3.3</MinimumEfaCloudVersion>
+        <ShowNotice lang="de">Wenn efaCloud eingesetzt wird, muss der Server mindestens Version 2.3.3 unterstützen. EfaCloud 2.4.0_12 und höher werden empfohlen.</ShowNotice>
+        <ShowNotice lang="en">If you use efaCloud, make sure your server at least supports efaCloud Version 2.3.3. It is recommended to upgrade to EfaCloud 2.4.0_12 or above.</ShowNotice>
+        <Changes lang="de">
+        	<ChangeItem>Bugfix: efaBths Hintergrund-Task ist mehr Thread-sicher.</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+			<ChangeItem>Bugfix: efaBths background task is more thread safe.</ChangeItem>
+        </Changes>
+	</Version>
+	<Version>
         <VersionID>2.5.3#10</VersionID>
         <ReleaseDate>16.08.2026</ReleaseDate>
         <DownloadUrl>TODO</DownloadUrl>
