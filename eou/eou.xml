@@ -2,7 +2,7 @@
 <efaOnlineUpdate>
 	<Version>
         <VersionID>2.5.3#11</VersionID>
-        <ReleaseDate>01.09.2026</ReleaseDate>
+        <ReleaseDate>02.09.2026</ReleaseDate>
         <DownloadUrl>TODO</DownloadUrl>
         <DownloadSize>TODO</DownloadSize>
      	<MinimumJavaVersion>1.8</MinimumJavaVersion>
@@ -11,9 +11,13 @@
         <ShowNotice lang="en">If you use efaCloud, make sure your server at least supports efaCloud Version 2.3.3. It is recommended to upgrade to EfaCloud 2.4.0_12 or above.</ShowNotice>
         <Changes lang="de">
         	<ChangeItem>Bugfix: efaBths Hintergrund-Task ist mehr Thread-sicher.</ChangeItem>
+        	<ChangeItem>Bugfix: Alle "efa im Vordergrund" Funktionen sind nun per efaConfig konfigurierbar (und standardmäßig deaktiviert)</ChangeItem>
+        	<ChangeItem>Bugfix: Anzeige der Widget-Warnungen (z.B. Warnung vor Dunkelheit) werden threadsicher aufgerufen.</ChangeItem>
         </Changes>
         <Changes lang="en">
 			<ChangeItem>Bugfix: efaBths background task is more thread safe.</ChangeItem>
+        	<ChangeItem>Bugfix: all options for "efa always in front" are now configureable in efaConfig konfigurierbar and disabled by default.</ChangeItem>
+        	<ChangeItem>Bugfix: widget warnings (like warnings because of darkness) are now thread safe.</ChangeItem>
         </Changes>
 	</Version>
 	<Version>

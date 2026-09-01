@@ -370,6 +370,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 	private ItemTypeBoolean efaDirekt_fensterNichtVerschiebbar;
 	private ItemTypeBoolean efaDirekt_immerImVordergrund;
 	private ItemTypeBoolean efaDirekt_immerImVordergrundBringToFront;
+	private ItemTypeBoolean efaDirekt_immerImVordergrundNachFahrteingabe;
 	private ItemTypeBoolean efaDirekt_tabelleShowTooltip;
 	private ItemTypeBoolean efaDirekt_tabelleAlternierendeZeilenfarben;
 	private ItemTypeColor efaGuiTableAlternatingRowColorValue;
@@ -1374,6 +1375,9 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					International.getString("Hauptfenster nicht verschiebbar")));
 			efaDirekt_fensterNichtVerschiebbar.setPadding(0, 0, 20, 2);
 			
+			addHintWordWrap("EfaBoathouseToFrontHint", 
+					IItemType.TYPE_EXPERT, BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),
+					International.getString("Die folgenden Optionen sollten nur benutzt werden, wenn es zu Fokusproblemen bei der Fahrteingabe kommt."),30, 10, 6,600);
 			addParameter(efaDirekt_immerImVordergrund = new ItemTypeBoolean("EfaBoathouseWindowAlwaysOnTop", false,
 					IItemType.TYPE_EXPERT,
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),
@@ -1382,6 +1386,10 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					"EfaBoathouseWindowAlwaysOnTopBringToFront", false, IItemType.TYPE_EXPERT,
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),
 					International.getString("efa immer im Vordergrund - efa jede Minute in den Vordergrund bringen")));
+			addParameter(efaDirekt_immerImVordergrundNachFahrteingabe= new ItemTypeBoolean(
+					"EfaBoathouseWindowAlwaysOnTopAfterSessionDialog", false, IItemType.TYPE_EXPERT,
+					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),
+					International.getString("efa immer im Vordergrund - nach Fahrteingabe efa-Fenster wieder in den Vordergrund bringen.")));			
 			
 			addHeader("efaGuiBoathouseFont", IItemType.TYPE_PUBLIC,
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),
@@ -2873,6 +2881,10 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 
 	public boolean getValueEfaDirekt_immerImVordergrundBringToFront() {
 		return efaDirekt_immerImVordergrundBringToFront.getValue();
+	}
+	
+	public boolean getValueEfaDirekt_immerImVordergrundNachFahrteingabe() {
+		return efaDirekt_immerImVordergrundNachFahrteingabe.getValue();
 	}
 
 	public boolean getValueEfaDirekt_tabelleShowTooltip() {

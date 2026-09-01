@@ -895,7 +895,7 @@ public class EfaBoathouseBackgroundTask extends Thread {
                         
                         if (topWindow && Daten.efaConfig.getValueEfaDirekt_immerImVordergrundBringToFront()) {
                         	if (efaBoathouseFrame != null) {
-                        		efaBoathouseFrame.bringFrameToFront();
+                        		efaBoathouseFrame.bringFrameToFront(true);
                         	}
                         }
                     }

@@ -1292,8 +1292,10 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
         this.pack();
     }
 
-    public void bringFrameToFront() {
-        this.toFront();
+    public void bringFrameToFront(boolean byBackgroundTask) {
+        if (byBackgroundTask || (Daten.efaConfig.getValueEfaDirekt_immerImVordergrundNachFahrteingabe())) {
+        	this.toFront();
+        }
     }
 
     // i == 0 - automatically try to find correct list to focus
@@ -1376,7 +1378,9 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     private void this_windowActivated(WindowEvent e) {
         try {
             if (!isEnabled() && efaBaseFrame != null) {
-                efaBaseFrame.toFront();
+                if (Daten.efaConfig.getValueEfaDirekt_immerImVordergrundNachFahrteingabe()) {
+                	efaBaseFrame.toFront();
+                }
             }
         } catch (Exception ee) {
             Logger.logdebug(ee);
@@ -2772,7 +2776,8 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
      * @param r LogbookRecord of the newly created record. May be null.
      */
     void showEfaBoathouseFrame(ItemTypeBoatstatusList.BoatListItem efaBoathouseAction, LogbookRecord r) {
-        bringFrameToFront();
+        
+    	bringFrameToFront(false);
         updateBoatLists(true,false); // must be explicitly called here! only efaBoathouseBackgroundTask.interrupt() is NOT sufficient.
         efaBoathouseBackgroundTask.interrupt();
         if (focusItem != null) {
@@ -2785,16 +2790,18 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             if (!boatStatus.areBoatsOutOnTheWater() &&
                     Daten.efaConfig.getValueEfaBoathouseShowLastFromWaterNotification() &&
                     Daten.efaConfig.getValueNotificationWindowTimeout() > 0) {
-                String txt = Daten.efaConfig.getValueEfaBoathouseShowLastFromWaterNotificationText();
-                if (txt == null || txt.length() == 0) {
-                    txt = International.getString("Alle Boote sind zurück.") + "<br>" +
-                            International.getString("Bitte schließe die Hallentore.");
-                }
-                NotificationDialog dlg = new NotificationDialog(this,
-                        txt,
-                        BaseDialog.BIGIMAGE_CLOSEDOORS,
-                        "ffffff", "ff0000", Daten.efaConfig.getValueNotificationWindowTimeout());
-                dlg.showDialog();
+                final String txt = Daten.efaConfig.getValueEfaBoathouseShowLastFromWaterNotificationText();
+                final String standardText = International.getString("Alle Boote sind zurück.") + "<br>" +
+                        International.getString("Bitte schließe die Hallentore.");
+                SwingUtilities.invokeLater(()->{
+                    NotificationDialog dlg = new NotificationDialog(this,
+                    		//if configured text is empty, use standard text
+                            ((txt == null || txt.length() == 0) ? standardText : txt),
+                            BaseDialog.BIGIMAGE_CLOSEDOORS,
+                            "ffffff", "ff0000", Daten.efaConfig.getValueNotificationWindowTimeout());
+                    dlg.showDialog();                	
+                });
+
             }
         }
         if (efaBoathouseAction != null) {
