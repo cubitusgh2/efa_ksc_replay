@@ -166,20 +166,24 @@ public class ClockAndSunlightWidgetInstance extends WidgetInstance implements IW
                 if (sunset < 0 || sunrise < 0 || now < 0) {
                     return;
                 }
-                String warnText = null;
-                if (now <= sunrise-getWarnTimeBeforeSunrise() || now >= sunset+getWarnTimeAfterSunset()) {
-                    warnText = getWarnTextDarkNow();
-                } else if (now >= sunset-getWarnTimeBeforeSunset() && now < sunset+getWarnTimeAfterSunset()) {
-                    warnText = getWarnTextDarkSoon();
+
+                	SwingUtilities.invokeLater(()->{
+                        String warnText = null;
+                        if (now <= sunrise-getWarnTimeBeforeSunrise() || now >= sunset+getWarnTimeAfterSunset()) {
+                            warnText = getWarnTextDarkNow();
+                        } else if (now >= sunset-getWarnTimeBeforeSunset() && now < sunset+getWarnTimeAfterSunset()) {
+                            warnText = getWarnTextDarkSoon();
+                        }
+                        if (warnText != null && Daten.efaConfig.getValueNotificationWindowTimeout() > 0) {
+	                        NotificationDialog dlg = new NotificationDialog((JFrame)null,
+	                                warnText,
+	                                BaseDialog.BIGIMAGE_DARKNESS,
+	                                "ffffff", "ff0000", Daten.efaConfig.getValueNotificationWindowTimeout());
+	                        dlg.showDialog();
+                        }
+                		
+                	});
                 }
-                if (warnText != null && Daten.efaConfig.getValueNotificationWindowTimeout() > 0) {
-                    NotificationDialog dlg = new NotificationDialog((JFrame)null,
-                            warnText,
-                            BaseDialog.BIGIMAGE_DARKNESS,
-                            "ffffff", "ff0000", Daten.efaConfig.getValueNotificationWindowTimeout());
-                    dlg.showDialog();
-                }
-            }
         } catch(Exception eignore) {
             Logger.logdebug(eignore);
         }
