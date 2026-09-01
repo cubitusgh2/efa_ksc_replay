@@ -98,7 +98,6 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
     private JPopupMenu popup;
     private JList<String> popupList;
     private JScrollPane popupScrollPane;
-    private boolean popupVisible = false;
 
     public ItemTypeStringAutoComplete(String name, String value, int type,
             String category, String description, boolean showButton) {
@@ -185,14 +184,14 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         	        return;
         	    }
 
-        	    if (e.getKeyCode() == KeyEvent.VK_ENTER && popupVisible) {
+        	    if (e.getKeyCode() == KeyEvent.VK_ENTER && isPopupVisible()) {
         	        acceptPopupSelection();
         	        e.consume();
     	            ((JTextField) field).transferFocus();
         	        return;
         	    } 
         	    
-        	    if (e.getKeyCode() == KeyEvent.VK_TAB && popupVisible) {
+        	    if (e.getKeyCode() == KeyEvent.VK_TAB && isPopupVisible()) {
         	        acceptPopupSelection();
         	        e.consume();
     	            ((JTextField) field).transferFocus();
@@ -201,7 +200,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
 
         	    // TAB ohne Popup: Fokus manuell weitergeben
         	    if (e.getKeyCode() == KeyEvent.VK_TAB) {
-        	        if (popupVisible) {
+        	        if (isPopupVisible()) {
         	            acceptPopupSelection();
         	        }
         	        e.consume();
@@ -224,8 +223,8 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         	        }
 
         	        // Popup ggf. schließen
-        	        if (popupVisible) {
-        	            closePopup(false);
+        	        if (isPopupVisible()) {
+        	            closePopup();
         	        }
 
         	        // Nicht consume() -> übergeordnete ESC-Handler sollen den Key noch sehen
@@ -357,7 +356,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
             return;
         }
         if (useAutocompleteList) {
-            closePopup(true);
+            closePopup();
         }
         if (isCheckSpelling && Daten.efaConfig != null && Daten.efaConfig.getValueCorrectMisspelledNames()) {
             checkSpelling();
@@ -387,10 +386,10 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         }
         JTextField f = (JTextField) field;
         if (f.isEnabled() && f.isEditable()) {
-            if (!popupVisible) {
+            if (!isPopupVisible()) {
                 showPopupForField(f);
             } else {
-                closePopup(true);
+                closePopup();
             }
         }
     }
@@ -414,7 +413,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         AutoCompleteList list = getAutoCompleteList();
         if (list == null) {
             setButtonColor(null);
-            closePopup(true);
+            closePopup();
             return;
         } else {
             list.update();
@@ -475,7 +474,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
             }
 
             if (e != null && e.getKeyCode() == KeyEvent.VK_DOWN) {
-                if (popupVisible && useAutocompleteList && popupVisible) {
+                if (isPopupVisible() && useAutocompleteList) {
                     complete = list.getNext();
                 } else {
                     complete = list.getNext(prefix);
@@ -518,7 +517,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
                 prefix = field.getText().toLowerCase();
             }
 
-            if (popupVisible && useAutocompleteList) {
+            if (isPopupVisible() && useAutocompleteList) {
                 complete = list.getPrev();
             } else {
                 complete = list.getPrev(prefix);
@@ -612,11 +611,11 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         if (mode == Mode.enter) {
             field.select(-1, -1);
             field.setCaretPosition(field.getText().length());
-            closePopup(true);
+            closePopup();
         }
 
         if (mode == Mode.escape) {
-            closePopup(true);
+            closePopup();
         }
 
         if (field.getText().length() == 0) {
@@ -718,7 +717,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
 
         if (list == null) {
             setButtonColor(null);
-            closePopup(true);
+            closePopup();
             return;
         } else {
             list.update();
@@ -796,7 +795,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
                     (e.getKeyCode() == KeyEvent.VK_ENTER) ||
                     ((e.getKeyCode() == KeyEvent.VK_TAB) && !searchFor.isEmpty())
                     ) &&
-                    popupVisible)) {
+            		isPopupVisible())) {
                 complete = popupList.getSelectedValue();
                 if (complete != null && !complete.isEmpty()) {
                     textField.setText(complete);
@@ -811,7 +810,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         }
 
         if (mode == Mode.up) {
-            if (popupVisible && useAutocompleteList) {
+            if (isPopupVisible() && useAutocompleteList) {
                 complete = list.getPrev(searchFor);
             } else {
                 complete = list.getPrev(searchFor);
@@ -864,11 +863,11 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         if (mode == Mode.enter) {
             textField.select(-1, -1);
             textField.setCaretPosition(textField.getText().length());
-            closePopup(true);
+            closePopup();
         }
 
         if (mode == Mode.escape) {
-            closePopup(true);
+            closePopup();
         }
 
         if (textField.getText().length() == 0) {
@@ -954,10 +953,6 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
             }
         }
         return super.isValidInput();
-    }
-
-    public boolean isAutoCompleteWindowShowing() {
-        return popupVisible;
     }
 
     public void setShowButtonFocusable(boolean value) {
@@ -1048,7 +1043,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
 
     private void showPopupForField(JTextField textField) {
         if (!useAutocompleteList || autoCompleteList == null || textField == null || !textField.isEnabled() || !textField.isEditable()) {
-            closePopup(true);
+            closePopup();
             return;
         }
 
@@ -1067,7 +1062,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         popupList.setListData(data);
 
         if (data == null || data.isEmpty()) {
-            closePopup(true);
+            closePopup();
             return;
         }
 
@@ -1083,10 +1078,9 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
 
         popupScrollPane.setPreferredSize(new Dimension(width, height));
 
-        if (!popupVisible) {
+        if (!isPopupVisible()) {
             try {
                 popup.show(textField, 0, textField.getHeight());
-                popupVisible = true;
             } catch (Exception ex) {
                 Logger.logdebug(ex);
                 return;
@@ -1147,26 +1141,17 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
     }
 
     private boolean handlePopupNavigationKey(KeyEvent e) {
-        if (!popupVisible || popupList == null || e == null) {
+        if (!isPopupVisible() || popupList == null || e == null) {
             return false;
         }
 
         switch (e.getKeyCode()) {
             case KeyEvent.VK_ESCAPE:
-                closePopup(false);
-                return true;
-/*
-            case KeyEvent.VK_ENTER:
-                acceptPopupSelection();
+                closePopup();
                 return true;
                 
-            case KeyEvent.VK_TAB:
-                if (popupVisible) {
-                    acceptPopupSelection();
-                    return true;   // consume → verhindert Focus-Wechsel noch nicht, aber...
-                }
-                return false;
-*/
+            // we don't want to handle VK_ENTER or VK_TAB here as it is handled in the calling method.
+
             case KeyEvent.VK_DOWN:
                 movePopupSelection(1, false);
                 return true;
@@ -1257,7 +1242,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
 
 
     private void acceptPopupSelection() {
-        if (!popupVisible || popupList == null) {
+        if (!isPopupVisible() || popupList == null) {
             return;
         }
 
@@ -1265,7 +1250,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         if (selected != null) {
             applyPopupValue(selected);
         }
-        closePopup(true);
+        closePopup();
     }
 
     private void applyPopupValue(String selected) {
@@ -1283,23 +1268,20 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         autoComplete(null);
     }
 
-    private void closePopup(boolean keepText) {
-        if (popup != null && popupVisible) {
+    private void closePopup() {
+        if (popup != null && isPopupVisible()) {
             popup.setVisible(false);
         }
-        popupVisible = false;
 
         if (autoCompleteList != null) {
             autoCompleteList.setFilterText(null);
         }
-        if (!keepText) {
-        	if (field!=null && (field instanceof JTextField)) {
-        		((JTextField) field).setText(null);
-        	}
-        }
     }
 
-
+    private boolean isPopupVisible() {
+    	return (popup!=null && popup.isVisible());
+    }
+    
     public void acpwCallback(JTextField field) {
         autoComplete(null);
     }
