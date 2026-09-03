@@ -1361,6 +1361,12 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					IItemType.TYPE_EXPERT,
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),
 					International.getString("efa maximiert starten")));
+			addParameter(efaDirekt_fensterNichtVerschiebbar = new ItemTypeBoolean("EfaBoathouseWindowFixedPosition",
+					true, IItemType.TYPE_EXPERT,
+					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),
+					International.getString("Hauptfenster nicht verschiebbar")));
+			efaDirekt_fensterNichtVerschiebbar.setPadding(0, 0, 20, 2);
+			
 			addHint("EfaBoathouseWindowMaximizedRespectTaskBarHint", 
 					IItemType.TYPE_EXPERT, BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),
 					International.getString("Wirkt nur, wenn Allgemein->Fenster die Fenster-Offsets X und Y beide 0 sind"),3, 10, 6);
@@ -1368,12 +1374,6 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					IItemType.TYPE_EXPERT,
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),
 					International.getString("Beim Maximieren Groesse und Position der Taskleisten beruecksichtigen")));
-
-			addParameter(efaDirekt_fensterNichtVerschiebbar = new ItemTypeBoolean("EfaBoathouseWindowFixedPosition",
-					true, IItemType.TYPE_EXPERT,
-					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),
-					International.getString("Hauptfenster nicht verschiebbar")));
-			efaDirekt_fensterNichtVerschiebbar.setPadding(0, 0, 20, 2);
 			
 			addHintWordWrap("EfaBoathouseToFrontHint", 
 					IItemType.TYPE_EXPERT, BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),

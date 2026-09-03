@@ -4961,9 +4961,21 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         
         distance.parseAndShowValue("");
         updateTimeInfoFields();
+
         return true;
     }
 
+    /* refresh the GUI. 
+     * InvokeLater() guarantees that all other swing events have been processed before
+     */
+    private void refreshGui() {
+        SwingUtilities.invokeLater(()->{
+            this.invalidate();
+            this.revalidate();
+            this.repaint();
+        });
+    }
+    
     boolean efaBoathouseCorrectSession(ItemTypeBoatstatusList.BoatListItem item) {
         this.setTitle(International.getString("Fahrt korrigieren"));
         saveButton.setDescription(International.getStringWithMnemonic("Fahrt korrigieren"));
@@ -5359,6 +5371,7 @@ public class EfaBaseFrame extends BaseDialog implements IItemListener {
         }
         packFrame("efaBoathouseShowEfaFrame(Component)");
         efaBoathouseSetFixedLocation(-1, -1);
+        refreshGui();
         showMe();
         if (Daten.efaConfig.getValueEfaDirekt_immerImVordergrundNachFahrteingabe()) {
         	toFront();
