@@ -175,9 +175,19 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         });
     }
     
+    /*
+	 * KeyListener for the text field to handle auto-completion and popup navigation.
+	 * ENTER, TAB: Use the selected item from the popup if visible, otherwise transfer focus.
+	 * ESC: Clear the text field and close the popup if visible.
+	 * Other keys: Call autoComplete() to update the text field and popup.
+	 */
     private void iniDisplay_KeyListener(JTextField tf) {
         tf.addKeyListener(new KeyAdapter() {
 
+        	/*
+        	 * keyPressed works best for keys which are usually hit once.
+        	 * all other keys (navigation) are handled in keyReleased()
+        	 */
         	public void keyPressed(KeyEvent e) {
         	    if (handlePopupNavigationKey(e)) {
         	        e.consume();
@@ -211,23 +221,22 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         	        }
         	        return;
         	    }
-
-
         	    
         	    if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-        	        // Erst die Eingabe im Textfeld löschen
+        	    	// ESC: no, we do not want this value to be taken.
+        	    	// and the textfield shall be cleared
         	        if (field instanceof JTextField) {
         	            JTextField tf = (JTextField) field;
         	            tf.setText("");
         	            tf.setCaretPosition(0);
         	        }
 
-        	        // Popup ggf. schließen
+        	        // Close the popup if neccessary
         	        if (isPopupVisible()) {
         	            closePopup();
         	        }
 
-        	        // Nicht consume() -> übergeordnete ESC-Handler sollen den Key noch sehen
+        	        // Do not consume() the event. -> super ESC-handlers shall see the key
         	        return;
         	    }
 
@@ -1042,7 +1051,8 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
     }
 
     private void showPopupForField(JTextField textField) {
-        if (!useAutocompleteList || autoCompleteList == null || textField == null || !textField.isEnabled() || !textField.isEditable()) {
+        if (!useAutocompleteList || autoCompleteList == null || textField == null 
+        		|| !textField.isEnabled() || !textField.isEditable()) {
             closePopup();
             return;
         }
@@ -1074,6 +1084,10 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
                         ? popupList.getFixedCellHeight()
                         : popupList.getFontMetrics(popupList.getFont()).getHeight() + 6
         );
+        // Ensure the Dropdown height is at least 150 pix, so that the user recognizes
+        // for search terms with no result, that the result is empty.
+        // also, the screen does not flicker so much when the resulting popup gets smaller
+        // after consecutively adding new characters to the search term as the result set gets smaller
         int height = Math.max(150, rowCount * rowHeight + 8);
 
         popupScrollPane.setPreferredSize(new Dimension(width, height));
@@ -1092,7 +1106,12 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         updatePopupSelection(textField.getText(), filterText);
     }
 
-
+    /* 
+	 * Updates the selection in the popup list based on the given value to select and filter text.
+	 * If the value to select is found in the data, it will be selected. Otherwise, it will try to find
+	 * a match based on the filter text, either by contains or starts with, depending on the configuration.
+	 * If no match is found, the first item in the list will be selected.
+	 */
     private void updatePopupSelection(String valueToSelect, String filterText) {
         if (popupList == null) {
             return;
@@ -1140,6 +1159,10 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         popupList.repaint();
     }
 
+    /*
+	 * Handles navigation keys (up, down, page up, page down, escape) for the popup list.
+	 * Returns true if the key event was handled and consumed, false otherwise.
+	 */
     private boolean handlePopupNavigationKey(KeyEvent e) {
         if (!isPopupVisible() || popupList == null || e == null) {
             return false;
@@ -1173,7 +1196,12 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         }
     }
 
-
+    /* 
+     * Moves the selection in the popup list by the specified delta. 
+     * If wrap is true, the selection will wrap around when reaching the beginning or end of the list.
+     * Also, it mimics the standard selection behavior of JList (move the selection bar and only scroll the
+     * visible items when necessary).
+     */
     private void movePopupSelection(int delta, boolean wrap) {
         if (popupList == null) {
             return;
@@ -1218,6 +1246,9 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
     }
 
 
+    /* 
+     * Only scroll the list if the selected item is not fully visible, mimicking the standard JList behavior. 
+     */
     private void ensureSelectionVisibleNaturally(int idx) {
         if (popupList == null) {
             return;
@@ -1240,7 +1271,10 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         }
     }
 
-
+    /* 
+	 * Accepts the currently selected value in the popup list and applies it to the text field.
+	 * If no value is selected, it does nothing. After applying the value, it closes the popup.
+	 */
     private void acceptPopupSelection() {
         if (!isPopupVisible() || popupList == null) {
             return;
@@ -1252,7 +1286,10 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         }
         closePopup();
     }
-
+    
+    /* 
+     * Puts the currently selected value from the popup list into the text field and updates the internal state.
+     */
     private void applyPopupValue(String selected) {
         if (field == null || selected == null) {
             return;
@@ -1268,6 +1305,9 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         autoComplete(null);
     }
 
+    /*
+     * Closes the popup if it is currently visible and resets the filter text in the autoCompleteList.
+     */
     private void closePopup() {
         if (popup != null && isPopupVisible()) {
             popup.setVisible(false);
@@ -1282,14 +1322,25 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
     	return (popup!=null && popup.isVisible());
     }
     
+    /*
+     * Callback method for the auto-complete functionality. 
+     * This method is called when the text in the associated JTextField changes, and it triggers the auto-complete logic.
+     * It is also called from outside (efaBaseFrame, efaBaseFrameMultisession) 
+     * to ensure that the value of the text field is checked against the auto-complete list and updated accordingly.
+     */
     public void acpwCallback(JTextField field) {
         autoComplete(null);
     }
 
-    // painter renderer: malt die erste uebereinstimmung gelb
+    /* 
+     * A custom ListCellRenderer that highlights the matching part of the text in the popup list based on the current search term.
+     * The highlighting is only performed if the "contains mode" is active, as determined by the configuration.
+     * If the old search mode is active (search by prefix), the matching part is not highlighted, and the text is displayed normally.
+     */
     private class PaintHighlightRenderer extends JComponent implements ListCellRenderer<String> {
 
-        private String fullText;
+        private static final long TEN_SECONDS_IN_MILLIS = 1000*10;
+		private String fullText;
         private String search;
         private boolean selectedFlag;
         
@@ -1312,6 +1363,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         private void updateCachedColors() { 
             listBackground = UIManager.getColor("List.background");
             listForeground = UIManager.getColor("List.foreground");
+            // for some LookAndFeels, the selection colors might be null, so we provide a fallback to the default JList colors.
             selectionBackground = (selectionBackground != null ? selectionBackground : new JList().getSelectionBackground());
             selectionForeground = (selectionForeground != null ? selectionForeground : new JList().getSelectionForeground());
         }
@@ -1386,12 +1438,10 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
             }
         }
         
-        private boolean isContainsMode() {
-        	long now = System.currentTimeMillis();
-        	
-        	if (now> this.lastContainsModeCheck+ (1000*10)) {
+        private boolean isContainsMode() {        	
+        	if (System.currentTimeMillis() >= this.lastContainsModeCheck+ (TEN_SECONDS_IN_MILLIS)) {
         		this.isContainsMode= Daten.efaConfig.getValuePopupContainsMode();
-        		lastContainsModeCheck=now;
+        		lastContainsModeCheck=System.currentTimeMillis();
         	}
         	return this.isContainsMode;
         }
