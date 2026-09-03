@@ -13,11 +13,13 @@
         	<ChangeItem>Bugfix: efaBths Hintergrund-Task ist mehr Thread-sicher.</ChangeItem>
         	<ChangeItem>Bugfix: Alle "efa im Vordergrund" Funktionen sind nun per efaConfig konfigurierbar (und standardmäßig deaktiviert)</ChangeItem>
         	<ChangeItem>Bugfix: Anzeige der Widget-Warnungen (z.B. Warnung vor Dunkelheit) werden threadsicher aufgerufen.</ChangeItem>
+        	<ChangeItem>Bugfix: Autovervollständigungs-Textfelder: Die Liste im Tippfehler-Dialog wächst mit der Größe des Fensters.</ChangeItem>
         </Changes>
         <Changes lang="en">
 			<ChangeItem>Bugfix: efaBths background task is more thread safe.</ChangeItem>
         	<ChangeItem>Bugfix: all options for "efa always in front" are now configureable in efaConfig konfigurierbar and disabled by default.</ChangeItem>
         	<ChangeItem>Bugfix: widget warnings (like warnings because of darkness) are now thread safe.</ChangeItem>
+        	<ChangeItem>Bugfix: Autocomplete text fields: The list in the typo dialog grows with the size of the window.</ChangeItem>
         </Changes>
 	</Version>
 	<Version>

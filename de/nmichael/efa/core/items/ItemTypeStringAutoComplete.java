@@ -17,6 +17,7 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.Window;
@@ -674,6 +675,9 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
                 item.addItem(neighbours.get(i), neighbours.get(i), null, null, neighbours.get(i), false, '\0');
             }
             item.setFieldSize(350, 200);
+            item.setFieldGrid(3, GridBagConstraints.CENTER, GridBagConstraints.BOTH);
+            item.setGridWeightX(1.0);
+            item.setGridWeightY(1.0);
 
             if (field == null || !field.isValid()) {
                 return;

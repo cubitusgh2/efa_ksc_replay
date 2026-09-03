@@ -82,6 +82,9 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     int iconHeight = 0;
     private FastTwoColumnListCellRenderer listCellRenderer = null;
 
+    private double gridWeightX = 0.0;
+    private double gridWeightY = 0.0;
+    
     protected static final String LIST_SECTION_STRING = "----";
     protected static final String LIST_SECTION_STRING_START = LIST_SECTION_STRING + "  ";
     protected static final String LIST_SECTION_STRING_END = "  " + LIST_SECTION_STRING;
@@ -607,7 +610,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     }
 
     public int displayOnGui(Window dlg, JPanel panel, int x, int y) {
-        panel.add(setupPanel(dlg), new GridBagConstraints(x, y, fieldGridWidth, fieldGridHeight, 0.0, 0.0,
+        panel.add(setupPanel(dlg), new GridBagConstraints(x, y, fieldGridWidth, fieldGridHeight, gridWeightX, gridWeightY,
                 fieldGridAnchor, fieldGridFill, new Insets(padYbefore, 0, padYafter, padXafter), 0, 0));
         showValue();
         return 1;
@@ -1246,4 +1249,20 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         	this._separatorBackground=Daten.efaConfig.getEfaGuiflatLaf_Background();
        }
     }
+
+	public double getGridWeightX() {
+		return gridWeightX;
+	}
+
+	public void setGridWeightX(double gridWeightX) {
+		this.gridWeightX = gridWeightX;
+	}
+
+	public double getGridWeightY() {
+		return gridWeightY;
+	}
+
+	public void setGridWeightY(double gridWeightY) {
+		this.gridWeightY = gridWeightY;
+	}
 }
