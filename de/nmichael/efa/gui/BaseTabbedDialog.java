@@ -21,6 +21,7 @@ import java.util.*;
 public abstract class BaseTabbedDialog extends BaseDialog {
 
     public static final char CATEGORY_SEPARATOR = ':';
+    public static final String CATEGORY_SEPARATOR_STRING = "" + CATEGORY_SEPARATOR;
     public static final String CATEGORY_COMMON = "%00%" + International.getString("Allgemein");
     public static final String CATEGORY_NONAME = "%00%NONAME";
 
