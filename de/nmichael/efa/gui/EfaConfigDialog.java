@@ -19,9 +19,12 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Frame;
+import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
+import java.awt.event.FocusEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -64,6 +67,7 @@ import de.nmichael.efa.core.items.IItemType;
 import de.nmichael.efa.core.items.ItemTypeHashtable;
 import de.nmichael.efa.gui.util.RoundedBorder;
 import de.nmichael.efa.gui.util.RoundedLabel;
+import de.nmichael.efa.util.EfaUtil;
 import de.nmichael.efa.util.International;
 
 // @i18n complete
@@ -72,16 +76,16 @@ public class EfaConfigDialog extends BaseTabbedDialog {
     private static final String CARD_EMPTY = "__empty__";
     private static final String GROUP_CARD_PREFIX = "__group__::";
     private static final int NAV_INDENT_PER_LEVEL = 10;
-    private static final String BREADCRUMB_SEPARATOR = " \u203A ";
+    private static final String BREADCRUMB_SEPARATOR = "  >  ";//" \u203A ";
     private static final String ACTION_NAV_ACTIVATE = "nav.activate";
     private static final String ACTION_NAV_FOCUS_FILTER = "nav.focusFilter";
     private static final String ACTION_FILTER_ARROW_UP = "filter.arrowUp";
     private static final String ACTION_FILTER_ARROW_DOWN = "filter.arrowDown";
-    private static final String HIGHLIGHT_STYLE = "background-color:#fff176; font:bold; color:#000000;";
+    private static final String HIGHLIGHT_STYLE = "background-color:#fff176; color:#000000;";//"background-color:#fff176; font:bold; color:#000000;";
     private static final Pattern TAG_PATTERN = Pattern.compile("<[^>]*>");
     private static final int FILTER_DELAY_MS = 500;
     private static final int MIN_FILTER_LENGTH = 2;
-    private static final int NAVIGATIONLIST_WIDTH = 210;
+    private static final int NAVIGATIONLIST_WIDTH = 220;
 
     private EfaConfig myEfaConfig;
 
@@ -94,7 +98,6 @@ public class EfaConfigDialog extends BaseTabbedDialog {
     private JPanel cardPanel;
     private CardLayout cardLayout;
     private String lastSelectedCardKey;
-    private RoundedLabel breadcrumbLabel;
 
     // Persisted UI state across rebuilds
     private String persistedFilterText = "";
@@ -104,6 +107,7 @@ public class EfaConfigDialog extends BaseTabbedDialog {
     private final List<JPanel> leafCardPanels = new ArrayList<JPanel>();
     private final Map<JLabel, String> originalLabelTexts = new HashMap<JLabel, String>();
     private final Map<AbstractButton, String> originalButtonTexts = new HashMap<AbstractButton, String>();
+	private Color navigationFilterFieldBackground = Color.white;
 
     public EfaConfigDialog(Frame parent, EfaConfig efaConfig) {
         super(parent,
@@ -140,6 +144,13 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         closeButton.setIconTextGap(10);
     }
 
+    /**
+	 * Handles the action performed when the close button is clicked.
+	 * Saves the current values from the GUI to the EfaConfig object and performs necessary checks.
+	 * Also clears cached component-to-text mappings when the dialog is closing.
+	 * 
+	 * @param e The ActionEvent triggered by clicking the close button.
+	 */
     public void closeButton_actionPerformed(ActionEvent e) {
         getValuesFromGui();
         synchronized (myEfaConfig) {
@@ -153,6 +164,10 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         myEfaConfig.checkNewConfigValues();
         myEfaConfig.setExternalParameters(true);
         myEfaConfig.checkForRequiredPlugins();
+        // Release cached component->text mappings when dialog is closing.
+        originalLabelTexts.clear();
+        originalButtonTexts.clear();
+
         super.closeButton_actionPerformed(e);
         setDialogResult(true);
     }
@@ -192,6 +207,17 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         return (ItemTypeHashtable<String>) getItem(myEfaConfig.getValueTypesStatus().getName());
     }
 
+    /**
+	 * Recursively builds the navigation list and card panels for the configuration GUI.
+	 *
+	 * @param categories      The hashtable of categories to process.
+	 * @param items           The hashtable of items associated with each category.
+	 * @param catKey          The current category key being processed.
+	 * @param currentPane     The current pane to which the navigation and cards will be added.
+	 * @param selectedPanel   The key of the panel that should be selected initially.
+	 * @param otherPanelHeight The height of other panels, used for layout calculations.
+	 * @return The total number of selectable items processed.
+	 */
     protected int recursiveBuildGui(Hashtable<String, Hashtable> categories,
                                     Hashtable<String, Vector<IItemType>> items,
                                     String catKey,
@@ -210,45 +236,14 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         cardPanel = new JPanel(cardLayout);
         cardPanel.add(createEmptyCard(), CARD_EMPTY);
 
+        //Recursively build navigation entries and card panels for all categories and items.
         int itmcnt = collectNavAndCards(categories, items, catKey, otherPanelHeight, 0);
 
         navigationList = new JList<NavEntry>(navigationModel);
         navigationList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         navigationList.setCellRenderer(new NavEntryRenderer());
 
-        navigationList.addListSelectionListener(e -> {
-            if (e.getValueIsAdjusting()) {
-                return;
-            }
-            NavEntry entry = navigationList.getSelectedValue();
-            if (entry != null && entry.selectable) {
-                persistedSelectedPanelKey = entry.key;
-                showCard(entry.cardKey, entry.key);
-            } else {
-                showCard(CARD_EMPTY, null);
-            }
-        });
-
-        navigationList.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                int idx = navigationList.locationToIndex(e.getPoint());
-                if (idx < 0) {
-                    return;
-                }
-                navigationList.setSelectedIndex(idx);
-                activateNavigationEntryAt(idx);
-            }
-        });
-
-        navigationList.getInputMap(JComponent.WHEN_FOCUSED)
-                .put(KeyStroke.getKeyStroke("ENTER"), ACTION_NAV_ACTIVATE);
-        navigationList.getActionMap().put(ACTION_NAV_ACTIVATE, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                activateNavigationEntryAt(navigationList.getSelectedIndex());
-            }
-        });
+        addNavigationListListeners(navigationList);
 
         navigationFilterField = new JTextField();
         navigationFilterField.setToolTipText(International.getString("STRG+F für Suche"));
@@ -261,37 +256,8 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         });
         navigationFilterTimer.setRepeats(false);
 
-        navigationFilterField.getDocument().addDocumentListener(new DocumentListener() {
-            public void insertUpdate(DocumentEvent e) {
-                scheduleNavigationFilter();
-            }
-
-            public void removeUpdate(DocumentEvent e) {
-                scheduleNavigationFilter();
-            }
-
-            public void changedUpdate(DocumentEvent e) {
-                scheduleNavigationFilter();
-            }
-        });
-
-        navigationFilterField.getInputMap(JComponent.WHEN_FOCUSED)
-                .put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), ACTION_FILTER_ARROW_DOWN);
-        navigationFilterField.getActionMap().put(ACTION_FILTER_ARROW_DOWN, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                moveFocusFromFilterToList(true);
-            }
-        });
-
-        navigationFilterField.getInputMap(JComponent.WHEN_FOCUSED)
-                .put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), ACTION_FILTER_ARROW_UP);
-        navigationFilterField.getActionMap().put(ACTION_FILTER_ARROW_UP, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                moveFocusFromFilterToList(false);
-            }
-        });
+        addNavigationFilterFieldListeners();
+ 
 
         JPanel navPanel = new JPanel(new BorderLayout(0, 4));
         navPanel.add(navigationFilterField, BorderLayout.NORTH);
@@ -300,25 +266,17 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         navPanel.add(myScroller, BorderLayout.CENTER);
         navPanel.setPreferredSize(new Dimension(NAVIGATIONLIST_WIDTH, 10));
 
-        breadcrumbLabel = new RoundedLabel();
-        breadcrumbLabel.setBorder(new RoundedBorder(Daten.efaConfig.getHeaderForegroundColor()));
-        breadcrumbLabel.setFont(breadcrumbLabel.getFont().deriveFont(Font.BOLD));
-        breadcrumbLabel.setToolTipText(null);
-        breadcrumbLabel.setForeground(Daten.efaConfig.getHeaderForegroundColor());
-        breadcrumbLabel.setBackground(Daten.efaConfig.getHeaderBackgroundColor().darker());
-        breadcrumbLabel.setOpaque(true);
-
         JScrollPane cardScrollWrapper = new JScrollPane(cardPanel);
         cardScrollWrapper.getVerticalScrollBar().setUnitIncrement(12);
-        cardScrollWrapper.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+        cardScrollWrapper.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
 
         JPanel rightPanel = new JPanel(new BorderLayout());
-        rightPanel.add(breadcrumbLabel, BorderLayout.NORTH);
         rightPanel.add(cardScrollWrapper, BorderLayout.CENTER);
-
+        
         JPanel contentPanel = new JPanel(new BorderLayout(8, 0));
         contentPanel.add(navPanel, BorderLayout.WEST);
         contentPanel.add(rightPanel, BorderLayout.CENTER);
+        //contentPanel.setBorder(BorderFactory.createEmptyBorder());
 
         currentPane.setLayout(new BorderLayout(8, 0));
         currentPane.add(contentPanel, BorderLayout.CENTER);
@@ -355,6 +313,111 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         return itmcnt;
     }
 
+    /** 
+	 * Adds listeners to the navigation filter field to handle text changes and key events.
+	 *
+	 * @param navigationFilterField2 The JTextField used for filtering navigation entries.
+	 */
+    private void addNavigationFilterFieldListeners() {
+        
+        navigationFilterField.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) {
+                scheduleNavigationFilter();
+            }
+
+            public void removeUpdate(DocumentEvent e) {
+                scheduleNavigationFilter();
+            }
+
+            public void changedUpdate(DocumentEvent e) {
+                scheduleNavigationFilter();
+            }
+        });
+
+        navigationFilterField.getInputMap(JComponent.WHEN_FOCUSED)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), ACTION_FILTER_ARROW_DOWN);
+        navigationFilterField.getActionMap().put(ACTION_FILTER_ARROW_DOWN, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                moveFocusFromFilterToList(true);
+            }
+        });
+
+        navigationFilterField.getInputMap(JComponent.WHEN_FOCUSED)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), ACTION_FILTER_ARROW_UP);
+        navigationFilterField.getActionMap().put(ACTION_FILTER_ARROW_UP, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                moveFocusFromFilterToList(false);
+            }
+        });
+        
+        navigationFilterFieldBackground = navigationFilterField.getBackground();
+        
+        navigationFilterField.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(FocusEvent e) {
+            	navigationFilterField.setBackground(Color.YELLOW);
+            }
+        });
+        
+        navigationFilterField.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(FocusEvent e) {
+            	if (!navigationFilterField.getText().isEmpty()) {
+            		navigationFilterField.setBackground(new Color(255,255,204)); //some white yellow so it is clear that some stuff is in this field.
+
+            	} else {	
+            		// use standard background color. for flatlaf, this is not white as it is for the other lafs.
+            		navigationFilterField.setBackground(navigationFilterFieldBackground); 
+            	}
+            }
+        });		
+	}
+
+    /** 
+     * Adds listeners to the navigation list to handle selection changes and mouse clicks.
+     * @param navigationList
+     */
+    private void addNavigationListListeners(JList<NavEntry> navigationList) {
+    	navigationList.addListSelectionListener(e -> {
+            if (e.getValueIsAdjusting()) {
+                return;
+            }
+            NavEntry entry = navigationList.getSelectedValue();
+            if (entry != null && entry.selectable) {
+                persistedSelectedPanelKey = entry.key;
+                showCard(entry.cardKey, entry.key);
+            } else {
+                showCard(CARD_EMPTY, null);
+            }
+        });
+
+        navigationList.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int idx = navigationList.locationToIndex(e.getPoint());
+                if (idx < 0) {
+                    return;
+                }
+                navigationList.setSelectedIndex(idx);
+                activateNavigationEntryAt(idx);
+            }
+        });
+
+        navigationList.getInputMap(JComponent.WHEN_FOCUSED)
+                .put(KeyStroke.getKeyStroke("ENTER"), ACTION_NAV_ACTIVATE);
+        navigationList.getActionMap().put(ACTION_NAV_ACTIVATE, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                activateNavigationEntryAt(navigationList.getSelectedIndex());
+            }
+        });
+    }
+    
+    /**
+	 * Creates an empty card panel with a message indicating that the user can use Ctrl+F for search.
+	 * 
+	 * @return A JPanel representing the empty card.
+	 */
     private JPanel createEmptyCard() {
         JPanel panel = new JPanel(new BorderLayout());
         JLabel label = new JLabel(International.getString("STRG+F für Suche"), SwingConstants.CENTER);
@@ -363,6 +426,11 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         return panel;
     }
 
+    /**
+	 * Moves the focus from the navigation filter field to the navigation list.
+	 * 
+	 * @param toNext If true, moves focus to the next item; if false, moves focus to the previous item.
+	 */
     private void moveFocusFromFilterToList(boolean toNext) {
         if (navigationList == null || navigationModel == null || navigationModel.getSize() == 0) {
             return;
@@ -384,6 +452,10 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         navigationList.requestFocusInWindow();
     }
 
+    /**
+	 * Sets the focus to the navigation filter field and selects all text within it.
+	 * 
+	 */
     private void focusFilterField() {
         if (navigationFilterField != null) {
             navigationFilterField.requestFocusInWindow();
@@ -391,10 +463,19 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         }
     }
 
+    /**
+	 * Persists the current text in the navigation filter field to the persistedFilterText variable.
+	 * This is needed as the filter action on the navigation list is deferred and may be executed 
+	 * after the user has already changed the filter text.
+	 */
     private void persistCurrentFilterText() {
         persistedFilterText = navigationFilterField != null ? navigationFilterField.getText() : "";
     }
 
+    /**
+	 * Schedules the application of the navigation filter after a delay.
+	 * This method is called whenever the text in the navigation filter field changes.
+	 */ 
     private void scheduleNavigationFilter() {
         persistCurrentFilterText();
 
@@ -403,6 +484,11 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         }
     }
 
+    /**
+	 * Applies the navigation filter to the navigation list and card panels.
+	 * This method is executed on the Event Dispatch Thread (EDT) to ensure thread safety.
+	 * If called from a non-EDT thread, it will schedule itself to run on the EDT.
+	 */
     private void applyNavigationFilterDeferred() {
         if (!SwingUtilities.isEventDispatchThread()) {
             SwingUtilities.invokeLater(new Runnable() {
@@ -422,6 +508,10 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         }
     }
 
+    /**
+	 * Applies the navigation filter to the navigation list and card panels, enforcing a minimum filter length
+	 * of MIN_FILTER_LENGTH characters. If the filter text is shorter than this length, it will be treated as empty.
+	 */ 
     private void applyNavigationFilterWithMinLength() {
         String raw = navigationFilterField != null ? navigationFilterField.getText() : "";
         String trimmed = raw == null ? "" : raw.trim();
@@ -434,6 +524,12 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         applyNavigationFilter(filter);
     }
 
+    /**
+	 * Sets the cursor to a wait cursor or restores it to the default cursor.
+	 * 
+	 * @param wait If true, sets the cursor to a wait cursor; if false, restores it to the default cursor.
+	 * @return A CursorState object containing the previous cursor states of the dialog, filter field, navigation list, and window.
+	 */ 
     private CursorState setWaitCursor(boolean wait) {
         Cursor cursor = wait
                 ? Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
@@ -472,6 +568,11 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         return state;
     }
 
+    /**
+	 * Restores the cursor to its previous state based on the provided CursorState object.
+	 * 
+	 * @param state The CursorState object containing the previous cursor states to restore.
+	 */ 
     private void restoreCursor(CursorState state) {
         if (state == null) {
             return;
@@ -502,6 +603,11 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         }
     }
 
+    /**
+	 * Attempts to restore the selection in the navigation list after a rebuild of the GUI.
+	 * It first tries to match the persisted selected panel key, and if not found, it falls back 
+	 * to matching the persisted selected card key.
+	 */
     private boolean restoreSelectionAfterRebuild() {
         if (navigationModel == null || navigationModel.getSize() == 0) {
             return false;
@@ -543,6 +649,11 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         return false;
     }
 
+    /**
+	 * Rebuilds the configuration GUI by clearing the displayed GUI items, persisting the current
+	 * filter text, stopping any running navigation filter timer, and removing all components from the dialog.
+	 * This method is typically called when the configuration has changed and the GUI needs to be refreshed.
+	 */ 
     public void rebuildConfigGui() {
         displayedGuiItems.clear();
 
@@ -570,6 +681,17 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         repaint();
     }
 
+    /**
+	 * Recursively collects navigation entries and card panels for the given categories and items.
+	 * 
+	 * @param categories      The hashtable of categories to process.
+	 * @param items           The hashtable of items associated with each category.
+	 * @param catKey          The current category key being processed.
+	 * @param otherPanelHeight The height of other panels, used for layout calculations.
+	 * @param level           The current level of recursion, used for indentation in the navigation list.
+	 * 
+	 * @return The total number of selectable items processed.
+	 */
     private int collectNavAndCards(Hashtable<String, Hashtable> categories,
                                    Hashtable<String, Vector<IItemType>> items,
                                    String catKey,
@@ -632,6 +754,11 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         return itmcnt;
     }
 
+    /**
+	 * Activates the navigation entry at the specified index in the navigation list.
+	 * 
+	 * @param idx The index of the navigation entry to activate.
+	 */
     private void activateNavigationEntryAt(int idx) {
         if (idx < 0 || idx >= navigationList.getModel().getSize()) {
             return;
@@ -648,7 +775,7 @@ public class EfaConfigDialog extends BaseTabbedDialog {
             return;
         }
 
-        if (entry.group) {
+        /*if (entry.group) {
             int childIndex = findFirstVisibleSelectableChildIndex(entry.key);
             if (childIndex >= 0 && childIndex != idx) {
                 navigationList.setSelectedIndex(childIndex);
@@ -656,9 +783,18 @@ public class EfaConfigDialog extends BaseTabbedDialog {
                 	navigationList.ensureIndexIsVisible(childIndex);
                 }
             }
-        }
+        }*/
     }
 
+    /**
+	 * Builds a leaf panel for the specified category key, containing the items associated with that category
+	 * and their corresponding GUI components.
+	 * 
+	 * @param items The hashtable of items associated with each category.
+	 * @param thisCatKey The category key for which to build the leaf panel.
+	 * 
+	 * @return A JPanel representing the leaf panel for the specified category, or null if there are no items to display.
+	 */   
     private JPanel buildLeafPanel(Hashtable<String, Vector<IItemType>> items, String thisCatKey) {
         JPanel panel = new JPanel();
         panels.put(panel, thisCatKey);
@@ -669,11 +805,20 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         scrollPane.getVerticalScrollBar().setUnitIncrement(12);
 
         innerPanel.setLayout(new GridBagLayout());
-        panel.setLayout(new BorderLayout());
-        panel.add(scrollPane, BorderLayout.CENTER);
+        panel.setLayout(new GridBagLayout());
+        panel.add(scrollPane, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 
+        RoundedLabel localBreadcrumb = new RoundedLabel();
+        localBreadcrumb.setBorder(new RoundedBorder(Daten.efaConfig.getHeaderForegroundColor()));
+        localBreadcrumb.setOpaque(true);
+        localBreadcrumb.setForeground(Daten.efaConfig.getHeaderForegroundColor());
+        localBreadcrumb.setBackground(Daten.efaConfig.getHeaderBackgroundColor().darker());
+        localBreadcrumb.setFont(localBreadcrumb.getFont().deriveFont(Font.BOLD));
+        localBreadcrumb.setText(getBreadcrumbFromFullCategory(thisCatKey));
+        innerPanel.add(localBreadcrumb, new GridBagConstraints(0, 0, 10, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(10, 0, 10, 0), 0, 0));
+        
         Vector<IItemType> v = items.get(thisCatKey);
-        int y = 0;
+        int y = 1;
         for (int j = 0; v != null && j < v.size(); j++) {
             IItemType itm = v.get(j);
             if (itm.getType() == IItemType.TYPE_PUBLIC
@@ -683,9 +828,13 @@ public class EfaConfigDialog extends BaseTabbedDialog {
             }
         }
 
-        return y > 0 ? panel : null;
+        return y > 1 ? panel : null;
     }
 
+    /**
+	 * Creates a placeholder panel for a group category that has no selectable child items.
+	 * @param groupName 
+	 */ 
     private JPanel createGroupPlaceholderPanel(String groupName) {
         JPanel panel = new JPanel(new BorderLayout());
         JLabel label = new JLabel(groupName, SwingConstants.CENTER);
@@ -694,6 +843,12 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         return panel;
     }
 
+    /**
+	 * Applies the navigation filter to the navigation list and card panels based on the provided filter string
+	 * and updates the selection in the navigation list accordingly.
+	 * 
+	 * @param filter The filter string to apply to the navigation entries and card panels.
+	 */
     private void applyNavigationFilter(String filter) {
         String effectiveFilter = filter == null ? "" : filter;
 
@@ -754,7 +909,7 @@ public class EfaConfigDialog extends BaseTabbedDialog {
             }
         }
 
-        if (selectedIndex >= 0) {
+        if (selectedIndex > 1) {
             navigationList.setSelectedIndex(selectedIndex);
             if (navigationList.getFirstVisibleIndex()>selectedIndex || navigationList.getLastVisibleIndex()<selectedIndex) {
             	navigationList.ensureIndexIsVisible(selectedIndex);
@@ -767,14 +922,39 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         }
     }
 
+    /**
+	 * Applies highlights to the text of all JLabel and AbstractButton components within the leaf card panels
+	 * based on the provided normalized filter string. If the filter is empty, it restores the original text without highlights.
+	 *
+	 *  @param normalizedFilter The normalized filter string used to determine which parts of the text to highlight.
+	 *
+	 */
     private void applyHighlightsToCards(String normalizedFilter) {
-    	if (normalizedFilter!=null && normalizedFilter.trim().length()>0) {
-	        for (int i = 0; i < leafCardPanels.size(); i++) {
-	            applyHighlightsRecursive(leafCardPanels.get(i), normalizedFilter);
-	        }
-    	}
+        String f = normalizedFilter == null ? "" : normalizedFilter.trim();
+
+        // If filter is empty, restore original texts and clear highlight markup.
+        if (f.length() == 0) {
+            for (Map.Entry<JLabel, String> e : originalLabelTexts.entrySet()) {
+                e.getKey().setText(e.getValue());
+            }
+            for (Map.Entry<AbstractButton, String> e : originalButtonTexts.entrySet()) {
+                e.getKey().setText(e.getValue());
+            }
+            return;
+        }
+
+        for (int i = 0; i < leafCardPanels.size(); i++) {
+            applyHighlightsRecursive(leafCardPanels.get(i), f);
+        }
     }
 
+    /**
+	 * Recursively applies highlights to the text of JLabel and AbstractButton components within the given component
+	 * based on the provided normalized filter string. If the filter is empty, it restores the original text without highlights.
+	 * 
+	 * @param c The component to process, which may contain JLabel and AbstractButton components.
+	 * @param normalizedFilter The normalized filter string used to determine which parts of the text to highlight.
+	 * */
     private void applyHighlightsRecursive(Component c, String normalizedFilter) {
         if (c == null) {
             return;
@@ -804,62 +984,220 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         }
     }
 
+    /**
+	 * Highlights occurrences of the normalized filter string within the original text for display purposes.
+	 * @param originalText The original text to be displayed, which may contain HTML tags.
+	 * @param normalizedFilter The normalized filter string used to determine which parts of the text to highlight.
+	 *
+	 * @return The modified text with highlighted occurrences of the filter string, or the original text if no highlights are applied.
+	 */
     private String highlightForDisplay(String originalText, String normalizedFilter) {
         if (originalText == null) {
             return null;
         }
 
-        String filter = normalizedFilter == null ? "" : normalizedFilter.trim();
+        String filter = normalizedFilter == null ? "" : normalizedFilter.trim().toLowerCase();
         if (filter.length() == 0) {
             return originalText;
         }
 
-        String plain = stripHtmlTags(originalText);
-        String plainLower = plain.toLowerCase();
-        int first = plainLower.indexOf(filter);
-        if (first < 0) {
+        // Remove outer <html>...</html> wrapper if present (case-insensitive), keep content only.
+        String source = originalText;
+        int from = 0;
+        int to = source.length();
+
+        // do skip leading whitespace
+        while (from < to && Character.isWhitespace(source.charAt(from))) {
+            from++;
+        }
+
+        // detect opening <html ...>
+        int contentStart = from;
+        if (contentStart < to && source.charAt(contentStart) == '<') {
+            int gt = source.indexOf('>', contentStart);
+            if (gt > contentStart) {
+                String openTag = source.substring(contentStart + 1, gt).trim(); // without '<' '>'
+                if (openTag.length() >= 4 && openTag.regionMatches(true, 0, "html", 0, 4)) {
+                    contentStart = gt + 1;
+
+                    // trim trailing whitespace first
+                    int end = to;
+                    while (end > contentStart && Character.isWhitespace(source.charAt(end - 1))) {
+                        end--;
+                    }
+
+                    // detect closing </html>
+                    if (end - 7 >= contentStart && source.charAt(end - 7) == '<' && source.charAt(end - 6) == '/') {
+                        // quick case-insensitive check for "</html>"
+                        if (source.regionMatches(true, end - 5, "html", 0, 4) && source.charAt(end - 1) == '>') {
+                            to = end - 7;
+                        } else {
+                            to = end;
+                        }
+                    } else {
+                        to = end;
+                    }
+
+                    from = contentStart;
+                } else {
+                    from = 0;
+                    to = source.length();
+                }
+            } else {
+                from = 0;
+                to = source.length();
+            }
+        } else {
+            from = 0;
+            to = source.length();
+        }
+
+        source = source.substring(from, to);
+
+        // Tokenize into tag/text chunks, preserve tags as-is.
+        ArrayList<String> chunks = new ArrayList<String>(16);
+        ArrayList<Boolean> isTag = new ArrayList<Boolean>(16);
+
+        Matcher m = TAG_PATTERN.matcher(source);
+        int p = 0;
+        while (m.find()) {
+            if (m.start() > p) {
+                chunks.add(source.substring(p, m.start()));
+                isTag.add(Boolean.FALSE);
+            }
+            chunks.add(source.substring(m.start(), m.end()));
+            isTag.add(Boolean.TRUE);
+            p = m.end();
+        }
+        if (p < source.length()) {
+            chunks.add(source.substring(p));
+            isTag.add(Boolean.FALSE);
+        }
+
+        // Build visible text and map text-runs back to chunk indices.
+        StringBuilder visible = new StringBuilder(source.length());
+        ArrayList<Integer> runChunkIdx = new ArrayList<Integer>(chunks.size());
+        ArrayList<Integer> runStart = new ArrayList<Integer>(chunks.size());
+        ArrayList<Integer> runEnd = new ArrayList<Integer>(chunks.size());
+
+        for (int i = 0; i < chunks.size(); i++) {
+            if (!isTag.get(i).booleanValue()) {
+                String t = chunks.get(i);
+                if (t.length() > 0) {
+                    int s = visible.length();
+                    visible.append(t);
+                    int e = visible.length();
+                    runChunkIdx.add(Integer.valueOf(i));
+                    runStart.add(Integer.valueOf(s));
+                    runEnd.add(Integer.valueOf(e));
+                }
+            }
+        }
+
+        if (visible.length() == 0) {
             return originalText;
         }
 
-        StringBuilder html = new StringBuilder();
-        html.append("<html>");
-        int pos = 0;
-        while (first >= 0) {
-            html.append(escapeHtml(plain.substring(pos, first)));
-            html.append("<span style='").append(HIGHLIGHT_STYLE).append("'>");
-            html.append(escapeHtml(plain.substring(first, first + filter.length())));
-            html.append("</span>");
-            pos = first + filter.length();
-            first = plainLower.indexOf(filter, pos);
+        String visibleLower = visible.toString().toLowerCase();
+        int flen = filter.length();
+        int firstHit = visibleLower.indexOf(filter);
+        if (firstHit < 0) {
+            return originalText;
         }
-        html.append(escapeHtml(plain.substring(pos)));
+
+        // Collect hit ranges in visible coordinates.
+        ArrayList<Integer> hitStarts = new ArrayList<Integer>(8);
+        ArrayList<Integer> hitEnds = new ArrayList<Integer>(8);
+        int searchPos = 0;
+        while (true) {
+            int h = visibleLower.indexOf(filter, searchPos);
+            if (h < 0) {
+                break;
+            }
+            hitStarts.add(Integer.valueOf(h));
+            hitEnds.add(Integer.valueOf(h + flen));
+            searchPos = h + flen;
+        }
+
+        // Rewrite only overlapping text runs.
+        int hitPtr = 0;
+        for (int r = 0; r < runChunkIdx.size(); r++) {
+            int cidx = runChunkIdx.get(r).intValue();
+            String text = chunks.get(cidx);
+            int rs = runStart.get(r).intValue();
+            int re = runEnd.get(r).intValue();
+
+            while (hitPtr < hitStarts.size() && hitEnds.get(hitPtr).intValue() <= rs) {
+                hitPtr++;
+            }
+            if (hitPtr >= hitStarts.size() || hitStarts.get(hitPtr).intValue() >= re) {
+                continue;
+            }
+
+            StringBuilder out = new StringBuilder(text.length() + 32);
+            int localPos = 0;
+            int hp = hitPtr;
+
+            while (hp < hitStarts.size()) {
+                int hs = hitStarts.get(hp).intValue();
+                int he = hitEnds.get(hp).intValue();
+                if (hs >= re) {
+                    break;
+                }
+                if (he <= rs) {
+                    hp++;
+                    continue;
+                }
+
+                int os = hs > rs ? hs : rs;
+                int oe = he < re ? he : re;
+                int ls = os - rs;
+                int le = oe - rs;
+
+                if (ls > localPos) {
+                    out.append(EfaUtil.escapeHtml(text.substring(localPos, ls)));
+                }
+
+                out.append("<span style='").append(HIGHLIGHT_STYLE).append("'><b>")
+                   .append(EfaUtil.escapeHtml(text.substring(ls, le)))
+                   .append("</b></span>");
+
+                localPos = le;
+                hp++;
+            }
+
+            if (localPos < text.length()) {
+                out.append(EfaUtil.escapeHtml(text.substring(localPos)));
+            }
+
+            chunks.set(cidx, out.toString());
+        }
+
+        // Reassemble once, with exactly one outer html wrapper.
+        StringBuilder html = new StringBuilder(source.length() + 64);
+        html.append("<html>");
+        for (int i = 0; i < chunks.size(); i++) {
+            if (isTag.get(i).booleanValue()) {
+                html.append(chunks.get(i));
+            } else {
+                String t = chunks.get(i);
+                if (t.indexOf("<span style='") >= 0) {
+                    html.append(t);
+                } else {
+                    html.append(EfaUtil.escapeHtml(t));
+                }
+            }
+        }
         html.append("</html>");
         return html.toString();
     }
 
-    private String escapeHtml(String s) {
-        if (s == null) {
-            return "";
-        }
-        return s.replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;");
-    }
-
-    private int findFirstVisibleSelectableChildIndex(String parentKey) {
-        if (parentKey == null || parentKey.length() == 0 || navigationModel == null) {
-            return -1;
-        }
-        String prefix = parentKey + CATEGORY_SEPARATOR;
-        for (int i = 0; i < navigationModel.size(); i++) {
-            NavEntry e = navigationModel.get(i);
-            if (e.selectable && e.key != null && e.key.startsWith(prefix)) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
+    /**
+	 * Selects the initial entry in the navigation list based on the provided selected panel key.
+	 * If the selected panel key is not found, it selects the first selectable entry in the list.
+	 * 
+	 * @param selectedPanel The key of the panel to select initially, or null to select the first selectable entry.
+	 */  
     private void selectInitialEntry(String selectedPanel) {
         int indexToSelect = -1;
 
@@ -896,60 +1234,58 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         }
     }
 
+    /**
+	 * Displays the card panel corresponding to the specified card key and updates the last selected card key
+	 * and persisted selected card key accordingly. If the card key is null, it shows an empty card panel.
+	 * @param cardKey The key of the card panel to display, or null to show an empty card panel.
+	 * @param fullCategoryKey The full category key associated with the card panel, used for breadcrumb display.
+	 * */
     private void showCard(String cardKey, String fullCategoryKey) {
         if (cardKey == null) {
             cardLayout.show(cardPanel, CARD_EMPTY);
             lastSelectedCardKey = CARD_EMPTY;
             persistedSelectedCardKey = CARD_EMPTY;
-            updateBreadcrumb(null);
             return;
         }
         cardLayout.show(cardPanel, cardKey);
         lastSelectedCardKey = cardKey;
         persistedSelectedCardKey = cardKey;
-        updateBreadcrumb(fullCategoryKey);
     }
 
-    private void updateBreadcrumb(String fullCategoryKey) {
-        if (breadcrumbLabel == null) {
-            return;
-        }
-        if (fullCategoryKey == null || fullCategoryKey.length() == 0) {
-            breadcrumbLabel.setText(" ");
-            breadcrumbLabel.setToolTipText(null);
-            return;
-        }
-
-        List<String> parts = splitCategoryKey(fullCategoryKey);
-        if (parts.isEmpty()) {
-            breadcrumbLabel.setText(" ");
-            breadcrumbLabel.setToolTipText(null);
-            return;
-        }
-
-        StringBuilder sb = new StringBuilder();
-        String partialKey = "";
-        for (int i = 0; i < parts.size(); i++) {
-            partialKey = (i == 0) ? parts.get(i) : makeCategory(partialKey, parts.get(i));
-            String name = getCatName(partialKey);
-            if (name == null || name.length() == 0) {
-                name = parts.get(i);
-            }
-            if (sb.length() > 0) {
-                sb.append(BREADCRUMB_SEPARATOR);
-            } else {
-                sb.append(" "); // indent the label text by one space
-            }
-            sb.append(name);
-        }
-
-        String breadcrumb = sb.toString();
-        breadcrumbLabel.setText(breadcrumb);
-        breadcrumbLabel.setToolTipText(breadcrumb);
-        breadcrumbLabel.revalidate();
-        breadcrumbLabel.repaint();
+    /**
+	 * Generates a breadcrumb string from the full category key by splitting it into parts and retrieving
+	 * the corresponding category names for each part. The breadcrumb is constructed by joining the category names with a separator.
+	 *
+	 * @param fullCategoryKey The full category key to generate the breadcrumb from.
+	 *
+	 * @return A string representing the breadcrumb for the specified full category key.
+	 */
+    private String getBreadcrumbFromFullCategory(String fullCategoryKey) {
+    	List<String> parts = splitCategoryKey(fullCategoryKey);
+	    StringBuilder sb = new StringBuilder();
+	    String partialKey = "";
+	    for (int i = 0; i < parts.size(); i++) {
+	        partialKey = (i == 0) ? parts.get(i) : makeCategory(partialKey, parts.get(i));
+	        String name = getCatName(partialKey);
+	        if (name == null || name.length() == 0) {
+	            name = parts.get(i);
+	        }
+	        if (sb.length() > 0) {
+	            sb.append(BREADCRUMB_SEPARATOR);
+	        } else {
+	            sb.append(" "); // indent the label text by one space
+	        }
+	        sb.append(name);
+	    }
+	
+	    return sb.toString();
     }
-
+    
+    /** 
+     * Splits the full category key into its individual parts based on the defined category separator.
+     * @param fullCategoryKey
+     * @return A list of strings representing the individual parts of the full category key.
+     */
     private List<String> splitCategoryKey(String fullCategoryKey) {
         ArrayList<String> parts = new ArrayList<String>();
         if (fullCategoryKey == null || fullCategoryKey.length() == 0) {
@@ -972,6 +1308,11 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         return parts;
     }
 
+    /**
+     * Retrieves the parent key of the given full category key by finding the last occurrence of the category separator.
+     * @param fullKey
+     * @return The parent key of the given full category key, or null if there is no parent.
+     */
     private String getParentKey(String fullKey) {
         if (fullKey == null || fullKey.length() == 0) {
             return null;
@@ -983,12 +1324,25 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         return fullKey.substring(0, pos);
     }
 
+    /**
+     * Builds a search text string by recursively traversing the given component and its children,
+     * extracting text from JLabel, AbstractButton, and JTextComponent instances, and concatenating it into a single string.
+     * 
+     * @param c The component to traverse and extract text from.
+     * @return A string containing the concatenated text from the component and its children, suitable for search purposes.
+     */
     private String buildSearchText(Component c) {
         StringBuilder sb = new StringBuilder();
         appendSearchText(c, sb);
         return sb.toString();
     }
 
+    /**
+	 * Recursively appends the text from the given component and its children to the provided StringBuilder.
+	 * 
+	 * @param c The component to traverse and extract text from.
+	 * @param sb The StringBuilder to append the extracted text to.
+	 */
     private void appendSearchText(Component c, StringBuilder sb) {
         if (c == null) {
             return;
@@ -1019,6 +1373,11 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         }
     }
 
+    /**
+     * Normalizes the given search text by stripping HTML tags and converting it to lowercase.
+     * @param text The search text to normalize.
+     * @return A normalized version of the search text, suitable for case-insensitive searching.
+     */
     private String normalizeSearchText(String text) {
         if (text == null) {
             return "";
@@ -1027,6 +1386,13 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         return noTags.toLowerCase();
     }
 
+    /**
+     * Strips HTML tags from the given text using a regular expression pattern.
+     * 
+     * @param text The text from which to remove HTML tags.
+     * 
+     * @return The text with HTML tags removed, or an empty string if the input text is null.
+     */
     private String stripHtmlTags(String text) {
         if (text == null) {
             return "";
@@ -1076,6 +1442,11 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         }
     }
 
+    /**
+	 * Custom ListCellRenderer for rendering navigation entries in the navigation list.
+	 * It handles indentation based on the entry level, bold font for group entries,
+	 * and background color for top-level group entries.
+	 */
     private static class NavEntryRenderer extends DefaultListCellRenderer {
         private static final Color TOP_GROUP_BG = new Color(230, 230, 230);
 
@@ -1103,7 +1474,7 @@ public class EfaConfigDialog extends BaseTabbedDialog {
                 setFont(f.deriveFont(Font.PLAIN));
             }
 
-            if (!isSelected && entry.group && entry.level == 0) {
+            if (!isSelected && entry.group /*&& entry.level == 0*/) {
                 setBackground(TOP_GROUP_BG);
             }
 
