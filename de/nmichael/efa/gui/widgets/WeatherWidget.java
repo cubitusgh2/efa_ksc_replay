@@ -89,7 +89,7 @@ public class WeatherWidget extends Widget implements IItemFactory {
     public static final String PARAM_WEATHER_VISIBLE = "WeatherVisible";
 	
 	private static final int WEATHERWIDGET_GRIDWIDTH = 6;
-	private static final int SMALL_FIELDWIDTH = 110;
+	private static final int SMALL_FIELDWIDTH = 80;
 	private ItemTypeItemList locationList;
 
 

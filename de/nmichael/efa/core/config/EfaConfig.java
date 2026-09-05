@@ -108,8 +108,10 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 	// Parameter Categories
 	public final String CATEGORY_INTERNAL = "%-1%" + International.getString("intern");
 	public final String CATEGORY_COMMON = BaseTabbedDialog.CATEGORY_COMMON;
+	public final String CATEGORY_LOCALE = "%01%" + International.getStringWithoutAnyEscaping("Sprache & Region");
 	public final String CATEGORY_INPUT = "%02%" + International.getString("Eingabe");
 	public final String CATEGORY_BASE = "%03%" + Daten.EFA_BASE;
+	public final String CATEGORY_BASE_GUI = "%031%" + International.getString("Erscheinungsbild");
 	public final String CATEGORY_BOATHOUSE = "%04%" + Daten.EFA_BOATHOUSE;
 	public final String CATEGORY_GUI = "%05%" + International.getString("Erscheinungsbild");
 	public final String CATEGORY_GUI_WINDOW = "%051%" + International.getString("Fenster");
@@ -132,7 +134,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 	public final String CATEGORY_TYPES_STAT = "%147%" + International.getString("Status");
 	public final String CATEGORY_SYNC = "%15%" + International.getString("Synchronisation");
 	public final String CATEGORY_KANUEFB = "%16%" + International.onlyFor("Kanu-eFB", "de");
-	public final String CATEGORY_LOCALE = "%17%" + International.getStringWithoutAnyEscaping("Sprache & Region");
+
 	public final String CATEGORY_WIDGETS = "%18%" + International.getString("Widgets");
 	public final String CATEGORY_WIDGET_NEWS = "%9%" + International.getString("Ticker");
 	public final String CATEGORY_DATAACCESS = "%19%" + International.getString("Daten");
@@ -168,6 +170,8 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 	// Values for email security
 	public static final String SECURITY_STARTTLS = "STARTTLS";
 	public static final String SECURITY_SSL = "SSL";
+	
+	private static final int HINT_WIDTH = 400;
 
 	// some default values
 	private static final String[] DEFAULT_BROWSER = { "/usr/bin/firefox", "/usr/bin/mozilla", "/usr/bin/netscape",
@@ -185,6 +189,8 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 
 	private static final String BUTTON_FREE_FIELD_REPLACEMENT="BUTTON_FREE_FIELD_REPLACEMENT";
 	public static final String ITEM_LANGUAGE_REPLACEMENT = "LANGUAGE_REPLACEMENT";
+	
+	private static final int STANDARD_FIELD_WIDTH = 220;
 	
 	// private configuration data
 	private ItemTypeString lastProjectEfaBase;
@@ -841,11 +847,11 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_INPUT),
 					International.getString("Vorbelegung Bemerkungs-Feld")));
 
-			addHint("efaCommonInputCommentsHint", IItemType.TYPE_EXPERT,
+			addHintWordWrap("efaCommonInputCommentsHint", IItemType.TYPE_EXPERT,
 					BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_INPUT),
 					International.getString(
 							"Im Bemerkungsfeld kann über die Funktionstasten F6, F7, ... F12 ein Text ergänzt werden."),
-					3, 20, 3);
+					3, 20, 3,500);
 
 			addDescription("efaCommonInputCommentsDescription", IItemType.TYPE_EXPERT,
 					BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_INPUT),
@@ -909,10 +915,10 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					IItemType.TYPE_EXPERT, BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_GUI),
 					"LookAndFeel ButtonFocusColor", true));
 
-			addHint("efaGuiFlatLafColorsHint", IItemType.TYPE_PUBLIC,
+			addHintWordWrap("efaGuiFlatLafColorsHint", IItemType.TYPE_PUBLIC,
 					BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_GUI),
 					International.getString("Diese Einstellungen werden nur vom EFA Flat Look&Feel verwendet."), 3, 32,
-					3);
+					3, HINT_WIDTH);
 
 			addParameter(efaGuiflatLaf_Background = new ItemTypeColor("efaGuiflatLaf_Background",
 					EfaUtil.getColor(standardFlatLafBackgroundColor), EfaUtil.getColor(standardFlatLafBackgroundColor),
@@ -1036,33 +1042,33 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					International.getString("Tooltipp-Überschriften Textfarbe"), false));					
 			
 			addHeader("efaGuiOtherFont", IItemType.TYPE_PUBLIC,
-					BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_GUI),
+					BaseTabbedDialog.makeCategory(CATEGORY_BASE, CATEGORY_BASE_GUI),
 					International.getString("Schriftart für efaBase"), 3);
 			
-			addHint("efaGuiOtherFontHint", IItemType.TYPE_PUBLIC, 
-					BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_GUI),
+			addHintWordWrap("efaGuiOtherFontHint", IItemType.TYPE_PUBLIC, 
+					BaseTabbedDialog.makeCategory(CATEGORY_BASE, CATEGORY_BASE_GUI),
 					International.getString("Die Schrift von efaBootshaus wird in efaBootshaus->Erscheinungsbild eingestellt."),
-					3,3,3);
+					3,3,3, HINT_WIDTH);
 
 			String defaultFont=getDefaultFont();
 			addParameter(efa_OtherFontNameButton = new ItemTypeFontName("EfaOtherFontNameButton",
 					defaultFont, defaultFont,
-					IItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_GUI),
+					IItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_BASE, CATEGORY_BASE_GUI),
 					International.getString("Schriftart"),false));			
 			
 			addParameter(efa_otherFontSize = new ItemTypeInteger("EfaOtherFontSize", 12, 6, 32, false,
 					IItemType.TYPE_PUBLIC,
-					BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_GUI),
+					BaseTabbedDialog.makeCategory(CATEGORY_BASE, CATEGORY_BASE_GUI),
 					International.getString("Schriftgröße in Punkten (6 bis 32, Standard: 12)")));
 			addParameter(efa_otherFontStyle = new ItemTypeStringList("EfaOtherFontStyle", "",
 					makeFontStyleArray(STRINGLIST_VALUES), makeFontStyleArray(STRINGLIST_DISPLAY),
 					IItemType.TYPE_PUBLIC,
-					BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_GUI),
+					BaseTabbedDialog.makeCategory(CATEGORY_BASE, CATEGORY_BASE_GUI),
 					International.getString("Schriftstil")));
 
 			addParameter(efa_otherTableFontSize = new ItemTypeInteger("EfaOtherTableFontSize", 12, 6, 24,
 					false, IItemType.TYPE_PUBLIC,
-					BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_GUI),
+					BaseTabbedDialog.makeCategory(CATEGORY_BASE, CATEGORY_BASE_GUI),
 					International.getString("Tabellen-Schriftgröße in Punkten (6 bis 20, Standard: 12)")));					
 	
 			
@@ -1206,12 +1212,12 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 
 			// ============================= BOATHOUSE:INPUT =============================
 
-			addHint("efaGuiBoathouseInputHint", IItemType.TYPE_PUBLIC,
+			addHintWordWrap("efaGuiBoathouseInputHint", IItemType.TYPE_PUBLIC,
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_INPUT),
 					International.getMessage(
 							"Weitere Einstellungen finden Sie in dem Bereich {Allgemein}->{Erscheinungsbild}",
 							International.getString("Allgemein"), International.getString("Eingabe")),
-					3, 10, 10);
+					3, 10, 10, HINT_WIDTH);
 
 			addHeader("efaBthsInputCommon", IItemType.TYPE_EXPERT,
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_INPUT),
@@ -1343,26 +1349,26 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 
 			// ============================= BOATHOUSE:GUI =============================
 
-			addHint("efaGuiBoathouseWindowHint", IItemType.TYPE_PUBLIC,
+			addHintWordWrap("efaGuiBoathouseWindowHint", IItemType.TYPE_PUBLIC,
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),
 					International.getMessage(
 							"Weitere Einstellungen finden Sie in dem Bereich {Allgemein}->{Erscheinungsbild}",
 							International.getString("Allgemein"), International.getString("Erscheinungsbild")),
-					3, 10, 10);
+					3, 10, 10, HINT_WIDTH);
 
 			addHeader("efaGuiBoathouseWindow", IItemType.TYPE_EXPERT,
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),
 					International.getString("Fensterpositionierung"), 3);
-			addHint("efaDirekt_startMaximizedHint", 
+			addHintWordWrap("efaDirekt_startMaximizedHint", 
 					IItemType.TYPE_EXPERT, BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),
-					International.getString("Auf Bildschirmgroesse bzw. auf die Breite-Hoehe in Allgemein->Fenster maximieren"),3,0, 6);
+					International.getString("Auf Bildschirmgroesse bzw. auf die Breite-Hoehe in Allgemein->Fenster maximieren"), 3, 0, 6, HINT_WIDTH);
 			addParameter(efaDirekt_startMaximized = new ItemTypeBoolean("EfaBoathouseWindowMaximized", true,
 					IItemType.TYPE_EXPERT,
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),
 					International.getString("efa maximiert starten")));
-			addHint("EfaBoathouseWindowMaximizedRespectTaskBarHint", 
+			addHintWordWrap("EfaBoathouseWindowMaximizedRespectTaskBarHint", 
 					IItemType.TYPE_EXPERT, BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),
-					International.getString("Wirkt nur, wenn Allgemein->Fenster die Fenster-Offsets X und Y beide 0 sind"),3, 10, 6);
+					International.getString("Wirkt nur, wenn Allgemein->Fenster die Fenster-Offsets X und Y beide 0 sind"),3, 10, 6, HINT_WIDTH);
 			addParameter(efaDirekt_startMaximizedRespectTaskbar = new ItemTypeBoolean("EfaBoathouseWindowMaximizedRespectTaskBar", true,
 					IItemType.TYPE_EXPERT,
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),
@@ -1585,9 +1591,9 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 			// ============================= BOATHOUSE:GUIBUTTONS
 			// =============================
 			
-			addHint("efaMultiSessinoSupportHintOnButtons", 
+			addHintWordWrap("efaMultiSessinoSupportHintOnButtons", 
 					IItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUIBUTTONS),
-					International.getString("Konfiguration der Schaltflächen hinter 'Fahrt beginnen' und 'Nachtrag' via efa-Bootshaus -> Eingabe -> Vereinfachte Anlage..."),3, 6, 6);
+					International.getString("Konfiguration der Schaltflächen hinter 'Fahrt beginnen' und 'Nachtrag' via efa-Bootshaus -> Eingabe -> Vereinfachte Anlage..."),3, 6, 6, HINT_WIDTH);
 
 			addParameter(efaDirekt_showButtonHotkey = new ItemTypeBoolean("ButtonShowHotkeys", false,
 					IItemType.TYPE_EXPERT, BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUIBUTTONS),
@@ -1647,9 +1653,9 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 
 			// ============================= BOATHOUSE:STARTSTOP
 			// =============================
-			addHint("EfaExitRestartTimeHint", 
+			addHintWordWrap("EfaExitRestartTimeHint", 
 					IItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_STARTSTOP),
-					International.getMessage("Zum Zeitpunkt des Neustarts oder Beendens muss efa mindestens {n} Minuten gelaufen sein.", Daten.AUTO_EXIT_MIN_RUNTIME),3, 6, 6);
+					International.getMessage("Zum Zeitpunkt des Neustarts oder Beendens muss efa mindestens {n} Minuten gelaufen sein.", Daten.AUTO_EXIT_MIN_RUNTIME),3, 6, 6, HINT_WIDTH);
 			addParameter(efaDirekt_restartTime = new ItemTypeTime("EfaExitRestartTime", new DataTypeTime(4, 0, 0),
 					IItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_STARTSTOP),
 					International.getString("Uhrzeit zum automatischen Neustart von efa")));
@@ -1808,86 +1814,86 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 
 			// ============================= LOCALE =============================
 			
-			addHeader("LanguageHeader", IItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_LOCALE), 
+			addHeader("LanguageHeader", IItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_LOCALE), 
 					International.getStringWithMnemonic("Sprache & Region").replace("&&", "&"), 3);
 						
 			addParameter(language = new ItemTypeStringList("_Language", Daten.efaBaseConfig.language,
 					makeLanguageArray(STRINGLIST_VALUES), makeLanguageArray(STRINGLIST_DISPLAY), IItemType.TYPE_PUBLIC,
-					BaseTabbedDialog.makeCategory(CATEGORY_LOCALE), International.getString("Sprache")));
+					BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_LOCALE), International.getString("Sprache")));
 			addParameter(translateLanguageWork = new ItemTypeString("TranslateLanguageWork", "",
-					IItemType.TYPE_INTERNAL, BaseTabbedDialog.makeCategory(CATEGORY_LOCALE), "TranslateLanguageWork"));
+					IItemType.TYPE_INTERNAL, BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_LOCALE), "TranslateLanguageWork"));
 			addParameter(translateLanguageBase = new ItemTypeString("TranslateLanguageBase", "",
-					IItemType.TYPE_INTERNAL, BaseTabbedDialog.makeCategory(CATEGORY_LOCALE), "TranslateLanguageBase"));
+					IItemType.TYPE_INTERNAL, BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_LOCALE), "TranslateLanguageBase"));
 
 			addParameter(defaultDistanceUnit = new ItemTypeStringList("LocaleDefaultDistanceUnit",
 					DataTypeDistance.KILOMETERS, DataTypeDistance.makeDistanceUnitValueArray(),
 					DataTypeDistance.makeDistanceUnitNamesArray(), IItemType.TYPE_PUBLIC,
-					BaseTabbedDialog.makeCategory(CATEGORY_LOCALE),
+					BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_LOCALE),
 					International.getString("Standardeinheit für Entfernungen")));
 			
 			addParameter(defaultWeightUnit = new ItemTypeStringList("LocaleDefaultWeightUnit",
 					DataTypeWeight.KILOGRAMS, DataTypeWeight.makeWeightUnitValueArray(),
 					DataTypeWeight.makeWeightUnitValueArray(), IItemType.TYPE_PUBLIC,
-					BaseTabbedDialog.makeCategory(CATEGORY_LOCALE),
+					BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_LOCALE),
 					International.getString("Standardeinheit für Gewicht")));
 			
 			addParameter(dateFormat = new ItemTypeStringList("LocaleDateFormat", DataTypeDate.DAY_MONTH_YEAR,
 					DataTypeDate.makeDateFormatValueArray(), DataTypeDate.makeDateFormatNamesArray(),
-					IItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_LOCALE),
+					IItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_LOCALE),
 					International.getString("Datumsformat")));
 			
 			//-----------------------------
-			addHeader("LanguageHeaderFunctions", IItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_LOCALE), 
+			addHeader("LanguageHeaderFunctions", IItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_LOCALE), 
 					International.getString("Welche Funktionen von efa möchtest Du verwenden?"), 3);
 			
 			addParameter(useFunctionalityRowing = new ItemTypeBoolean("CustUsageRowing",
 					(custSettings != null ? custSettings.activateRowingOptions : true), IItemType.TYPE_PUBLIC,
-					BaseTabbedDialog.makeCategory(CATEGORY_LOCALE), International
+					BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_LOCALE), International
 							.getMessage("Funktionalitäten aktivieren für {sport}", International.getString("Rudern"))));
 			addParameter(useFunctionalityRowingGermany = new ItemTypeBoolean("CustUsageRowingGermany",
 					(custSettings != null ? custSettings.activateGermanRowingOptions
 							: International.getLanguageID().startsWith("de")),
-					IItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_LOCALE),
+					IItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_LOCALE),
 					International.getMessage("Funktionalitäten aktivieren für {sport}",
 							International.getString("Rudern")) + " "
 							+ International.getMessage("in {region}", International.getString("Deutschland"))));
 			addParameter(useFunctionalityRowingBerlin = new ItemTypeBoolean("CustUsageRowingBerlin",
 					(custSettings != null ? custSettings.activateBerlinRowingOptions : false), IItemType.TYPE_PUBLIC,
-					BaseTabbedDialog.makeCategory(CATEGORY_LOCALE),
+					BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_LOCALE),
 					International.getMessage("Funktionalitäten aktivieren für {sport}",
 							International.getString("Rudern")) + " "
 							+ International.getMessage("in {region}", International.getString("Berlin"))));
 			addParameter(useFunctionalityCanoeing = new ItemTypeBoolean("CustUsageCanoeing",
 					(custSettings != null ? custSettings.activateCanoeingOptions : false), IItemType.TYPE_PUBLIC,
-					BaseTabbedDialog.makeCategory(CATEGORY_LOCALE), International.getMessage(
+					BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_LOCALE), International.getMessage(
 							"Funktionalitäten aktivieren für {sport}", International.getString("Kanufahren"))));
 			addParameter(useFunctionalityCanoeingGermany = new ItemTypeBoolean("CustUsageCanoeingGermany",
 					(custSettings != null ? custSettings.activateGermanCanoeingOptions : false), IItemType.TYPE_PUBLIC,
-					BaseTabbedDialog.makeCategory(CATEGORY_LOCALE),
+					BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_LOCALE),
 					International.getMessage("Funktionalitäten aktivieren für {sport}",
 							International.getString("Kanufahren")) + " "
 							+ International.getMessage("in {region}", International.getString("Deutschland"))));
 
 			//-----------------------------
-			addHeader("LanguageReplacementsHeader", IItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_LOCALE), 
+			addHeader("LanguageReplacementsHeader", IItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_LOCALE), 
 					International.getString("Textersetzungen in der Oberfläche"), 3);
 			
-			addHintWordWrap("LanguageReplacementHint", IItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_LOCALE), 
-					International.getString("Textersetzungen Hinweistext"), 3, 0, 10,500 );
+			addHintWordWrap("LanguageReplacementHint", IItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_LOCALE), 
+					International.getString("Textersetzungen Hinweistext"), 3, 0, 10, 500);
 
 			//ItemTypeAction is a button which handles the ActionEvent itself.
 			//This is suitable for 
 			addParameter(languageReplacementButton = new ItemTypeAction(BUTTON_FREE_FIELD_REPLACEMENT,
 					ItemTypeAction.ACTION_CREATE_FREEUSE_FIELD_STANDARD_CAPTIONS,
 					IItemType.TYPE_PUBLIC,
-					BaseTabbedDialog.makeCategory(CATEGORY_LOCALE),
+					BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_LOCALE),
 					International.getString("'Freie Verwendung'-Felder für Boote und Personen hinzufügen")));
 		
 			// use the whole width if necessary
 			languageReplacementButton.setFieldGrid(3, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL);
             languageReplacementButton.setPadding(0, 0, 20, 10);
 			addParameter(languageReplacement = new ItemTypeInternationalReplacement(ITEM_LANGUAGE_REPLACEMENT, "", true, IItemType.TYPE_PUBLIC,
-					BaseTabbedDialog.makeCategory(CATEGORY_LOCALE),
+					BaseTabbedDialog.makeCategory(CATEGORY_COMMON, CATEGORY_LOCALE),
 					International.getString("Textersetzungen")));
 			
 			// ============================= TYPES =============================
@@ -2003,10 +2009,10 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					IItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_DATAACCESS, CATEGORY_DATAXML),
 					International.getString("Spiegelverzeichnis für Datenkopie")));
 
-			addHint("dataRemoteEfaServerEnabledDescription", IItemType.TYPE_PUBLIC,
+			addHintWordWrap("dataRemoteEfaServerEnabledDescription", IItemType.TYPE_PUBLIC,
 					BaseTabbedDialog.makeCategory(CATEGORY_DATAACCESS, CATEGORY_DATAREMOTE),
 					International.getString("Hinweis: Remote-Zugriff muss aktiv sein, um efaCLI zu benutzen."), 3, 6,
-					12);
+					12, HINT_WIDTH);
 
 			addParameter(dataRemoteEfaServerEnabled = new ItemTypeBoolean("DataRemoteEfaServerEnabled", false,
 					IItemType.TYPE_PUBLIC, BaseTabbedDialog.makeCategory(CATEGORY_DATAACCESS, CATEGORY_DATAREMOTE),
@@ -2054,9 +2060,9 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 					BaseTabbedDialog.makeCategory(CATEGORY_DATAACCESS, CATEGORY_DATAREMOTE),
 					"efaOnline Update Interval (sec)"));
 
-			addHint("_EfaCloudLabel", IItemType.TYPE_EXPERT,
+			addHintWordWrap("_EfaCloudLabel", IItemType.TYPE_EXPERT,
 					BaseTabbedDialog.makeCategory(CATEGORY_DATAACCESS, CATEGORY_DATACLOUD),
-					International.getString("Bitte konfiguriere efaCloud über das Menü Datei > efaCloud."),3,3,3);
+					International.getString("Bitte konfiguriere efaCloud über das Menü Datei > efaCloud."),3,3,3, HINT_WIDTH);
 
 		}
 	}
@@ -2071,6 +2077,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 				configValues.put(configValue.getName(), configValue);
 				configValueNames.add(configValue.getName());
 			}
+			configValue.setFieldSize(STANDARD_FIELD_WIDTH,0);
 		}
 	}
 

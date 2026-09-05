@@ -1,12 +1,12 @@
 /**
- * Title:        efa - elektronisches Fahrtenbuch fuer Ruderer
- * Copyright:    Copyright (c) 2001-2011 by Nicolas Michael
- * Website:      http://efa.nmichael.de/
- * License:      GNU General Public License v2
- *
- * @author Nicolas Michael
- * @version 2
- */
+* Title:        efa - elektronisches Fahrtenbuch fuer Ruderer
+* Copyright:    Copyright (c) 2001-2011 by Nicolas Michael
+* Website:      http://efa.nmichael.de/
+* License:      GNU General Public License v2
+*
+* @author Nicolas Michael
+* @version 2
+*/
 
 package de.nmichael.efa.gui;
 
@@ -15,10 +15,15 @@ import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Cursor;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Frame;
 import java.awt.GridBagLayout;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -42,20 +47,23 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
-import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
-import javax.swing.JSplitPane;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.JTextComponent;
 
+import de.nmichael.efa.Daten;
 import de.nmichael.efa.core.config.EfaConfig;
 import de.nmichael.efa.core.items.IItemType;
 import de.nmichael.efa.core.items.ItemTypeHashtable;
+import de.nmichael.efa.gui.util.RoundedBorder;
+import de.nmichael.efa.gui.util.RoundedLabel;
 import de.nmichael.efa.util.International;
 
 // @i18n complete
@@ -63,24 +71,35 @@ public class EfaConfigDialog extends BaseTabbedDialog {
 
     private static final String CARD_EMPTY = "__empty__";
     private static final String GROUP_CARD_PREFIX = "__group__::";
-    private static final int NAV_INDENT_PER_LEVEL = 20;
+    private static final int NAV_INDENT_PER_LEVEL = 10;
     private static final String BREADCRUMB_SEPARATOR = " \u203A ";
     private static final String ACTION_NAV_ACTIVATE = "nav.activate";
-    private static final String HIGHLIGHT_STYLE = "background-color:#fff176;";
+    private static final String ACTION_NAV_FOCUS_FILTER = "nav.focusFilter";
+    private static final String ACTION_FILTER_ARROW_UP = "filter.arrowUp";
+    private static final String ACTION_FILTER_ARROW_DOWN = "filter.arrowDown";
+    private static final String HIGHLIGHT_STYLE = "background-color:#fff176; font:bold; color:#000000;";
     private static final Pattern TAG_PATTERN = Pattern.compile("<[^>]*>");
+    private static final int FILTER_DELAY_MS = 500;
+    private static final int MIN_FILTER_LENGTH = 2;
+    private static final int NAVIGATIONLIST_WIDTH = 210;
 
     private EfaConfig myEfaConfig;
 
-    private JSplitPane splitPane;
     private JList<NavEntry> navigationList;
     private DefaultListModel<NavEntry> navigationModel;
     private List<NavEntry> allNavigationEntries;
     private JTextField navigationFilterField;
+    private Timer navigationFilterTimer;
 
     private JPanel cardPanel;
     private CardLayout cardLayout;
     private String lastSelectedCardKey;
-    private JLabel breadcrumbLabel;
+    private RoundedLabel breadcrumbLabel;
+
+    // Persisted UI state across rebuilds
+    private String persistedFilterText = "";
+    private String persistedSelectedCardKey = null;
+    private String persistedSelectedPanelKey = null;
 
     private final List<JPanel> leafCardPanels = new ArrayList<JPanel>();
     private final Map<JLabel, String> originalLabelTexts = new HashMap<JLabel, String>();
@@ -189,7 +208,7 @@ public class EfaConfigDialog extends BaseTabbedDialog {
 
         cardLayout = new CardLayout();
         cardPanel = new JPanel(cardLayout);
-        cardPanel.add(new JPanel(new BorderLayout()), CARD_EMPTY);
+        cardPanel.add(createEmptyCard(), CARD_EMPTY);
 
         int itmcnt = collectNavAndCards(categories, items, catKey, otherPanelHeight, 0);
 
@@ -203,7 +222,10 @@ public class EfaConfigDialog extends BaseTabbedDialog {
             }
             NavEntry entry = navigationList.getSelectedValue();
             if (entry != null && entry.selectable) {
+                persistedSelectedPanelKey = entry.key;
                 showCard(entry.cardKey, entry.key);
+            } else {
+                showCard(CARD_EMPTY, null);
             }
         });
 
@@ -229,54 +251,321 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         });
 
         navigationFilterField = new JTextField();
+        navigationFilterField.setToolTipText(International.getString("STRG+F für Suche"));
+
+        navigationFilterTimer = new Timer(FILTER_DELAY_MS, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                applyNavigationFilterDeferred();
+            }
+        });
+        navigationFilterTimer.setRepeats(false);
+
         navigationFilterField.getDocument().addDocumentListener(new DocumentListener() {
             public void insertUpdate(DocumentEvent e) {
-                applyNavigationFilter();
+                scheduleNavigationFilter();
             }
 
             public void removeUpdate(DocumentEvent e) {
-                applyNavigationFilter();
+                scheduleNavigationFilter();
             }
 
             public void changedUpdate(DocumentEvent e) {
-                applyNavigationFilter();
+                scheduleNavigationFilter();
+            }
+        });
+
+        navigationFilterField.getInputMap(JComponent.WHEN_FOCUSED)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), ACTION_FILTER_ARROW_DOWN);
+        navigationFilterField.getActionMap().put(ACTION_FILTER_ARROW_DOWN, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                moveFocusFromFilterToList(true);
+            }
+        });
+
+        navigationFilterField.getInputMap(JComponent.WHEN_FOCUSED)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), ACTION_FILTER_ARROW_UP);
+        navigationFilterField.getActionMap().put(ACTION_FILTER_ARROW_UP, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                moveFocusFromFilterToList(false);
             }
         });
 
         JPanel navPanel = new JPanel(new BorderLayout(0, 4));
         navPanel.add(navigationFilterField, BorderLayout.NORTH);
-        navPanel.add(new JScrollPane(navigationList), BorderLayout.CENTER);
+        JScrollPane myScroller = new JScrollPane(navigationList);
+        myScroller.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        navPanel.add(myScroller, BorderLayout.CENTER);
+        navPanel.setPreferredSize(new Dimension(NAVIGATIONLIST_WIDTH, 10));
 
-        breadcrumbLabel = new JLabel(" ");
-        breadcrumbLabel.setBorder(BorderFactory.createEmptyBorder(4, 8, 6, 8));
+        breadcrumbLabel = new RoundedLabel();
+        breadcrumbLabel.setBorder(new RoundedBorder(Daten.efaConfig.getHeaderForegroundColor()));
         breadcrumbLabel.setFont(breadcrumbLabel.getFont().deriveFont(Font.BOLD));
         breadcrumbLabel.setToolTipText(null);
+        breadcrumbLabel.setForeground(Daten.efaConfig.getHeaderForegroundColor());
+        breadcrumbLabel.setBackground(Daten.efaConfig.getHeaderBackgroundColor().darker());
+        breadcrumbLabel.setOpaque(true);
 
         JScrollPane cardScrollWrapper = new JScrollPane(cardPanel);
         cardScrollWrapper.getVerticalScrollBar().setUnitIncrement(12);
+        cardScrollWrapper.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
 
         JPanel rightPanel = new JPanel(new BorderLayout());
         rightPanel.add(breadcrumbLabel, BorderLayout.NORTH);
         rightPanel.add(cardScrollWrapper, BorderLayout.CENTER);
 
-        splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, navPanel, rightPanel);
-        splitPane.setResizeWeight(0.25d);
-        splitPane.setDividerLocation(250);
+        JPanel contentPanel = new JPanel(new BorderLayout(8, 0));
+        contentPanel.add(navPanel, BorderLayout.WEST);
+        contentPanel.add(rightPanel, BorderLayout.CENTER);
 
-        currentPane.setLayout(new BorderLayout());
-        currentPane.add(splitPane, BorderLayout.CENTER);
+        currentPane.setLayout(new BorderLayout(8, 0));
+        currentPane.add(contentPanel, BorderLayout.CENTER);
 
-        applyNavigationFilter();
-        selectInitialEntry(selectedPanel);
+        KeyStroke findKey = KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.CTRL_DOWN_MASK);
+        currentPane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+                .put(findKey, ACTION_NAV_FOCUS_FILTER);
+        currentPane.getActionMap().put(ACTION_NAV_FOCUS_FILTER, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                focusFilterField();
+            }
+        });
+
+        // Restore filter text before applying filter model
+        if (persistedFilterText != null && persistedFilterText.length() > 0) {
+            navigationFilterField.setText(persistedFilterText);
+        }
+
+        applyNavigationFilterWithMinLength();
+
+        // Try to restore the exact panel/card after filter is active.
+        if (!restoreSelectionAfterRebuild()) {
+            selectInitialEntry(selectedPanel);
+        }
+
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                focusFilterField();
+            }
+        });
 
         return itmcnt;
     }
 
+    private JPanel createEmptyCard() {
+        JPanel panel = new JPanel(new BorderLayout());
+        JLabel label = new JLabel(International.getString("STRG+F für Suche"), SwingConstants.CENTER);
+        label.setFont(label.getFont().deriveFont(Font.ITALIC));
+        panel.add(label, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private void moveFocusFromFilterToList(boolean toNext) {
+        if (navigationList == null || navigationModel == null || navigationModel.getSize() == 0) {
+            return;
+        }
+
+        int idx = navigationList.getSelectedIndex();
+        if (idx < 0) {
+            idx = toNext ? 0 : (navigationModel.getSize() - 1);
+        } else if (toNext && idx < navigationModel.getSize() - 1) {
+            idx++;
+        } else if (!toNext && idx > 0) {
+            idx--;
+        }
+
+        navigationList.setSelectedIndex(idx);
+        if (navigationList.getFirstVisibleIndex()>idx || navigationList.getLastVisibleIndex()<idx) {
+        	navigationList.ensureIndexIsVisible(idx);
+        }
+        navigationList.requestFocusInWindow();
+    }
+
+    private void focusFilterField() {
+        if (navigationFilterField != null) {
+            navigationFilterField.requestFocusInWindow();
+            navigationFilterField.selectAll();
+        }
+    }
+
+    private void persistCurrentFilterText() {
+        persistedFilterText = navigationFilterField != null ? navigationFilterField.getText() : "";
+    }
+
+    private void scheduleNavigationFilter() {
+        persistCurrentFilterText();
+
+        if (navigationFilterTimer != null) {
+            navigationFilterTimer.restart();
+        }
+    }
+
+    private void applyNavigationFilterDeferred() {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    applyNavigationFilterDeferred();
+                }
+            });
+            return;
+        }
+
+        CursorState cursorState = setWaitCursor(true);
+        try {
+            applyNavigationFilterWithMinLength();
+        } finally {
+            restoreCursor(cursorState);
+        }
+    }
+
+    private void applyNavigationFilterWithMinLength() {
+        String raw = navigationFilterField != null ? navigationFilterField.getText() : "";
+        String trimmed = raw == null ? "" : raw.trim();
+        String filter = normalizeSearchText(trimmed);
+
+        if (filter.length() > 0 && filter.length() < MIN_FILTER_LENGTH) {
+            filter = "";
+        }
+
+        applyNavigationFilter(filter);
+    }
+
+    private CursorState setWaitCursor(boolean wait) {
+        Cursor cursor = wait
+                ? Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
+                : Cursor.getDefaultCursor();
+
+        CursorState state = new CursorState();
+        state.dialog = this;
+        state.dialogCursor = this.getCursor();
+
+        if (navigationFilterField != null) {
+            state.filterField = navigationFilterField;
+            state.filterFieldCursor = navigationFilterField.getCursor();
+        }
+
+        if (navigationList != null) {
+            state.navigationList = navigationList;
+            state.navigationListCursor = navigationList.getCursor();
+        }
+
+        Window window = SwingUtilities.getWindowAncestor(this);
+        if (window != null) {
+            state.window = window;
+            state.windowCursor = window.getCursor();
+            window.setCursor(cursor);
+        }
+
+        this.setCursor(cursor);
+
+        if (navigationFilterField != null) {
+            navigationFilterField.setCursor(cursor);
+        }
+        if (navigationList != null) {
+            navigationList.setCursor(cursor);
+        }
+
+        return state;
+    }
+
+    private void restoreCursor(CursorState state) {
+        if (state == null) {
+            return;
+        }
+
+        if (state.window != null) {
+            state.window.setCursor(state.windowCursor != null
+                    ? state.windowCursor
+                    : Cursor.getDefaultCursor());
+        }
+
+        if (state.dialog != null) {
+            state.dialog.setCursor(state.dialogCursor != null
+                    ? state.dialogCursor
+                    : Cursor.getDefaultCursor());
+        }
+
+        if (state.filterField != null) {
+            state.filterField.setCursor(state.filterFieldCursor != null
+                    ? state.filterFieldCursor
+                    : Cursor.getDefaultCursor());
+        }
+
+        if (state.navigationList != null) {
+            state.navigationList.setCursor(state.navigationListCursor != null
+                    ? state.navigationListCursor
+                    : Cursor.getDefaultCursor());
+        }
+    }
+
+    private boolean restoreSelectionAfterRebuild() {
+        if (navigationModel == null || navigationModel.getSize() == 0) {
+            return false;
+        }
+
+        String desiredCard = persistedSelectedCardKey != null ? persistedSelectedCardKey : lastSelectedCardKey;
+        String desiredPanel = persistedSelectedPanelKey;
+
+        // 1) Try exact panel key first
+        if (desiredPanel != null && desiredPanel.length() > 0) {
+            for (int i = 0; i < navigationModel.size(); i++) {
+                NavEntry e = navigationModel.get(i);
+                if (e.selectable && desiredPanel.equals(e.key)) {
+                    navigationList.setSelectedIndex(i);
+                    if (navigationList.getFirstVisibleIndex()>i || navigationList.getLastVisibleIndex()<i) {
+                    	navigationList.ensureIndexIsVisible(i);
+                    }
+                    showCard(e.cardKey, e.key);
+                    return true;
+                }
+            }
+        }
+
+        // 2) Fallback: match by card key
+        if (desiredCard != null && desiredCard.length() > 0) {
+            for (int i = 0; i < navigationModel.size(); i++) {
+                NavEntry e = navigationModel.get(i);
+                if (e.selectable && desiredCard.equals(e.cardKey)) {
+                    navigationList.setSelectedIndex(i);
+                    if (navigationList.getFirstVisibleIndex()>i || navigationList.getLastVisibleIndex()<i) {
+                    	navigationList.ensureIndexIsVisible(i);
+                    }
+                    showCard(e.cardKey, e.key);
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     public void rebuildConfigGui() {
         displayedGuiItems.clear();
-        if (splitPane != null) {
-            splitPane.removeAll();
+
+        // Capture current state before components are disposed/rebuilt.
+        persistCurrentFilterText();
+
+        if (navigationFilterTimer != null && navigationFilterTimer.isRunning()) {
+            navigationFilterTimer.stop();
         }
+
+        persistedSelectedCardKey = lastSelectedCardKey;
+        persistedSelectedPanelKey = null;
+        if (navigationList != null) {
+            NavEntry selected = navigationList.getSelectedValue();
+            if (selected != null) {
+                persistedSelectedPanelKey = selected.key;
+                if (selected.cardKey != null) {
+                    persistedSelectedCardKey = selected.cardKey;
+                }
+            }
+        }
+
+        removeAll();
         revalidate();
         repaint();
     }
@@ -354,6 +643,7 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         }
 
         if (entry.selectable) {
+            persistedSelectedPanelKey = entry.key;
             showCard(entry.cardKey, entry.key);
             return;
         }
@@ -362,7 +652,9 @@ public class EfaConfigDialog extends BaseTabbedDialog {
             int childIndex = findFirstVisibleSelectableChildIndex(entry.key);
             if (childIndex >= 0 && childIndex != idx) {
                 navigationList.setSelectedIndex(childIndex);
-                navigationList.ensureIndexIsVisible(childIndex);
+                if (navigationList.getFirstVisibleIndex()>childIndex || navigationList.getLastVisibleIndex()<childIndex) {
+                	navigationList.ensureIndexIsVisible(childIndex);
+                }
             }
         }
     }
@@ -373,8 +665,7 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         JPanel innerPanel = new JPanel();
 
         JScrollPane scrollPane = new JScrollPane(innerPanel);
-        scrollPane.setPreferredSize(
-                EfaGuiUtils.getTabPanelPreferredSizeEfaConfig(EfaGuiUtils.getSubCatCount(thisCatKey), this));
+        scrollPane.setPreferredSize(EfaGuiUtils.getTabPanelPreferredSizeEfaConfig(this, NAVIGATIONLIST_WIDTH+50, 200));
         scrollPane.getVerticalScrollBar().setUnitIncrement(12);
 
         innerPanel.setLayout(new GridBagLayout());
@@ -403,11 +694,10 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         return panel;
     }
 
-    private void applyNavigationFilter() {
-        String raw = navigationFilterField != null ? navigationFilterField.getText() : "";
-        String filter = normalizeSearchText(raw == null ? "" : raw.trim());
+    private void applyNavigationFilter(String filter) {
+        String effectiveFilter = filter == null ? "" : filter;
 
-        applyHighlightsToCards(filter);
+        applyHighlightsToCards(effectiveFilter);
 
         String keepCard = lastSelectedCardKey;
         if (keepCard == null && navigationList != null && navigationList.getSelectedValue() != null) {
@@ -416,7 +706,7 @@ public class EfaConfigDialog extends BaseTabbedDialog {
 
         navigationModel.clear();
 
-        if (filter.length() == 0) {
+        if (effectiveFilter.length() == 0) {
             for (int i = 0; i < allNavigationEntries.size(); i++) {
                 navigationModel.addElement(allNavigationEntries.get(i));
             }
@@ -425,7 +715,7 @@ public class EfaConfigDialog extends BaseTabbedDialog {
 
             for (int i = 0; i < allNavigationEntries.size(); i++) {
                 NavEntry e = allNavigationEntries.get(i);
-                if (e.searchText != null && e.searchText.contains(filter)) {
+                if (e.searchText != null && e.searchText.contains(effectiveFilter)) {
                     visibleKeys.add(e.key);
                     String p = e.parentKey;
                     while (p != null) {
@@ -466,8 +756,11 @@ public class EfaConfigDialog extends BaseTabbedDialog {
 
         if (selectedIndex >= 0) {
             navigationList.setSelectedIndex(selectedIndex);
-            navigationList.ensureIndexIsVisible(selectedIndex);
+            if (navigationList.getFirstVisibleIndex()>selectedIndex || navigationList.getLastVisibleIndex()<selectedIndex) {
+            	navigationList.ensureIndexIsVisible(selectedIndex);
+            }
             NavEntry entry = navigationModel.get(selectedIndex);
+            persistedSelectedPanelKey = entry.key;
             showCard(entry.cardKey, entry.key);
         } else {
             showCard(CARD_EMPTY, null);
@@ -475,9 +768,11 @@ public class EfaConfigDialog extends BaseTabbedDialog {
     }
 
     private void applyHighlightsToCards(String normalizedFilter) {
-        for (int i = 0; i < leafCardPanels.size(); i++) {
-            applyHighlightsRecursive(leafCardPanels.get(i), normalizedFilter);
-        }
+    	if (normalizedFilter!=null && normalizedFilter.trim().length()>0) {
+	        for (int i = 0; i < leafCardPanels.size(); i++) {
+	            applyHighlightsRecursive(leafCardPanels.get(i), normalizedFilter);
+	        }
+    	}
     }
 
     private void applyHighlightsRecursive(Component c, String normalizedFilter) {
@@ -590,8 +885,11 @@ public class EfaConfigDialog extends BaseTabbedDialog {
 
         if (indexToSelect >= 0) {
             navigationList.setSelectedIndex(indexToSelect);
-            navigationList.ensureIndexIsVisible(indexToSelect);
+            if (navigationList.getFirstVisibleIndex()>indexToSelect || navigationList.getLastVisibleIndex()<indexToSelect) {
+            	navigationList.ensureIndexIsVisible(indexToSelect);
+            }
             NavEntry entry = navigationModel.get(indexToSelect);
+            persistedSelectedPanelKey = entry.key;
             showCard(entry.cardKey, entry.key);
         } else {
             showCard(CARD_EMPTY, null);
@@ -602,11 +900,13 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         if (cardKey == null) {
             cardLayout.show(cardPanel, CARD_EMPTY);
             lastSelectedCardKey = CARD_EMPTY;
+            persistedSelectedCardKey = CARD_EMPTY;
             updateBreadcrumb(null);
             return;
         }
         cardLayout.show(cardPanel, cardKey);
         lastSelectedCardKey = cardKey;
+        persistedSelectedCardKey = cardKey;
         updateBreadcrumb(fullCategoryKey);
     }
 
@@ -637,6 +937,8 @@ public class EfaConfigDialog extends BaseTabbedDialog {
             }
             if (sb.length() > 0) {
                 sb.append(BREADCRUMB_SEPARATOR);
+            } else {
+                sb.append(" "); // indent the label text by one space
             }
             sb.append(name);
         }
@@ -644,6 +946,8 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         String breadcrumb = sb.toString();
         breadcrumbLabel.setText(breadcrumb);
         breadcrumbLabel.setToolTipText(breadcrumb);
+        breadcrumbLabel.revalidate();
+        breadcrumbLabel.repaint();
     }
 
     private List<String> splitCategoryKey(String fullCategoryKey) {
@@ -729,6 +1033,20 @@ public class EfaConfigDialog extends BaseTabbedDialog {
         }
         Matcher m = TAG_PATTERN.matcher(text);
         return m.replaceAll(" ");
+    }
+
+    private static class CursorState {
+        private Window window;
+        private Cursor windowCursor;
+
+        private Component dialog;
+        private Cursor dialogCursor;
+
+        private Component filterField;
+        private Cursor filterFieldCursor;
+
+        private Component navigationList;
+        private Cursor navigationListCursor;
     }
 
     private static class NavEntry {

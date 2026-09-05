@@ -324,7 +324,7 @@ public class EfaGuiUtils {
     		
     }
     
-    public static Dimension getTabPanelPreferredSizeEfaConfig(int numCats, BaseDialog base) {
+    public static Dimension getTabPanelPreferredSizeEfaConfig(BaseDialog base, int reduceWidth, int reduceHeight) {
 		Dimension s = Toolkit.getDefaultToolkit().getScreenSize();
 		
 		Dimension efaBthsSize = null;
@@ -353,12 +353,13 @@ public class EfaGuiUtils {
     	
     	// No size configured for dialogs or even efaBths window? 
     	// then use screen height/width as base
-   		maxDlgW=Math.min(s.width-80,1200);
-   		maxDlgH=Math.min(s.height-((numCats+1)*25), 900);
+   		maxDlgW=Math.max(maxDlgW-reduceWidth,500);
+   		maxDlgH=Math.max(maxDlgH-reduceHeight, 500);
     	
 		return new Dimension(
-				(int) Math.round(maxDlgW*.85), 
-				(int) Math.round(maxDlgH*.70));
+				maxDlgW, maxDlgH);
+				//(int) Math.round(maxDlgW*.85), 
+				//(int) Math.round(maxDlgH*.70));
     }
     
     public static Dimension getTabPanelPreferredSize(int reduceHeight, BaseDialog base, int intendedMaxWidth, int intendedMaxHeight) {
