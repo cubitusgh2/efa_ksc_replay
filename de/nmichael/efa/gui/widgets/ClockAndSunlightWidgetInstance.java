@@ -166,8 +166,9 @@ public class ClockAndSunlightWidgetInstance extends WidgetInstance implements IW
                 if (sunset < 0 || sunrise < 0 || now < 0) {
                     return;
                 }
-
-                	SwingUtilities.invokeLater(()->{
+                //InvokeLater causes the dialogs to be displayed simultaneously 
+                //and stacked on top of one another when multiple dialogs are configured for display.
+                	//SwingUtilities.invokeLater(()->{
                         String warnText = null;
                         if (now <= sunrise-getWarnTimeBeforeSunrise() || now >= sunset+getWarnTimeAfterSunset()) {
                             warnText = getWarnTextDarkNow();
@@ -182,7 +183,7 @@ public class ClockAndSunlightWidgetInstance extends WidgetInstance implements IW
 	                        dlg.showDialog();
                         }
                 		
-                	});
+                	//});
                 }
         } catch(Exception eignore) {
             Logger.logdebug(eignore);
