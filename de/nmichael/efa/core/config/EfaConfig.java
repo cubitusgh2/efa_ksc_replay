@@ -1377,7 +1377,7 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 			
 			addHintWordWrap("EfaBoathouseToFrontHint", 
 					IItemType.TYPE_EXPERT, BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),
-					International.getString("Die folgenden Optionen sollten nur benutzt werden, wenn es zu Fokusproblemen bei der Fahrteingabe kommt."),30, 10, 6,600);
+					International.getString("Die folgenden Optionen nur dann benutzen, wenn es zu Fenster-Fokusproblemen bei der Fahrteingabe kommt."),30, 10, 6,600);
 			addParameter(efaDirekt_immerImVordergrund = new ItemTypeBoolean("EfaBoathouseWindowAlwaysOnTop", false,
 					IItemType.TYPE_EXPERT,
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_GUI),

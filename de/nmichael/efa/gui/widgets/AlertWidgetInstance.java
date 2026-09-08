@@ -47,7 +47,9 @@ public class AlertWidgetInstance extends WidgetInstance implements IWidgetInstan
                     String text = AlertWidget.getText(list, i);
                     final int usedI = i;
                     if (text != null && text.length() > 0) {
-                    	SwingUtilities.invokeLater(()->{
+                        //InvokeLater causes the dialogs to be displayed simultaneously 
+                        //and stacked on top of one another when multiple dialogs are configured for display.
+                    	//SwingUtilities.invokeLater(()->{
                             String color = "0000ff";
                             String image = BaseDialog.BIGIMAGE_INFO;
                             if (AlertWidget.TYPE_WARN.equals(AlertWidget.getType(list, usedI))) {
@@ -58,7 +60,7 @@ public class AlertWidgetInstance extends WidgetInstance implements IWidgetInstan
 	                        NotificationDialog dlg = new NotificationDialog((JFrame) null,
 	                                text, image, "ffffff", color, Daten.efaConfig.getValueNotificationWindowTimeout());
 	                        dlg.showDialog();
-                    	});
+                    	//});
                     }
                 }
             }
