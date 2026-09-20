@@ -11,7 +11,7 @@
 package de.nmichael.efa.gui;
 
 import de.nmichael.efa.Daten;
-import de.nmichael.efa.core.OnlineUpdate;
+import de.nmichael.efa.core.update.OnlineUpdate;
 import de.nmichael.efa.util.Dialog;
 import de.nmichael.efa.util.International;
 import de.nmichael.efa.util.Mnemonics;

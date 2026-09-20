@@ -10,28 +10,63 @@
 
 package de.nmichael.efa.gui.util;
 
+import java.util.Hashtable;
+import java.util.Vector;
+
+import javax.swing.ImageIcon;
+
 import de.nmichael.efa.Daten;
 import de.nmichael.efa.core.config.AdminRecord;
 import de.nmichael.efa.core.config.Admins;
 import de.nmichael.efa.core.config.EfaConfig;
 import de.nmichael.efa.core.items.IItemType;
 import de.nmichael.efa.core.items.ItemTypeString;
+import de.nmichael.efa.core.update.DialogSelectionStrategy;
+import de.nmichael.efa.core.update.GithubReleaseUpdateProviderStrategy;
+import de.nmichael.efa.core.update.OnlineUpdate;
+import de.nmichael.efa.core.update.UpdateProviderStrategy;
+import de.nmichael.efa.core.update.UpdateSelectionStrategy;
 import de.nmichael.efa.data.Logbook;
 import de.nmichael.efa.data.storage.IDataAccess;
 import de.nmichael.efa.data.storage.RemoteCommand;
 import de.nmichael.efa.data.sync.KanuEfbSyncTask;
-import de.nmichael.efa.gui.*;
-import de.nmichael.efa.gui.dataedit.*;
+import de.nmichael.efa.gui.AdminDialog;
+import de.nmichael.efa.gui.AdminPasswordChangeDialog;
+import de.nmichael.efa.gui.BackupDialog;
+import de.nmichael.efa.gui.BaseDialog;
+import de.nmichael.efa.gui.BaseFrame;
+import de.nmichael.efa.gui.EfaAboutDialog;
+import de.nmichael.efa.gui.EfaBaseFrame;
+import de.nmichael.efa.gui.EfaCloudConfigDialog;
+import de.nmichael.efa.gui.EfaConfigDialog;
 import de.nmichael.efa.gui.ImagesAndIcons;
+import de.nmichael.efa.gui.LogViewDialog;
+import de.nmichael.efa.gui.PluginDialog;
+import de.nmichael.efa.gui.ProgressDialog;
+import de.nmichael.efa.gui.SimpleInputDialog;
+import de.nmichael.efa.gui.TranslateDialog;
+import de.nmichael.efa.gui.dataedit.AdminListDialog;
+import de.nmichael.efa.gui.dataedit.BoatDamageListDialog;
+import de.nmichael.efa.gui.dataedit.BoatListDialog;
+import de.nmichael.efa.gui.dataedit.BoatReservationListDialog;
+import de.nmichael.efa.gui.dataedit.BoatStatusListDialog;
+import de.nmichael.efa.gui.dataedit.ClubworkListDialog;
+import de.nmichael.efa.gui.dataedit.CrewListDialog;
+import de.nmichael.efa.gui.dataedit.DestinationListDialog;
+import de.nmichael.efa.gui.dataedit.FahrtenabzeichenListDialog;
+import de.nmichael.efa.gui.dataedit.GroupListDialog;
+import de.nmichael.efa.gui.dataedit.LogbookListDialog;
+import de.nmichael.efa.gui.dataedit.MessageListDialog;
+import de.nmichael.efa.gui.dataedit.PersonListDialog;
+import de.nmichael.efa.gui.dataedit.SessionGroupListDialog;
+import de.nmichael.efa.gui.dataedit.StatisticsListDialog;
+import de.nmichael.efa.gui.dataedit.StatusListDialog;
+import de.nmichael.efa.gui.dataedit.WatersListDialog;
 import de.nmichael.efa.util.Dialog;
 import de.nmichael.efa.util.Help;
 import de.nmichael.efa.util.International;
 import de.nmichael.efa.util.LogString;
 import de.nmichael.efa.util.Logger;
-import de.nmichael.efa.core.OnlineUpdate;
-import java.util.Hashtable;
-import java.util.Vector;
-import javax.swing.ImageIcon;
 
 public class EfaMenuButton {
 
@@ -525,7 +560,10 @@ public class EfaMenuButton {
                             result));
                 }
             } else {
-                OnlineUpdate.runOnlineUpdate(parentDialog, Daten.ONLINEUPDATE_INFO);
+                //OnlineUpdate.runOnlineUpdate(parentDialog, Daten.ONLINEUPDATE_INFO);
+            	UpdateProviderStrategy gitHubUpdateProvider = new GithubReleaseUpdateProviderStrategy("nicmichael", "efa", true);
+            	UpdateSelectionStrategy dialogStrategy = new DialogSelectionStrategy();
+            	OnlineUpdate.runOnlineUpdate(parentDialog, gitHubUpdateProvider, dialogStrategy);
             }
             return false; // nothing to do for caller of this method
         }

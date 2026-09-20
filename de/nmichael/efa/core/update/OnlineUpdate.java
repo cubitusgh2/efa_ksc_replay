@@ -8,7 +8,7 @@
  * @version 2
  */
 
-package de.nmichael.efa.core;
+package de.nmichael.efa.core.update;
 
 import java.awt.Window;
 import java.io.BufferedInputStream;
@@ -20,6 +20,7 @@ import java.io.OutputStreamWriter;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JDialog;
@@ -28,6 +29,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.XMLReader;
 
 import de.nmichael.efa.Daten;
+import de.nmichael.efa.core.Backup;
 import de.nmichael.efa.data.storage.IDataAccess;
 import de.nmichael.efa.gui.OnlineUpdateDialog;
 import de.nmichael.efa.util.Dialog;
@@ -45,7 +47,29 @@ public class OnlineUpdate {
 
     private static String lastError;
 
+    /**
+	 * Run the old online update process using the specified EOU XML file.
+	 * @param parent The parent dialog for displaying messages. Can be null if running in headless mode.
+	 * @param eouFile The URL of the EOU XML file containing update information.
+	 * @return true if the update process was successful, false otherwise.
+	 */
     public synchronized static boolean runOnlineUpdate(JDialog parent, String eouFile) {
+        return runOnlineUpdate(parent,
+            new EfaNMichaelDeUpdateProviderStrategy(eouFile),
+            new DialogSelectionStrategy()); // wenn jetzt auch bei EOU auswählbar
+    }
+    
+    /**
+	 * Run the online update process using the specified provider and selection strategies.
+	 * @param parent The parent dialog for displaying messages. Can be null if running in headless mode.
+	 * @param provider The strategy for fetching available updates.
+	 * @param selection The strategy for selecting an update from the available candidates.
+	 * @return true if the update process was successful, false otherwise.
+	 * */
+    public synchronized static boolean runOnlineUpdate(
+            JDialog parent,
+            UpdateProviderStrategy provider,
+            UpdateSelectionStrategy selection) {
         Vector<OnlineUpdateInfo> versions = null;
         lastError = null;
 
@@ -57,8 +81,21 @@ public class OnlineUpdate {
             return false;
         }
 
+        List<UpdateCandidate> allUpdateCandidates = null;
+        try {
+           allUpdateCandidates = provider.fetchAvailableUpdates();
+        } catch (Exception e) {
+			lastError = International.getString("Fehler beim Abrufen der Update-Informationen!")
+						+ "\n" + e.getMessage();
+			if (parent != null) {
+				Dialog.error(lastError);
+			}
+			return false;
+        }
+        List<UpdateCandidate> newerCandidates = filterNewerCandidates(allUpdateCandidates, Daten.VERSIONID);
+
         // aktuelle Versionsnummer aus dem Internet besorgen
-        String versionFile = Daten.efaTmpDirectory + "eou.xml";
+        /*String versionFile = Daten.efaTmpDirectory + "eou.xml";
         if (!DownloadThread.getFile(parent, eouFile, versionFile, true)) {
             lastError = International.getString("Keine neue Version gefunden!");
             return false;
@@ -87,11 +124,11 @@ public class OnlineUpdate {
             EfaUtil.deleteFile(versionFile);
             return false;
         }
-
+		*/
         if (Daten.efaConfig != null) {
             Daten.efaConfig.setValueEfaVersionLastCheck(System.currentTimeMillis());
         }
-
+	
         // ist die installierte Version aktuell?
         OnlineUpdateInfo newestVersion = versions.get(0); // first version is always newest one!
         if (Daten.VERSIONID.equals(newestVersion.versionId) ||
@@ -103,7 +140,7 @@ public class OnlineUpdate {
             } else {
                 lastError = International.getString("Es liegt derzeit keine neuere Version von efa vor.");
             }
-            EfaUtil.deleteFile(versionFile);
+
             return true;
         }
 
@@ -187,10 +224,55 @@ public class OnlineUpdate {
         return true;
     }
 
-    public static String getLastError() {
+    /**
+	 * Filters the list of all update candidates to only include those that are newer than the specified version ID.
+	 * @param allUpdateCandidates The list of all available update candidates.
+	 * @param versionid The current version ID to compare against.
+	 * @return A list of update candidates that are newer than the specified version ID.
+	 */
+    private static List<UpdateCandidate> filterNewerCandidates(List<UpdateCandidate> allUpdateCandidates,
+			String versionid) {
+    	
+        List<UpdateCandidate> newer = new Vector<UpdateCandidate>();
+        if (allUpdateCandidates == null || allUpdateCandidates.isEmpty()) {
+            return newer;
+        }
+
+        String current = (versionid == null) ? "" : versionid.trim();
+
+        for (UpdateCandidate candidate : allUpdateCandidates) {
+            if (candidate == null || candidate.getVersionId() == null) {
+                continue;
+            }
+
+            String candidateVersion = candidate.getVersionId().trim();
+            if (candidateVersion.length() == 0) {
+                continue;
+            }
+
+            // Keep only versions strictly newer than current version.
+            if (VersionIdComparator.isNewer(candidateVersion, current)) {
+                newer.add(candidate);
+            }
+        }
+
+        return newer;
+    }
+
+    /**
+	 * Returns the last error message encountered during the online update process.
+	 * @return The last error message, or null if no error has occurred.
+	 */
+	public static String getLastError() {
         return lastError;
     }
 
+	/**
+	 * Collects and formats user information for transmission during the online update process.
+	 * @param newVersionName The name of the new version being installed.
+	 * @return A formatted string containing user information, or null if the project is not open or the club name is not set.
+	 * */
+	
     public static String getTransmitUserInfo(String newVersionName) {
         if (Daten.project == null || !Daten.project.isOpen()) {
             return null;
@@ -217,6 +299,10 @@ public class OnlineUpdate {
         return s.toString();
     }
 
+    /**
+	 * Submits user information to the specified server during the online update process.
+	 * @param newVersionName The name of the new version being installed.
+	 * */
     public static void submitUserInfos(String newVersionName) {
         String infos = getTransmitUserInfo(newVersionName);
         if (infos == null || Daten.INTERNET_EFAMAIL == null) {
@@ -255,6 +341,23 @@ public class OnlineUpdate {
 
 }
 
+/**	
+ * Parses the XML file containing online update information and extracts relevant details.
+ * The expected XML structure is as follows:
+ * <efaOnlineUpdate>
+ *     <Version>
+ *         <VersionID>...</VersionID>
+ *         <ReleaseDate>...</ReleaseDate>
+ *         <DownloadUrl>...</DownloadUrl>
+ *         <DownloadSize>...</DownloadSize>
+ *         <Changes lang="...">
+ *             <ChangeItem>...</ChangeItem>
+ *             ...
+ *         </Changes>
+ *     </Version>
+ *     ...
+ * </efaOnlineUpdate>
+ */
 class OnlineUpdateFileParser extends XmlHandler {
 
     public static String XML_ONLINEUPDATE = "efaOnlineUpdate";
@@ -278,7 +381,14 @@ class OnlineUpdateFileParser extends XmlHandler {
     public Vector<OnlineUpdateInfo> getVersions() {
         return versions;
     }
-
+    
+    /**
+	 * Called when the parser encounters the start of an element.
+	 * @param uri The Namespace URI, or the empty string if the element has no Namespace URI or if Namespace processing is not being performed.
+	 * @param localName The local name (without prefix), or the empty string if Namespace processing is not being performed.
+	 * @param qname The qualified name (with prefix), or the empty string if qualified names are not available.
+	 * @param atts The attributes attached to the element. If there are no attributes, it shall be an empty Attributes object.
+	 */
     public void startElement(String uri, String localName, String qname, Attributes atts) {
         super.startElement(uri, localName, qname, atts);
 
@@ -291,6 +401,12 @@ class OnlineUpdateFileParser extends XmlHandler {
         }
     }
 
+    /**
+	 * Called when the parser encounters the end of an element.
+	 * @param uri The Namespace URI, or the empty string if the element has no Namespace URI or if Namespace processing is not being performed.
+	 * @param localName The local name (without prefix), or the empty string if Namespace processing is not being performed.
+	 * @param qname The qualified name (with prefix), or the empty string if qualified names are not available.
+	 * */
     public void endElement(String uri, String localName, String qname) {
         super.endElement(uri, localName, qname);
 
@@ -329,7 +445,10 @@ class OnlineUpdateFileParser extends XmlHandler {
 
 }
 
-
+/**
+ * Implements the ExecuteAfterDownload interface to handle the actions to be taken after a successful or failed download.
+ * This includes verifying the downloaded file size, backing up existing data, unzipping the downloaded update, and restarting the application if necessary.
+ */
 class ExecuteAfterDownloadImpl implements ExecuteAfterDownload {
 
     Window parent;
@@ -344,7 +463,10 @@ class ExecuteAfterDownloadImpl implements ExecuteAfterDownload {
         this.fileSize = fileSize;
         this.versionId = versionId;
     }
-
+    /**
+	 * Called when the download is successful. This method verifies the downloaded file size, backs up
+	 * existing data, unzips the downloaded update, and restarts the application if necessary.
+	 * */
     public void success() {
         if (parent != null) {
             parent.setEnabled(true);
@@ -398,8 +520,7 @@ class ExecuteAfterDownloadImpl implements ExecuteAfterDownload {
         }
         
         if (result != null) {
-        	if (result.getStatus()==EfaZIPUtil.UnzipStatus.SUCCESS 
-        		|| result.getStatus()==EfaZIPUtil.UnzipStatus.SUCCESS_WITH_WARNINGS) {
+        	if (result.getStatus()==EfaZIPUtil.UnzipStatus.FAILURE) {
         		String errorText = result.getErrorsAsString();
         		if (errorText.length() > 1000) {
         			errorText = errorText.substring(0, 1000);
@@ -433,6 +554,10 @@ class ExecuteAfterDownloadImpl implements ExecuteAfterDownload {
         }
     }
 
+    /**
+	 * Called when the download fails. This method enables the parent window and displays an error message
+	 * indicating that the operation failed.
+	 * */
     public void failure(String text) {
         parent.setEnabled(true);
         Dialog.infoDialog(LogString.operationFailed(International.getString("Installation")));

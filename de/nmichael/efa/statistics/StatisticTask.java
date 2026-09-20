@@ -10,10 +10,10 @@
 package de.nmichael.efa.statistics;
 
 import de.nmichael.efa.Daten;
-import de.nmichael.efa.core.OnlineUpdate;
 import de.nmichael.efa.core.Plugins;
 import de.nmichael.efa.core.config.AdminRecord;
 import de.nmichael.efa.core.config.EfaTypes;
+import de.nmichael.efa.core.update.OnlineUpdate;
 import de.nmichael.efa.data.*;
 import de.nmichael.efa.data.StatisticsRecord.OutputTypes;
 import de.nmichael.efa.data.StatisticsRecord.StatisticCategory;
