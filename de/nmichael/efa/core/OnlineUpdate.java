@@ -10,17 +10,6 @@
 
 package de.nmichael.efa.core;
 
-import de.nmichael.efa.Daten;
-import de.nmichael.efa.data.storage.IDataAccess;
-import de.nmichael.efa.gui.OnlineUpdateDialog;
-import de.nmichael.efa.util.Dialog;
-import de.nmichael.efa.util.DownloadThread;
-import de.nmichael.efa.util.EfaUtil;
-import de.nmichael.efa.util.ExecuteAfterDownload;
-import de.nmichael.efa.util.International;
-import de.nmichael.efa.util.LogString;
-import de.nmichael.efa.util.Logger;
-import de.nmichael.efa.util.XmlHandler;
 import java.awt.Window;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -32,9 +21,25 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.util.Vector;
+
 import javax.swing.JDialog;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.XMLReader;
+
+import de.nmichael.efa.Daten;
+import de.nmichael.efa.data.storage.IDataAccess;
+import de.nmichael.efa.gui.OnlineUpdateDialog;
+import de.nmichael.efa.util.Dialog;
+import de.nmichael.efa.util.DownloadThread;
+import de.nmichael.efa.util.EfaUtil;
+import de.nmichael.efa.util.EfaZIPUtil;
+import de.nmichael.efa.util.EfaZIPUtil.UnzipResult;
+import de.nmichael.efa.util.ExecuteAfterDownload;
+import de.nmichael.efa.util.International;
+import de.nmichael.efa.util.LogString;
+import de.nmichael.efa.util.Logger;
+import de.nmichael.efa.util.XmlHandler;
 
 public class OnlineUpdate {
 
@@ -384,24 +389,29 @@ class ExecuteAfterDownloadImpl implements ExecuteAfterDownload {
             }
         }
 
-        // Neue Version entpacken
-       // if (Date)
-        String result = null;
+        //Using new unzip method
+        UnzipResult result = null;
         if (Daten.isOsLinux()) {
-            result= EfaUtil.unzip(zipFile, Daten.efaMainDirectory, ".jar", ".jar.new");
+            result= EfaZIPUtil.unzipToResult(zipFile, Daten.efaMainDirectory, ".jar", ".jar.new");
         } else {
-            result= EfaUtil.unzip(zipFile, Daten.efaMainDirectory);
+            result= EfaZIPUtil.unzipToResult(zipFile, Daten.efaMainDirectory);
         }
+        
         if (result != null) {
-            if (result.length() > 1000) {
-                result = result.substring(0, 1000);
-            }
-            lastError = LogString.operationFailed(International.getString("Installation")) +
-                    "\n" + result;
-            if (parent != null) {
-                Dialog.error(lastError);
-            }
-            return;
+        	if (result.getStatus()==EfaZIPUtil.UnzipStatus.SUCCESS 
+        		|| result.getStatus()==EfaZIPUtil.UnzipStatus.SUCCESS_WITH_WARNINGS) {
+        		String errorText = result.getErrorsAsString();
+        		if (errorText.length() > 1000) {
+        			errorText = errorText.substring(0, 1000);
+        		}
+        		
+	            lastError = LogString.operationFailed(International.getString("Installation")) +
+	                    "\n" + errorText;
+	            if (parent != null) {
+	                Dialog.error(lastError);
+	            }
+	            return;
+        	}
         }
 
         // Erfolgreich
