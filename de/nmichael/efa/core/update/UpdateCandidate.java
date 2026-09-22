@@ -17,9 +17,10 @@ public class UpdateCandidate {
     private final String sourceName;
     private final boolean isDraft;
     private final String eouURL;
+    private final String tag; // GitHub Tag ID
     
     public UpdateCandidate(String versionId, String releaseDate, String downloadUrl,
-            long downloadSize, List<String> changes, String sourceName, boolean isDraft, String eouURL) {
+            long downloadSize, List<String> changes, String sourceName, boolean isDraft, String eouURL, String tag) {
         this.versionId = versionId;
         this.releaseDate = releaseDate;
         this.downloadUrl = downloadUrl;
@@ -28,6 +29,7 @@ public class UpdateCandidate {
         this.sourceName = sourceName;
         this.isDraft = isDraft;
         this.eouURL = eouURL;
+        this.tag = tag;
     }
 
     public String getVersionId() { return versionId; }
@@ -38,6 +40,7 @@ public class UpdateCandidate {
     public String getSourceName() { return sourceName; }
     public boolean isDraft() { return isDraft; }
     public String getEouURL() { return eouURL; }
+    public String getTag() { return tag; }
     @Override
     public String toString() {
         return versionId + " (" + sourceName + ")";

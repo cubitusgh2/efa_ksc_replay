@@ -81,9 +81,43 @@ section="Other"
 		</Section>
 	</Sections>
 	<Version>
+        <VersionID>2.5.3#16</VersionID>
+        <ReleaseDate>19.09.2026</ReleaseDate>
+        <DownloadUrl>https://github.com/nicmichael/efa/releases/download/2.5.3-beta.16/efa2.5.3_16.zip</DownloadUrl>
+        <DownloadSize>TODO</DownloadSize>
+     	<MinimumJavaVersion>1.8</MinimumJavaVersion>
+		<MinimumEfaCloudVersion>2.3.3</MinimumEfaCloudVersion>
+        <ShowNotice lang="de">Wenn efaCloud eingesetzt wird, muss der Server mindestens Version 2.3.3 unterstützen. EfaCloud 2.4.0_12 und höher werden empfohlen.</ShowNotice>
+        <ShowNotice lang="en">If you use efaCloud, make sure your server at least supports efaCloud Version 2.3.3. It is recommended to upgrade to EfaCloud 2.4.0_12 or above.</ShowNotice>
+        <Changes lang="de">
+        	<ChangeItem section="Admin/Other">BugFix: Verarbeitung der .efacred Datei verbessert. Logging für das Handling der .efacred Datei und für Loginvorgänge verbessert.</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+        	<ChangeItem section="Admin/Other">BugFix: Improved processing of the .efacred file. Logging for handling the .efacred file and for login processes improved.</ChangeItem>
+        </Changes>
+	</Version>
+	<Version>
+        <VersionID>2.5.3#15</VersionID>
+        <ReleaseDate>13.09.2026</ReleaseDate>
+        <DownloadUrl>https://github.com/nicmichael/efa/releases/download/2.5.3-beta.15/efa2.5.3_15.zip</DownloadUrl>
+        <DownloadSize>TODO</DownloadSize>
+     	<MinimumJavaVersion>1.8</MinimumJavaVersion>
+		<MinimumEfaCloudVersion>2.3.3</MinimumEfaCloudVersion>
+        <ShowNotice lang="de">Wenn efaCloud eingesetzt wird, muss der Server mindestens Version 2.3.3 unterstützen. EfaCloud 2.4.0_12 und höher werden empfohlen.</ShowNotice>
+        <ShowNotice lang="en">If you use efaCloud, make sure your server at least supports efaCloud Version 2.3.3. It is recommended to upgrade to EfaCloud 2.4.0_12 or above.</ShowNotice>
+        <Changes lang="de">
+        	<ChangeItem section="Admin/Data Edit">Bugfix: Dialoge für die Bearbeitung von Booten, Personen, Gruppen, Zielen wurden größer als das konfigurierte Limit für Dialoggrößen.</ChangeItem>
+        	<ChangeItem section="Stability">Neu: die Änderungshistorie zeigt die Änderungen einer Version nun je nach Bereich an. Dazu wurde eou.xml überarbeitet und um alle Einträge früher als Version 2.3.3 bereinigt.</ChangeItem>
+        </Changes>
+        <Changes lang="en">
+			<ChangeItem section="Admin/Data Edit">Bugfix: Dialogs for editing boats, persons, groups, and destinations were larger than the configured limit for dialog sizes.</ChangeItem>
+			<ChangeItem section="Stability">New: The change history now displays the changes of a version according to their respective areas. For this purpose, eou.xml has been revised and all entries earlier than version 2.3.3 have been cleaned up.</ChangeItem>
+        </Changes>
+	</Version>	
+	<Version>
         <VersionID>2.5.3#14</VersionID>
         <ReleaseDate>10.09.2026</ReleaseDate>
-        <DownloadUrl>TODO</DownloadUrl>
+        <DownloadUrl>https://github.com/nicmichael/efa/releases/download/2.5.3-beta.14/efa2.5.3_14.zip</DownloadUrl>
         <DownloadSize>TODO</DownloadSize>
      	<MinimumJavaVersion>1.8</MinimumJavaVersion>
 		<MinimumEfaCloudVersion>2.3.3</MinimumEfaCloudVersion>
@@ -101,7 +135,7 @@ section="Other"
 	<Version>
         <VersionID>2.5.3#13</VersionID>
         <ReleaseDate>07.09.2026</ReleaseDate>
-        <DownloadUrl>TODO</DownloadUrl>
+        <DownloadUrl>https://github.com/nicmichael/efa/releases/download/2.5.3-beta.13/efa2.5.3_13.zip</DownloadUrl>
         <DownloadSize>TODO</DownloadSize>
      	  <MinimumJavaVersion>1.8</MinimumJavaVersion>
 		    <MinimumEfaCloudVersion>2.3.3</MinimumEfaCloudVersion>
@@ -119,7 +153,7 @@ section="Other"
 	<Version>
         <VersionID>2.5.3#10</VersionID>
         <ReleaseDate>16.08.2026</ReleaseDate>
-        <DownloadUrl>TODO</DownloadUrl>
+        <DownloadUrl>https://github.com/nicmichael/efa/releases/download/2.5.3-beta.10/efa2.5.3_10.zip</DownloadUrl>
         <DownloadSize>TODO</DownloadSize>
      	<MinimumJavaVersion>1.8</MinimumJavaVersion>
 		<MinimumEfaCloudVersion>2.3.3</MinimumEfaCloudVersion>
@@ -143,7 +177,7 @@ section="Other"
 	<Version>
         <VersionID>2.5.3#9</VersionID>
         <ReleaseDate>19.07.2026</ReleaseDate>
-        <DownloadUrl>TODO</DownloadUrl>
+        <DownloadUrl>https://github.com/nicmichael/efa/releases/download/2.5.3-beta.9/efa2.5.3_9.zip</DownloadUrl>
         <DownloadSize>TODO</DownloadSize>
      	<MinimumJavaVersion>1.8</MinimumJavaVersion>
 		<MinimumEfaCloudVersion>2.3.3</MinimumEfaCloudVersion>
@@ -161,7 +195,7 @@ section="Other"
 	<Version>
         <VersionID>2.5.3#8</VersionID>
         <ReleaseDate>14.06.2026</ReleaseDate>
-        <DownloadUrl>TODO</DownloadUrl>
+        <DownloadUrl>https://github.com/nicmichael/efa/releases/download/2.5.1-beta.8/efa2.5.1_8.zip</DownloadUrl>
         <DownloadSize>TODO</DownloadSize>
      	<MinimumJavaVersion>1.8</MinimumJavaVersion>
 		<MinimumEfaCloudVersion>2.3.3</MinimumEfaCloudVersion>
@@ -187,7 +221,7 @@ section="Other"
 	<Version>
         <VersionID>2.5.3#7</VersionID>
         <ReleaseDate>14.06.2026</ReleaseDate>
-        <DownloadUrl>TODO</DownloadUrl>
+        <DownloadUrl>https://github.com/nicmichael/efa/releases/download/2.5.3-beta.7/efa2.5.3_7.zip</DownloadUrl>
         <DownloadSize>TODO</DownloadSize>
      	<MinimumJavaVersion>1.8</MinimumJavaVersion>
 		<MinimumEfaCloudVersion>2.3.3</MinimumEfaCloudVersion>
@@ -205,7 +239,7 @@ section="Other"
 	<Version>
         <VersionID>2.5.3#6</VersionID>
         <ReleaseDate>09.06.2026</ReleaseDate>
-        <DownloadUrl>TODO</DownloadUrl>
+        <DownloadUrl>https://github.com/nicmichael/efa/releases/download/2.5.3-beta.6/efa2.5.3_6.zip</DownloadUrl>
         <DownloadSize>TODO</DownloadSize>
      	<MinimumJavaVersion>1.8</MinimumJavaVersion>
 		<MinimumEfaCloudVersion>2.3.3</MinimumEfaCloudVersion>
@@ -223,7 +257,7 @@ section="Other"
 	<Version>
         <VersionID>2.5.3#5</VersionID>
         <ReleaseDate>02.06.2026</ReleaseDate>
-        <DownloadUrl>TODO</DownloadUrl>
+        <DownloadUrl>https://github.com/nicmichael/efa/releases/download/2.5.3-beta.5/efa2.5.3_5.zip</DownloadUrl>
         <DownloadSize>TODO</DownloadSize>
      	<MinimumJavaVersion>1.8</MinimumJavaVersion>
 		<MinimumEfaCloudVersion>2.3.3</MinimumEfaCloudVersion>
@@ -275,7 +309,7 @@ section="Other"
 	<Version>
         <VersionID>2.5.3#2</VersionID>
         <ReleaseDate>27.05.2026</ReleaseDate>
-        <DownloadUrl>TODO</DownloadUrl>
+        <DownloadUrl>https://github.com/nicmichael/efa/releases/download/2.5.3-beta.2/efa2.5.3_2.zip</DownloadUrl>
         <DownloadSize>TODO</DownloadSize>
      	<MinimumJavaVersion>1.8</MinimumJavaVersion>
 		  <MinimumEfaCloudVersion>2.3.3</MinimumEfaCloudVersion>
@@ -305,7 +339,7 @@ section="Other"
 	<Version>
         <VersionID>2.5.3#1</VersionID>
         <ReleaseDate>27.04.2026</ReleaseDate>
-        <DownloadUrl>TODO</DownloadUrl>
+        <DownloadUrl>https://github.com/nicmichael/efa/releases/download/2.5.3-beta.1/efa2.5.3_1.zip</DownloadUrl>
         <DownloadSize>TODO</DownloadSize>
      	<MinimumJavaVersion>1.8</MinimumJavaVersion>
 		  <MinimumEfaCloudVersion>2.3.3</MinimumEfaCloudVersion>
@@ -331,7 +365,7 @@ section="Other"
   <Version>
         <VersionID>2.5.2</VersionID>
         <ReleaseDate>26.04.2026</ReleaseDate>
-        <DownloadUrl>TODO</DownloadUrl>
+        <DownloadUrl>https://github.com/nicmichael/efa/releases/download/v2.5.2/efa2.5.2.zip</DownloadUrl>
         <DownloadSize>TODO</DownloadSize>
      	<MinimumJavaVersion>1.8</MinimumJavaVersion>
 		<MinimumEfaCloudVersion>2.3.3</MinimumEfaCloudVersion>
@@ -349,7 +383,7 @@ section="Other"
 	<Version>
         <VersionID>2.5.1#9</VersionID>
         <ReleaseDate>19.02.2026</ReleaseDate>
-        <DownloadUrl>TODO</DownloadUrl>
+        <DownloadUrl>https://github.com/nicmichael/efa/releases/download/2.5.1-beta.9/efa2.5.1_9.zip</DownloadUrl>
         <DownloadSize>TODO</DownloadSize>
      	<MinimumJavaVersion>1.8</MinimumJavaVersion>
 		<MinimumEfaCloudVersion>2.3.3</MinimumEfaCloudVersion>
@@ -381,7 +415,7 @@ section="Other"
 	<Version>
         <VersionID>2.5.1#8</VersionID>
         <ReleaseDate>14.02.2026</ReleaseDate>
-        <DownloadUrl>TODO</DownloadUrl>
+        <DownloadUrl>https://github.com/nicmichael/efa/releases/download/2.5.1-beta.8/efa2.5.1_8.zip</DownloadUrl>
         <DownloadSize>TODO</DownloadSize>
      	<MinimumJavaVersion>1.8</MinimumJavaVersion>
 		<MinimumEfaCloudVersion>2.3.3</MinimumEfaCloudVersion>

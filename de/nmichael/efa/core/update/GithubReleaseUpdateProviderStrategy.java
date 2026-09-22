@@ -81,11 +81,16 @@ public class GithubReleaseUpdateProviderStrategy implements UpdateProviderStrate
                 continue;
             }
 
-            String versionId = normalizeTag(release.optString("tag_name", ""));
+            String tag = normalizeTag(release.optString("tag_name", ""));
+            String versionId = tag;
             if (versionId.length() == 0) {
                 continue;
             }
+            // on github the tag name contains -beta. instead of a "#" in the version string, 
+            // so we replace it here to match the versioning scheme used in EFA.
 
+            versionId = versionId.replace("-beta.", "#");
+            
             JSONObject asset = findZipAsset(release.optJSONArray("assets"));
             if (asset == null) {
                 // Skip releases without downloadable zip asset.
@@ -116,7 +121,8 @@ public class GithubReleaseUpdateProviderStrategy implements UpdateProviderStrate
                     changes,
                     getName(),
                     draft,
-                    eouXmlDownloadUrl));
+                    eouXmlDownloadUrl, 
+                    tag));
         }
 
         // Ensure newest first even if API order changes.

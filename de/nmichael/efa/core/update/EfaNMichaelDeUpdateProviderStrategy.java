@@ -50,7 +50,8 @@ public class EfaNMichaelDeUpdateProviderStrategy implements UpdateProviderStrate
                     new ArrayList<String>(v.getChanges()),
                     getName(),
                     false,
-                    eouUrl
+                    eouUrl,
+                    v.versionId
                 ));
             }
             return result;
