@@ -1,7 +1,9 @@
 package de.nmichael.efa.core.update;
 
+import java.awt.Window;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -15,6 +17,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import de.nmichael.efa.Daten;
+import de.nmichael.efa.util.DownloadThread;
 import de.nmichael.efa.util.Logger;
 
 /**
@@ -30,6 +33,7 @@ public class GithubReleaseUpdateProviderStrategy implements UpdateProviderStrate
     private final String assetNameMustContain; // optional, e.g. "efa"
     private final int connectTimeoutMs;
     private final int readTimeoutMs;
+    public static final String GITHUB = "GitHub";
 
     public GithubReleaseUpdateProviderStrategy(String owner, String repo) {
         this(owner, repo, false, false, "efa", 15000, 30000);
@@ -51,12 +55,14 @@ public class GithubReleaseUpdateProviderStrategy implements UpdateProviderStrate
         this.readTimeoutMs = readTimeoutMs;
     }
 
-    @Override
     public String getName() {
-        return "GitHub";
+        return GITHUB;
     }
+    
+    public String getSource() {
+		return getApiUrl();
+	}
 
-    @Override
     /**
 	 * Fetches available releases from GitHub API and maps them to UpdateCandidate.
 	 * Filters out drafts and pre-releases based on configuration.
@@ -89,7 +95,7 @@ public class GithubReleaseUpdateProviderStrategy implements UpdateProviderStrate
             // on github the tag name contains -beta. instead of a "#" in the version string, 
             // so we replace it here to match the versioning scheme used in EFA.
 
-            versionId = versionId.replace("-beta.", "#");
+            versionId = versionId.replace("-beta.", "_#");
             
             JSONObject asset = findZipAsset(release.optJSONArray("assets"));
             if (asset == null) {
@@ -130,7 +136,7 @@ public class GithubReleaseUpdateProviderStrategy implements UpdateProviderStrate
             @Override
             public int compare(UpdateCandidate a, UpdateCandidate b) {
                 // descending (newest first)
-                return -VersionIdComparator.compare(a.getVersionId(), b.getVersionId());
+                return VersionIdComparator.compare(a.getVersionId(), b.getVersionId());
             }
         });
 
@@ -378,5 +384,33 @@ public class GithubReleaseUpdateProviderStrategy implements UpdateProviderStrate
 	 * */
     public String getApiUrl() {
         return "https://api.github.com/repos/" + owner + "/" + repo + "/releases";
+    }
+    
+    /**
+	 * Fetches the newest EOU file from the provider.
+	 * This method is used to obtain the latest EOU file, which contains information about available updates.
+	 * @param parent The parent window for any dialogs that may be displayed during the download process.
+	 * @param newerCandidates A sorted list (newest first) of update candidates that are newer than the current version.
+	 * @return The newest EOU file or null if the download fails.
+	 * @throws Exception
+	 */
+    public File fetchNewestEOUFile(Window parent, List<UpdateCandidate> newerCandidates) throws Exception{
+    	UpdateCandidate newestCandidate = null;
+    	newestCandidate = (newestCandidate != null) ? newestCandidate : newerCandidates.get(0);
+
+    	if (newestCandidate != null && newestCandidate.getEouURL() != null && !newestCandidate.getEouURL().isEmpty()) {
+			String versionFile = Daten.efaTmpDirectory + "eou.xml";
+			if (!DownloadThread.getFile(parent, newestCandidate.getEouURL(), versionFile, true)) {
+				// No candidate with a valid EOU download URL found.
+				Logger.log(Logger.INFO, Logger.MSG_STAT_IGNOREDENTRIES, "No EOU download URL found in newer candidates.");
+				return null;
+			} else {
+				Logger.log(Logger.INFO, Logger.MSG_STAT_IGNOREDENTRIES, "Downloaded EOU file from: " + newestCandidate.getEouURL());
+				return new File(versionFile);
+			}
+    	} else {
+    		Logger.log(Logger.INFO, Logger.MSG_STAT_IGNOREDENTRIES, "No newer candidates found or no EOU download URL available.");
+			return null;
+    	}
     }
 }

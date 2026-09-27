@@ -20,6 +20,8 @@ import java.io.OutputStreamWriter;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Vector;
 
@@ -70,16 +72,8 @@ public class OnlineUpdate {
             JDialog parent,
             UpdateProviderStrategy provider,
             UpdateSelectionStrategy selection) {
-        Vector<OnlineUpdateInfo> versions = null;
+        Vector<OnlineUpdateInfo> eouVersions = null;
         lastError = null;
-
-        // Online Update
-        if (parent != null &&
-            !Dialog.okAbbrDialog(International.getString("Online-Update"),
-                International.getString("Prüfen auf neue Programmversion") + "\n\n" +
-                International.getString("Bitte stelle eine Verbindung zum Internet her."))) {
-            return false;
-        }
 
         List<UpdateCandidate> allUpdateCandidates = null;
         try {
@@ -95,44 +89,56 @@ public class OnlineUpdate {
         List<UpdateCandidate> newerCandidates = filterNewerCandidates(allUpdateCandidates, Daten.VERSIONID);
 
         // aktuelle Versionsnummer aus dem Internet besorgen
-        /*String versionFile = Daten.efaTmpDirectory + "eou.xml";
-        if (!DownloadThread.getFile(parent, eouFile, versionFile, true)) {
-            lastError = International.getString("Keine neue Version gefunden!");
-            return false;
-        }
-
+        File versionFile = null;
+        try {
+			versionFile = provider.fetchNewestEOUFile(parent, newerCandidates);
+		} catch (Exception e) {
+			lastError = International.getString("Fehler beim Abrufen der Update-Informationen!")
+					+ "\n" + e.getMessage();
+			if (parent != null) {
+				Dialog.error(lastError);
+			}
+			return false;
+		}
+        if (versionFile == null || !versionFile.exists()) {
+			lastError = International.getString("Keine neue Version gefunden!");
+			if (parent != null) {
+				Dialog.error(lastError);
+			}
+			return false;
+		}
+        
         try {
             XMLReader parser = EfaUtil.getXMLReader();
             OnlineUpdateFileParser ou = new OnlineUpdateFileParser();
             parser.setContentHandler(ou);
-            parser.parse(versionFile);
-            versions = ou.getVersions();
+            parser.parse(versionFile.getAbsolutePath());
+            eouVersions = ou.getVersions();
         } catch (Exception ee) {
             lastError = International.getString("Keine neue Version gefunden!")
                         + "\n" + ee.getMessage();
             if (parent != null) {
                 Dialog.error(lastError);
             }
-            EfaUtil.deleteFile(versionFile);
+            EfaUtil.deleteFile(versionFile.getAbsolutePath());
             return false;
         }
-        if (versions == null || versions.size() == 0) {
+        if (eouVersions == null || eouVersions.size() == 0) {
             lastError = International.getString("Keine neue Version gefunden!");
             if (parent != null) {
                 Dialog.error(lastError);
             }
-            EfaUtil.deleteFile(versionFile);
+            EfaUtil.deleteFile(versionFile.getAbsolutePath());
             return false;
         }
-		*/
+		
         if (Daten.efaConfig != null) {
             Daten.efaConfig.setValueEfaVersionLastCheck(System.currentTimeMillis());
         }
 	
         // ist die installierte Version aktuell?
-        OnlineUpdateInfo newestVersion = versions.get(0); // first version is always newest one!
-        if (Daten.VERSIONID.equals(newestVersion.versionId) ||
-            Daten.VERSIONID.compareTo(newestVersion.versionId) > 0) {
+        OnlineUpdateInfo newestVersion = eouVersions.get(0); // first version is always newest one!
+        if (!VersionIdComparator.isNewer(newestVersion.versionId, Daten.VERSIONID)) {
             if (parent != null) {
                 Dialog.infoDialog(International.getString("Es liegt derzeit keine neuere Version von efa vor.") + "\n"
                         + International.getMessage("Die von Dir benutzte Version {version} ist noch aktuell.",
@@ -146,8 +152,8 @@ public class OnlineUpdate {
 
         // Ok, es gibt eine neue Version --> Infos über diese Version einlesen
         Vector<String> changes = new Vector<String>();
-        for (int i=0; i<versions.size(); i++) {
-            OnlineUpdateInfo version = versions.get(i);
+        for (int i=0; i<eouVersions.size(); i++) {
+            OnlineUpdateInfo version = eouVersions.get(i);
             if (Daten.VERSIONID.compareTo(version.versionId) >= 0) {
                 break;
             }
@@ -159,6 +165,14 @@ public class OnlineUpdate {
             }
         }
 
+        // TODO: needs fix so that the download size is only taken from eou file 
+        // if the provider is not GitHub or LocalFile, because those providers may not provide the download size in the eou file.
+        if (newestVersion.downloadSize==0) {
+        	if (provider.getName().equals(GithubReleaseUpdateProviderStrategy.GITHUB) || 
+        			provider.getName().equals(LocalFileUpdateProviderStrategy.LOCAL_FILE)) {
+        		newestVersion.downloadSize = -1;
+        	}
+        }
         // Ok, Informationen gelesen: Jetzt auf dem Bildschirm anzeigen
         if (parent != null) {
             OnlineUpdateDialog dlg = new OnlineUpdateDialog(parent,
@@ -256,6 +270,15 @@ public class OnlineUpdate {
             }
         }
 
+        // Ensure newest first even if API order changes.
+        Collections.sort(newer, new Comparator<UpdateCandidate>() {
+            @Override
+            public int compare(UpdateCandidate a, UpdateCandidate b) {
+                // descending (newest first)
+                return VersionIdComparator.compare(a.getVersionId(), b.getVersionId());
+            }
+        });
+        
         return newer;
     }
 
@@ -472,7 +495,7 @@ class ExecuteAfterDownloadImpl implements ExecuteAfterDownload {
             parent.setEnabled(true);
         }
         File f = new File(zipFile);
-        if (f.length() != fileSize) {
+        if ((fileSize>0) && (f.length() != fileSize)) {
             lastError = International.getString("Der Download ist unvollständig.");
             if (parent != null) {
                 Dialog.error(LogString.operationAborted(International.getString("Update")) + "\n" + lastError);

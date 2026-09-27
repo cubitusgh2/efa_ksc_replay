@@ -1,5 +1,7 @@
 package de.nmichael.efa.core.update;
 
+import java.awt.Window;
+import java.io.File;
 import java.util.List;
 
 /**
@@ -32,6 +34,12 @@ public interface UpdateProviderStrategy {
 	 * @return Name of the update provider.
 	 */
 	String getName();
+	
+    /**
+	 * Returns the source of the update provider.
+	 * @return Source of the update provider.
+	 */
+	String getSource();
 
 	/**
 	 * Fetches available updates from the provider.
@@ -39,4 +47,12 @@ public interface UpdateProviderStrategy {
 	 * @throws Exception if an error occurs while fetching updates.
 	 */
     List<UpdateCandidate> fetchAvailableUpdates() throws Exception; // newest first
+    
+    /**
+     * Fetches the newest EOU file from the provider.
+	 * This method is used to obtain the latest EOU file, which contains information about available updates.
+     * @return The newest EOU file.
+     * @throws Exception
+     */
+    File fetchNewestEOUFile(Window parent, List<UpdateCandidate> newerCandidates) throws Exception;
 }

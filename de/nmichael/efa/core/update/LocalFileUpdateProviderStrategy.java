@@ -1,5 +1,6 @@
 package de.nmichael.efa.core.update;
 
+import java.awt.Window;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,11 +12,16 @@ import de.nmichael.efa.util.EfaUtil;
 
 public class LocalFileUpdateProviderStrategy implements UpdateProviderStrategy {
 	private final String eouFileName;
+	public static final String LOCAL_FILE="LocalFile";
 
     public LocalFileUpdateProviderStrategy(String eouFileName) {
         this.eouFileName = eouFileName;
     }
 
+    public String getSource() {
+		return eouFileName;
+	}
+    
     public String getName() {
         return "Local file (eou.xml)";
     }
@@ -60,7 +66,7 @@ public class LocalFileUpdateProviderStrategy implements UpdateProviderStrategy {
 
             	String downloadUrl = v.downloadUrl;
             	downloadUrl = getLastPartOfUrl(downloadUrl);
-            	String downloadFilePath = eouFile.getCanonicalPath() + File.separator + ""+v.downloadUrl;
+            	String downloadFilePath = eouFile.getAbsoluteFile().getParent() + File.separator + ""+downloadUrl;
 
             	File downloadFile = new File(downloadFilePath);
 
@@ -99,4 +105,16 @@ public class LocalFileUpdateProviderStrategy implements UpdateProviderStrategy {
 		}
 		return downloadUrl.substring(lastSlashIndex + 1); // return the part after the last slash
 	}
+	
+    public File fetchNewestEOUFile(Window parent, List<UpdateCandidate> newerCandidates) throws Exception{
+		// In the case of LocalFileUpdateProviderStrategy, we already have the EOU file locally.
+		// So we can simply return the existing EOU file.
+		File eouFile = new File(eouFileName);
+		if (eouFile.exists()) {
+			return eouFile;
+		} else {
+			throw new Exception("EOU file not found: " + eouFileName);
+		}
+    }
+	
 }

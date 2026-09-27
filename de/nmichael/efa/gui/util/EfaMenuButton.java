@@ -22,7 +22,9 @@ import de.nmichael.efa.core.config.EfaConfig;
 import de.nmichael.efa.core.items.IItemType;
 import de.nmichael.efa.core.items.ItemTypeString;
 import de.nmichael.efa.core.update.DialogSelectionStrategy;
+import de.nmichael.efa.core.update.EfaNMichaelDeUpdateProviderStrategy;
 import de.nmichael.efa.core.update.GithubReleaseUpdateProviderStrategy;
+import de.nmichael.efa.core.update.LocalFileUpdateProviderStrategy;
 import de.nmichael.efa.core.update.OnlineUpdate;
 import de.nmichael.efa.core.update.UpdateProviderStrategy;
 import de.nmichael.efa.core.update.UpdateSelectionStrategy;
@@ -220,7 +222,7 @@ public class EfaMenuButton {
         if (admin == null || admin.isAllowedUpdateEfa()) {
             v.add(new EfaMenuButton(MENU_FILE, BUTTON_UPDATE,
                     International.getStringWithMnemonic("Datei"),
-                    International.getStringWithMnemonic("Online-Update"),
+                    International.getStringWithMnemonic("Update (Online/USB)"),
                     BaseFrame.getIcon(ImagesAndIcons.IMAGE_MENU_UPDATE)));
         }
         if (admin == null || admin.isAllowedUpdateEfa()) {
@@ -561,7 +563,10 @@ public class EfaMenuButton {
                 }
             } else {
                 //OnlineUpdate.runOnlineUpdate(parentDialog, Daten.ONLINEUPDATE_INFO);
-            	UpdateProviderStrategy gitHubUpdateProvider = new GithubReleaseUpdateProviderStrategy("nicmichael", "efa", true);
+            	UpdateProviderStrategy gitHubUpdateProvider = 
+            			//new LocalFileUpdateProviderStrategy("D://efa/99_Alte_Versionen//eou.xml");
+            			//new EfaNMichaelDeUpdateProviderStrategy(Daten.ONLINEUPDATE_INFO);
+            			new GithubReleaseUpdateProviderStrategy("nicmichael", "efa", true);
             	UpdateSelectionStrategy dialogStrategy = new DialogSelectionStrategy();
             	OnlineUpdate.runOnlineUpdate(parentDialog, gitHubUpdateProvider, dialogStrategy);
             }

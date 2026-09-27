@@ -1,6 +1,10 @@
 package de.nmichael.efa.core.update;
 
+import java.awt.Window;
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Vector;
 
@@ -9,6 +13,7 @@ import org.xml.sax.XMLReader;
 import de.nmichael.efa.Daten;
 import de.nmichael.efa.util.DownloadThread;
 import de.nmichael.efa.util.EfaUtil;
+import de.nmichael.efa.util.Logger;
 
 public class EfaNMichaelDeUpdateProviderStrategy implements UpdateProviderStrategy {
 
@@ -18,6 +23,9 @@ public class EfaNMichaelDeUpdateProviderStrategy implements UpdateProviderStrate
         this.eouUrl = eouUrl;
     }
 
+    public String getSource() {
+		return eouUrl;
+	}
     public String getName() {
         return "efa.nmichael.de";
     }
@@ -54,9 +62,40 @@ public class EfaNMichaelDeUpdateProviderStrategy implements UpdateProviderStrate
                     v.versionId
                 ));
             }
+            // Ensure newest first even if API order changes.
+            Collections.sort(result, new Comparator<UpdateCandidate>() {
+                @Override
+                public int compare(UpdateCandidate a, UpdateCandidate b) {
+                    // descending (newest first)
+                    return VersionIdComparator.compare(a.getVersionId(), b.getVersionId());
+                }
+            });
+
             return result;
         } finally {
             EfaUtil.deleteFile(versionFile);
         }
     }
+    
+    /**
+	 * Fetches the newest EOU file from the provider.
+	 * This method is used to obtain the latest EOU file, which contains information about available updates.
+	 * @param parent The parent window for any dialogs that may be displayed during the download process.
+	 * @param newerCandidates A sorted list (newest first) of update candidates that are newer than the current version.
+	 * @return The newest EOU file or null if the download fails.
+	 * @throws Exception
+	 */
+    public File fetchNewestEOUFile(Window parent, List<UpdateCandidate> newerCandidates) throws Exception{
+ 
+    	String versionFile = Daten.efaTmpDirectory + "eou.xml";
+		if (!DownloadThread.getFile(parent, this.eouUrl, versionFile, true)) {
+			// No candidate with a valid EOU download URL found.
+			Logger.log(Logger.INFO, Logger.MSG_STAT_IGNOREDENTRIES, "No EOU download URL found in newer candidates.");
+			return null;
+		} else {
+			Logger.log(Logger.INFO, Logger.MSG_STAT_IGNOREDENTRIES, "Downloaded EOU file from: " + this.eouUrl);
+			return new File(versionFile);
+		}
+    }
+    
 }
