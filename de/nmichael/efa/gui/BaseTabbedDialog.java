@@ -122,7 +122,7 @@ public abstract class BaseTabbedDialog extends BaseDialog {
     // Constants for Navigation Mode 
     protected static final int MODE_TABBED_PANE = 0;
     protected static final int MODE_LEFT_NAVIGATION = 1;
-    protected static final int NAVIGATIONLIST_WIDTH = 220;
+    protected static final int NAVIGATIONLIST_WIDTH = 240;
     private static final String HIGHLIGHT_STYLE = "background-color:#fff176; color:#000000;";
     private static final Color HIGHLIGHT_COLOR = new Color(0xFFF176);
     private static final Color FILTERFIELD_FILLED = new Color(255,255,204);

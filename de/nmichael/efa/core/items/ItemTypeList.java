@@ -636,7 +636,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
         
         //Vertical scrollbar shall be shown always, because better ListCellRendering does not work optically well when
         //scrollbar is shown only when needed
-        scrollPane = new JScrollPane(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        scrollPane = new JScrollPane(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED/*ALWAYS*/, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         this.field = scrollPane;
         
         mypanel = new JPanel();
