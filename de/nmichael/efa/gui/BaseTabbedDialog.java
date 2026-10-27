@@ -574,7 +574,9 @@ public abstract class BaseTabbedDialog extends BaseDialog {
         JScrollPane cardScrollWrapper = new JScrollPane(cardPanel);
         cardScrollWrapper.getVerticalScrollBar().setUnitIncrement(12);
         cardScrollWrapper.setBorder(BorderFactory.createEmptyBorder(3, 0, 0, 0));
-
+        cardScrollWrapper.getHorizontalScrollBar().setBackground(cardPanel.getBackground());
+        cardScrollWrapper.getVerticalScrollBar().setBackground(cardPanel.getBackground());
+        
         breadcrumbLabel = new RoundedLabel();
         breadcrumbLabel.setBorder(new RoundedBorder(Daten.efaConfig.getHeaderForegroundColor()));
         breadcrumbLabel.setOpaque(true);
@@ -644,6 +646,8 @@ public abstract class BaseTabbedDialog extends BaseDialog {
         }
         scrollPane.getVerticalScrollBar().setUnitIncrement(12);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.getHorizontalScrollBar().setBackground(panel.getBackground());
+        scrollPane.getVerticalScrollBar().setBackground(panel.getBackground());
 
         innerPanel.setLayout(new GridBagLayout());
         innerPanel.setBorder(BorderFactory.createEmptyBorder(8, 2, 0, 6));
