@@ -378,6 +378,8 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 	private ItemTypeString efaDirekt_newsText;
 	private ItemTypeInteger efaDirekt_newsScrollSpeed;
 	private ItemTypeInteger efaDirekt_newsWidthPercent;
+	private ItemTypeColor efaDirekt_newsForegroundColor;
+	private ItemTypeColor efaDirekt_newsBackgroundColor;
 	private ItemTypeBoolean efaDirekt_startMaximized;
 	private ItemTypeBoolean efaDirekt_startMaximizedRespectTaskbar;
 	private ItemTypeBoolean efaDirekt_fensterNichtVerschiebbar;
@@ -2059,6 +2061,23 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 							IItemType.TYPE_EXPERT, BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE,
 									CATEGORY_BOATHOUSE_WIDGETS, CATEGORY_WIDGET_NEWS),
 							International.getString("Breite") + " (%)"));
+			
+			addParameter(efaDirekt_newsBackgroundColor= new ItemTypeColor("WidgetNewsBackgroundColor", 
+					//EfaUtil.getColor(EfaConfig.standardToolTipBackgroundColor), EfaUtil.getColor(EfaConfig.standardToolTipBackgroundColor), 
+					EfaUtil.getColor(EfaConfig.standardHeaderBackgroundColor), EfaUtil.getColor(EfaConfig.standardHeaderBackgroundColor), 
+					IItemType.TYPE_PUBLIC,
+					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_BOATHOUSE_WIDGETS, CATEGORY_WIDGET_NEWS),
+					International.getString("Hintergrundfarbe"),false));
+			efaDirekt_newsBackgroundColor.setFieldGrid(3, -1, GridBagConstraints.HORIZONTAL);
+
+			addParameter(efaDirekt_newsForegroundColor= new ItemTypeColor("WidgetNewsForegroundColor", 
+					//EfaUtil.getColor(EfaConfig.standardToolTipForegroundColor), EfaUtil.getColor(EfaConfig.standardToolTipForegroundColor), 
+					EfaUtil.getColor(EfaConfig.standardHeaderForegroundColor), EfaUtil.getColor(EfaConfig.standardHeaderForegroundColor), 
+					IItemType.TYPE_PUBLIC,
+					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_BOATHOUSE_WIDGETS, CATEGORY_WIDGET_NEWS),
+					International.getString("Textfarbe"), false));
+			efaDirekt_newsForegroundColor.setFieldGrid(3, -1, GridBagConstraints.HORIZONTAL);
+   
 
 			widgets = Widget.getAllWidgets(true);
 			for (int i = 0; widgets != null && i < widgets.size(); i++) {
@@ -2966,6 +2985,14 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 		return efaDirekt_newsWidthPercent.getValue();
 	}
 
+	public Color getValueEfaDirekt_newsBackgroundColor() {
+		return efaDirekt_newsBackgroundColor.getColor();
+	}
+
+	public Color getValueEfaDirekt_newsForegroundColor() {
+		return efaDirekt_newsForegroundColor.getColor();
+	}
+	
 	public boolean getValueEfaDirekt_startMaximized() {
 		return efaDirekt_startMaximized.getValue();
 	}
