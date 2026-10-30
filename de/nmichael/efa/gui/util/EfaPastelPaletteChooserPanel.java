@@ -569,6 +569,17 @@ public class EfaPastelPaletteChooserPanel extends AbstractColorChooserPanel {
 		Color[][] colors; // [family][column]
 		Color panelBackground;
 
+		/** Color family names (rows), shared by all palettes. */
+		static final String[] FAMILY_NAMES = { "Red", "Coral", "Orange", "Yellow", "Green", "Mint", "Blue", "Azure",
+				"Navy", "Violet", "Pink", "Sand", "Brown" };
+		/** Shade column names of the light palettes. */
+		static final String[] LIGHT_COLUMN_NAMES = { "Very Light", "Light", "Accent", "Primary", "Hover" };
+		/** Shade column names of the "Fresh Bright Pastels (Dark)" palette. */
+		static final String[] DARK_FRESH_COLUMN_NAMES = { "Deep", "Surface", "Accent", "Primary", "Glow" };
+		/** Shade column names of the "Professional Pastels (Dark)" palette. */
+		static final String[] DARK_PROFESSIONAL_COLUMN_NAMES = { "Surface Dark", "Light Accent", "Accent", "Primary",
+				"Strong" };
+
 		PaletteData(String title, String[] familyNames, String[] columnNames, Color[][] colors, Color panelBackground) {
 			this.title = title;
 			this.familyNames = familyNames;
@@ -603,15 +614,16 @@ public class EfaPastelPaletteChooserPanel extends AbstractColorChooserPanel {
 		 *         Pink), followed by the non-spectral neutrals Sand and Braun.
 		 */
 		static PaletteData freshBrightLight() {
-			String[] families = { "Rot", "Koralle", "Gelb", "Grün", "Mint", "Blau", "Navy", "Violett", "Pink", "Sand",
-					"Braun" };
-			String[] cols = { "Very Light", "Light", "Accent", "Primary", "Hover" };
+			String[] families = FAMILY_NAMES;
+			String[] cols = LIGHT_COLUMN_NAMES;
 			Color[][] colors = { { c("#FFF4F4"), c("#FFE0E0"), c("#FFB3B3"), c("#FF7A7A"), c("#FF5C5C") },
 					{ c("#FFF6F4"), c("#FFE7E1"), c("#FFCFC4"), c("#FFB6A5"), c("#FFA08A") },
+					{ c("#FFF7F0"), c("#FFE8D4"), c("#FFC98F"), c("#FFA85C"), c("#FF9238") },
 					{ c("#FFFDF3"), c("#FFF8D8"), c("#FFF2B8"), c("#FFE98E"), c("#FFE06D") },
 					{ c("#F6FFF2"), c("#E8FBDD"), c("#C8F5B0"), c("#9EEA7A"), c("#82E058") },
 					{ c("#F2FFF9"), c("#DFFBF0"), c("#BFF5D8"), c("#95EDC0"), c("#78E3B0") },
 					{ c("#F4FBFF"), c("#EAF7FF"), c("#AEE2FF"), c("#73CAFF"), c("#5CBEFF") },
+					{ c("#F2FCFF"), c("#DBF6FF"), c("#9EE9FF"), c("#58D6FF"), c("#2EC8FF") },
 					{ c("#F3F6FF"), c("#E6ECFF"), c("#B0C4FF"), c("#6F8EFF"), c("#5579FF") },
 					{ c("#FAF7FF"), c("#EFE8FF"), c("#DDD0FF"), c("#C2AEFF"), c("#AD93FF") },
 					{ c("#FFF6FC"), c("#FFE7F7"), c("#FFCDED"), c("#FFA9DD"), c("#FF8CD3") },
@@ -627,15 +639,16 @@ public class EfaPastelPaletteChooserPanel extends AbstractColorChooserPanel {
 		 *         Pink), followed by the non-spectral neutrals Sand and Braun.
 		 */
 		static PaletteData professionalLight() {
-			String[] families = { "Rot", "Koralle", "Gelb", "Grün", "Mint", "Blau", "Navy", "Violett", "Pink", "Sand",
-					"Braun" };
-			String[] cols = { "Very Light", "Light", "Accent", "Primary", "Hover" };
+			String[] families = FAMILY_NAMES;
+			String[] cols = LIGHT_COLUMN_NAMES;
 			Color[][] colors = { { c("#FDF5F5"), c("#F9E6E6"), c("#EEC2C2"), c("#E3A0A0"), c("#D68888") },
 					{ c("#FFF8F6"), c("#F7E6E1"), c("#EDC8BE"), c("#F2B19E"), c("#E39A84") },
+					{ c("#FDF6EF"), c("#F7E6D0"), c("#F0C890"), c("#E8A95C"), c("#DB9339") },					
 					{ c("#FFFDF9"), c("#FBF4DE"), c("#F4E6B0"), c("#F8DF88"), c("#EBCF68") },
 					{ c("#F6FBF3"), c("#E9F3E0"), c("#CFE6BC"), c("#B3D99A"), c("#9BCB81") },
 					{ c("#F5FCF8"), c("#E8F5EE"), c("#C8E8D7"), c("#A5E3C5"), c("#8FD1B1") },
 					{ c("#F5FAFD"), c("#E9F3F9"), c("#BEDAEC"), c("#7DBFEA"), c("#69AFDC") },
+					{ c("#F3FAFD"), c("#DEF0F8"), c("#A7D9ED"), c("#67C0E0"), c("#4CADCE") },
 					{ c("#F4F6FA"), c("#E3E8F2"), c("#B9C6DE"), c("#8AA0C9"), c("#7290BD") },
 					{ c("#FAF8FD"), c("#EDE8F6"), c("#D6CAE8"), c("#BBA8DA"), c("#A28CC6") },
 					{ c("#FFF8FB"), c("#F8E8EF"), c("#EDC8D9"), c("#E5AFC4"), c("#D493AB") },
@@ -651,15 +664,16 @@ public class EfaPastelPaletteChooserPanel extends AbstractColorChooserPanel {
 		 *         Pink), followed by the non-spectral neutrals Sand and Brown.
 		 */
 		static PaletteData freshBrightDark() {
-			String[] families = { "Red", "Coral", "Yellow", "Green", "Mint", "Blue", "Navy", "Violet", "Pink", "Sand",
-					"Brown" };
-			String[] cols = { "Deep", "Surface", "Accent", "Primary", "Glow" };
+			String[] families = FAMILY_NAMES;
+			String[] cols = DARK_FRESH_COLUMN_NAMES;
 			Color[][] colors = { { c("#441A1A"), c("#732E2E"), c("#C94C4C"), c("#FF7A7A"), c("#FFADAD") },
 					{ c("#44261F"), c("#734136"), c("#C87862"), c("#F2B19E"), c("#FFD8CC") },
+					{ c("#45301A"), c("#78522A"), c("#CB8A3F"), c("#FFA85C"), c("#FFCB96") },					
 					{ c("#473B17"), c("#7B6527"), c("#C9A53A"), c("#F8DF88"), c("#FFF0AE") },
 					{ c("#2B3A17"), c("#4D6B28"), c("#7DAE3F"), c("#9EEA7A"), c("#C7F5A8") },
 					{ c("#173D34"), c("#276856"), c("#52B694"), c("#95EDC0"), c("#C8F9E0") },
 					{ c("#183044"), c("#255273"), c("#4C9FD9"), c("#73CAFF"), c("#A9E3FF") },
+					{ c("#143742"), c("#1F5F71"), c("#3BA5C0"), c("#58D6FF"), c("#AEEEFF") },
 					{ c("#12203A"), c("#1F3660"), c("#3E6FB0"), c("#6F9FE0"), c("#A8CDFF") },
 					{ c("#332B4A"), c("#574977"), c("#8D78B8"), c("#BBA8DA"), c("#E1D7F3") },
 					{ c("#442A38"), c("#75485F"), c("#C17898"), c("#E5AFC4"), c("#FFD9E8") },
@@ -675,15 +689,16 @@ public class EfaPastelPaletteChooserPanel extends AbstractColorChooserPanel {
 		 *         Pink), followed by the non-spectral neutrals Sand and Brown.
 		 */
 		static PaletteData professionalDark() {
-			String[] families = { "Red", "Coral", "Yellow", "Green", "Mint", "Blue", "Navy", "Violet", "Pink", "Sand",
-					"Brown" };
-			String[] cols = { "Surface Dark", "Light Accent", "Accent", "Primary", "Strong" };
+			String[] families = FAMILY_NAMES;
+			String[] cols = DARK_PROFESSIONAL_COLUMN_NAMES;
 			Color[][] colors = { { c("#301F1F"), c("#6B3A3A"), c("#9C5C5C"), c("#E3A0A0"), c("#F0C4C4") },
 					{ c("#31231F"), c("#8A6052"), c("#C18673"), c("#F2B19E"), c("#F7D0C1") },
+					{ c("#302418"), c("#75502F"), c("#AD7A42"), c("#E8A95C"), c("#F4CB95") },
 					{ c("#2D291D"), c("#7A6840"), c("#BFA052"), c("#F8DF88"), c("#FCECB9") },
 					{ c("#232B1D"), c("#4A5A3A"), c("#78915C"), c("#B3D99A"), c("#D6ECC4") },
 					{ c("#1F2A25"), c("#44695A"), c("#72A68D"), c("#A5E3C5"), c("#C7F0DA") },
 					{ c("#1B2832"), c("#385A70"), c("#5F8FB0"), c("#7DBFEA"), c("#A5D7F4") },
+					{ c("#172A30"), c("#305F6E"), c("#51939E"), c("#67C0E0"), c("#A9E0F0") },
 					{ c("#151F2E"), c("#2E4766"), c("#4F6F95"), c("#7FA3C8"), c("#A9C6E0") },
 					{ c("#262230"), c("#6E608D"), c("#9887BC"), c("#BBA8DA"), c("#D6CAF0") },
 					{ c("#2D2328"), c("#8B6674"), c("#BC8FA0"), c("#E5AFC4"), c("#F1CEDB") },
