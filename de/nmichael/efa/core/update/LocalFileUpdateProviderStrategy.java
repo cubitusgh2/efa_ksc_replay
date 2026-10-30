@@ -81,7 +81,8 @@ public class LocalFileUpdateProviderStrategy implements UpdateProviderStrategy {
                     v.downloadSize,
                     new ArrayList<String>(v.getChanges()),
                     getName(),
-                    v.versionId.contains("#"),
+                    false, // local file source  does not provide draft releases
+                    v.versionId.contains("#"), // but it provides beta releases, which can be determined by the version ID containing a "#" character
                     eouFileName, 
                     v.versionId
                 ));

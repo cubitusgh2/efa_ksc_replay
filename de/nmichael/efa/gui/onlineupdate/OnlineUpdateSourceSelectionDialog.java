@@ -16,7 +16,8 @@ import de.nmichael.efa.core.items.ItemTypeFile;
 import de.nmichael.efa.core.items.ItemTypeLabel;
 import de.nmichael.efa.core.items.ItemTypeStringList;
 import de.nmichael.efa.core.update.EfaNMichaelDeUpdateProviderStrategy;
-import de.nmichael.efa.core.update.GithubReleaseUpdateProviderStrategy;
+import de.nmichael.efa.core.update.GithubBetaReleaseUpdateProviderStrategy;
+import de.nmichael.efa.core.update.GithubProductionReleaseUpdateProviderStrategy;
 import de.nmichael.efa.core.update.LocalFileUpdateProviderStrategy;
 import de.nmichael.efa.core.update.UpdateProviderStrategy;
 import de.nmichael.efa.gui.BaseTabbedDialog;
@@ -29,7 +30,8 @@ import de.nmichael.efa.util.International;
 public class OnlineUpdateSourceSelectionDialog extends BaseTabbedDialog implements IItemListener {
 
     private static final String SOURCE_EFA       = "efaNMichaelDe";
-    private static final String SOURCE_GITHUB    = "GitHubRelease";
+    private static final String SOURCE_GITHUB_PROD = "GitHubProduction";
+    private static final String SOURCE_GITHUB_BETA = "GitHubPreRelease";
     private static final String SOURCE_LOCALFILE = "LocalFile";
     private static final int GRID_WIDTH = 3;
 
@@ -58,9 +60,10 @@ public class OnlineUpdateSourceSelectionDialog extends BaseTabbedDialog implemen
         guiItems.add(EfaGuiUtils.createHeader("UPDATE_SOURCE_HEADER", IItemType.TYPE_PUBLIC, cat,
 				International.getString("Update-Quelle wählen"),GRID_WIDTH));
         
-        guiItems.add(item = new ItemTypeStringList("UPDATE_SOURCE", SOURCE_GITHUB,
-                new String[] { SOURCE_GITHUB, SOURCE_LOCALFILE, SOURCE_EFA, },
-                new String[] { 	International.getString("Github Releases (Standard)"),
+        guiItems.add(item = new ItemTypeStringList("UPDATE_SOURCE", SOURCE_GITHUB_PROD,
+                new String[] { SOURCE_GITHUB_PROD, SOURCE_GITHUB_BETA, SOURCE_LOCALFILE, SOURCE_EFA, },
+                new String[] { 	International.getString("Github Produktion Releases (Standard)"),
+                				International.getString("Github Beta Releases"),
                 				International.getString("Lokale Datei vom USB-Stick (eou.xml)"), 
                 				International.getString("efa.nmichael.de (Historisch)")},
                 IItemType.TYPE_PUBLIC, cat,
@@ -176,12 +179,12 @@ public class OnlineUpdateSourceSelectionDialog extends BaseTabbedDialog implemen
     private UpdateProviderStrategy createProvider() {
         String source = sourceSelect.getValue();
 
-        if (SOURCE_GITHUB.equals(source)) {
-            return new GithubReleaseUpdateProviderStrategy(
-                    Daten.ONLINEUPDATE_INFO_GITHUB_OWNER,
-                    Daten.ONLINEUPDATE_INFO_GITHUB_REPOSITORY,
-                    false);
+        if (SOURCE_GITHUB_PROD.equals(source)) {
+            return new GithubProductionReleaseUpdateProviderStrategy();
         }
+        if (SOURCE_GITHUB_BETA.equals(source)) {
+			return new GithubBetaReleaseUpdateProviderStrategy();
+		}
 
         if (SOURCE_LOCALFILE.equals(source)) {
             String path = eouFile.getValue();

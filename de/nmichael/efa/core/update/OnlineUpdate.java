@@ -10,7 +10,9 @@
 
 package de.nmichael.efa.core.update;
 
+import java.awt.Cursor;
 import java.awt.Window;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
@@ -28,12 +30,10 @@ import java.util.Vector;
 import javax.swing.JDialog;
 
 import org.xml.sax.Attributes;
-import org.xml.sax.XMLReader;
 
 import de.nmichael.efa.Daten;
 import de.nmichael.efa.core.Backup;
 import de.nmichael.efa.data.storage.IDataAccess;
-import de.nmichael.efa.gui.onlineupdate.OnlineUpdateDialog;
 import de.nmichael.efa.util.Dialog;
 import de.nmichael.efa.util.DownloadThread;
 import de.nmichael.efa.util.EfaUtil;
@@ -61,12 +61,33 @@ public class OnlineUpdate {
 	 * @param eouFile The URL of the EOU XML file containing update information.
 	 * @return true if the update process was successful, false otherwise.
 	 */
-    public synchronized static boolean runOnlineUpdateGitHubNewestProd(JDialog parent, boolean allowBetaVersions) {
+    public synchronized static boolean runOnlineUpdateGitHubNewestProductionRelease(JDialog parent) {
         return runOnlineUpdate(parent,
-            new GithubReleaseUpdateProviderStrategy(Daten.ONLINEUPDATE_INFO_GITHUB_OWNER, 
-            		Daten.ONLINEUPDATE_INFO_GITHUB_REPOSITORY, allowBetaVersions),
-            new DialogSelectionStrategy()); 
+            new GithubProductionReleaseUpdateProviderStrategy(),
+            new AutoNewestSelectionStrategy()/*no dialog needed, just select the newest version*/); 
     }
+    
+    
+    /**
+	 * Run the old online update process for efaDRV programs using efa.nmichael.de as the source.
+	 * Uses the newest release only and does not need a Dialog to be displayed.
+	 * 
+	 * This method is only called from efaDRV programs.
+	 * 
+	 * The DRV releases are hosted on efa.nmichael.de and are not available on GitHub.
+	 * The DRV releases are not open source as they contain DRV specific features, 
+	 * data and branding - functions which should not be used by anyone else but DRV.
+	 * 
+	 * Until further notice, the DRV releases are only available on efa.nmichael.de and not on GitHub.
+	 * 
+	 * @param parent The parent dialog for displaying messages. Can be null if running in headless mode.
+	 * 
+	 */
+    public synchronized static boolean runOnlineUpdateDRVEfaNMichael(JDialog parent) {
+		return runOnlineUpdate(parent,
+			new EfaNMichaelDeUpdateProviderStrategy(Daten.ONLINEUPDATE_INFO_DRV),
+			new AutoNewestSelectionStrategy()/*no dialog needed, just select the newest version*/); 
+	}
     
     /**
 	 * Run the online update process using the specified provider and selection strategies.
@@ -82,18 +103,17 @@ public class OnlineUpdate {
         Vector<OnlineUpdateInfo> eouVersionInfo = null;
         lastError = null;
 
-        List<UpdateCandidate> allUpdateCandidates = null;
+        List<UpdateCandidate> newerCandidates;
         try {
-           allUpdateCandidates = provider.fetchAvailableUpdates();
+            newerCandidates = fetchNewerCandidates(parent, provider);
         } catch (Exception e) {
-			lastError = International.getString("Fehler beim Abrufen der Update-Informationen!")
-						+ "\n" + e.getMessage();
-			if (parent != null) {
-				Dialog.error(lastError);
-			}
-			return false;
+            lastError = International.getString("Fehler beim Abrufen der Update-Informationen!")
+                        + "\n" + e.getMessage();
+            if (parent != null) {
+                Dialog.error(lastError);
+            }
+            return false;
         }
-        List<UpdateCandidate> newerCandidates = filterNewerCandidates(allUpdateCandidates, Daten.VERSIONID);
 
         if (newerCandidates==null || newerCandidates.isEmpty()) {
 			if (parent != null) {
@@ -134,26 +154,7 @@ public class OnlineUpdate {
         }
         
         // Ok, jetzt pruefen, ob Benutzer Schreibrechte im efa-Directory hat
-        String writeTestFile = Daten.efaMainDirectory + "writetest.tmp";
-        boolean canWrite = true;
-        try {
-            EfaUtil.deleteFile(writeTestFile); // just to make sure there is no such file
-            if (!(new File(writeTestFile)).createNewFile()) {
-                canWrite = false;
-            }
-        } catch (Exception e) {
-            canWrite = false;
-        } finally {
-            EfaUtil.deleteFile(writeTestFile);
-        }
-        if (!canWrite) {
-            if (parent != null) {
-                Dialog.error(LogString.directoryNoWritePermission(Daten.efaMainDirectory, International.getString("Verzeichnis")) +
-                        "\n\n" +
-                        International.getMessage("Bitte wiederhole das Online-Update als {osname}-Administrator.", Daten.osName));
-            } else {
-                lastError = LogString.directoryNoWritePermission(Daten.efaMainDirectory, International.getString("Verzeichnis"));
-            }
+        if (!checkWritePermission(parent)) {
             return false;
         }
 
@@ -164,6 +165,66 @@ public class OnlineUpdate {
 
         return downloadAndApplyUpdate(parent, newestCandidate);
     }
+
+	/**
+	 * Sets or resets the wait cursor (hourglass) on the parent dialog. Does nothing if parent is null.
+	 * @param parent The parent dialog, can be null.
+	 * @param wait true to show the wait cursor, false to restore the default cursor.
+	 */
+	private static void setWaitCursor(JDialog parent, boolean wait) {
+		if (parent != null) {
+			parent.setCursor(wait ? Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR) : Cursor.getDefaultCursor());
+		}
+	}
+
+	/**
+	 * Fetches all available update candidates from the provider and filters them to newer versions.
+	 * Shows the wait cursor during both steps.
+	 * @param parent The parent dialog, can be null.
+	 * @param provider The strategy for fetching available updates.
+	 * @return The newer candidates, newest first.
+	 * @throws Exception if the provider fails to fetch the update information.
+	 */
+	private static List<UpdateCandidate> fetchNewerCandidates(JDialog parent, UpdateProviderStrategy provider) throws Exception {
+		setWaitCursor(parent, true);
+		try {
+			List<UpdateCandidate> allUpdateCandidates = provider.fetchAvailableUpdates();
+			return filterNewerCandidates(allUpdateCandidates, Daten.VERSIONID);
+		} finally {
+			setWaitCursor(parent, false);
+		}
+	}
+
+	/**
+	 * Checks whether the current user can write into the efa main directory.
+	 * Sets lastError or shows an error dialog if not.
+	 * @param parent The parent dialog, can be null.
+	 * @return true if writing is possible, false otherwise.
+	 */
+	private static boolean checkWritePermission(JDialog parent) {
+		String writeTestFile = Daten.efaMainDirectory + "writetest.tmp";
+		boolean canWrite = true;
+		try {
+			EfaUtil.deleteFile(writeTestFile); // just to make sure there is no such file
+			if (!(new File(writeTestFile)).createNewFile()) {
+				canWrite = false;
+			}
+		} catch (Exception e) {
+			canWrite = false;
+		} finally {
+			EfaUtil.deleteFile(writeTestFile);
+		}
+		if (!canWrite) {
+			if (parent != null) {
+				Dialog.error(LogString.directoryNoWritePermission(Daten.efaMainDirectory, International.getString("Verzeichnis")) +
+						"\n\n" +
+						International.getMessage("Bitte wiederhole das Online-Update als {osname}-Administrator.", Daten.osName));
+			} else {
+				lastError = LogString.directoryNoWritePermission(Daten.efaMainDirectory, International.getString("Verzeichnis"));
+			}
+		}
+		return canWrite;
+	}
 
 	private static boolean downloadAndApplyUpdate(JDialog parent, UpdateCandidate newestCandidate) {
 		// Download des Updates

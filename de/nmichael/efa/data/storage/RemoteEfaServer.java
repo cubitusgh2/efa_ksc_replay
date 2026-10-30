@@ -981,7 +981,7 @@ public class RemoteEfaServer {
             	 * and avoid beta releases. Beta releases have to be installed manually using the GUI of efaBths
             	 * or a manual update.
             	 */
-                if (OnlineUpdate.runOnlineUpdateGitHubNewestProd(null, false)) {
+                if (OnlineUpdate.runOnlineUpdateGitHubNewestProductionRelease(null)) {
                     EfaBoathouseFrame.efaBoathouseFrame.cancelRunInThreadWithDelay(EfaBoathouseFrame.EFA_EXIT_REASON_ONLINEUPDATE, _admin, true);
                     response  = RemoteEfaMessage.createResponseResult(request.getMsgId(), RemoteEfaMessage.RESULT_OK, null);
                 } else {

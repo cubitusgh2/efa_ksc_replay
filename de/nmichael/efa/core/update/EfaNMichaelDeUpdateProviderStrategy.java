@@ -15,6 +15,19 @@ import de.nmichael.efa.util.DownloadThread;
 import de.nmichael.efa.util.EfaUtil;
 import de.nmichael.efa.util.Logger;
 
+/**
+ * An implementation of UpdateProviderStrategy that fetches update information from the efa.nmichael.de server.
+ * It downloads an XML file from the specified URL and parses it to extract update information.
+ * 
+ * efa.nmichael.de only provides a single EOU file for the newest version, 
+ * and does not natively distinguish between production and beta releases.
+ * 
+ * Beta releases can only be determined by the version ID, which contains a "#" character for beta versions.
+ * 
+ * efa.nmichael.de is only used as a fallback update source if the GitHub update source is not available,
+ * OR for the DRV version of efa, which is not hosted on GitHub.
+ * 
+ */
 public class EfaNMichaelDeUpdateProviderStrategy implements UpdateProviderStrategy {
 
     private final String eouUrl;
@@ -57,7 +70,8 @@ public class EfaNMichaelDeUpdateProviderStrategy implements UpdateProviderStrate
                     v.downloadSize,
                     new ArrayList<String>(v.getChanges()),
                     getName(),
-                    v.versionId.contains("#"),
+                    false, // efa.nmichael.de does not provide draft releases
+                    v.versionId.contains("#"),//but it provides beta releases, which can be determined by the version ID containing a "#" character
                     eouUrl,
                     v.versionId
                 ));
