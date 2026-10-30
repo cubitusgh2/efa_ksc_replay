@@ -549,6 +549,10 @@ public abstract class BaseTabbedDialog extends BaseDialog {
 
         navigationList = new JList<NavEntry>(navigationModel);
         navigationList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        NavEntryRenderer renderer = new NavEntryRenderer();
+        if (Daten.isEfaFlatLafActive()) {
+        	renderer.setSepartorColor(Daten.efaConfig.getEfaGuiflatLaf_Background());
+        }
         navigationList.setCellRenderer(new NavEntryRenderer());
         addNavigationListListeners(navigationList);
 
@@ -2111,7 +2115,7 @@ public abstract class BaseTabbedDialog extends BaseDialog {
 	 * Custom ListCellRenderer for rendering navigation entries in the navigation list.
 	 * */
     private static class NavEntryRenderer extends DefaultListCellRenderer {
-        private static final Color TOP_GROUP_BG = new Color(230, 230, 230);
+        private static Color TOP_GROUP_BG = new Color(230, 230, 230);
         private static final int NAV_INDENT_PER_LEVEL = 10;
 
         public Component getListCellRendererComponent(JList<?> list,
@@ -2144,6 +2148,10 @@ public abstract class BaseTabbedDialog extends BaseDialog {
 
             return this;
         }
+
+		public void setSepartorColor(Color efaGuiflatLaf_Background) {
+			TOP_GROUP_BG = efaGuiflatLaf_Background;			
+		}
     }
 
 }

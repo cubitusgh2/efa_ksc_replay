@@ -484,15 +484,15 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 	private Vector<IWidget> widgets;
 	private ItemTypeItemList crontab;
 
-	private static Color standardTableSelectionBackgroundColor = new Color(75, 134, 193);
-	private static Color standardTableSelectionForegroundColor = Color.WHITE;
-	private static Color standardTableHeaderBackgroundColor = new Color(171, 206, 241);// new Color(181, 206, 226);
+	public static Color standardTableSelectionBackgroundColor = new Color(75, 134, 193);
+	public static Color standardTableSelectionForegroundColor = Color.WHITE;
+	public static Color standardTableHeaderBackgroundColor = new Color(171, 206, 241);// new Color(181, 206, 226);
 																						// //ABCEF1
-	private static Color standardTableHeaderForegroundColor = Color.BLACK;
-	private static Color standardTableAlternatingRowColor = new Color(219, 234, 249);
-	private static Color standardFlatLafBackgroundColor = new Color(239, 237, 232);// #EFEDE8 //some yellowish gray
-	private static Color standardFlatLafAccentColor = new Color(38, 117, 191); // #2675bf Blue
-	private static Color standardFlatLafFocusColor = new Color(255, 153, 0); // #ff9900 Orange
+	public static Color standardTableHeaderForegroundColor = Color.BLACK;
+	public static Color standardTableAlternatingRowColor = new Color(219, 234, 249);
+	public static Color standardFlatLafBackgroundColor = new Color(239, 237, 232);// #EFEDE8 //some yellowish gray
+	public static Color standardFlatLafAccentColor = new Color(38, 117, 191); // #2675bf Blue
+	public static Color standardFlatLafFocusColor = new Color(255, 153, 0); // #ff9900 Orange
 	public static Color hintBackgroundColor = new Color(210, 225, 239);
 	public static Color hintBorderColor = new Color(120, 166, 213);
 
@@ -2063,16 +2063,14 @@ public class EfaConfig extends StorageObject implements IItemFactory {
 							International.getString("Breite") + " (%)"));
 			
 			addParameter(efaDirekt_newsBackgroundColor= new ItemTypeColor("WidgetNewsBackgroundColor", 
-					//EfaUtil.getColor(EfaConfig.standardToolTipBackgroundColor), EfaUtil.getColor(EfaConfig.standardToolTipBackgroundColor), 
-					EfaUtil.getColor(EfaConfig.standardHeaderBackgroundColor), EfaUtil.getColor(EfaConfig.standardHeaderBackgroundColor), 
+					EfaUtil.getColor(Color.RED), EfaUtil.getColor(Color.RED), 
 					IItemType.TYPE_PUBLIC,
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_BOATHOUSE_WIDGETS, CATEGORY_WIDGET_NEWS),
 					International.getString("Hintergrundfarbe"),false));
 			efaDirekt_newsBackgroundColor.setFieldGrid(3, -1, GridBagConstraints.HORIZONTAL);
 
 			addParameter(efaDirekt_newsForegroundColor= new ItemTypeColor("WidgetNewsForegroundColor", 
-					//EfaUtil.getColor(EfaConfig.standardToolTipForegroundColor), EfaUtil.getColor(EfaConfig.standardToolTipForegroundColor), 
-					EfaUtil.getColor(EfaConfig.standardHeaderForegroundColor), EfaUtil.getColor(EfaConfig.standardHeaderForegroundColor), 
+					EfaUtil.getColor(Color.WHITE), EfaUtil.getColor(Color.WHITE), 
 					IItemType.TYPE_PUBLIC,
 					BaseTabbedDialog.makeCategory(CATEGORY_BOATHOUSE, CATEGORY_BOATHOUSE_WIDGETS, CATEGORY_WIDGET_NEWS),
 					International.getString("Textfarbe"), false));
