@@ -1,19 +1,55 @@
 package de.nmichael.efa.gui.util;
 
-import java.awt.*;
+import java.awt.BasicStroke;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.Insets;
+import java.awt.LayoutManager;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.Icon;
+import javax.swing.JColorChooser;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSlider;
+import javax.swing.JSpinner;
+import javax.swing.JTextField;
+import javax.swing.JViewport;
+import javax.swing.Scrollable;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingConstants;
+import javax.swing.UIManager;
 import javax.swing.border.AbstractBorder;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
 import javax.swing.colorchooser.AbstractColorChooserPanel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+
+import de.nmichael.efa.util.International;
 
 /**
  * A drop-in replacement / wrapper for the standard {@link JColorChooser} that
@@ -371,7 +407,7 @@ public class EfaColorChooser extends JColorChooser {
         /** {@inheritDoc} */
         @Override
         public String getDisplayName() {
-            return "efa Pastell-Paletten";
+            return International.getString("Pastell-Paletten");
         }
 
         /** {@inheritDoc} */
@@ -413,7 +449,7 @@ public class EfaColorChooser extends JColorChooser {
             // Left side, below the selector: palette swatches, takes most of the space.
             gbc.gridx = 0;
             gbc.gridy = 1;
-            gbc.weightx = 1.0;
+            gbc.weightx = 1;
             gbc.weighty = 1.0;
             gbc.fill = GridBagConstraints.BOTH;
             gbc.insets = new Insets(4, 8, 8, 4);
@@ -583,7 +619,7 @@ public class EfaColorChooser extends JColorChooser {
          */
         private JPanel buildSaturationPanel() {
             JPanel p = new JPanel(new GridBagLayout());
-            p.setBorder(createRoundedTitledBorder("Sättigung"));
+            p.setBorder(createRoundedTitledBorder(International.getString("Sättigung")));
 
             saturationSlider = new JSlider(-100, 100, 0);
             saturationSlider.setMajorTickSpacing(50);
@@ -646,7 +682,7 @@ public class EfaColorChooser extends JColorChooser {
          */
         private JPanel buildHexFieldPanel() {
             JPanel p = new JPanel(new BorderLayout(4, 0));
-            p.setBorder(createRoundedTitledBorder("Hex-Code"));
+            p.setBorder(createRoundedTitledBorder(International.getString("Farbcode")));
             hexField = new JTextField();
             hexField.setEditable(false);
             hexField.setFocusable(true);
@@ -664,7 +700,7 @@ public class EfaColorChooser extends JColorChooser {
          */
         private JPanel buildRecentColorsPanel() {
             JPanel wrapper = new JPanel(new BorderLayout());
-            wrapper.setBorder(createRoundedTitledBorder("Zuletzt verwendet"));
+            wrapper.setBorder(createRoundedTitledBorder(International.getString("Zuletzt verwendet")));
 
             recentPanel = new RoundedBackgroundPanel(new FlowLayout(FlowLayout.LEFT, 4, 4), CORNER_ARC);
             recentPanel.setBackground(data.panelBackground);
