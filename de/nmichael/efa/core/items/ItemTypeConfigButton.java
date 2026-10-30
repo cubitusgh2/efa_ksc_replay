@@ -24,6 +24,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
+import de.nmichael.efa.gui.util.EfaColorChooser;
 import de.nmichael.efa.util.Dialog;
 import de.nmichael.efa.util.EfaUtil;
 import de.nmichael.efa.util.International;
@@ -208,7 +209,7 @@ public class ItemTypeConfigButton extends ItemType {
 
     private void chooseColor() {
         if (!isChangeableColor) return;
-        Color color = JColorChooser.showDialog(dlg,
+        Color color = EfaColorChooser.showDialog(dlg,
                 International.getMessage("{item} auswählen",
                 International.getString("Farbe")),
                 field.getBackground());

@@ -10,12 +10,21 @@
 
 package de.nmichael.efa.core.items;
 
+import java.awt.Color;
+import java.awt.GridBagConstraints;
+import java.awt.Insets;
+import java.awt.Window;
+import java.awt.event.ActionEvent;
+
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JPanel;
+
 import de.nmichael.efa.gui.BaseDialog;
-import de.nmichael.efa.util.*;
+import de.nmichael.efa.gui.util.EfaColorChooser;
 import de.nmichael.efa.util.Dialog;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
+import de.nmichael.efa.util.EfaUtil;
+import de.nmichael.efa.util.International;
 
 // @i18n complete
 
@@ -134,7 +143,7 @@ public class ItemTypeColor extends ItemTypeLabelValue {
     }
 
     private void buttonHit(ActionEvent e) {
-        Color color = JColorChooser.showDialog(dlg,
+        Color color = EfaColorChooser.showDialog(dlg,
                 International.getMessage("{item} auswählen",
                 International.getString("Farbe")),
                 field.getBackground());
