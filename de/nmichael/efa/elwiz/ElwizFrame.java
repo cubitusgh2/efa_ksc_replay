@@ -27,6 +27,7 @@ import java.util.Vector;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JColorChooser;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -40,7 +41,6 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 
 import de.nmichael.efa.Daten;
-import de.nmichael.efa.gui.util.EfaColorChooser;
 import de.nmichael.efa.util.ActionHandler;
 import de.nmichael.efa.util.Dialog;
 import de.nmichael.efa.util.EfaUtil;
@@ -300,7 +300,7 @@ public class ElwizFrame extends JFrame {
     try {
       cint = Integer.parseInt(cstr.substring(0,6),16);
     } catch(Exception ee) { cint = 0; }
-    Color color = EfaColorChooser.showDialog(this,
+    Color color = JColorChooser.showDialog(this,
             International.getMessage("{item} auswählen",
             International.getString("Farbe")),
             new Color(cint));
