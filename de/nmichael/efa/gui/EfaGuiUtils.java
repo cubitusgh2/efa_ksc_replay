@@ -99,6 +99,36 @@ public class EfaGuiUtils {
         String[] a = captions.toArray(new String[0]);
         return createHint(uniqueName, type, category, a, gridWidth, padBefore, padAfter);
 	}
+
+	/**
+	 * Word-wraps the given plain text at the specified maximum pixel width (using
+	 * the default JLabel font metrics) and returns it as an HTML string with
+	 * explicit {@code <br>} line breaks, exactly the way {@link #createHintWordWrap}
+	 * formats its caption internally. This is useful when a hint's text needs to
+	 * be updated later at runtime (e.g. via {@code ItemTypeLabel.setDescription}),
+	 * since simply assigning the raw text would skip the word-wrapping entirely.
+	 *
+	 * @param caption      the plain (unwrapped) text to format, may be {@code null}
+	 * @param maxPixelWidth the maximum line width in pixels, should match the width
+	 *                      used when the label was originally created
+	 * @return an HTML string ("<html>...</html>") with the text word-wrapped into
+	 *         multiple lines, or an empty HTML string if caption is {@code null}/empty
+	 */
+	public static String wrapCaptionAsHtml(String caption, int maxPixelWidth) {
+		JLabel x = new JLabel();
+		FontMetrics myFontMetrics = x.getFontMetrics(x.getFont());
+
+		List<String> captions = splitStringByWidth(caption, maxPixelWidth, myFontMetrics);
+		StringBuilder resultCaption = new StringBuilder("<html>");
+		for (int i = 0; i < captions.size(); i++) {
+			resultCaption.append(captions.get(i));
+			if (captions.size() > 1 && i < captions.size() - 1) {
+				resultCaption.append("<br>");
+			}
+		}
+		resultCaption.append("</html>");
+		return resultCaption.toString();
+	}
 	
 	// Splits a string word-wise into lines. Wordwrap when the next word does not fit into maxWidth pixels.
 	// An explicit newline (\n) in the text always starts a new line.

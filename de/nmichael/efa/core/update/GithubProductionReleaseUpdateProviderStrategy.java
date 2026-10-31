@@ -14,8 +14,28 @@ import de.nmichael.efa.util.International;
 public class GithubProductionReleaseUpdateProviderStrategy extends GithubReleaseUpdateProviderStrategy {
 
     public static final String GITHUBPROD = "GitHubProd";
-    
-    
+
+    // Raw (untranslated) texts, extracted as constants so that they are defined
+    // exactly once and can be reused both by getDisplayName()/getUserHint() and
+    // by the UpdateProviderStrategyRegistry self-registration below.
+    private static final String DISPLAY_NAME = "GitHub Produktion Releases (Standard)";
+    private static final String USER_HINT = 
+    				 "Diese Update-Quelle lädt ausschließlich Produktions-Releases von GitHub."
+    				+"\n\nVerwenden Sie diese Quelle, um Ihre Installation"
+    				+" auf eine neuere PRODUKTIONS-Version zu aktualisieren.";
+
+    // Self-registration: makes this strategy's metadata available via
+    // UpdateProviderStrategyRegistry without requiring an instance to be created.
+    static {
+        UpdateProviderStrategyRegistry.register(new UpdateProviderStrategyDescriptor(
+                GITHUBPROD,
+                GithubProductionReleaseUpdateProviderStrategy.class,
+                () -> International.getString(DISPLAY_NAME),
+                () -> International.getString(USER_HINT),
+                // this strategy needs no configuration, so the config argument is ignored
+                config -> new GithubProductionReleaseUpdateProviderStrategy()));
+    }
+
     public GithubProductionReleaseUpdateProviderStrategy() {
     	super(Daten.ONLINEUPDATE_INFO_GITHUB_OWNER,
     			Daten.ONLINEUPDATE_INFO_GITHUB_REPOSITORY,
@@ -32,10 +52,10 @@ public class GithubProductionReleaseUpdateProviderStrategy extends GithubRelease
     }
     
     public String getDisplayName() {
-		return International.getString("Github Produktion Releases (Standard)");
+		return International.getString(DISPLAY_NAME);
     }
     
     public String getUserHint() {
-		return International.getString("Diese Update-Quelle lädt ausschließlich Produktions-Releases von GitHub. Wenden Sie diese Quelle an, wenn eine bestehende Produktionsversion auf eine neuere Produktionsversion aktualisiert werden soll. Ebenso kann eine bestehende Beta-Version auf eine NEUERE Produktionsversion aktualisiert werden.");
+		return International.getString(USER_HINT);
 	}
 }

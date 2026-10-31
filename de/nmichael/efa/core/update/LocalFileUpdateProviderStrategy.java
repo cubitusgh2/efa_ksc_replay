@@ -39,6 +39,27 @@ public class LocalFileUpdateProviderStrategy implements UpdateProviderStrategy {
 	private final String eouFileName;
 	public static final String LOCAL_FILE = "LocalFile";
 
+	// Raw (untranslated) texts, extracted as constants so that they are defined
+	// exactly once and can be reused both by getDisplayName()/getUserHint() and
+	// by the UpdateProviderStrategyRegistry self-registration below.
+	private static final String DISPLAY_NAME = "Lokale Datei vom USB-Stick (eou.xml)";
+	private static final String USER_HINT = 
+			"Zum Update von einem Verzeichnis (z.B. auf einem USB-Stick) müssen sich darin Download-Elemente von GitHub befinden: "
+			+ "\n\n1) Die eou.xml des aktuellsten efa-Releases \n2) mindestens ein efa*.zip Programmpaket-Download ihrer Wahl. \nEs können sich auch mehrere efa*.zip Dateien darin befinden.";
+
+	// Self-registration: makes this strategy's metadata available via
+	// UpdateProviderStrategyRegistry without requiring an instance to be created
+	// (which would not even be possible here without a valid eouFileName).
+	static {
+		UpdateProviderStrategyRegistry.register(new UpdateProviderStrategyDescriptor(
+				LOCAL_FILE,
+				LocalFileUpdateProviderStrategy.class,
+				() -> International.getString(DISPLAY_NAME),
+				() -> International.getString(USER_HINT),
+				// config is the mandatory eou.xml file path for this strategy
+				config -> new LocalFileUpdateProviderStrategy(config)));
+	}
+
 	public LocalFileUpdateProviderStrategy(String eouFileName) {
 		this.eouFileName = eouFileName;
 	}
@@ -52,13 +73,11 @@ public class LocalFileUpdateProviderStrategy implements UpdateProviderStrategy {
 	}
 
 	public String getDisplayName() {
-		return International.getString("Lokale Datei vom USB-Stick (eou.xml)");
+		return International.getString(DISPLAY_NAME);
 	}
 
 	public String getUserHint() {
-		return International.getString(
-				"Zum Update von einem Verzeichnis (z.B. auf einem USB-Stick) müssen sich darin Download-Elemente von GitHub befinden: "
-						+ "\n\n1) Die eou.xml des aktuellsten efa-Releases \n2) mindestens ein efa*.zip Programmpaket-Download ihrer Wahl. \nEs können sich auch mehrere efa*.zip Dateien darin befinden.");
+		return International.getString(USER_HINT);
 	}
 
 	/**

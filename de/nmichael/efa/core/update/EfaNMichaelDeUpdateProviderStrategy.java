@@ -34,6 +34,36 @@ import de.nmichael.efa.util.Logger;
  */
 public class EfaNMichaelDeUpdateProviderStrategy implements UpdateProviderStrategy {
 
+	// NEW: extracted as a named constant (was a plain String literal returned by
+	// getName() before), so that the registry key and getName() can never diverge.
+	public static final String EFA_NMICHAEL_DE = "efa.nmichael.de";
+
+	// Raw (untranslated) texts, extracted as constants so that they are defined
+	// exactly once and can be reused both by getDisplayName()/getUserHint() and
+	// by the UpdateProviderStrategyRegistry self-registration below.
+	private static final String DISPLAY_NAME = "efa.nmichael.de (Historisch)";
+	private static final String USER_HINT = 
+			"Diese Update-Quelle ist aus historischen Gründen vorhanden"
+			+ " und bildet die bisherige Online-Update Funktionalität nach."
+			+ "\n\nSie dient Testzwecken oder dafür, wenn GitHub nicht verfügbar sein sollte."
+			+ "\n\nDiese Update-Quelle lädt ausschließlich die neueste efa-Version von efa.nmichael.de "
+			+ " (egal, ob Beta oder Produktions-Release).";
+
+	// Self-registration: makes this strategy's metadata available via
+	// UpdateProviderStrategyRegistry without requiring an instance to be created
+	// (which would not even be possible here without a valid eouUrl).
+	static {
+		UpdateProviderStrategyRegistry.register(new UpdateProviderStrategyDescriptor(
+				EFA_NMICHAEL_DE,
+				EfaNMichaelDeUpdateProviderStrategy.class,
+				() -> International.getString(DISPLAY_NAME),
+				() -> International.getString(USER_HINT),
+				// config is the eou.xml download URL; fall back to the default
+				// efa.nmichael.de URL if the caller does not provide one
+				config -> new EfaNMichaelDeUpdateProviderStrategy(
+						config != null ? config : Daten.ONLINEUPDATE_INFO)));
+	}
+
 	private final String eouUrl;
 
 	public EfaNMichaelDeUpdateProviderStrategy(String eouUrl) {
@@ -45,19 +75,15 @@ public class EfaNMichaelDeUpdateProviderStrategy implements UpdateProviderStrate
 	}
 
 	public String getName() {
-		return "efa.nmichael.de";
+		return EFA_NMICHAEL_DE;
 	}
 	
 	public String getDisplayName() {
-		return International.getString("efa.nmichael.de (Historisch)");
+		return International.getString(DISPLAY_NAME);
     }
 
 	public String getUserHint() {
-		return International.getString("Diese Update-Quelle ist aus historischen Gründen vorhanden"
-				+ " und bildet die bisherige Online-Update Funktionalität nach."
-				+ " Sie dient Testzwecken oder dafür, wenn GitHub nicht verfügbar sein sollte."
-				+ " Diese Update-Quelle lädt ausschließlich die neueste efa-Version von efa.nmichael.de "
-				+ " (egal, ob Beta oder Production Release).");
+		return International.getString(USER_HINT);
 	}
 
 	/**

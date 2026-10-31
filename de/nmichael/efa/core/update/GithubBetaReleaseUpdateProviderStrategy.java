@@ -20,8 +20,28 @@ import de.nmichael.efa.util.International;
 public class GithubBetaReleaseUpdateProviderStrategy extends GithubReleaseUpdateProviderStrategy {
 
     public static final String GITHUBBETA = "GitHubBeta";
-    
-    
+
+    // Raw (untranslated) texts, extracted as constants so that they are defined
+    // exactly once and can be reused both by getDisplayName()/getUserHint() and
+    // by the UpdateProviderStrategyRegistry self-registration below.
+    private static final String DISPLAY_NAME = "GitHub Beta Releases";
+    private static final String USER_HINT = 
+    				"Diese Update-Quelle lädt ausschließlich Beta/Pre-Releases von GitHub."
+    				+"\n\nVerwenden Sie diese Quelle, um Ihre Installation"+
+    				" auf eine neuere BETA-Version zu aktualisieren.";
+
+    // Self-registration: makes this strategy's metadata available via
+    // UpdateProviderStrategyRegistry without requiring an instance to be created.
+    static {
+        UpdateProviderStrategyRegistry.register(new UpdateProviderStrategyDescriptor(
+                GITHUBBETA,
+                GithubBetaReleaseUpdateProviderStrategy.class,
+                () -> International.getString(DISPLAY_NAME),
+                () -> International.getString(USER_HINT),
+                // this strategy needs no configuration, so the config argument is ignored
+                config -> new GithubBetaReleaseUpdateProviderStrategy()));
+    }
+
     public GithubBetaReleaseUpdateProviderStrategy() {
 		//just call super constructor with includePrereleases = true, includeDrafts = false
 		super(Daten.ONLINEUPDATE_INFO_GITHUB_OWNER, 
@@ -39,11 +59,11 @@ public class GithubBetaReleaseUpdateProviderStrategy extends GithubReleaseUpdate
     }
     
     public String getDisplayName() {
-		return International.getString("GitHub Beta Releases");
+		return International.getString(DISPLAY_NAME);
 	}
     
     public String getUserHint() {
-    	return International.getString("Diese Update-Quelle lädt ausschließlich Beta/Pre-Releases von GitHub. Wenden Sie diese Quelle an, um eine bestehende Produktionsversion auf eine NEUERE Beta-Version zu aktualisieren.");
+    	return International.getString(USER_HINT);
     }
 }
     
