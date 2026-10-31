@@ -109,7 +109,7 @@ section="Other"
 			<ChangeItem section="Stability">Bugfix: Alle Oberflächenelemente vom Typ ItemType wurden gehärtet gegen Nullpointer und Programmierfehler.</ChangeItem>
 			<ChangeItem section="Other">Neu: XSLT-Scripte zum automatisierten Erstellen von Changelogs zwischen zwei efa-Versionen erstellt, wahlweise nach HTML oder MarkDown für GitHub. Änderungen werden nach Bereich der Änderungen gruppiert.</ChangeItem>
 			<ChangeItem section="Other">Neu: XSLT-Scripte für das Erstellen des efa-Changelogs im "Über Efa" Dialog unterstützen zwei Sprachen und geben Änderungen nach Bereich gruppiert aus, und stellen Neuerungen getrennt von Bugfixes dar.</ChangeItem>
-			<ChangeItem section="Other">Bugfix: Der Downloader </ChangeItem>
+			<ChangeItem section="Other">Bugfix: Download-Thread: umfassendes Refactoring und Härtung. Dieser Funktion wird von OnlineUpdate, Fahrtenabzeichen, DRV-Funktionen, BrowserDialog genutzt. Inhaltlich tut der Download-Thread aber nichts Neues.</ChangeItem>
 		</Changes>
         <Changes lang="en">
         	<ChangeItem section="Admin/Online-Update">New: Online update revised. Supports update from GitHub (Production or Prerelease), efa.nmichael.de or from a local directory/USB stick. The user can choose from which source the update shall be installed from.</ChangeItem>
@@ -122,6 +122,7 @@ section="Other"
         	<ChangeItem section="Stability">Bugfix: All GUI elements of type ItemType have been hardened against null pointers and programming errors.</ChangeItem>
         	<ChangeItem section="Other">New: XSLT scripts created for automatically generating changelogs between two efa versions, optionally in HTML or MarkDown for GitHub. Changes are grouped by area of change.</ChangeItem>
         	<ChangeItem section="Other">New: XSLT scripts for creating the efa changelog in the "About Efa" dialog support two languages and output changes grouped by area, and display new features separately from bug fixes.</ChangeItem>
+        	<ChangeItem section="Other">Bugfix: Download thread: comprehensive refactoring and hardening. This function is used by OnlineUpdate, Fahrtenabzeichen, DRV functions, BrowserDialog. In terms of content, however, the download thread does not do anything new.</ChangeItem>
         </Changes>
 	</Version>
 	<Version>
