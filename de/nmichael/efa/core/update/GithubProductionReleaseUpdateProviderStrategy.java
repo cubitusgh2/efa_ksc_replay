@@ -18,6 +18,8 @@ public class GithubProductionReleaseUpdateProviderStrategy extends GithubRelease
     public GithubProductionReleaseUpdateProviderStrategy() {
     	super(Daten.ONLINEUPDATE_INFO_GITHUB_OWNER,
     			Daten.ONLINEUPDATE_INFO_GITHUB_REPOSITORY,
+				// no pre-releases. Github can mark a release as pre-realese.
+				// we rely on that, and don't check the version number for a "beta" or "alpha" string.
     			false, // no pre-releases
     			false, // no drafts
     			true, // only production releases

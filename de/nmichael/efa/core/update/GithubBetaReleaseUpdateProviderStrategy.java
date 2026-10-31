@@ -25,7 +25,9 @@ public class GithubBetaReleaseUpdateProviderStrategy extends GithubReleaseUpdate
 		//just call super constructor with includePrereleases = true, includeDrafts = false
 		super(Daten.ONLINEUPDATE_INFO_GITHUB_OWNER, 
 				Daten.ONLINEUPDATE_INFO_GITHUB_REPOSITORY, 
-    			true, // only pre-releases
+				// only pre-releases. Github can mark a release as pre-realese.
+				// we rely on that, and don't check the version number for a "beta" or "alpha" string.
+    			true, 
     			false, // no drafts
     			false, // no production releases
     			null, 15000, 30000);

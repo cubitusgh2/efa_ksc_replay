@@ -12,12 +12,8 @@ package de.nmichael.efa.core.update;
 
 import java.awt.Cursor;
 import java.awt.Window;
-
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.URL;
 import java.net.URLConnection;
@@ -115,6 +111,12 @@ public class OnlineUpdate {
             return false;
         }
 
+        // Update check timestamp speichern, damit nicht bei jedem Start von efa ein Online-Update-Check durchgeführt wird
+        if (Daten.efaConfig != null) {
+            Daten.efaConfig.setValueEfaVersionLastCheck(System.currentTimeMillis());
+        }
+
+
         if (newerCandidates==null || newerCandidates.isEmpty()) {
 			if (parent != null) {
 				Dialog.infoDialog(International.getString("Es liegt derzeit keine neuere Version von efa vor.") + "\n"
@@ -125,11 +127,6 @@ public class OnlineUpdate {
 			}
 			return true;
 		}
-        
-        // Update check timestamp speichern, damit nicht bei jedem Start von efa ein Online-Update-Check durchgeführt wird
-        if (Daten.efaConfig != null) {
-            Daten.efaConfig.setValueEfaVersionLastCheck(System.currentTimeMillis());
-        }
         
     	UpdateCandidate newestCandidate = newerCandidates.get(0); // first candidate is always the newest one!
 
@@ -304,6 +301,10 @@ public class OnlineUpdate {
         return lastError;
     }
 
+	public static void setLastError(String error) {
+		lastError = error;
+	}
+	
 	/**
 	 * Collects and formats user information for transmission during the online update process.
 	 * @param newVersionName The name of the new version being installed.
@@ -320,9 +321,13 @@ public class OnlineUpdate {
         StringBuilder s = new StringBuilder();
         s.append(International.getString("Verein") + ": " + Daten.project.getClubName() + "\n");
         s.append(International.getString("Sprache") + ": " + International.getLanguageDescription() + "\n");
+        
+        boolean rowing  = Daten.efaConfig != null && Daten.efaConfig.getValueUseFunctionalityRowing();
+        boolean canoeing = Daten.efaConfig != null && Daten.efaConfig.getValueUseFunctionalityCanoeing();
         s.append(International.getString("Sportarten") + ": " +
-                (Daten.efaConfig.getValueUseFunctionalityRowing() ? International.getString("Rudern") : "") + " " +
-                (Daten.efaConfig.getValueUseFunctionalityCanoeing() ? International.getString("Kanu") : "") + "\n");
+                (rowing ? International.getString("Rudern") : "") + " " +
+                (canoeing ? International.getString("Kanu") : "") + "\n");
+        
         s.append(International.getString("efa Version") + ": " + newVersionName + "\n");
         if (Daten.EFALIVE_VERSION != null) {
             s.append(International.getString("efaLive Version") + ": " + Daten.EFALIVE_VERSION + "\n");
@@ -346,33 +351,36 @@ public class OnlineUpdate {
             return;
         }
         try {
-            URL url = new URL(Daten.INTERNET_EFAMAIL);
-            URLConnection connection = url.openConnection();
-            connection.setDoOutput(true);
-            connection.setDoInput(true);
-            connection.setUseCaches(false);
-            connection.setAllowUserInteraction(true);
-            connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-            OutputStreamWriter out = new OutputStreamWriter(connection.getOutputStream());
-            out.write("subject=User efa - " + newVersionName + " (Online-Update)" +
+            String body = "subject=User efa - " + newVersionName + " (Online-Update)" +
                     "&comments=" + URLEncoder.encode(infos, "ISO-8859-1") +
                     "&club=" + URLEncoder.encode(Daten.project.getClubName(), "ISO-8859-1") +
                     "&efa.version=" + URLEncoder.encode(newVersionName, "ISO-8859-1") +
                     (Daten.EFALIVE_VERSION != null ? "&efalive.version=" + URLEncoder.encode(Daten.EFALIVE_VERSION, "ISO-8859-1") : "") +
-                    (Daten.project != null && Daten.project.isOpen() && Daten.project.getProjectStorageType() == IDataAccess.TYPE_EFA_CLOUD ? "efacloud=efaCloud" : "")  +
+                    (Daten.project.getProjectStorageType() == IDataAccess.TYPE_EFA_CLOUD ? "&efacloud=efaCloud" : "") +
                     "&java.version=" + URLEncoder.encode(Daten.javaVersion, "ISO-8859-1") +
-                    "&app=" + URLEncoder.encode(Daten.applName, "ISO-8859-1"));
-            out.flush();
-            out.close();
-            InputStream in = new BufferedInputStream(connection.getInputStream());
-            BufferedReader buf = new BufferedReader(new InputStreamReader(in));
-            @SuppressWarnings("unused")
-			String s;
-            while ((s = buf.readLine()) != null) {
-                // nothing
+                    "&app=" + URLEncoder.encode(Daten.applName, "ISO-8859-1");
+
+            URLConnection connection = new URL(Daten.INTERNET_EFAMAIL).openConnection();
+            connection.setDoOutput(true);
+            connection.setDoInput(true);
+            connection.setUseCaches(false);
+            connection.setConnectTimeout(10000);
+            connection.setReadTimeout(10000);
+            connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+
+            try (OutputStreamWriter out = new OutputStreamWriter(connection.getOutputStream(), "ISO-8859-1")) {
+                out.write(body);
+            }
+            // read the response to ensure the request is completed, but we don't need to process it
+            try (InputStream in = connection.getInputStream()) {
+                byte[] buffer = new byte[1024];
+                while (in.read(buffer) != -1) {
+                    // nothing
+                }
             }
         } catch (Exception e) {
-            return;
+        	Logger.logdebug(e);
+            // transmitting user info failed, but we don't want to interrupt the update process for this
         }
     }
 }
@@ -499,6 +507,13 @@ class ExecuteAfterDownloadImpl implements ExecuteAfterDownload {
         this.fileSize = fileSize;
         this.versionId = versionId;
     }
+    
+    // NEW: sets the error locally and globally (also works in the efaRemote case without a dialog)
+    private void setError(String err) {
+        lastError = err;
+        OnlineUpdate.setLastError(err);
+    }
+
     /**
 	 * Called when the download is successful. This method verifies the downloaded file size, backs up
 	 * existing data, unzips the downloaded update, and restarts the application if necessary.
@@ -508,8 +523,8 @@ class ExecuteAfterDownloadImpl implements ExecuteAfterDownload {
             parent.setEnabled(true);
         }
         File f = new File(zipFile);
-        if ((fileSize>0) && (f.length() != fileSize)) {
-            lastError = International.getString("Der Download ist unvollständig.");
+        if ((fileSize > 0) && (f.length() != fileSize)) {
+            setError(International.getString("Der Download ist unvollständig."));
             if (parent != null) {
                 Dialog.error(LogString.operationAborted(International.getString("Update")) + "\n" + lastError);
             }
@@ -534,7 +549,7 @@ class ExecuteAfterDownloadImpl implements ExecuteAfterDownload {
             }
             Backup backup = new Backup(Daten.efaBakDirectory, null, backupProject, true, true); // do not include efa log during onlineupdate backup
             if (backup.runBackup(null) != 0) {
-                lastError = LogString.operationFailed(International.getString("Backup"));
+                setError(LogString.operationFailed(International.getString("Backup")));
                 if (parent == null) {
                     return;
                 }
@@ -547,28 +562,27 @@ class ExecuteAfterDownloadImpl implements ExecuteAfterDownload {
             }
         }
 
-        //Using new unzip method
+        // Entpacken (neue Unzip-Methode)
         UnzipResult result = null;
         if (Daten.isOsLinux()) {
-            result= EfaZIPUtil.unzipToResult(zipFile, Daten.efaMainDirectory, ".jar", ".jar.new");
+            result = EfaZIPUtil.unzipToResult(zipFile, Daten.efaMainDirectory, ".jar", ".jar.new");
         } else {
-            result= EfaZIPUtil.unzipToResult(zipFile, Daten.efaMainDirectory);
+            result = EfaZIPUtil.unzipToResult(zipFile, Daten.efaMainDirectory);
         }
-        
+
         if (result != null) {
-        	if (result.getStatus()==EfaZIPUtil.UnzipStatus.FAILURE) {
-        		String errorText = result.getErrorsAsString();
-        		if (errorText.length() > 1000) {
-        			errorText = errorText.substring(0, 1000);
-        		}
-        		
-	            lastError = LogString.operationFailed(International.getString("Installation")) +
-	                    "\n" + errorText;
-	            if (parent != null) {
-	                Dialog.error(lastError);
-	            }
-	            return;
-        	}
+            if (result.getStatus() == EfaZIPUtil.UnzipStatus.FAILURE) {
+                String errorText = result.getErrorsAsString();
+                if (errorText.length() > 1000) {
+                    errorText = errorText.substring(0, 1000);
+                }
+                setError(LogString.operationFailed(International.getString("Installation")) +
+                        "\n" + errorText);
+                if (parent != null) {
+                    Dialog.error(lastError);
+                }
+                return;
+            }
         }
 
         // Erfolgreich
@@ -590,12 +604,26 @@ class ExecuteAfterDownloadImpl implements ExecuteAfterDownload {
         }
     }
 
+
+
     /**
-	 * Called when the download fails. This method enables the parent window and displays an error message
-	 * indicating that the operation failed.
+	 * Called when the download fails. Re-enables the parent window (if present), records the error
+	 * and shows an error message (only if a parent window exists).
 	 * */
     public void failure(String text) {
-        parent.setEnabled(true);
-        Dialog.infoDialog(LogString.operationFailed(International.getString("Installation")));
+        String err = LogString.operationFailed(International.getString("Installation"));
+        if (text != null && text.length() > 0) {
+            err += "\n" + text;
+        }
+        OnlineUpdate.setLastError(err);
+        if (parent != null) {
+            parent.setEnabled(true);
+            Dialog.error(err);
+        } else {
+            Logger.log(Logger.ERROR, Logger.MSG_EVT_REMOTEONLINEUPDATEDOWNLOAD, err);
+        }
     }
+
+    
+
 }

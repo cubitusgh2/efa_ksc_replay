@@ -22,24 +22,25 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import javax.swing.ProgressMonitor;
+import javax.swing.SwingUtilities;
 
 public class DownloadThread {
 
     final static int PROGRESS_TIMETOPOPUP = 1;
-    final static int PROGRESS_TIMERINTERVAL = 20;
+    final static int PROGRESS_TIMERINTERVAL = 500;
 
     private ProgressMonitor progressMonitor;
     private URLConnection conn;
-    private String localFile;
-    private boolean waitfor;
+    private volatile String localFile;
+    private volatile boolean waitfor;
     private ExecuteAfterDownload afterDownload;
     private Thread thread;
-    private int downDone, downTotal;
-    private InputStream i;
-    private FileOutputStream o;
-    private String exceptionText = null;
+    private volatile int downDone, downTotal;
+    private volatile InputStream i;
+    private volatile FileOutputStream o;
+    private volatile String exceptionText = null;
     private javax.swing.Timer timer;
-    private boolean aborted = false;
+    private volatile boolean aborted = false;
 
     public DownloadThread(ProgressMonitor progressMonitor, 
             URLConnection conn, 
@@ -74,12 +75,18 @@ public class DownloadThread {
 
     void stop() {
         try {
-            i.close();
-            o.close();
-            exceptionText = International.getString("Abbruch");
+            if (i != null) {
+                i.close();
+            }
+            if (o != null) {
+                o.close();
+            }
         } catch (IOException e) {
+            // ignorieren, Stream war evtl. schon zu
+        } finally {
             i = null;
             o = null;
+            exceptionText = International.getString("Abbruch");
         }
     }
 
@@ -184,56 +191,107 @@ public class DownloadThread {
         }
     }
 
-	private static boolean copyLocalFile(String remote, String local) {
-		remote = remote.substring(7); // remove "file://" prefix
-		
-		Path source= Paths.get(remote);
-		Path target = Paths.get(local);
-		try {
-		    // Option StandardCopyOption.REPLACE_EXISTING überschreibt die Zieldatei, falls sie bereits existiert
-		    Files.copy(source, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-		    System.out.println("Datei erfolgreich kopiert!");
-		} catch (IOException e) {
-		    Dialog.error(LogString.operationFailed(International.getString("Download"),e.toString()) + "\n");
+    private static boolean copyLocalFile(String remote, String local) {
+        if (remote == null || local == null) {
+            Dialog.error(LogString.operationFailed(International.getString("Download"),
+                    "remote/local file path is null") + "\n");
+            return false;
+        }
 
-			return false; // error while copying the file
-		}
-		return true; // file copied successfully
-	}
+        // "file://" bzw. "file:///" Präfix robust entfernen (case-insensitive)
+        String path = remote;
+        if (path.toLowerCase().startsWith("file://")) {
+            path = path.substring(7);
+        }
+        // Windows: "file:///C:/..." -> nach dem Entfernen von "file://" bleibt "/C:/...";
+        // führenden Slash vor Laufwerksbuchstaben entfernen
+        if (path.matches("^/[a-zA-Z]:.*")) {
+            path = path.substring(1);
+        }
+
+        try {
+            Path source = Paths.get(path);
+            Path target = Paths.get(local);
+
+            if (!Files.exists(source)) {
+                Dialog.error(LogString.operationFailed(International.getString("Download"),
+                        "Quelldatei nicht gefunden: " + source) + "\n");
+                return false;
+            }
+
+            Files.copy(source, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            Logger.log(Logger.INFO, Logger.MSG_EVT_ONLINEUPDATEINFO, "Datei erfolgreich kopiert: " + source + " -> " + target);
+        } catch (IOException e) {
+            Dialog.error(LogString.operationFailed(International.getString("Download"), e.toString()) + "\n");
+            return false;
+        }
+        return true;
+    }
 
 
+    /**
+	 * The actual download task that runs in a separate thread.
+	 */
     class ActualTask {
 
-        ActualTask(ExecuteAfterDownload afterDownload) {
-            try {
-                int BUFSIZE = 1500;
-                byte[] buf = new byte[BUFSIZE];
-                i = conn.getInputStream();
-                o = new FileOutputStream(localFile);
-                int c = 0;
-                downDone = 0;
-                downTotal = conn.getContentLength();
-                while ((c = i.read(buf, 0, BUFSIZE)) > 0 && !aborted) {
-                    o.write(buf, 0, c);
+    	ActualTask(ExecuteAfterDownload afterDownload) {
+            final int BUFSIZE = 32768; // 32 KB
+            byte[] buf = new byte[BUFSIZE];
+            downDone = 0;
+            downTotal = conn.getContentLength();
+            //try-with-resources: InputStream und FileOutputStream werden automatisch geschlossen, auch bei Exception
+            try (InputStream in = conn.getInputStream();
+                 FileOutputStream out = new FileOutputStream(localFile)) {
+
+                // weiterhin über die Instanzfelder zugreifbar (z.B. für stop()/TimerListener)
+                i = in;
+                o = out;
+
+                int c;
+                // read from the stream and write to the file, until EOF or aborted
+                // we do not depend on the size (downtotal) being known, 
+                // as some servers do not provide a Content-Length header
+                while ((c = in.read(buf, 0, BUFSIZE)) > 0 && !aborted) {
+                    out.write(buf, 0, c);
                     downDone += c;
                 }
-                i.close();
-                o.close();
+
+	             // Sicherstellen, dass done() korrekt erkennt, dass der Download beendet ist
+	             // (relevant z.B. wenn der Server keinen Content-Length-Header liefert,
+	             // dann ist downTotal == -1 und würde sonst nie == downDone werden)
+	             if (!aborted) {
+	                 downTotal = downDone;
+	             }
+                
                 if (afterDownload != null) {
                     if (!aborted && downDone == downTotal) {
-                        afterDownload.success();
+                        invokeOnEdt(afterDownload::success);
                     } else {
-                        afterDownload.failure(International.getString("Abbruch"));
+                        invokeOnEdt(() -> afterDownload.failure(International.getString("Abbruch")));
                     }
                 }
             } catch (IOException e) {
                 exceptionText = e.getMessage();
                 if (afterDownload != null) {
-                    afterDownload.failure(e.getMessage());
+                    invokeOnEdt(() -> afterDownload.failure(e.getMessage()));
                 }
+            } finally {
+                // Felder zurücksetzen, damit stop() nach Abschluss nicht erneut auf
+                // bereits geschlossene Streams zugreift
+                i = null;
+                o = null;
+            }
+        }
+
+        private void invokeOnEdt(Runnable r) {
+            if (SwingUtilities.isEventDispatchThread()) {
+                r.run();
+            } else {
+                SwingUtilities.invokeLater(r);
             }
         }
     }
+
 
     class TimerListener implements ActionListener {
 
@@ -248,9 +306,9 @@ public class DownloadThread {
                 if (progressMonitor.isCanceled() || downloadThread.done()) {
                     if (progressMonitor.isCanceled()) {
                         downloadThread.setAborted();
+                        downloadThread.stop();   // <-- reaktiviert: schließt Streams & setzt exceptionText
                     }
                     progressMonitor.close();
-//                downloadThread.stop();
                     downloadThread.exit();
                     timer.stop();
                 } else {
@@ -258,7 +316,15 @@ public class DownloadThread {
                     progressMonitor.setMaximum(downloadThread.getLengthOfTask());
                     progressMonitor.setProgress(downloadThread.getCurrent());
                 }
+            } else {
+                // Silent-Mode: kein ProgressMonitor vorhanden, trotzdem Timer stoppen,
+                // sobald der Download fertig ist - sonst läuft der Timer endlos weiter.
+                if (downloadThread.done()) {
+                    downloadThread.exit();
+                    timer.stop();
+                }
             }
         }
+
     }
 }
