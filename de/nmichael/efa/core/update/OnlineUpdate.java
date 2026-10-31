@@ -10,7 +10,6 @@
 
 package de.nmichael.efa.core.update;
 
-import java.awt.Cursor;
 import java.awt.Window;
 import java.io.File;
 import java.io.InputStream;
@@ -30,6 +29,7 @@ import org.xml.sax.Attributes;
 import de.nmichael.efa.Daten;
 import de.nmichael.efa.core.Backup;
 import de.nmichael.efa.data.storage.IDataAccess;
+import de.nmichael.efa.gui.EfaGuiUtils;
 import de.nmichael.efa.util.Dialog;
 import de.nmichael.efa.util.DownloadThread;
 import de.nmichael.efa.util.EfaUtil;
@@ -89,14 +89,13 @@ public class OnlineUpdate {
 	 * Run the online update process using the specified provider and selection strategies.
 	 * @param parent The parent dialog for displaying messages. Can be null if running in headless mode.
 	 * @param provider The strategy for fetching available updates.
-	 * @param selection The strategy for selecting an update from the available candidates.
+	 * @param updateSelector The strategy for selecting an update from the available candidates.
 	 * @return true if the update process was successful, false otherwise.
 	 * */
     public synchronized static boolean runOnlineUpdate(
             JDialog parent,
             UpdateProviderStrategy provider,
-            UpdateSelectionStrategy selection) {
-        Vector<OnlineUpdateInfo> eouVersionInfo = null;
+            UpdateSelectionStrategy updateSelector) {
         lastError = null;
 
         List<UpdateCandidate> newerCandidates;
@@ -142,7 +141,7 @@ public class OnlineUpdate {
             return true;
         }
 
-        UpdateCandidate selected = selection.select(parent, provider, newerCandidates, Daten.VERSIONID);
+        UpdateCandidate selected = updateSelector.select(parent, provider, newerCandidates, Daten.VERSIONID);
         
 
         if (selected == null) {
@@ -164,17 +163,6 @@ public class OnlineUpdate {
     }
 
 	/**
-	 * Sets or resets the wait cursor (hourglass) on the parent dialog. Does nothing if parent is null.
-	 * @param parent The parent dialog, can be null.
-	 * @param wait true to show the wait cursor, false to restore the default cursor.
-	 */
-	private static void setWaitCursor(JDialog parent, boolean wait) {
-		if (parent != null) {
-			parent.setCursor(wait ? Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR) : Cursor.getDefaultCursor());
-		}
-	}
-
-	/**
 	 * Fetches all available update candidates from the provider and filters them to newer versions.
 	 * Shows the wait cursor during both steps.
 	 * @param parent The parent dialog, can be null.
@@ -183,12 +171,12 @@ public class OnlineUpdate {
 	 * @throws Exception if the provider fails to fetch the update information.
 	 */
 	private static List<UpdateCandidate> fetchNewerCandidates(JDialog parent, UpdateProviderStrategy provider) throws Exception {
-		setWaitCursor(parent, true);
+		EfaGuiUtils.setWaitCursor(parent, true);
 		try {
 			List<UpdateCandidate> allUpdateCandidates = provider.fetchAvailableUpdates();
 			return filterNewerCandidates(allUpdateCandidates, Daten.VERSIONID);
 		} finally {
-			setWaitCursor(parent, false);
+			EfaGuiUtils.setWaitCursor(parent, false);
 		}
 	}
 
@@ -223,24 +211,42 @@ public class OnlineUpdate {
 		return canWrite;
 	}
 
+	/**
+	 * Downloads the update from the specified candidate and applies it to the local installation.
+	 * 
+	 * @param parent The parent dialog, can be null.
+	 * @param newestCandidate The update candidate to download and apply.
+	 * @return true if the download and application were successful, false otherwise.
+	 */
 	private static boolean downloadAndApplyUpdate(JDialog parent, UpdateCandidate newestCandidate) {
-		// Download des Updates
+		// Target ZIP file for the downloaded update. Existing file will be overwritten.
+		// Downloaded file will NOT be deleted after the update.
         String zipFile = Daten.efaTmpDirectory + "eou.zip";
+        
         ExecuteAfterDownload afterDownload = new ExecuteAfterDownloadImpl(parent,
                 zipFile, newestCandidate.getDownloadSize(), newestCandidate.getVersionId());
+        
         if (parent != null) {
+        	// Disable the parent dialog while downloading to prevent user interaction.
             parent.setEnabled(false);
+            
+            // Download the update file. If the download fails, re-enable the parent dialog and return false.
+            // The Downloadthread shows its own progress dialog and handles cancellation and error messages.
             if (!DownloadThread.getFile(parent, newestCandidate.getDownloadUrl(), zipFile, afterDownload)) {
                 parent.setEnabled(true);
                 return false;
             }
         } else {
+        	// Download the update file without a parent dialog. 
+        	// This is used for remote updates where no GUI is available.
             Logger.log(Logger.INFO, Logger.MSG_EVT_REMOTEONLINEUPDATEDOWNLOAD,
                     International.getMessage("Download von {file}", newestCandidate.getDownloadUrl()) + " ...");
+            
             if (!DownloadThread.getFile(parent, newestCandidate.getDownloadUrl(), zipFile, true)) {
                 lastError = LogString.operationFailed(International.getString("Download"));
                 return false;
             }
+            
             Logger.log(Logger.INFO, Logger.MSG_EVT_REMOTEONLINEUPDATEDOWNLOAD,
                     LogString.operationSuccessfullyCompleted(
                         International.getMessage("Download von {file}", newestCandidate.getDownloadUrl())));
@@ -281,7 +287,8 @@ public class OnlineUpdate {
             }
         }
 
-        // Ensure newest first even if API order changes.
+        // Ensure newest first even if API order changes. 
+        // The comparator sorts the updates descending by version ID, so the newest version is first in the list.
         Collections.sort(newer, new Comparator<UpdateCandidate>() {
             @Override
             public int compare(UpdateCandidate a, UpdateCandidate b) {
@@ -309,8 +316,7 @@ public class OnlineUpdate {
 	 * Collects and formats user information for transmission during the online update process.
 	 * @param newVersionName The name of the new version being installed.
 	 * @return A formatted string containing user information, or null if the project is not open or the club name is not set.
-	 * */
-	
+	 */
     public static String getTransmitUserInfo(String newVersionName) {
         if (Daten.project == null || !Daten.project.isOpen()) {
             return null;
@@ -343,29 +349,76 @@ public class OnlineUpdate {
 
     /**
 	 * Submits user information to the specified server during the online update process.
+	 * This is done "fire and forget": the actual network transmission happens asynchronously
+	 * in a background thread, so the caller is never blocked (e.g. by slow DNS/connect/read
+	 * timeouts) and does not need to wait for the result. Any failure is only logged for debugging.
+	 *
+	 * All data needed for the HTTP request (club name, storage type, Java/efa/efaLive versions, ...)
+	 * is read from {@link Daten} / {@link Daten#project} synchronously on the calling thread before
+	 * the background thread is started. This avoids race conditions / NullPointerExceptions in case
+	 * {@code Daten.project} is closed or modified concurrently while the background submission is
+	 * still in progress.
+	 *
 	 * @param newVersionName The name of the new version being installed.
 	 * */
-    public static void submitUserInfos(String newVersionName) {
-        String infos = getTransmitUserInfo(newVersionName);
-        if (infos == null || Daten.INTERNET_EFAMAIL == null) {
+    public static void submitUserInfos(final String newVersionName) {
+        final String infos = getTransmitUserInfo(newVersionName);
+        final String emailUrl = Daten.INTERNET_EFAMAIL;
+        if (infos == null || emailUrl == null || emailUrl.length() == 0) {
             return;
         }
+
+        // Snapshot all values needed for the request NOW (on the calling thread), so the
+        // background thread does not depend on mutable global state (Daten.project etc.)
+        // which could change or become unavailable while the request is still in flight.
+        final String clubName = Daten.project.getClubName();
+        final boolean isEfaCloud = Daten.project.getProjectStorageType() == IDataAccess.TYPE_EFA_CLOUD;
+        final String javaVersion = Daten.javaVersion;
+        final String appName = Daten.applName;
+        final String efaLiveVersion = Daten.EFALIVE_VERSION;
+
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                submitUserInfosBlocking(newVersionName, infos, emailUrl, clubName,
+                        isEfaCloud, javaVersion, appName, efaLiveVersion);
+            }
+        }, "OnlineUpdate-SubmitUserInfos");
+        t.setDaemon(true); // does not prevent JVM shutdown if the main thread exits
+        t.start();
+    }
+
+    /**
+	 * Performs the actual (blocking) HTTP submission of user information. Must not be called
+	 * directly from UI code; use {@link #submitUserInfos(String)} instead, which runs this in
+	 * a background thread ("fire and forget") and provides all the required snapshot data.
+	 * @param newVersionName The name of the new version being installed.
+	 * @param infos The already-collected user info text.
+	 * @param emailUrl The URL to submit the data to.
+	 * @param clubName The club name, snapshotted from Daten.project before going async.
+	 * @param isEfaCloud Whether the project storage type is efaCloud.
+	 * @param javaVersion The Java version string.
+	 * @param appName The application name.
+	 * @param efaLiveVersion The efaLive version, or null if not running under efaLive.
+	 */
+    private static void submitUserInfosBlocking(String newVersionName, String infos, String emailUrl,
+            String clubName, boolean isEfaCloud, String javaVersion, String appName, String efaLiveVersion) {
+        URLConnection connection = null;
         try {
             String body = "subject=User efa - " + newVersionName + " (Online-Update)" +
                     "&comments=" + URLEncoder.encode(infos, "ISO-8859-1") +
-                    "&club=" + URLEncoder.encode(Daten.project.getClubName(), "ISO-8859-1") +
+                    "&club=" + URLEncoder.encode(clubName != null ? clubName : "", "ISO-8859-1") +
                     "&efa.version=" + URLEncoder.encode(newVersionName, "ISO-8859-1") +
-                    (Daten.EFALIVE_VERSION != null ? "&efalive.version=" + URLEncoder.encode(Daten.EFALIVE_VERSION, "ISO-8859-1") : "") +
-                    (Daten.project.getProjectStorageType() == IDataAccess.TYPE_EFA_CLOUD ? "&efacloud=efaCloud" : "") +
-                    "&java.version=" + URLEncoder.encode(Daten.javaVersion, "ISO-8859-1") +
-                    "&app=" + URLEncoder.encode(Daten.applName, "ISO-8859-1");
+                    (efaLiveVersion != null ? "&efalive.version=" + URLEncoder.encode(efaLiveVersion, "ISO-8859-1") : "") +
+                    (isEfaCloud ? "&efacloud=efaCloud" : "") +
+                    "&java.version=" + URLEncoder.encode(javaVersion, "ISO-8859-1") +
+                    "&app=" + URLEncoder.encode(appName, "ISO-8859-1");
 
-            URLConnection connection = new URL(Daten.INTERNET_EFAMAIL).openConnection();
+            connection = new URL(emailUrl).openConnection();
             connection.setDoOutput(true);
             connection.setDoInput(true);
             connection.setUseCaches(false);
-            connection.setConnectTimeout(10000);
-            connection.setReadTimeout(10000);
+            connection.setConnectTimeout(15000);
+            connection.setReadTimeout(30000);
             connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
             try (OutputStreamWriter out = new OutputStreamWriter(connection.getOutputStream(), "ISO-8859-1")) {
@@ -381,8 +434,14 @@ public class OnlineUpdate {
         } catch (Exception e) {
         	Logger.logdebug(e);
             // transmitting user info failed, but we don't want to interrupt the update process for this
+        } finally {
+            // release the underlying socket/connection instead of relying on garbage collection
+            if (connection instanceof java.net.HttpURLConnection) {
+                ((java.net.HttpURLConnection) connection).disconnect();
+            }
         }
     }
+
 }
 
 /**	
@@ -395,7 +454,7 @@ public class OnlineUpdate {
  *         <DownloadUrl>...</DownloadUrl>
  *         <DownloadSize>...</DownloadSize>
  *         <Changes lang="...">
- *             <ChangeItem>...</ChangeItem>
+ *             <ChangeItem section="...">...</ChangeItem>
  *             ...
  *         </Changes>
  *     </Version>

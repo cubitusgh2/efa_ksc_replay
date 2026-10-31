@@ -71,10 +71,10 @@ public class OnlineUpdateSourceSelectionDialog extends BaseTabbedDialog implemen
         sourceSelect = (ItemTypeStringList) item;
         sourceSelect.registerItemListener(this);
 
-        String localfilehint = International.getString("Zum Update von einem Verzeichnis (z.B. auf einem USB-Stick) müssen sich darin Download-Elemente von GitHub befinden: "+
-        "\n\n1) Die eou.xml des aktuellsten efa-Releases \n2) mindestens ein efa*.zip Programmpaket-Download ihrer Wahl. \nEs können sich auch mehrere efa*.zip Dateien darin befinden.");
-        guiItems.add(localFileInfo = EfaGuiUtils.createHintWordWrap("LOCALFILEHINT", IItemType.TYPE_PUBLIC, cat, localfilehint, GRID_WIDTH, 10, 10, 550));
+        String localfilehint = "";
+        guiItems.add(localFileInfo = EfaGuiUtils.createHintWordWrap("LOCALFILEHINT", IItemType.TYPE_PUBLIC, cat, localfilehint, GRID_WIDTH-1, 10, 10, 550));
         localFileInfo.setVisible(false);
+        localFileInfo.setIndent(true);
 
         guiItems.add(eouFile = new ItemTypeFile("LOCALFILE_EOU", "",
                 "eou.xml",

@@ -20,6 +20,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import de.nmichael.efa.Daten;
+import de.nmichael.efa.gui.EfaGuiUtils;
 import de.nmichael.efa.util.DownloadThread;
 import de.nmichael.efa.util.Logger;
 
@@ -474,22 +475,27 @@ public abstract class GithubReleaseUpdateProviderStrategy implements UpdateProvi
             Logger.log(Logger.INFO, Logger.MSG_EVT_ONLINEUPDATEINFO, "No newer candidates found.");
             return null;
         }
-
-        UpdateCandidate newestCandidate = newerCandidates.get(0);
-        String eouUrl = newestCandidate.getEouURL();
-        if (eouUrl == null || eouUrl.isEmpty()) {
-            Logger.log(Logger.INFO, Logger.MSG_EVT_ONLINEUPDATEINFO,
-                    "No EOU download URL available for " + newestCandidate.getVersionId());
-            return null;
-        }
-
-        String versionFile = Daten.efaTmpDirectory + "eou.xml";
-        if (!DownloadThread.getFile(parent, eouUrl, versionFile, true)) {
-            Logger.log(Logger.INFO, Logger.MSG_EVT_ONLINEUPDATEINFO, "Download of EOU file failed: " + eouUrl);
-            return null;
-        }
-        Logger.log(Logger.INFO, Logger.MSG_EVT_ONLINEUPDATEINFO, "Downloaded EOU file from: " + eouUrl);
-        return new File(versionFile);
+        
+		EfaGuiUtils.setWaitCursor(parent, true);
+		try {
+	        UpdateCandidate newestCandidate = newerCandidates.get(0);
+	        String eouUrl = newestCandidate.getEouURL();
+	        if (eouUrl == null || eouUrl.isEmpty()) {
+	            Logger.log(Logger.INFO, Logger.MSG_EVT_ONLINEUPDATEINFO,
+	                    "No EOU download URL available for " + newestCandidate.getVersionId());
+	            return null;
+	        }
+	
+	        String versionFile = Daten.efaTmpDirectory + "eou.xml";
+	        if (!DownloadThread.getFile(parent, eouUrl, versionFile, true)) {
+	            Logger.log(Logger.INFO, Logger.MSG_EVT_ONLINEUPDATEINFO, "Download of EOU file failed: " + eouUrl);
+	            return null;
+	        }
+	        Logger.log(Logger.INFO, Logger.MSG_EVT_ONLINEUPDATEINFO, "Downloaded EOU file from: " + eouUrl);
+	        return new File(versionFile);
+		} finally {
+			EfaGuiUtils.setWaitCursor(parent, false);
+		}
     }
 
     @Override

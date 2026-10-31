@@ -23,6 +23,7 @@ import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Toolkit;
+import java.awt.Window;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.io.IOException;
@@ -31,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
@@ -438,6 +440,28 @@ public class EfaGuiUtils {
     
 	public static Color getUrlLabelColor() {
 		return Color.BLUE;
+	}
+	
+	/**
+	 * Sets or resets the wait cursor (hourglass) on the parent dialog. Does nothing if parent is null.
+	 * @param parent The parent dialog, can be null.
+	 * @param wait true to show the wait cursor, false to restore the default cursor.
+	 */
+	public static void setWaitCursor(JDialog parent, boolean wait) {
+		if (parent != null) {
+			parent.setCursor(wait ? Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR) : Cursor.getDefaultCursor());
+		}
+	}
+	
+	/**
+	 * Sets or resets the wait cursor (hourglass) on the parent dialog. Does nothing if parent is null.
+	 * @param parent The parent dialog, can be null.
+	 * @param wait true to show the wait cursor, false to restore the default cursor.
+	 */
+	public static void setWaitCursor(Window parent, boolean wait) {
+		if (parent != null) {
+			parent.setCursor(wait ? Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR) : Cursor.getDefaultCursor());
+		}
 	}
 	
 }

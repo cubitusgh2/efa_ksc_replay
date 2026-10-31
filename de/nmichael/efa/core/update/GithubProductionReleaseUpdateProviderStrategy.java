@@ -1,6 +1,7 @@
 package de.nmichael.efa.core.update;
 
 import de.nmichael.efa.Daten;
+import de.nmichael.efa.util.International;
 
 /**
  * Loads releases from GitHub API and maps them to UpdateCandidate.
@@ -12,7 +13,7 @@ import de.nmichael.efa.Daten;
  */
 public class GithubProductionReleaseUpdateProviderStrategy extends GithubReleaseUpdateProviderStrategy {
 
-    public static final String GITHUBPROD = "GitHub (Production Release)";
+    public static final String GITHUBPROD = "GitHubProd";
     
     
     public GithubProductionReleaseUpdateProviderStrategy() {
@@ -29,4 +30,12 @@ public class GithubProductionReleaseUpdateProviderStrategy extends GithubRelease
     public String getName() {
         return GITHUBPROD;
     }
+    
+    public String getDisplayName() {
+		return International.getString("Github Produktion Releases (Standard)");
+    }
+    
+    public String getUserHint() {
+		return International.getString("Diese Update-Quelle lädt ausschließlich Produktions-Releases von GitHub. Wenden Sie diese Quelle an, wenn eine bestehende Produktionsversion auf eine neuere Produktionsversion aktualisiert werden soll. Ebenso kann eine bestehende Beta-Version auf eine NEUERE Produktionsversion aktualisiert werden.");
+	}
 }

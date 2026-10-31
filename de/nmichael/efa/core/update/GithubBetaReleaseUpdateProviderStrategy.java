@@ -1,6 +1,7 @@
 package de.nmichael.efa.core.update;
 
 import de.nmichael.efa.Daten;
+import de.nmichael.efa.util.International;
 
 /**
  * Loads releases from GitHub API and maps them to UpdateCandidate.
@@ -18,7 +19,7 @@ import de.nmichael.efa.Daten;
 
 public class GithubBetaReleaseUpdateProviderStrategy extends GithubReleaseUpdateProviderStrategy {
 
-    public static final String GITHUBBETA = "GitHub (Beta/Pre-Release)";
+    public static final String GITHUBBETA = "GitHubBeta";
     
     
     public GithubBetaReleaseUpdateProviderStrategy() {
@@ -36,4 +37,13 @@ public class GithubBetaReleaseUpdateProviderStrategy extends GithubReleaseUpdate
     public String getName() {
         return GITHUBBETA;
     }
+    
+    public String getDisplayName() {
+		return International.getString("GitHub Beta Releases");
+	}
+    
+    public String getUserHint() {
+    	return International.getString("Diese Update-Quelle lädt ausschließlich Beta/Pre-Releases von GitHub. Wenden Sie diese Quelle an, um eine bestehende Produktionsversion auf eine NEUERE Beta-Version zu aktualisieren.");
+    }
 }
+    
