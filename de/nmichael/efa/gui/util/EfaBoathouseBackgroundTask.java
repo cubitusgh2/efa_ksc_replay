@@ -53,12 +53,13 @@ public class EfaBoathouseBackgroundTask extends Thread {
 
     private static final int CHECK_INTERVAL = 60;
     private static final int REMOTE_SCN_CHECK_INTERVAL = 5;
-    private static final int ONCE_AN_HOUR = 3600 / CHECK_INTERVAL;
+    private static final long HOURLY_INTERVAL = 60 * 60 * 1000L; // one hour in ms
+    private static final long FOCUS_TIMEOUT = 3 * 60 * 1000L;    // 3 minutes without a list focused
     private static final long BOAT_DAMAGE_REMINDER_INTERVAL = 7*24*60*60*1000;
     private EfaBoathouseFrame efaBoathouseFrame;
     private boolean isProjectOpen = false;
     private boolean isLocalProject = true;
-    private int onceAnHour;
+    private long nextHourlyTasksAt; // time-based, replaces the loop counter onceAnHour
     private Calendar lockEfa;
     private volatile long lastEfaConfigScn = -1;
     private long lastBoatStatusScn = -1;
@@ -67,7 +68,7 @@ public class EfaBoathouseBackgroundTask extends Thread {
     private long newReservationStatusScn =-1;
 
     private long lastListUpdate = -1;
-	private volatile int nonListFocussedCount;
+	private volatile long nonListFocusSince = -1; // time when the current non-list focus started, replaces the loop counter
 	private volatile Component lastFocussedElement;
     // Retry handling for a failed automatic logbook switch (see autoOpenNewLogbook)
     private static final long LOGBOOK_SWITCH_RETRY_INTERVAL = 10 * 60 * 1000; // 10 minutes
@@ -76,7 +77,7 @@ public class EfaBoathouseBackgroundTask extends Thread {
 
     public EfaBoathouseBackgroundTask(EfaBoathouseFrame efaBoathouseFrame) {
         this.efaBoathouseFrame = efaBoathouseFrame;
-        this.onceAnHour = 5; // initial nach 5 Schleifendurchläufen zum ersten Mal hier reingehen
+        this.nextHourlyTasksAt = System.currentTimeMillis() + 5 * 60 * 1000L; // first run after ~5 minutes, as before
         this.lockEfa = null;
     }
 
@@ -216,10 +217,11 @@ public class EfaBoathouseBackgroundTask extends Thread {
 	                // Speicher-Überwachung
 	                checkMemory();
 	
-	                // Aktivitäten einmal pro Stunde
-	                if (--onceAnHour <= 0) {
+	                // Aktivitäten einmal pro Stunde (zeitbasiert, damit zusätzliche Schleifendurchläufe durch Interrupts sie nicht auslösen)
+	                long nowMs = System.currentTimeMillis();
+	                if (nowMs >= nextHourlyTasksAt) {
+	                    nextHourlyTasksAt = nowMs + HOURLY_INTERVAL;
 	                    System.gc(); // Damit Speicherüberwachung funktioniert (anderenfalls wird CollectionUsage nicht aktualisiert; Java-Bug)
-	                    onceAnHour = ONCE_AN_HOUR;
 	                    if (Logger.isTraceOn(Logger.TT_BACKGROUND)) {
 	                        Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK, "EfaBoathouseBackgroundTask: alive!");
 	                    }
@@ -1034,44 +1036,39 @@ public class EfaBoathouseBackgroundTask extends Thread {
                     if (efaBoathouseFrame == null) return;
                     
                     Component focusOwner = efaBoathouseFrame.getFocusOwner();
+                    long now = System.currentTimeMillis();
                     
                     // Lese den aktuellen Zustand einmal ab
-                    final int currentNonListCount;
+                    final long currentNonListFocusSince;
                     final Component currentLastFocussedElement;
                     synchronized (EfaBoathouseBackgroundTask.this) {
-                        currentNonListCount = nonListFocussedCount;
+                        currentNonListFocusSince = nonListFocusSince;
                         currentLastFocussedElement = lastFocussedElement;
                     }
                     
                     // Bestimme die neue Aktion
                     boolean shouldRequestFocus = false;
                     int focusRequestForList = 0;
-                    int newNonListCount = currentNonListCount;
+                    long newFocusSince = currentNonListFocusSince;
                     Component newLastFocussedElement = currentLastFocussedElement;
                     
                     // Prüfe, ob Frame selbst den Fokus hat - Das soll nicht sein! Gib einer Liste den Fokus!
                     if (focusOwner == efaBoathouseFrame) {
-                        newNonListCount = 0;
+                        newFocusSince = -1;
                         newLastFocussedElement = null;
                         shouldRequestFocus = true;
                         focusRequestForList = 0;
                     } else if (!efaBoathouseFrame.isAnyListFocused()) {
-                        // if no boatlist is focussed, get the last focussed element.
-                        newNonListCount = currentNonListCount + 1;
-                        
-                        // Prüfe, ob sich der Fokus geändert hat
-                        if (currentLastFocussedElement != null && currentLastFocussedElement != focusOwner) {
-                            // the last focussed element changed, although no boatlist is focussed - 
-                            // user is still active. wait for another 3 minutes before automatically changing focus to a boatlist
-                            newNonListCount = 0;
+                        // No boatlist is focussed: track how long the same non-list element has the focus.
+                        // A change of the focussed element means the user is still active, so the timer restarts.
+                        if (currentLastFocussedElement != focusOwner || currentNonListFocusSince < 0) {
+                            newFocusSince = now;
                         }
                         newLastFocussedElement = focusOwner;
                         
-                        // Nach 3 Minuten (3 Durchlaeufe dieses threads) zur Bootsliste wechseln
-                        // same element has focus for more than three minutes, and it is no boatlist?
-                        // change the focus to the list of available boats.
-                        if (newNonListCount > 3) {
-                            newNonListCount = 0;
+                        // After FOCUS_TIMEOUT without a boatlist focus, switch to the list of available boats.
+                        if (now - newFocusSince >= FOCUS_TIMEOUT) {
+                            newFocusSince = -1;
                             newLastFocussedElement = null;
                             shouldRequestFocus = true;
                             focusRequestForList = 1;//select "available boats" list
@@ -1079,8 +1076,10 @@ public class EfaBoathouseBackgroundTask extends Thread {
                     }
                     
                     // Aktualisiere den globalen Zustand
-                    nonListFocussedCount = newNonListCount;
-                    lastFocussedElement = newLastFocussedElement;
+                    synchronized (EfaBoathouseBackgroundTask.this) {
+	                    nonListFocusSince = newFocusSince;
+	                    lastFocussedElement = newLastFocussedElement;
+                    }
                     
                     // Führe GUI-Operationen aus (außerhalb des Sync-Blocks)
                     if (shouldRequestFocus && efaBoathouseFrame != null) {
