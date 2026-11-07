@@ -1474,13 +1474,15 @@ public class EfaBoathouseBackgroundTask extends Thread {
 	 * @return true if admin mode is active or shutdown is requested; false otherwise.
 	 */
     private boolean isAdminModeOrShutdownRequested(String context) {
-    	boolean adminOrShutdown = Daten.isAdminMode() || Daten.isShutdownRequested();
+    	boolean admin = Daten.isAdminMode();
+    	boolean shutdownRequested = Daten.isShutdownRequested();
+    	boolean adminOrShutdown = admin || shutdownRequested;
     	
-    	if (Daten.isAdminMode()) {
+    	if (admin) {
 		    if (Logger.isTraceOn(Logger.TT_BACKGROUND, 5)) {
 		        Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK, "EfaBoathouseBackgroundTask: stopping '"+context+"' as admin mode is active.");
 	        }
-    	} else if (Daten.isShutdownRequested()) {
+    	} else if (shutdownRequested) {
 	       if (Logger.isTraceOn(Logger.TT_BACKGROUND, 5)) {
 	           Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK, "EfaBoathouseBackgroundTask: stopping  '"+context+"' as shutdown is requested.");
 	       }
