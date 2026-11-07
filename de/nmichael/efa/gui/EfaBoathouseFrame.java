@@ -1427,95 +1427,112 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
 		return who;
 	}
     
-    public boolean cancel(WindowEvent e, int reason, AdminRecord admin, boolean restart) {
-        Dialog.IGNORE_WINDOW_STACK_CHECKS = true;
-        int exitCode = 0;
-        Daten.requestShutdown();
-        // Under Windows and JDK8, we cannot detect if the system shutdown has been initiated by the user or by the system. 
-        // so under windows, all shutdowns initiated by the operating system itself (e.g. due to update or shutdown) 
-        // will be logged as "Programmende durch Nutzer".
-        String who = getRequestOriginator(reason, admin);
-        Logger.log(Logger.INFO, Logger.MSG_EVT_EFAEXIT_REQUESTED,
+	public boolean cancel(WindowEvent e, int reason, AdminRecord admin, boolean restart) {
+		Dialog.IGNORE_WINDOW_STACK_CHECKS = true;
+		int exitCode = 0;
+
+		// Under Windows and JDK8, we cannot detect if the system shutdown has been
+		// initiated by the user or by the system.
+		// so under windows, all shutdowns initiated by the operating system itself
+		// (e.g. due to update or shutdown)
+		// will be logged as "Programmende durch Nutzer".
+		String who = getRequestOriginator(reason, admin);
+		Logger.log(Logger.INFO, Logger.MSG_EVT_EFAEXIT_REQUESTED,
 				International.getMessage("Programmende durch {originator} angefordert", who));
-        switch (reason) {
-            case EFA_EXIT_REASON_USER: // manuelles Beenden von efa
-                boolean byUser;
-                if (admin != null || !Daten.efaConfig.getValueEfaDirekt_mitgliederDuerfenEfaBeenden()) {
-                    while (admin == null || !admin.isAllowedExitEfa()) {
-                        if (admin == null) {
-                            admin = AdminLoginDialog.login(this, International.getString("Beenden von efa"));
-                            if (admin == null) {
-                                Dialog.IGNORE_WINDOW_STACK_CHECKS = false;
-                                Daten.resetShutdownRequest(); // we no longer want to shut down, as the user cancelled the admin login
-                                return false;
-                            }
-                        }
-                        if (admin != null && !admin.isAllowedExitEfa()) {
-                            EfaMenuButton.insufficientRights(admin, EfaMenuButton.BUTTON_EXIT);
-                            admin = null;
-                        }
-                    }
-                    who = International.getString("Admin") + "=" + admin.getName();
-                    byUser = false;
-                } else {
-                    who = International.getString("Nutzer");
-                    byUser = true;
-                }
-                if (Daten.efaConfig.getValueEfaDirekt_execOnEfaExit().length() > 0 && byUser) {
-                    Logger.log(Logger.INFO, Logger.MSG_EVT_EFAEXITEXECCMD,
-                            International.getMessage("Programmende veranlaßt; versuche, Kommando '{cmd}' auszuführen...", Daten.efaConfig.getValueEfaDirekt_execOnEfaExit()));
-                    try {
-                        Runtime.getRuntime().exec(Daten.efaConfig.getValueEfaDirekt_execOnEfaExit());
-                    } catch (Exception ee) {
-                        Logger.log(Logger.ERROR, Logger.MSG_ERR_EFAEXITEXECCMD_FAILED,
-                                LogString.cantExecCommand(Daten.efaConfig.getValueEfaDirekt_execOnEfaExit(), International.getString("Kommando")));
-                    }
-                }
-                break;
-            case EFA_EXIT_REASON_TIME:
-            case EFA_EXIT_REASON_IDLE:
-                who = International.getString("Zeitsteuerung");
-                who += " (" + (reason == EFA_EXIT_REASON_TIME ? "time" : "idle") + ")";
-                if (Daten.efaConfig.getValueEfaDirekt_execOnEfaAutoExit().length() > 0) {
-                    Logger.log(Logger.INFO, Logger.MSG_EVT_EFAEXITEXECCMD,
-                            International.getMessage("Programmende veranlaßt; versuche, Kommando '{cmd}' auszuführen...", Daten.efaConfig.getValueEfaDirekt_execOnEfaAutoExit()));
-                    try {
-                        Runtime.getRuntime().exec(Daten.efaConfig.getValueEfaDirekt_execOnEfaAutoExit());
-                    } catch (Exception ee) {
-                        Logger.log(Logger.ERROR, Logger.MSG_ERR_EFAEXITEXECCMD_FAILED,
-                                LogString.cantExecCommand(Daten.efaConfig.getValueEfaDirekt_execOnEfaAutoExit(), International.getString("Kommando")));
-                    }
-                }
-                break;
-            case EFA_EXIT_REASON_OOME:
-                who = International.getString("Speicherüberwachung");
-                break;
-            case EFA_EXIT_REASON_AUTORESTART:
-                who = International.getString("Automatischer Neustart");
-                break;
-            case EFA_EXIT_REASON_ONLINEUPDATE:
-                who = International.getString("Online-Update");
-                break;
-            case EFA_EXIT_REASON_SYSTEM:
-            	// Under Windows and JDK8, we cannot detect if the system shutdown has been initiated by the user or by the system.
-            	// so this only is run on Linux/MacOs systems.
-            	who = "Shutdown Hook / System signal";
-            	break;
-        }
-        if (restart) {
-            exitCode = Daten.program.restart();
-        }
+		switch (reason) {
+		case EFA_EXIT_REASON_USER: // manuelles Beenden von efa
+			boolean byUser;
+			if (admin != null || !Daten.efaConfig.getValueEfaDirekt_mitgliederDuerfenEfaBeenden()) {
+				while (admin == null || !admin.isAllowedExitEfa()) {
+					if (admin == null) {
+						admin = AdminLoginDialog.login(this, International.getString("Beenden von efa"));
+						if (admin == null) {
+							Dialog.IGNORE_WINDOW_STACK_CHECKS = false;
+							return false;
+						}
+					}
+					if (admin != null && !admin.isAllowedExitEfa()) {
+						EfaMenuButton.insufficientRights(admin, EfaMenuButton.BUTTON_EXIT);
+						admin = null;
+						return false;
+					}
+				}
+				who = International.getString("Admin") + "=" + admin.getName();
+				byUser = false;
+			} else {
+				who = International.getString("Nutzer");
+				byUser = true;
+			}
+			// now we have the permission to exit efa
+			Daten.requestShutdown();
+			if (Daten.efaConfig.getValueEfaDirekt_execOnEfaExit().length() > 0 && byUser) {
+				Logger.log(Logger.INFO, Logger.MSG_EVT_EFAEXITEXECCMD,
+						International.getMessage("Programmende veranlaßt; versuche, Kommando '{cmd}' auszuführen...",
+								Daten.efaConfig.getValueEfaDirekt_execOnEfaExit()));
+				try {
+					Runtime.getRuntime().exec(Daten.efaConfig.getValueEfaDirekt_execOnEfaExit());
+				} catch (Exception ee) {
+					Logger.log(Logger.ERROR, Logger.MSG_ERR_EFAEXITEXECCMD_FAILED, LogString.cantExecCommand(
+							Daten.efaConfig.getValueEfaDirekt_execOnEfaExit(), International.getString("Kommando")));
+				}
+			}
+			break;
+		case EFA_EXIT_REASON_TIME:
+		case EFA_EXIT_REASON_IDLE:
+			Daten.requestShutdown();
+			who = International.getString("Zeitsteuerung");
+			who += " (" + (reason == EFA_EXIT_REASON_TIME ? "time" : "idle") + ")";
+			if (Daten.efaConfig.getValueEfaDirekt_execOnEfaAutoExit().length() > 0) {
+				Logger.log(Logger.INFO, Logger.MSG_EVT_EFAEXITEXECCMD,
+						International.getMessage("Programmende veranlaßt; versuche, Kommando '{cmd}' auszuführen...",
+								Daten.efaConfig.getValueEfaDirekt_execOnEfaAutoExit()));
+				try {
+					Runtime.getRuntime().exec(Daten.efaConfig.getValueEfaDirekt_execOnEfaAutoExit());
+				} catch (Exception ee) {
+					Logger.log(Logger.ERROR, Logger.MSG_ERR_EFAEXITEXECCMD_FAILED,
+							LogString.cantExecCommand(Daten.efaConfig.getValueEfaDirekt_execOnEfaAutoExit(),
+									International.getString("Kommando")));
+				}
+			}
+			break;
+		case EFA_EXIT_REASON_OOME:
+			Daten.requestShutdown();
+			who = International.getString("Speicherüberwachung");
+			break;
+		case EFA_EXIT_REASON_AUTORESTART:
+			Daten.requestShutdown();
+			who = International.getString("Automatischer Neustart");
+			break;
+		case EFA_EXIT_REASON_ONLINEUPDATE:
+			Daten.requestShutdown();
+			who = International.getString("Online-Update");
+			break;
+		case EFA_EXIT_REASON_SYSTEM:
+			Daten.requestShutdown();
+			// Under Windows and JDK8, we cannot detect if the system shutdown has been
+			// initiated by the user or by the system.
+			// so this only is run on Linux/MacOs systems.
+			who = "Shutdown Hook / System signal";
+			break;
+		default:
+			Daten.requestShutdown();
+			who = "unknown";
+			break;
+		}
+		if (restart) {
+			exitCode = Daten.program.restart();
+		}
 
 //        if (e != null) {
 //            super.processWindowEvent(e);
 //        }
-        super.cancel();
-        Logger.log(Logger.INFO, Logger.MSG_EVT_EFAEXIT,
-                International.getMessage("Programmende durch {originator}", who));
-        Daten.haltProgram(exitCode);
-        return true;
-    }
-
+		super.cancel();
+		Logger.log(Logger.INFO, Logger.MSG_EVT_EFAEXIT,
+				International.getMessage("Programmende durch {originator}", who));
+		Daten.haltProgram(exitCode);
+		return true;
+	}
+	
     public void cancelRunInThreadWithDelay(int reason, AdminRecord admin, boolean restart) {
         final int _reason = reason;
         final AdminRecord _admin = admin;

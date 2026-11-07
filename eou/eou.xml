@@ -102,11 +102,17 @@ section="Other"
         	<ChangeItem section="Session Entry">Neu: Die AutoPopup-Listen zeigen den Suchtext im Treffer gelb hinterlegt an (nur bei aktiver Suche nach Teilbegriff).</ChangeItem>
         	<ChangeItem section="Stability">Neu: Die AutoPopup-Listen wurden grundsätzlich überarbeitet, damit sie ohne separates Fenster auskommen. Damit gibt es weniger Probleme unter Ubuntu Linux mit Gnome Fenstermanager (oder anderen Fenstermanagern, die eine FocusStealing-Prevention umsetzen.</ChangeItem> 
 			<ChangeItem section="Boathouse">Neu: Der Automatische Fahrtenbuchwechsel brach schon immer alle Fahrten ab, die zum Zeitpunkt des Wechsels noch unterwegs waren. Treten beim Abbrechen dieser Fahrten Fehler auf (so dass sie nicht abgebrochen werden können), wird der Fehler protokolliert und die noch offenen Fahrten in die Mail an den Admin übernommen. Ein Fehler bei einem Boot behindert nicht den Fahrtenbuchwechsel.</ChangeItem>
+			<ChangeItem section="Boathouse">Neu: Fahrtenbuchwechsel: Wenn beim automatischen Fahrtenbuchwechsel ein Fehler auftritt, so wird der Fahrtenbuchwechsel nur alle 10 min statt jede Minute neu versucht. Es wird auch nur einmal am Tag eine Mail über einen fehlerhaften Fahrtenbuchwechsel versendet (um den Admin nicht vollzuspammen)</ChangeItem>
+			<ChangeItem section="Stability">Neu: Der im Hintergrund arbeitende efaBoathouseBackgroundTask wurde gehärtet und Bugs beseitigt.</ChangeItem>
+			<ChangeItem section="Stability">Neu: Der efaBoathouseBackgroundTask beendet sich, wenn eine Anforderung zum Herunterfahren/Neustart von EFA angefordert wurde.</ChangeItem>
 		</Changes>
 		<Changes lang="en">
 			<ChangeItem section="Session Entry">New: The AutoPopup lists highlight the search text in yellow in the hit (only when searching for a partial term).</ChangeItem>
 			<ChangeItem section="Stability">New: The AutoPopup lists have been fundamentally revised so that they can do without a separate window. This reduces problems under Ubuntu Linux with Gnome window manager (or other window managers that implement focus stealing prevention).</ChangeItem>
 			<ChangeItem section="Boathouse">New: The automatic logbook change has always aborted all trips that were still on the way at the time of the change. If errors occur when aborting these trips (so that they cannot be aborted), the error is logged and the still open trips are included in the email to the admin. An error with one boat does not hinder the logbook change.</ChangeItem>
+ 			<ChangeItem section="Boathouse">New: Logbook change: If an error occurs during the automatic logbook change, the logbook change will only be retried every 10 minutes instead of every minute. Also, only one email about a failed logbook change will be sent per day (to avoid spamming the admin).</ChangeItem>
+ 			<ChangeItem section="Stability">New: The efaBoathouseBackgroundTask running in the background has been hardened and bugs have been fixed.</ChangeItem>
+ 			<ChangeItem section="Stability">New: The efaBoathouseBackgroundTask stops if a shutdown-request has been detected.</ChangeItem>
  		</Changes>
 	</Version>
 	<Version>

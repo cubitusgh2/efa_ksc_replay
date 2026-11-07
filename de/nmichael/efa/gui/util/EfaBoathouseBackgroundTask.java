@@ -69,6 +69,10 @@ public class EfaBoathouseBackgroundTask extends Thread {
     private long lastListUpdate = -1;
 	private int nonListFocussedCount;
 	private Component lastFocussedElement;
+    // Retry handling for a failed automatic logbook switch (see autoOpenNewLogbook)
+    private static final long LOGBOOK_SWITCH_RETRY_INTERVAL = 10 * 60 * 1000; // 10 minutes
+    private String failedLogbookSwitchKey = null;
+    private long lastLogbookSwitchFailure = -1;
 
     public EfaBoathouseBackgroundTask(EfaBoathouseFrame efaBoathouseFrame) {
         this.efaBoathouseFrame = efaBoathouseFrame;
@@ -76,6 +80,12 @@ public class EfaBoathouseBackgroundTask extends Thread {
         this.lockEfa = null;
     }
 
+    /** 
+     * Sets the time when efa shall be locked. If efa is already locked, this method does nothing.
+     * It is used when the background task detects that efa is actually locked to document the time when it was locked.
+     * @param datum	
+     * @param zeit
+     */
     public void setEfaLockBegin(DataTypeDate datum, DataTypeTime zeit) {
         if (Daten.efaConfig.getValueEfaDirekt_locked()) {
             lockEfa = null; // don't lock twice
@@ -92,19 +102,33 @@ public class EfaBoathouseBackgroundTask extends Thread {
         }
     }
 
+    /**
+	 * Checks the efa log file for warnings and mails them to the admin if there are any.
+	 * The last time this check was done is stored in the efaConfig.
+	 */
     private void mailWarnings() {
         try {
             if (Daten.efaLogfile == null || Daten.efaConfig == null) {return;}
             ArrayList <String>warnings = new ArrayList<String>();
             try (BufferedReader f = new BufferedReader(new FileReader(Daten.efaLogfile))){
 	            String s;
+	            long lasttime = Daten.efaConfig.getValueEfaDirekt_bnrWarning_lasttime();
 	            while ((s = f.readLine()) != null) {
-	                if (Logger.isWarningLine(s) && Logger.getLineTimestamp(s) > Daten.efaConfig.getValueEfaDirekt_bnrWarning_lasttime()) {
+	                if (Logger.isWarningLine(s) && Logger.getLineTimestamp(s) > lasttime) {
 	                    warnings.add(s);
+	                }
+	                // an efa.log can be about 10MBytes in size.
+	                // if an shutdown is requested, we should not continue to read the whole file, 
+	                // but stop reading it and return. mailwarnings will be called again in the next cycle of the background task.
+	                if (isAdminModeOrShutdownRequested("mailWarnings")) {
+	                    break; //skip the rest of the iterations
 	                }
 	            }
             } //try-with-resources closes f automatically
             
+            if (isAdminModeOrShutdownRequested("mailWarnings")) {
+                return; //stop all the rest.
+            }
             if (warnings.size() == 0) {
                 Logger.log(Logger.INFO, Logger.MSG_EVT_CHECKFORWARNINGS,
                         International.getMessage("Seit {date} sind keinerlei Warnungen in efa verzeichnet worden.",
@@ -140,10 +164,13 @@ public class EfaBoathouseBackgroundTask extends Thread {
         }
     }
 
+    /**
+	 * The main loop of the background task. It runs in a separate thread and performs various checks and updates.
+	 */
     public void run() {
         // Diese Schleife läuft i.d.R. einmal pro Minute
         setName("EfaBoathouseBackgroundTask");
-        while (true) {
+        while (Daten.isShutdownRequested() == false) {
             try {
                 if (Logger.isTraceOn(Logger.TT_BACKGROUND, 5)) {
                     Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK, "EfaBoathouseBackgroundTask: alive!");
@@ -154,64 +181,56 @@ public class EfaBoathouseBackgroundTask extends Thread {
                 //critical changes can take place like changing the current project, closing the project due to backup/restore functions
                 //and more.
                 //so, in isAdminMode=true mode we only sleep for a while...
-                if (Daten.isAdminMode()) {
-                     if (Logger.isTraceOn(Logger.TT_BACKGROUND, 5)) {
-                         Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK, "EfaBoathouseBackgroundTask: doing nothing as admin mode is active.");
-                     }
-                } else if (Daten.isShutdownRequested()) {
-                    if (Logger.isTraceOn(Logger.TT_BACKGROUND, 5)) {
-                        Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK, "EfaBoathouseBackgroundTask: doing nothing as shutdown is requested.");
-                    }
-                } else {
+                if (!isAdminModeOrShutdownRequested("main loop")) {
                 	
-                // find out whether a project is open, and whether it's local or remote
-                updateProjectInfo();
-
-                // Update GUI on Config Changes
-                checkUpdateGui();
-
-                // Reservierungs-Checker
-                checkBoatStatus();
-
-                // Nach ungelesenen Nachrichten für den Admin suchen
-                checkForUnreadMessages();
-
-                // automatisches Beenden von efa
-                checkForExitOrRestart();
-
-                // efa zeitgesteuert sperren
-                checkForLockEfa();
-
-                // automatisches Beginnen eines neuen Fahrtenbuchs (z.B. zum Jahreswechsel)
-                checkForAutoCreateNewLogbook();
-
-                // immer im Vordergrund
-                checkAlwaysInFront();
-
-                // Fokus-Kontrolle
-                checkFocus();
-
-                // Filter-Felder leeren nach Zeitintervall
-                checkFilterTextFields();
-                
-                // Speicher-Überwachung
-                checkMemory();
-
-                // Aktivitäten einmal pro Stunde
-                if (--onceAnHour <= 0) {
-                    System.gc(); // Damit Speicherüberwachung funktioniert (anderenfalls wird CollectionUsage nicht aktualisiert; Java-Bug)
-                    onceAnHour = ONCE_AN_HOUR;
-                    if (Logger.isTraceOn(Logger.TT_BACKGROUND)) {
-                        Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK, "EfaBoathouseBackgroundTask: alive!");
-                    }
-
-                    checkWarnings();
-
-                    checkUnfixedBoatDamages();
-
-                    remindAdminOfLogbookSwitch();
-                }
-                }
+	                // find out whether a project is open, and whether it's local or remote
+	                updateProjectInfo();
+	
+	                // Update GUI on Config Changes
+	                runCheck("checkUpdateGui", this::checkUpdateGui);
+	
+	                // Reservierungs-Checker
+	                runCheck("checkBoatStatus", this::checkBoatStatus);
+	
+	                // Nach ungelesenen Nachrichten für den Admin suchen
+	                runCheck("checkForUnreadMessages", this::checkForUnreadMessages);
+	
+	                // automatisches Beenden von efa
+	                checkForExitOrRestart();
+	
+	                // efa zeitgesteuert sperren
+	                runCheck("checkForLockEfa", this::checkForLockEfa);
+	
+	                // automatisches Beginnen eines neuen Fahrtenbuchs (z.B. zum Jahreswechsel)
+	                checkForAutoCreateNewLogbook();
+	
+	                // immer im Vordergrund
+	                runCheck("checkAlwaysInFront", this::checkAlwaysInFront);
+	
+	                // Fokus-Kontrolle
+	                runCheck("checkFocus", this::checkFocus);
+	
+	                // Filter-Felder leeren nach Zeitintervall
+	                runCheck("checkFilterTextFields", this::checkFilterTextFields);
+	                
+	                // Speicher-Überwachung
+	                checkMemory();
+	
+	                // Aktivitäten einmal pro Stunde
+	                if (--onceAnHour <= 0) {
+	                    System.gc(); // Damit Speicherüberwachung funktioniert (anderenfalls wird CollectionUsage nicht aktualisiert; Java-Bug)
+	                    onceAnHour = ONCE_AN_HOUR;
+	                    if (Logger.isTraceOn(Logger.TT_BACKGROUND)) {
+	                        Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK, "EfaBoathouseBackgroundTask: alive!");
+	                    }
+	
+	                    runCheck("checkWarnings", this::checkWarnings);
+	
+	                    runCheck("checkUnfixedBoatDamages", this::checkUnfixedBoatDamages);
+	
+	                    runCheck("remindAdminOfLogbookSwitch", this::remindAdminOfLogbookSwitch);
+	                }
+	            }
                 
                 sleepForAWhile();
 
@@ -221,6 +240,37 @@ public class EfaBoathouseBackgroundTask extends Thread {
         } // end: while(true)
     } // end: run
 
+    /**
+	 * Runs a check in a try-catch block and logs any exceptions that occur.
+	 * If the application is in admin mode or a shutdown has been requested, the check is skipped.
+	 *
+	 * @param name  the name of the check for logging purposes
+	 * @param check the Runnable representing the check to be executed
+	 */
+    private void runCheck(String name, Runnable check) {
+        // Why isolate each check: an exception in one check must not silently skip
+        // all remaining checks of the same cycle. The failing check's name is logged
+        // so that a permanently failing check can be identified in the log.
+    	
+        // Why check the shutdown flag per check: shutdown can be requested in the middle
+        // of a cycle of efaBoathouseBackgroundtask. 
+    	// The remaining checks must then not touch efa's data any more.
+        if (isAdminModeOrShutdownRequested(name)) {
+            return;
+        }
+        try {
+            check.run();
+        } catch (RuntimeException e) {
+            Logger.log(Logger.ERROR, Logger.MSG_GENERIC_ERROR,
+                    "EfaBoathouseBackgroundTask: check '" + name + "' failed");
+            Logger.log(e);
+        }
+    }
+
+    /** 
+     * Invokes an event where efaBoathouseFrame clears the filter text fields after a certain interval.
+     * Which interval is defined in efaBoathouseFrame.clearListFilterAfterInterval() method.
+     */
     private void checkFilterTextFields() {
     	SwingUtilities.invokeLater(new Runnable() {
     	      public void run() {
@@ -231,6 +281,10 @@ public class EfaBoathouseBackgroundTask extends Thread {
       	});
     }
     
+    /**
+	 * Updates the information about whether a project is open and whether it is local or remote.
+	 * This information is used to determine how to handle certain operations in the background task.
+	 */
     private void updateProjectInfo() {
         try {
             if (Daten.project != null) {
@@ -250,6 +304,17 @@ public class EfaBoathouseBackgroundTask extends Thread {
         }
     }
 
+    /**
+	 * Sleeps for a while, either for a fixed interval 
+	 * or until a change in boat statu is detected, 
+	 * depending on whether a project is open and whether it is in admin mode.
+	 *  
+	 * If a project is open and app not in admin mode, the method checks for changes in boat status
+	 * and boat reservations every REMOTE_SCN_CHECK_INTERVAL seconds, 
+	 * and wakes up earlier if a change is detected.
+	 *  
+	 * If no project is open or if in admin mode, the method sleeps for CHECK_INTERVAL seconds.
+	 */
     private void sleepForAWhile() {
         if (Logger.isTraceOn(Logger.TT_BACKGROUND, 8)) {
             Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
@@ -361,6 +426,11 @@ public class EfaBoathouseBackgroundTask extends Thread {
         }
     }
 
+    /**
+	 * Checks if the GUI needs to be updated based on changes in the efaConfig.
+	 * If the SCN (System Change Number) of the efaConfig has changed since the last check,
+	 * the GUI elements of the efaBoathouseFrame are updated accordingly.
+	 * */
     private void checkUpdateGui() {
         if (Logger.isTraceOn(Logger.TT_BACKGROUND, 8)) {
             Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
@@ -386,23 +456,34 @@ public class EfaBoathouseBackgroundTask extends Thread {
         }
     }
 
+/**
+     * Marks the currently observed boat status and reservation SCNs as processed.
+     * Must only be called after the corresponding change has actually been handled,
+     * otherwise the change would not be detected again in the next cycle.
+     */
+    private void markScnsProcessed() {
+        lastBoatStatusScn = newBoatStatusScn;
+        lastReservationStatusScn = newReservationStatusScn;
+    }
+
+    /**
+     * Checks the status of boats and updates the boat lists in the efaBoathouseFrame
+     * if there are any changes in the boat status or reservations.
+     */
     private void checkBoatStatus() {
         if (Logger.isTraceOn(Logger.TT_BACKGROUND, 8)) {
             Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
                     "EfaBoathouseBackgroundTask: checkBoatStatus()");
         }
 
-        //Some changes in boat status? then the lists in efaBoatHouseFrame need update.
-        boolean listChanged = (newBoatStatusScn != -1 && newBoatStatusScn != lastBoatStatusScn);
-        lastBoatStatusScn = newBoatStatusScn;
-
-        //this also applies when some change on a reservation has happened.
-        //adding/removing/changing reservations can have an effect on the lists, 
-        //when they shall display reservation data.
-        listChanged = (listChanged || (newReservationStatusScn != -1 && newReservationStatusScn != lastReservationStatusScn));
-        lastReservationStatusScn = newReservationStatusScn;
+        // Some changes in boat status or reservations? Then the lists in efaBoatHouseFrame need update.
+        // The SCNs are NOT consumed here: they are marked as processed only once the change
+        // was actually handled (see markScnsProcessed), otherwise a change could be lost.
+        boolean listChanged = (newBoatStatusScn != -1 && newBoatStatusScn != lastBoatStatusScn)
+                || (newReservationStatusScn != -1 && newReservationStatusScn != lastReservationStatusScn);
         
         if (isProjectOpen && !isLocalProject) {
+            markScnsProcessed(); // remote project: lists are updated from the observed SCNs
         	// This includes swing updates, so we have to use invokeLater to avoid concurrency problems
 	        SwingUtilities.invokeLater(new BthsUpdateBoatLists(listChanged,false));
             if (Logger.isTraceOn(Logger.TT_BACKGROUND, 8)) {
@@ -414,6 +495,7 @@ public class EfaBoathouseBackgroundTask extends Thread {
         
 
         if (!isProjectOpen) {
+            markScnsProcessed(); // closed project: lists are updated, the change is handled
 	        SwingUtilities.invokeLater(new BthsUpdateBoatLists(listChanged,false));
             if (Logger.isTraceOn(Logger.TT_BACKGROUND, 8)) {
                 Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
@@ -426,25 +508,19 @@ public class EfaBoathouseBackgroundTask extends Thread {
         BoatReservations boatReservations = (Daten.project != null ? Daten.project.getBoatReservations(false) : null);
         BoatDamages boatDamages = (Daten.project != null ? Daten.project.getBoatDamages(false) : null);
         if (boatStatus == null || boatReservations == null || boatDamages == null) {
+            // Do NOT mark the SCNs as processed: the change is retried in the next cycle.
             return;
         }
+        markScnsProcessed(); // data is available, the change is handled below
 
         long now = System.currentTimeMillis();
         try {
             DataKeyIterator it = boatStatus.data().getStaticIterator();
             for (DataKey k = it.getFirst(); k != null; k = it.getNext()) {
             	//check for admin mode or shutdown request - and stop the iteration
-                if (Daten.isAdminMode()) {
-                    if (Logger.isTraceOn(Logger.TT_BACKGROUND, 5)) {
-                        Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK, "EfaBoathouseBackgroundTask: stopping update of boatstatus as admin mode is active.");
-                    }
-                    break;
-               } else if (Daten.isShutdownRequested()) {
-                   if (Logger.isTraceOn(Logger.TT_BACKGROUND, 5)) {
-                       Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK, "EfaBoathouseBackgroundTask: stopping update of boatstatus as shutdown is requested.");
-                   }
-                   break;
-               }
+				if (isAdminModeOrShutdownRequested("checkBoatStatus")) {
+					break; //skip the rest of the iterations
+				}
             	
                 BoatStatusRecord boatStatusRecord = (BoatStatusRecord) boatStatus.data().get(k);
                 if (boatStatusRecord == null) {
@@ -632,6 +708,10 @@ public class EfaBoathouseBackgroundTask extends Thread {
         }
     }
     
+    /**
+     * Checks for unread messages for the admin and boat maintenance users.
+     * It updates the efaBoathouseFrame main screen with the information about unread messages.
+	 */
     private void checkForUnreadMessages() {
         if (Logger.isTraceOn(Logger.TT_BACKGROUND, 8)) {
             Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
@@ -648,7 +728,7 @@ public class EfaBoathouseBackgroundTask extends Thread {
             try {
                 DataKeyIterator it = messages.data().getStaticIterator();
                 DataKey k = it.getLast();
-                while (k != null) {
+                while (k != null && !isAdminModeOrShutdownRequested("checkForUnreadMessages")) {
                     MessageRecord msg = (MessageRecord) messages.data().get(k);
                     if (msg != null && !msg.getRead()) {
                         if (msg.getTo().equals(MessageRecord.TO_ADMIN)) {
@@ -673,6 +753,13 @@ public class EfaBoathouseBackgroundTask extends Thread {
 
     }
 
+    /**
+	 * Checks if the application should exit or restart based on 
+	 * the configured exit time, idle time, or restart time.
+	 * 
+	 * If the conditions for exit or restart are met, 
+	 * it schedules the exit or restart accordingly.
+	 */
     private void checkForExitOrRestart() {
         if (Logger.isTraceOn(Logger.TT_BACKGROUND, 8)) {
             Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
@@ -681,6 +768,13 @@ public class EfaBoathouseBackgroundTask extends Thread {
         
         if (efaBoathouseFrame == null) {
             return; // Sicherheitsprüfung
+        }
+
+        // Why return early: efaConfig is loaded asynchronously during startup.
+        // Without it, every access below would throw a NullPointerException.
+        // The next cycle retries, so no check is lost once the config is available.
+        if (Daten.efaConfig == null) {
+            return;
         }
         
         long currentTime = System.currentTimeMillis();
@@ -802,6 +896,13 @@ public class EfaBoathouseBackgroundTask extends Thread {
         }
     }
     
+    /**
+	 * Checks if the EFA application is locked based on the configuration.
+	 * 
+	 * If locked, it invokes the lockEfa() method on the efaBoathouseFrame.
+	 * If a lock time is set and has passed, it also locks the application.
+	 * 
+	 */
     private void checkForLockEfa() {
         if (Logger.isTraceOn(Logger.TT_BACKGROUND, 8)) {
             Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
@@ -840,6 +941,11 @@ public class EfaBoathouseBackgroundTask extends Thread {
         }
     }
 
+    /**
+     * Checks if a new logbook should be automatically created based on the configuration.
+     * If the current date is after or equal to the configured auto new logbook date, it calls autoOpenNewLogbook().
+     * 
+     */
     private void checkForAutoCreateNewLogbook() {
         if (Logger.isTraceOn(Logger.TT_BACKGROUND, 8)) {
             Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
@@ -870,6 +976,10 @@ public class EfaBoathouseBackgroundTask extends Thread {
         }
     }
 
+    /**
+	 * Checks if the EFA application should always be in front based on the configuration.
+	 * If the configuration is set to always be in front, it brings the efaBoathouseFrame to the front.
+	 */
     private void checkAlwaysInFront() {
         if (Logger.isTraceOn(Logger.TT_BACKGROUND, 8)) {
             Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
@@ -904,7 +1014,11 @@ public class EfaBoathouseBackgroundTask extends Thread {
         }
 
     }
-
+    
+    /**
+	 * Checks the focus of the EFA application and ensures that a list component has focus.
+	 * If the focus is on the main frame or no list is focused, it will request focus for a list component.
+	 * */
     private void checkFocus() {
         if (Logger.isTraceOn(Logger.TT_BACKGROUND, 8)) {
             Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
@@ -976,8 +1090,10 @@ public class EfaBoathouseBackgroundTask extends Thread {
         }
     }
 
-
-
+    /**
+     * Checks the memory usage of the application and exits if memory is low.
+     * 
+     */
     private void checkMemory() {
         if (Logger.isTraceOn(Logger.TT_BACKGROUND, 8)) {
             Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
@@ -1001,6 +1117,10 @@ public class EfaBoathouseBackgroundTask extends Thread {
         }
     }
 
+    /**
+	 * Checks for warnings in the log file and sends them to admins if necessary.
+	 * This is done every 7 days or if the last warning was sent more than 7 days ago.
+	 */
     private void checkWarnings() {
         if (Logger.isTraceOn(Logger.TT_BACKGROUND, 8)) {
             Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
@@ -1013,6 +1133,10 @@ public class EfaBoathouseBackgroundTask extends Thread {
         }
     }
 
+    /**
+	 * Checks for unfixed boat damages and sends a reminder message if there are any.
+	 * This is done every 7 days or if the last reminder was sent more than 7 days ago.
+	 */
     private void checkUnfixedBoatDamages() {
         if (!isProjectOpen || !isLocalProject) {
             return;
@@ -1035,7 +1159,12 @@ public class EfaBoathouseBackgroundTask extends Thread {
             try {
                 DataKeyIterator it = boatDamages.data().getStaticIterator();
                 for (DataKey k = it.getFirst(); k != null; k = it.getNext()) {
-                    BoatDamageRecord damage = (BoatDamageRecord) boatDamages.data().get(k);
+                	
+                	if (isAdminModeOrShutdownRequested("checkUnfixedBoatDamages")) {
+						break;
+					}
+                    
+                	BoatDamageRecord damage = (BoatDamageRecord) boatDamages.data().get(k);
                     if (damage == null) {
                         continue;
                     }
@@ -1077,32 +1206,43 @@ public class EfaBoathouseBackgroundTask extends Thread {
         }
     }
 
+    /**
+	 * Reminds the admin to switch logbooks if the current logbook is nearing its end date.
+	 * 
+	 * This method checks if the current logbook's end date is within 31 days and if a reminder has not already been sent.
+	 * If conditions are met, it creates a message for the admin reminding them to switch logbooks.
+	 */
     private void remindAdminOfLogbookSwitch() {
         try {
             if (Daten.project != null && Daten.project.isOpen()) {
                 DataTypeDate newLogBookDate = Daten.project.getAutoNewLogbookDate();
+                
                 if (newLogBookDate == null || !newLogBookDate.isSet()) {
                     Logbook currentLogbook = efaBoathouseFrame.getLogbook();
+                    
                     if (currentLogbook != null && currentLogbook.getEndDate() != null &&
                         currentLogbook.getEndDate().isSet()) {
                         DataTypeDate today = DataTypeDate.today();
+                        
                         if (today.isBefore(currentLogbook.getEndDate()) &&
                             today.getDifferenceDays(currentLogbook.getEndDate()) < 31) {
-                            String lastReminderForLogbook = Daten.efaConfig.getValueEfaBoathouseChangeLogbookReminder();
-                            if (!currentLogbook.getName().equals(lastReminderForLogbook)) {
-                                // ok, it's due for a reminder
-                            	Messages myMessages =  Daten.project.getMessages(false);
-                            	if (myMessages != null) {
-                            	myMessages.createAndSaveMessageRecord(
-                                        MessageRecord.TO_ADMIN,
-                                        International.getString("Erinnerung an Fahrtenbuchwechsel"),
-                                        International.getMessage("Der Gültigkeitszeitraum des aktuellen Fahrtenbuchs {name} endet am {datum}.",
-                                                    currentLogbook.getName(), currentLogbook.getEndDate().toString()) + "\n" +
-                                        International.getString("Um anschließend automatisch ein neues Fahrtenbuch zu öffnen, erstelle bitte " +
-                                                    "im Admin-Modus ein neues Fahrtenbuch und aktiviere den automatischen Fahrtenbuchwechsel."));
-                                Daten.efaConfig.setValueEfaBoathouseChangeLogbookReminder(currentLogbook.getName());
-                            	}
-                            }
+                        	
+	                            String lastReminderForLogbook = Daten.efaConfig.getValueEfaBoathouseChangeLogbookReminder();
+	                            if (!currentLogbook.getName().equals(lastReminderForLogbook)) {
+	                            	
+	                                // ok, it's due for a reminder
+	                            	Messages myMessages =  Daten.project.getMessages(false);
+	                            	if (myMessages != null) {
+	                            	myMessages.createAndSaveMessageRecord(
+	                                        MessageRecord.TO_ADMIN,
+	                                        International.getString("Erinnerung an Fahrtenbuchwechsel"),
+	                                        International.getMessage("Der Gültigkeitszeitraum des aktuellen Fahrtenbuchs {name} endet am {datum}.",
+	                                                    currentLogbook.getName(), currentLogbook.getEndDate().toString()) + "\n" +
+	                                        International.getString("Um anschließend automatisch ein neues Fahrtenbuch zu öffnen, erstelle bitte " +
+	                                                    "im Admin-Modus ein neues Fahrtenbuch und aktiviere den automatischen Fahrtenbuchwechsel."));
+	                                Daten.efaConfig.setValueEfaBoathouseChangeLogbookReminder(currentLogbook.getName());
+	                            	}
+	                            }
                         }
                     }
                 }
@@ -1113,6 +1253,12 @@ public class EfaBoathouseBackgroundTask extends Thread {
         }
     }
 
+    /**
+	 * Automatically opens a new logbook if the current date is after or equal to the configured auto new logbook date.
+	 * 
+	 * It checks if the new logbook name is set and different from the current logbook, and if so, it switches to the new logbook.
+	 * It also handles aborting open sessions for local projects and logs any failures during the process.
+	 */
     private void autoOpenNewLogbook() {
         if (Daten.project == null || !Daten.project.isOpen()) {
             return;
@@ -1142,6 +1288,13 @@ public class EfaBoathouseBackgroundTask extends Thread {
             return;
         }
         
+        // Why back off: a failing switch would otherwise be retried every minute and flood
+        // the admin with messages. The same failed switch is retried at most every 10 minutes.
+        if (key.equals(failedLogbookSwitchKey)
+                && System.currentTimeMillis() - lastLogbookSwitchFailure < LOGBOOK_SWITCH_RETRY_INTERVAL) {
+            return;
+        }
+
         Logger.log(Logger.INFO, Logger.MSG_EVT_AUTOSTARTNEWLOGBOOK,
                 International.getString("Fahrtenbuchwechsel wird begonnen ..."));
 
@@ -1224,6 +1377,7 @@ public class EfaBoathouseBackgroundTask extends Thread {
                 Logger.log(Logger.INFO, Logger.MSG_EVT_AUTOSTARTNEWLBDONE,
                         LogString.operationSuccessfullyCompleted(International.getString("Fahrtenbuchwechsel")));
                 Daten.project.setLastLogbookSwitch(key);
+                failedLogbookSwitchKey = null; // success: reset the failure state
             } else {
                 throw new Exception("Failed to open new Logbook");
             }
@@ -1252,16 +1406,32 @@ public class EfaBoathouseBackgroundTask extends Thread {
         	});
             EfaUtil.sleep(500);
             interrupt();
+            
         } catch (Exception e) {
+        	
             Logger.logdebug(e);
+            lastLogbookSwitchFailure = System.currentTimeMillis();
+            boolean firstFailure = !key.equals(failedLogbookSwitchKey);
+            failedLogbookSwitchKey = key;
+            
+            //log the failure to the log file, so the admin can see it in the log file (and not only in the message)
             Logger.log(Logger.ERROR, Logger.MSG_ERR_AUTOSTARTNEWLOGBOOK,
                     LogString.operationAborted(International.getString("Fahrtenbuchwechsel")));
-            Messages messages = Daten.project.getMessages(false);
-            messages.createAndSaveMessageRecord(MessageRecord.TO_ADMIN,
-                    International.getString("Fahrtenbuchwechsel"),
-                    International.getString("efa hat soeben versucht, wie konfiguriert ein neues Fahrtenbuch anzulegen.") + "\n"
-                    + International.getString("Bei diesem Vorgang traten jedoch FEHLER auf.") + "\n\n"
-                    + International.getString("Ein Protokoll ist in der Logdatei (Admin-Modus: Logdatei anzeigen) zu finden."));
+            
+            // only send the mail if this is the first failure for this logbook switch attempt, 
+            // otherwise we would flood the admin with mails
+            if (firstFailure) {
+                Logger.log(Logger.ERROR, Logger.MSG_ERR_AUTOSTARTNEWLOGBOOK,
+                        LogString.operationAborted(International.getString("Fahrtenbuchwechsel")));
+                Messages messages = (Daten.project != null ? Daten.project.getMessages(false) : null);
+                if (messages != null) {
+                    messages.createAndSaveMessageRecord(MessageRecord.TO_ADMIN,
+                        International.getString("Fahrtenbuchwechsel"),
+                        International.getString("efa hat soeben versucht, wie konfiguriert ein neues Fahrtenbuch anzulegen.") + "\n"
+                        + International.getString("Bei diesem Vorgang traten jedoch FEHLER auf.") + "\n\n"
+                        + International.getString("Ein Protokoll ist in der Logdatei (Admin-Modus: Logdatei anzeigen) zu finden."));
+                }
+            }
         } finally {
             if (boatStatus != null && lockStatus >= 0) {
                 boatStatus.data().releaseGlobalLock(lockStatus);
@@ -1273,6 +1443,32 @@ public class EfaBoathouseBackgroundTask extends Thread {
 
     }
     
+    /**
+	 * Checks if the application is in admin mode or if a shutdown has been requested.
+	 * If either condition is true, it logs the reason and returns true.
+	 * 
+	 * @param context A string indicating the context in which this check is being performed, for logging purposes.
+	 * @return true if admin mode is active or shutdown is requested; false otherwise.
+	 */
+    private boolean isAdminModeOrShutdownRequested(String context) {
+    	boolean adminOrShutdown = Daten.isAdminMode() || Daten.isShutdownRequested();
+    	
+    	if (Daten.isAdminMode()) {
+		    if (Logger.isTraceOn(Logger.TT_BACKGROUND, 5)) {
+		        Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK, "EfaBoathouseBackgroundTask: stopping '"+context+"' as admin mode is active.");
+	        }
+    	} else if (Daten.isShutdownRequested()) {
+	       if (Logger.isTraceOn(Logger.TT_BACKGROUND, 5)) {
+	           Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK, "EfaBoathouseBackgroundTask: stopping  '"+context+"' as shutdown is requested.");
+	       }
+    	}
+    	return adminOrShutdown;	
+    }
+    
+    /**
+	 * Runnable class to update the boat lists in the EfaBoathouseFrame.
+	 * This is used to update the GUI from a background thread safely.
+	 */
     private class BthsUpdateBoatLists implements Runnable {
         
     	private boolean bListChanged=false;
@@ -1290,6 +1486,10 @@ public class EfaBoathouseBackgroundTask extends Thread {
 	    }
 	}
 	
+    /**
+	 * Runnable class to set the unread messages in the EfaBoathouseFrame.
+	 * This is used to update the GUI from a background thread safely.
+	 */
 	private class BthsSetUnreadMessages implements Runnable {
 		
 		private boolean bAdmin=false;

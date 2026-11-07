@@ -339,10 +339,6 @@ public class Daten {
 		isShutdownRequested = true;
 	}
 	
-	public static synchronized void resetShutdownRequest() {
-		isShutdownRequested = false;
-	}
-	
 	public static synchronized boolean isShutdownRequested() {
 		return isShutdownRequested;
 	}
