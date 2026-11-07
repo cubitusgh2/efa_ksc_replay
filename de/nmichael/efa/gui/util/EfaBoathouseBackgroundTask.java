@@ -87,7 +87,7 @@ public class EfaBoathouseBackgroundTask extends Thread {
      * @param datum	
      * @param zeit
      */
-    public void setEfaLockBegin(DataTypeDate datum, DataTypeTime zeit) {
+    private void setEfaLockBegin(DataTypeDate datum, DataTypeTime zeit) {
         if (Daten.efaConfig.getValueEfaDirekt_locked()) {
             lockEfa = null; // don't lock twice
             return;
@@ -110,13 +110,23 @@ public class EfaBoathouseBackgroundTask extends Thread {
     private void mailWarnings() {
         try {
             if (Daten.efaLogfile == null || Daten.efaConfig == null) {return;}
-            ArrayList <String>warnings = new ArrayList<String>();
+            
+            // Why count and cap: an efa.log can be about 10 MBytes. Keeping every warning in a list and
+            // concatenating them with += is memory-hungry and slow. We count all warnings, but keep only the first ones.
+            final int maxWarningsInMail = 500;
+            int warningCount = 0;
+            StringBuilder warningText = new StringBuilder();
             try (BufferedReader f = new BufferedReader(new FileReader(Daten.efaLogfile))){
 	            String s;
 	            long lasttime = Daten.efaConfig.getValueEfaDirekt_bnrWarning_lasttime();
 	            while ((s = f.readLine()) != null) {
 	                if (Logger.isWarningLine(s) && Logger.getLineTimestamp(s) > lasttime) {
-	                    warnings.add(s);
+	                    warningCount++;
+	                    // we count all warnings, but only keep the first ones in the mail text, 
+	                    // to avoid memory issues with large log files
+	                    if (warningCount <= maxWarningsInMail) {
+	                        warningText.append(s).append('\n');
+	                    }
 	                }
 	                // an efa.log can be about 10MBytes in size.
 	                // if an shutdown is requested, we should not continue to read the whole file, 
@@ -130,19 +140,20 @@ public class EfaBoathouseBackgroundTask extends Thread {
             if (isAdminModeOrShutdownRequested("mailWarnings")) {
                 return; //stop all the rest.
             }
-            if (warnings.size() == 0) {
+            if (warningCount == 0) {
                 Logger.log(Logger.INFO, Logger.MSG_EVT_CHECKFORWARNINGS,
                         International.getMessage("Seit {date} sind keinerlei Warnungen in efa verzeichnet worden.",
                         EfaUtil.getTimeStamp(Daten.efaConfig.getValueEfaDirekt_bnrWarning_lasttime())));
             } else {
                 Logger.log(Logger.INFO, Logger.MSG_EVT_CHECKFORWARNINGS,
                         International.getMessage("Seit {date} sind {n} Warnungen in efa verzeichnet worden.",
-                        EfaUtil.getTimeStamp(Daten.efaConfig.getValueEfaDirekt_bnrWarning_lasttime()), warnings.size()));
+                        EfaUtil.getTimeStamp(Daten.efaConfig.getValueEfaDirekt_bnrWarning_lasttime()), warningCount));
                 String txt = International.getMessage("Folgende Warnungen sind seit {date} in efa verzeichnet worden:",
                         EfaUtil.getTimeStamp(Daten.efaConfig.getValueEfaDirekt_bnrWarning_lasttime())) + "\n"
-                        + International.getMessage("{n} Warnungen", warnings.size()) + "\n\n";
-                for (int i = 0; i < warnings.size(); i++) {
-                    txt += ((String) warnings.get(i)) + "\n";
+                        + International.getMessage("{n} Warnungen", warningCount) + "\n\n";
+                txt += warningText.toString();
+                if (warningCount > maxWarningsInMail) {
+                    txt += "\n"+International.getMessage("({additionalwarncount} weitere Warnungen sind in der Logdatei verzeichnet)", (warningCount - maxWarningsInMail))+"\n";
                 }
                 if (Daten.project != null && Daten.efaConfig != null) {
                     Messages messages = Daten.project.getMessages(false);
@@ -509,14 +520,21 @@ public class EfaBoathouseBackgroundTask extends Thread {
         BoatStatus boatStatus = (Daten.project != null ? Daten.project.getBoatStatus(false) : null);
         BoatReservations boatReservations = (Daten.project != null ? Daten.project.getBoatReservations(false) : null);
         BoatDamages boatDamages = (Daten.project != null ? Daten.project.getBoatDamages(false) : null);
+        // Mark the change as processed in all cases. If data is unavailable, retrying every 5 seconds
+        // would not help and would keep the background loop awake; the lists are refreshed on the next change.
+        markScnsProcessed();
         if (boatStatus == null || boatReservations == null || boatDamages == null) {
-            // Do NOT mark the SCNs as processed: the change is retried in the next cycle.
             return;
         }
-        markScnsProcessed(); // data is available, the change is handled below
 
         long now = System.currentTimeMillis();
         try {
+            // The reservation comment template does not depend on the boat, so it is computed once
+            // per cycle here instead of being looked up again for every boat in the loop below.
+            String reservationCommentPrefix = International.getMessage("reserviert für {name} ({reason}) {from_to}", "", "", "");
+            if (reservationCommentPrefix.length() > 10) {
+                reservationCommentPrefix = reservationCommentPrefix.substring(0, 10);
+            }
             DataKeyIterator it = boatStatus.data().getStaticIterator();
             for (DataKey k = it.getFirst(); k != null; k = it.getNext()) {
             	//check for admin mode or shutdown request - and stop the iteration
@@ -579,11 +597,7 @@ public class EfaBoathouseBackgroundTask extends Thread {
                             // Reason for such reservation strings could be reservations that were
                             // explicitly deleted by the Admin while a boat was reserved, and have
                             // never been purged by the background task itself.
-                            String resstr = International.getMessage("reserviert für {name} ({reason}) {from_to}", "", "", "");
-                            if (resstr.length() > 10) {
-                                resstr = resstr.substring(0, 10);
-                            }
-                            if (oldComment != null && oldComment.startsWith(resstr)) {
+                            if (oldComment != null && oldComment.startsWith(reservationCommentPrefix)) {
                                 boatStatusRecord.setComment(null);
                             }
                         }
@@ -1159,7 +1173,7 @@ public class EfaBoathouseBackgroundTask extends Thread {
         long last = (Daten.efaConfig != null ? Daten.efaConfig.getValueLastBoatDamageReminder() : -1);
         if (last == -1 || now - BOAT_DAMAGE_REMINDER_INTERVAL > last) {
             boolean damagesOlderThanAWeek = false;
-            ArrayList <DataKey> openDamages = new ArrayList<DataKey>();
+            ArrayList <BoatDamageRecord> openDamages = new ArrayList<BoatDamageRecord>();
             try {
                 DataKeyIterator it = boatDamages.data().getStaticIterator();
                 for (DataKey k = it.getFirst(); k != null; k = it.getNext()) {
@@ -1175,7 +1189,7 @@ public class EfaBoathouseBackgroundTask extends Thread {
                     if (!damage.getFixed()) {
                         BoatRecord r = damage.getBoatRecord();
                         if (r != null && r.isValidAt(System.currentTimeMillis())) {
-                            openDamages.add(k);
+                            openDamages.add(damage); // keep the record itself, so it is not read a second time
                             if (damage.getReportDate() != null && damage.getReportTime() != null
                                     && damage.getReportDate().isSet() && damage.getReportTime().isSet()
                                     && damage.getReportDate().getTimestamp(damage.getReportTime()) < now - BOAT_DAMAGE_REMINDER_INTERVAL) {
@@ -1190,11 +1204,7 @@ public class EfaBoathouseBackgroundTask extends Thread {
                     StringBuilder s = new StringBuilder();
                     s.append(International.getMessage("Es liegen {count} offene Bootsschäden vor:",
                             openDamages.size()) + "\n\n");
-                    for (DataKey k : openDamages) {
-                        BoatDamageRecord damage = (BoatDamageRecord) boatDamages.data().get(k);
-                        if (damage == null) {
-                            continue;
-                        }
+                    for (BoatDamageRecord damage : openDamages) {
                         s.append(damage.getCompleteDamageInfo() + "\n");
                     }
                     s.append(International.getString("Sollten die Schäden bereits behoben sein, so markiere sie bitte "
