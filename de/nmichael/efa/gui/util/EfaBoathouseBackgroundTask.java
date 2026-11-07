@@ -60,15 +60,15 @@ public class EfaBoathouseBackgroundTask extends Thread {
     private boolean isLocalProject = true;
     private int onceAnHour;
     private Calendar lockEfa;
-    private long lastEfaConfigScn = -1;
+    private volatile long lastEfaConfigScn = -1;
     private long lastBoatStatusScn = -1;
     private long newBoatStatusScn = -1;
     private long lastReservationStatusScn = -1;
     private long newReservationStatusScn =-1;
 
     private long lastListUpdate = -1;
-	private int nonListFocussedCount;
-	private Component lastFocussedElement;
+	private volatile int nonListFocussedCount;
+	private volatile Component lastFocussedElement;
     // Retry handling for a failed automatic logbook switch (see autoOpenNewLogbook)
     private static final long LOGBOOK_SWITCH_RETRY_INTERVAL = 10 * 60 * 1000; // 10 minutes
     private String failedLogbookSwitchKey = null;
@@ -731,10 +731,12 @@ public class EfaBoathouseBackgroundTask extends Thread {
                 while (k != null && !isAdminModeOrShutdownRequested("checkForUnreadMessages")) {
                     MessageRecord msg = (MessageRecord) messages.data().get(k);
                     if (msg != null && !msg.getRead()) {
-                        if (msg.getTo().equals(MessageRecord.TO_ADMIN)) {
+                        // Compare with the constant first, so a null recipient cannot throw an NPE
+                        // and abort the whole scan of the unread messages.
+                        if (MessageRecord.TO_ADMIN.equals(msg.getTo())) {
                             admin = true;
                         }
-                        if (msg.getTo().equals(MessageRecord.TO_BOATMAINTENANCE)) {
+                        if (MessageRecord.TO_BOATMAINTENANCE.equals(msg.getTo())) {
                             boatmaintenance = true;
                         }
                     }
@@ -985,7 +987,8 @@ public class EfaBoathouseBackgroundTask extends Thread {
             Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
                     "EfaBoathouseBackgroundTask: checkAlwaysInFront()");
         }
-        if (Daten.efaConfig.getValueEfaDirekt_immerImVordergrund() && this.efaBoathouseFrame != null) {
+        // Why guard efaConfig: it is loaded asynchronously during startup (see checkForExitOrRestart).
+        if (Daten.efaConfig != null && Daten.efaConfig.getValueEfaDirekt_immerImVordergrund() && this.efaBoathouseFrame != null) {
         		//Run all in the Swing Event Dispatch Thread to avoid concurrency problems with the GUI
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
@@ -1076,10 +1079,8 @@ public class EfaBoathouseBackgroundTask extends Thread {
                     }
                     
                     // Aktualisiere den globalen Zustand
-                    synchronized (EfaBoathouseBackgroundTask.this) {
-                        nonListFocussedCount = newNonListCount;
-                        lastFocussedElement = newLastFocussedElement;
-                    }
+                    nonListFocussedCount = newNonListCount;
+                    lastFocussedElement = newLastFocussedElement;
                     
                     // Führe GUI-Operationen aus (außerhalb des Sync-Blocks)
                     if (shouldRequestFocus && efaBoathouseFrame != null) {
@@ -1125,6 +1126,10 @@ public class EfaBoathouseBackgroundTask extends Thread {
         if (Logger.isTraceOn(Logger.TT_BACKGROUND, 8)) {
             Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
                     "EfaBoathouseBackgroundTask: checkWarnings()");
+        }
+        // Why return early: efaConfig may not be loaded yet during startup (see checkForExitOrRestart).
+        if (Daten.efaConfig == null) {
+            return;
         }
         // WARNINGs aus Logfile an Admins verschicken
         if (System.currentTimeMillis() >= Daten.efaConfig.getValueEfaDirekt_bnrWarning_lasttime() + 7l * 24l * 60l * 60l * 1000l
@@ -1382,20 +1387,30 @@ public class EfaBoathouseBackgroundTask extends Thread {
                 throw new Exception("Failed to open new Logbook");
             }
 
-            Messages messages = Daten.project.getMessages(false);
-            messages.createAndSaveMessageRecord(MessageRecord.TO_ADMIN,
-                    International.getString("Fahrtenbuchwechsel"),
-                    International.getString("efa hat soeben wie konfiguriert ein neues Fahrtenbuch geöffnet.") + "\n"
-                    + International.getMessage("Das neue Fahrtenbuch heißt {name} und ist gültig vom {fromdate} bis {todate}.",
-                    newLogbook.getName(), newLogbook.getStartDate().toString(), newLogbook.getEndDate().toString()) + "\n"
-                    + LogString.operationSuccessfullyCompleted(International.getString("Fahrtenbuchwechsel")) + "\n\n"
-                    + (sessionsAborted ? International.getString("Zum Zeitpunkt des Fahrtenbuchwechsels befanden sich noch einige Boote "
-                    + "auf dem Wasser. Diese Fahrten wurden ABGEBROCHEN. Die abgebrochenen "
-                    + "Fahrten sind in der Logdatei verzeichnet.") : "")
-                    // add abort failures to the message, if any
-                    + (abortFailures.isEmpty() ? "" : "\n\n"
-                    + International.getString("Bei folgenden Booten konnte die Fahrt NICHT abgebrochen werden:") + "\n"
-                    + String.join(", ", abortFailures)));
+            // Step 4: Notify the admin. The logbook switch has already succeeded here, so a
+            // failure while building this message must NOT be reported as a failed switch
+            // (that is the job of the outer catch block). It is isolated in its own try/catch.
+            try {
+                Messages messages = Daten.project.getMessages(false);
+                if (messages != null) {
+                    messages.createAndSaveMessageRecord(MessageRecord.TO_ADMIN,
+                            International.getString("Fahrtenbuchwechsel"),
+                            International.getString("efa hat soeben wie konfiguriert ein neues Fahrtenbuch geöffnet.") + "\n"
+                            + International.getMessage("Das neue Fahrtenbuch heißt {name} und ist gültig vom {fromdate} bis {todate}.",
+                            newLogbook.getName(), newLogbook.getStartDate().toString(), newLogbook.getEndDate().toString()) + "\n"
+                            + LogString.operationSuccessfullyCompleted(International.getString("Fahrtenbuchwechsel")) + "\n\n"
+                            + (sessionsAborted ? International.getString("Zum Zeitpunkt des Fahrtenbuchwechsels befanden sich noch einige Boote "
+                            + "auf dem Wasser. Diese Fahrten wurden ABGEBROCHEN. Die abgebrochenen "
+                            + "Fahrten sind in der Logdatei verzeichnet.") : "")
+                            // add abort failures to the message, if any
+                            + (abortFailures.isEmpty() ? "" : "\n\n"
+                            + International.getString("Bei folgenden Booten konnte die Fahrt NICHT abgebrochen werden:") + "\n"
+                            + String.join(", ", abortFailures)));
+                }
+            } catch (Exception e) {
+                // The logbook switch itself succeeded; only the admin notification failed.
+                Logger.log(e);
+            }
             EfaUtil.sleep(500);
         	SwingUtilities.invokeLater(new Runnable() {
         		public void run() {
@@ -1421,8 +1436,7 @@ public class EfaBoathouseBackgroundTask extends Thread {
             // only send the mail if this is the first failure for this logbook switch attempt, 
             // otherwise we would flood the admin with mails
             if (firstFailure) {
-                Logger.log(Logger.ERROR, Logger.MSG_ERR_AUTOSTARTNEWLOGBOOK,
-                        LogString.operationAborted(International.getString("Fahrtenbuchwechsel")));
+                // (the failure is already logged above, so it is not logged a second time here)
                 Messages messages = (Daten.project != null ? Daten.project.getMessages(false) : null);
                 if (messages != null) {
                     messages.createAndSaveMessageRecord(MessageRecord.TO_ADMIN,
