@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.SwingUtilities;
@@ -1159,6 +1160,9 @@ public class EfaBoathouseBackgroundTask extends Thread {
 
             // Step 2: Abort open Sessions (only for local project)
             boolean sessionsAborted = false;
+            // Why declared here: the admin message is built after the abort block,
+            // so the failure list must be visible in both places.
+            List<String> abortFailures = new ArrayList<String>();
             if (Daten.project.getProjectStorageType() != IDataAccess.TYPE_EFA_REMOTE) {
             	if (boatStatus!=null) {
             		//only proceed if boatstatus !=null as it actually CAN be null if project is in deletion...
@@ -1172,17 +1176,28 @@ public class EfaBoathouseBackgroundTask extends Thread {
 	                    try {
 		                    for (int i = 0; i < boatsOnTheWater.size(); i++) {
 		                        BoatStatusRecord sr = boatsOnTheWater.get(i);
-		                        LogbookRecord r = null;
-		                        if (sr.getEntryNo() != null && sr.getEntryNo().isSet()) {
-		                            r = currentLogbook.getLogbookRecord(sr.getEntryNo());
-		                            r.setSessionIsOpen(false);
-		                            currentLogbook.data().update(r, lockLogbook);
+		                        try {
+		                            // try/catch: one broken record must not stop the
+		                            // abort of all other boats on the water.
+		                            LogbookRecord r = null;
+		                            if (sr.getEntryNo() != null && sr.getEntryNo().isSet()) {
+		                                r = currentLogbook.getLogbookRecord(sr.getEntryNo());
+		                                if (r == null) {
+		                                    throw new IllegalStateException("Logbook entry not found for boat " + sr.getBoatId());
+		                                }
+		                                r.setSessionIsOpen(false);
+		                                currentLogbook.data().update(r, lockLogbook);
+		                            }
+		                            sr.setEntryNo(null);
+		                            sr.setCurrentStatus(sr.getBaseStatus());
+		                            boatStatus.data().update(sr, lockStatus);
+		                            EfaBaseFrame.logBoathouseEvent(Logger.INFO, Logger.MSG_EVT_TRIPABORT,
+		                                    International.getString("Fahrtabbruch"), r);
+		                        } catch (Exception e) {
+		                            // the admin must know WHICH trips could not be aborted, and this is added to the message to admin
+		                            abortFailures.add(sr.getBoatNameAsString(System.currentTimeMillis()));
+		                            Logger.log(e);
 		                        }
-		                        sr.setEntryNo(null);
-		                        sr.setCurrentStatus(sr.getBaseStatus());
-		                        boatStatus.data().update(sr, lockStatus);
-		                        EfaBaseFrame.logBoathouseEvent(Logger.INFO, Logger.MSG_EVT_TRIPABORT,
-		                                International.getString("Fahrtabbruch"), r);
 		                    }
 		                } catch (Exception e){
 		                	Logger.log(e);
@@ -1222,7 +1237,11 @@ public class EfaBoathouseBackgroundTask extends Thread {
                     + LogString.operationSuccessfullyCompleted(International.getString("Fahrtenbuchwechsel")) + "\n\n"
                     + (sessionsAborted ? International.getString("Zum Zeitpunkt des Fahrtenbuchwechsels befanden sich noch einige Boote "
                     + "auf dem Wasser. Diese Fahrten wurden ABGEBROCHEN. Die abgebrochenen "
-                    + "Fahrten sind in der Logdatei verzeichnet.") : ""));
+                    + "Fahrten sind in der Logdatei verzeichnet.") : "")
+                    // add abort failures to the message, if any
+                    + (abortFailures.isEmpty() ? "" : "\n\n"
+                    + International.getString("Bei folgenden Booten konnte die Fahrt NICHT abgebrochen werden:") + "\n"
+                    + String.join(", ", abortFailures)));
             EfaUtil.sleep(500);
         	SwingUtilities.invokeLater(new Runnable() {
         		public void run() {
