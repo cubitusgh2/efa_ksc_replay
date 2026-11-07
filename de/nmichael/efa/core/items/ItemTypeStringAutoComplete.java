@@ -17,7 +17,6 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.Window;
@@ -37,6 +36,7 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
+import javax.swing.JViewport;
 import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
@@ -69,7 +69,10 @@ import de.nmichael.efa.util.Logger;
  * Key handling:
  * - DOWN / UP / PAGE DOWN / PAGE UP: move selection in popup
  * - ENTER: accept selected item
- * - ESC: close popup without accepting
+ * - ESC (two-stage): if the popup is visible, the first ESC only closes the
+ *   popup and leaves the text field unchanged. If the popup is NOT visible,
+ *   ESC clears the text field. So clearing the field normally requires
+ *   pressing ESC twice if the popup was open.
  * - typing: updates the popup/filter from the text field
  *
  * The popup is "remote-controlled" from the text field; focus remains in the text field.
@@ -100,6 +103,15 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
     private JList<String> popupList;
     private JScrollPane popupScrollPane;
 
+    /**
+     * Some platforms/input methods occasionally deliver a KeyEvent with this
+     * (non-standard, negative) key code. It does not correspond to any real key
+     * (java.awt.event.KeyEvent only defines non-negative VK_* codes), so such
+     * events are ignored here to avoid triggering autoComplete()/handleFilteredList()
+     * with meaningless input.
+     */
+    private static final int KEYCODE_IGNORE_SPURIOUS_EVENT = -23;
+
     public ItemTypeStringAutoComplete(String name, String value, int type,
             String category, String description, boolean showButton) {
         super(name, value, type, category, description);
@@ -125,7 +137,18 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         copy.setItemOnNewRow(itemOnNewRow);
         copy.setFieldGrid(fieldGridWidth,fieldGridHeight,fieldGridAnchor,fieldGridFill);
         copy.setIndent(this.isIndent());
-
+        //specific to this class
+        copy.setOtherField(this.otherField);
+        copy.setValidAt(this.validAtDateItem, this.validAtTimeItem);
+        copy.setChecks(this.isCheckSpelling, this.isCheckPermutations);
+        copy.setIgnoreEverythingAfter(this.ignoreEverythingAfter);
+        copy.setAlwaysReturnPlainText(this.alwaysReturnPlainText);
+        copy.setAlternateFieldNameForPlainText(this.alternateFieldNameForPlainText);
+        copy.setAutoCompleteData(this.autoCompleteList, this.onChoosenDeleteFromList);
+        copy.setVisibleSticky(this.isVisibleSticky);
+        copy.setShowButtonFocusable(this.showButtonFocusable);
+        copy.setRememberedId(this.rememberedId);
+        copy.withPopup = this.withPopup;
         return copy;
     }
 
@@ -179,7 +202,9 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
     /*
 	 * KeyListener for the text field to handle auto-completion and popup navigation.
 	 * ENTER, TAB: Use the selected item from the popup if visible, otherwise transfer focus.
-	 * ESC: Clear the text field and close the popup if visible.
+	 * ESC (two-stage): 1st ESC while popup is visible only closes the popup (handled in
+	 * handlePopupNavigationKey(), consumed there, the block below is NOT reached).
+	 * 2nd ESC (popup already closed) clears the text field (handled in the block below).
 	 * Other keys: Call autoComplete() to update the text field and popup.
 	 */
     private void iniDisplay_KeyListener(JTextField tf) {
@@ -194,7 +219,19 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         	        e.consume();
         	        return;
         	    }
+        	    
+        	    // DOWN key, but invisible popup: open the popup with the current filter
+        	    if (e.getKeyCode() == KeyEvent.VK_DOWN && !isPopupVisible() 
+        	    		&& useAutocompleteList && withPopup) {
+        	        autoComplete(e);
+        	        e.consume();
+        	        return;
+        	    }
 
+        	    
+        	    // ENTER: accept popup selection if visible, then move focus. 
+        	    // Do not invoke the default button of the dialog if the popup is visible 
+        	    // (otherwise the user cannot select an item from the popup with ENTER).
         	    if (e.getKeyCode() == KeyEvent.VK_ENTER && isPopupVisible()) {
         	        acceptPopupSelection();
         	        e.consume();
@@ -202,14 +239,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         	        return;
         	    } 
         	    
-        	    if (e.getKeyCode() == KeyEvent.VK_TAB && isPopupVisible()) {
-        	        acceptPopupSelection();
-        	        e.consume();
-    	            ((JTextField) field).transferFocus();
-        	        return;
-        	    }
-
-        	    // TAB ohne Popup: Fokus manuell weitergeben
+        	 // TAB: accept popup selection if visible, then move focus (Shift+TAB = backward)
         	    if (e.getKeyCode() == KeyEvent.VK_TAB) {
         	        if (isPopupVisible()) {
         	            acceptPopupSelection();
@@ -224,15 +254,17 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         	    }
         	    
         	    if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-        	    	// ESC: no, we do not want this value to be taken.
-        	    	// and the textfield shall be cleared
+        	    	// This block is only reached if the popup was NOT visible
+        	    	// (otherwise handlePopupNavigationKey() already closed the popup
+        	    	// and returned true above, so this code is skipped).
+        	    	// -> 2nd ESC (popup already closed): now clear the textfield, too.
         	        if (field instanceof JTextField) {
         	            JTextField tf = (JTextField) field;
         	            tf.setText("");
         	            tf.setCaretPosition(0);
         	        }
 
-        	        // Close the popup if neccessary
+        	        // Close the popup if neccessary (defensive; popup should already be closed here)
         	        if (isPopupVisible()) {
         	            closePopup();
         	        }
@@ -240,13 +272,13 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         	        // Do not consume() the event. -> super ESC-handlers shall see the key
         	        return;
         	    }
-
-        	    if (e.getKeyCode() == KeyEvent.VK_ENTER && Daten.efaConfig.getValuePopupContainsMode()) {
+        	    // ENTER shall not invoke the default button of the dialog if the popup is visible 
+        	    //(otherwise the user cannot select an item from the popup with ENTER).
+        	    if (e.getKeyCode() == KeyEvent.VK_ENTER && isPopupContainsMode()) {
         	        autoComplete(e);
         	        e.consume();
         	    }
         	}
-
 
             public void keyReleased(KeyEvent e) {
                 if (e == null) {
@@ -322,7 +354,10 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
     }
 
     public void setVisibleSticky(boolean visible) {
-        super.setVisible(visible);
+        // Set isVisibleSticky BEFORE calling setVisible(), so the guard clause
+        // in the overridden setVisible() below already sees the new value.
+        // We intentionally call this.setVisible() (not super.setVisible()) so that
+        // our own override (which also toggles the button) is applied exactly once.
         isVisibleSticky = visible;
         setVisible(visible);
     }
@@ -372,7 +407,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
             checkSpelling();
         }
         super.field_focusLost(e);
-        if (onChoosenDeleteFromList && valueIsKnown && !value.isEmpty()) {
+        if ((autoCompleteList!=null && value != null) && onChoosenDeleteFromList && valueIsKnown && !value.isEmpty()) {
             Vector<String> vis = autoCompleteList.getDataVisible();
             if (vis.remove(value)) {
                 autoCompleteList.setDataVisible(vis);
@@ -381,7 +416,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
     }
 
     protected void field_focusGained(FocusEvent e) {
-        if (onChoosenDeleteFromList && valueIsKnown && !value.isEmpty()) {
+        if ((autoCompleteList!=null && value != null) && onChoosenDeleteFromList && valueIsKnown && !value.isEmpty()) {
             Vector<String> vis = autoCompleteList.getDataVisible();
             if (!vis.contains(value) && vis.add(value)) {
                 autoCompleteList.setDataVisible(vis);
@@ -410,7 +445,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
     }
 
     private void autoComplete(KeyEvent e) {
-        if (Daten.efaConfig.getValuePopupContainsMode()) {
+        if (isPopupContainsMode()) {
             handleFilteredList(e);
             return;
         }
@@ -426,10 +461,18 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
             closePopup();
             return;
         } else {
+            // Note: list.update() is intentionally called again below (indirectly,
+            // via showPopupForField()) for most keystrokes. We consciously accept
+            // this double update() call per keystroke rather than introducing a
+            // time-based throttle inside AutoCompleteList.update(), since such a
+            // throttle could introduce a runtime-dependent/timing-dependent bug
+            // (e.g. stale data shown right after an external change to the list)
+            // that would be much harder to track down than this minor, constant
+            // performance overhead.
             list.update();
         }
 
-        if (e != null && e.getKeyCode() == -23) {
+        if (e != null && e.getKeyCode() == KEYCODE_IGNORE_SPURIOUS_EVENT) {
             return;
         }
 
@@ -478,16 +521,17 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
             }
 
             if (field.getSelectedText() != null) {
-                prefix = field.getText().toLowerCase().substring(0, field.getSelectionStart());
+            	// use substring first, then toLowerCase as toLowerCase() may change the length of the string (e.g. Turkish I)
+            	prefix = field.getText().substring(0, field.getSelectionStart()).toLowerCase();
             } else {
                 prefix = field.getText().toLowerCase();
             }
 
             if (e != null && e.getKeyCode() == KeyEvent.VK_DOWN) {
                 if (isPopupVisible() && useAutocompleteList) {
-                    complete = list.getNext();
+                    complete = list.getNext(); //popup visible, get the next item in the popup list
                 } else {
-                    complete = list.getNext(prefix);
+                    complete = list.getNext(prefix); //popup not visible, get the next item in the list based on the prefix
                 }
                 if (complete == null) {
                     complete = list.getFirst(prefix);
@@ -661,7 +705,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
             neighbours = list.getNeighbours(name, radius, (isCheckPermutations ? 6 : 0));
         }
 
-        if (Daten.efaConfig.getValuePopupContainsMode()) {
+        if (isPopupContainsMode()) {
             if (list.getExact(name) == null) {
                 if (neighbours == null) {
                     neighbours = new Vector<String>();
@@ -717,8 +761,11 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
     private void handleFilteredList(KeyEvent e) {
         if (field == null) {
             return;
+        }        
+        // Check spurious events before touching the list, so no filter state is left behind
+        if (e != null && e.getKeyCode() == KEYCODE_IGNORE_SPURIOUS_EVENT) {
+            return;
         }
-
         JTextField textField = (JTextField) this.field;
         AutoCompleteList list = getAutoCompleteList();
 
@@ -733,12 +780,12 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
             closePopup();
             return;
         } else {
+            // Note: list.update() is intentionally called again below (indirectly,
+            // via showPopupForField()) for most keystrokes. See autoComplete() for
+            // why this (minor) double update() call per keystroke is consciously
+            // accepted instead of adding a time-based throttle in AutoCompleteList.
             list.update();
             list.setFilterText(textField.getText().trim());
-        }
-
-        if (e != null && e.getKeyCode() == -23) {
-            return;
         }
 
         if (textField.getText().trim().length() == 0) {
@@ -777,7 +824,12 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
 
             if (e != null && ((e.getKeyCode() == KeyEvent.VK_DOWN)
                     || (e.getKeyCode() == KeyEvent.VK_F && ((e.getModifiers() & KeyEvent.CTRL_MASK) != 0)))) {
-                complete = list.getNext(searchFor);
+                if (isPopupVisible()) {
+                    complete = list.getNext(searchFor);       // popup visible: get next item in the popup list
+                } else {
+                    complete = list.getFirst(searchFor);      // Popup invisible: get first item in the list based on the prefix
+                }
+                
                 if (complete == null) {
                     complete = list.getFirst(searchFor);
                 }
@@ -789,7 +841,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
                 }
             } else {
                 if ((e != null) && e.getKeyCode() != KeyEvent.VK_DOWN) {
-                    if (Daten.efaConfig.getValuePopupContainsModeSelectPrefixItem()) {
+                    if (isPopupContainsModeSelectPrefixItem()) {
                         complete = list.getFirstByPrefix(textField.getText());
                         if (complete == null) {
                             complete = list.getFirst(textField.getText());
@@ -813,7 +865,9 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
                 if (complete != null && !complete.isEmpty()) {
                     textField.setText(complete);
                 }
-                matching = true;
+                // Note: "matching" is intentionally NOT set here, since it is
+                // recalculated uniformly further below via list.getExact(textField.getText())
+                // (any assignment here would be overwritten there anyway).
             }
 
             if (withPopup && useAutocompleteList && e != null && mode != Mode.none && e.getKeyCode() != KeyEvent.VK_TAB) {
@@ -823,12 +877,9 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         }
 
         if (mode == Mode.up) {
-            if (isPopupVisible() && useAutocompleteList) {
-                complete = list.getPrev(searchFor);
-            } else {
-                complete = list.getPrev(searchFor);
-            }
-
+            // In filter mode AutoCompleteList ignores the prefix, so getPrev() without
+            // argument is equivalent to getPrev(searchFor) here and matches autoComplete().
+            complete = list.getPrev();
             if (complete == null) {
                 complete = list.getLast(searchFor);
             }
@@ -838,9 +889,10 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
             }
         }
 
+
         if (mode == Mode.delete) {
             if (withPopup && useAutocompleteList && e != null && mode != Mode.none) {
-                if (Daten.efaConfig.getValuePopupContainsModeSelectPrefixItem()) {
+                if (isPopupContainsModeSelectPrefixItem()) {
                     complete = list.getFirstByPrefix(textField.getText());
                     if (complete == null) {
                         complete = list.getFirst(textField.getText());
@@ -916,6 +968,23 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         return autoCompleteList;
     }
 
+    /**
+     * Returns the value of Daten.efaConfig.getValuePopupContainsMode(),
+     * or false if Daten.efaConfig is not (yet) initialized
+     * (e.g. in unit tests or during application startup).
+     */
+    private boolean isPopupContainsMode() {
+        return Daten.efaConfig != null && Daten.efaConfig.getValuePopupContainsMode();
+    }
+
+    /**
+     * Returns the value of Daten.efaConfig.getValuePopupContainsModeSelectPrefixItem(),
+     * or false if Daten.efaConfig is not (yet) initialized.
+     */
+    private boolean isPopupContainsModeSelectPrefixItem() {
+        return Daten.efaConfig != null && Daten.efaConfig.getValuePopupContainsModeSelectPrefixItem();
+    }
+
     private void setButtonColor(Color color) {
         valueIsKnown = (color == Color.green || color == Color.yellow);
         if (button != null) {
@@ -960,7 +1029,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
 
     public boolean isValidInput() {
         if (!alwaysReturnPlainText && alternateFieldNameForPlainText == null && value != null && value.length() > 0) {
-            if (autoCompleteList.getId(value) == null) {
+            if (autoCompleteList!=null && autoCompleteList.getId(value) == null) {
                 lastInvalidErrorText = International.getString("Unbekannter Name nicht erlaubt");
                 return false;
             }
@@ -988,7 +1057,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
     }
 
     public void removeFromVisible(String value) {
-        if (onChoosenDeleteFromList && !value.isEmpty()) {
+        if ((autoCompleteList!=null && value != null) && onChoosenDeleteFromList && !value.isEmpty()) {
             Vector<String> vis = autoCompleteList.getDataVisible();
             if (vis.remove(value)) {
                 autoCompleteList.setDataVisible(vis);
@@ -1063,22 +1132,27 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
 
         ensurePopupCreated();
 
+        // Note: this is usually the SECOND call to autoCompleteList.update() for the
+        // same keystroke (the first one happened in autoComplete()/handleFilteredList()
+        // right before calling this method). This redundancy is intentional/accepted,
+        // see the comment in autoComplete() for the reasoning.
         autoCompleteList.update();
 
         String filterText = textField.getText() == null ? "" : textField.getText().trim();
-        if (Daten.efaConfig != null && Daten.efaConfig.getValuePopupContainsMode()) {
+        if (isPopupContainsMode()) {
             autoCompleteList.setFilterText(filterText);
         } else {
             autoCompleteList.setFilterText(null);
         }
 
         Vector<String> data = autoCompleteList.getDataVisibleFiltered();
-        popupList.setListData(data);
-
         if (data == null || data.isEmpty()) {
             closePopup();
             return;
         }
+        popupList.setListData(data);
+
+
 
         int width = Math.max(textField.getWidth(), 240);
         int rowCount = Math.min(Math.max(data.size(), 1), 6);
@@ -1133,7 +1207,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
             idx = data.indexOf(valueToSelect);
         }
 
-        boolean isContainsMode = Daten.efaConfig.getValuePopupContainsMode();
+        boolean isContainsMode = isPopupContainsMode();
         if (idx < 0 && filterText != null && filterText.length() > 0) {
             String lowerFilter = filterText.toLowerCase();
             for (int i = 0; i < data.size(); i++) {
@@ -1174,6 +1248,8 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
 
         switch (e.getKeyCode()) {
             case KeyEvent.VK_ESCAPE:
+                // 1st ESC while popup is visible: only close the popup, do NOT clear the
+                // textfield (two-stage ESC, see class/keyPressed javadoc).
                 closePopup();
                 return true;
                 
@@ -1301,8 +1377,8 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         JTextField tf = (JTextField) field;
 
         tf.setText(selected);
-        tf.setCaretPosition(selected.length());
         tf.select(-1, -1);
+        tf.setCaretPosition(selected.length());
 
         // Update internal state immediately.
         autoCompleteList.setFilterText(null);
@@ -1344,6 +1420,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
     private class PaintHighlightRenderer extends JComponent implements ListCellRenderer<String> {
 
         private static final long TEN_SECONDS_IN_MILLIS = 1000*10;
+        private static final int SELECTION_ARC = 14;
 		private String fullText;
         private String search;
         private boolean selectedFlag;
@@ -1353,7 +1430,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         private Color selectionForeground=UIManager.getColor("List.selectionForeground");
         private Color listBackground;
         private Color listForeground;
-        private Color highlightColor = new Color(255, 255, 180);
+        private Color highlightColor = new Color(245, 245, 120);
         private Color matchForeground = Color.BLACK;
         private boolean isContainsMode = true;
         private long lastContainsModeCheck=0;
@@ -1385,7 +1462,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         public Dimension getPreferredSize() {
             FontMetrics fm = getFontMetrics(getFont());
             String t = (fullText == null ? "" : fullText);
-            return new Dimension(fm.stringWidth(t) + 8, fm.getHeight() + 4);
+            return new Dimension(fm.stringWidth(t) + 8, fm.getHeight() + 8);
         }
 
         @Override
@@ -1397,12 +1474,19 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
             EfaGuiUtils.setStandardRenderingHints(g2);
             int x = 8;
             int y = fm.getAscent() + 2;
+            int yText = (this.getHeight()+ fm.getAscent() - fm.getDescent()) / 2;
 
             // Draw background
             if (selectedFlag) {
                 g2.setColor(selectionBackground);
                 int selectionBarPadding = 3;
-                g2.fillRoundRect(selectionBarPadding, 1, getWidth() - (selectionBarPadding * 2), getHeight() - 1, 12, 12);
+             // Sichtbare Breite des Viewports, nicht die Zellenbreite
+                int visibleWidth = getWidth();
+                java.awt.Container parent = SwingUtilities.getAncestorOfClass(JViewport.class, popupList);
+                if (parent instanceof JViewport) {
+                    visibleWidth = Math.min(visibleWidth, ((JViewport) parent).getExtentSize().width);
+                }
+                g2.fillRoundRect(selectionBarPadding, 1, visibleWidth - selectionBarPadding * 2, getHeight() - 1, SELECTION_ARC, SELECTION_ARC);
             } else {
                 g2.setColor(listBackground);
                 g2.fillRect(x-2, y, getWidth(), getHeight());
@@ -1410,8 +1494,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
             
             g2.setColor(selectedFlag ? selectionForeground : listForeground);
 
-            String lower = fullText.toLowerCase();
-            int pos = (search != null && !search.isEmpty()) ? lower.indexOf(search) : -1;
+            int pos = findIgnoreCase(fullText, search);
 
             if (pos >= 0 && !search.isEmpty()) {
                 String before = fullText.substring(0, pos);
@@ -1420,34 +1503,55 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
 
                 // Draw "before" text
                 g2.setColor(selectedFlag ? selectionForeground  : listForeground);
-                g2.drawString(before, x, y);
+                g2.drawString(before, x, yText);
                 x += fm.stringWidth(before);
 
                 int w = fm.stringWidth(match);
                 if (isContainsMode()) {
 	                // Draw highlight background for match only if containsmode is active.
 	                g2.setColor(highlightColor);
-	                g2.fillRect(x+1, y - fm.getAscent() + 2, w, fm.getHeight() - 3);
+	                g2.fillRect(x+1, y - fm.getAscent() + 2, w, fm.getHeight() );
 	                // Draw match text (in black for contrast)
 	                g2.setColor(matchForeground);
                 }
-                g2.drawString(match, x, y);
+                g2.drawString(match, x, yText);
                 x += w;
 
                 // Draw "after" text
                 g2.setColor(selectedFlag ? selectionForeground  : listForeground);
-                g2.drawString(after, x, y);
+                g2.drawString(after, x, yText);
             } else {
-                g2.drawString(fullText, x, y);
+                g2.drawString(fullText, x, yText);
             }
         }
         
         private boolean isContainsMode() {        	
         	if (System.currentTimeMillis() >= this.lastContainsModeCheck+ (TEN_SECONDS_IN_MILLIS)) {
-        		this.isContainsMode= Daten.efaConfig.getValuePopupContainsMode();
+        		this.isContainsMode= isPopupContainsMode();
         		lastContainsModeCheck=System.currentTimeMillis();
         	}
         	return this.isContainsMode;
+        }
+
+        /**
+         * Searches for "search" inside "text", case-insensitively, WITHOUT creating a
+         * toLowerCase() copy of "text". This avoids index mismatches that can occur for
+         * certain Unicode characters whose lowercase form has a different length than the
+         * original (e.g. Turkish "İ" -> "i̇", which is 2 chars instead of 1).
+         * Returns the position in "text" (in the original, unmodified coordinate system),
+         * or -1 if not found.
+         */
+        private int findIgnoreCase(String text, String search) {
+            if (text == null || search == null || search.isEmpty()) {
+                return -1;
+            }
+            int maxStart = text.length() - search.length();
+            for (int i = 0; i <= maxStart; i++) {
+                if (text.regionMatches(true, i, search, 0, search.length())) {
+                    return i;
+                }
+            }
+            return -1;
         }
     }
 }

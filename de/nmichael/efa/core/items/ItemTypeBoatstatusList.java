@@ -41,8 +41,18 @@ import de.nmichael.efa.util.EfaUtil;
 import de.nmichael.efa.util.International;
 import de.nmichael.efa.util.Logger;
 
+/**
+ * ItemTypeBoatstatusList is a specialized ItemTypeList for displaying boat status information in the EfaBoathouseFrame.
+ * It provides methods to set and sort boat status data, as well as to handle person status data.
+ * 
+ * It is used for 
+ * - available boats,
+ * - boats on the water,
+ * - unavailable boats, and
+ * - persons (if activated in efaConfig).
+ * 
+ */
 public class ItemTypeBoatstatusList extends ItemTypeList {
-
     public static final int SEATS_OTHER = 99;
     public static final String TYPE_OTHER = "";
     public static final String RIGGER_OTHER = "";
@@ -70,7 +80,14 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
         this.efaBoathouseFrame = efaBoathouseFrame;
     }
     
+    /**
+	 * Sets the person status data for the list, sorting it and adding an "other" entry if provided.
+	 * 
+	 * @param v Vector of PersonRecord objects representing the persons to be displayed.
+	 * @param other Optional string for an "other" entry to be added at the top of the list.
+	 */
     public void setPersonStatusData(Vector<PersonRecord> v, String other) {
+        setIconSize(0, 0); // person list shows no group icons
         Vector<ItemTypeListData> vdata = sortMemberList(v);
         if (other != null) {
         	BoatListItem item= new BoatListItem();
@@ -84,6 +101,13 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
         showValue();
     }
     
+    /**
+     * Sets the boat status data for the list, sorting it and adding an "other" entry if provided.
+     * @param v Vector of BoatStatusRecord objects representing the boats to be displayed.
+     * @param logbook Logbook object used to retrieve additional information about the boats.
+     * @param other Optional string for an "other" entry to be added at the top of the list.
+     * @param todaysReservations Vector of BoatReservationRecord objects representing the reservations for today, used to determine reservation information for each boat.
+     */
     public void setBoatStatusData(Vector<BoatStatusRecord> v, Logbook logbook, String other, Vector <BoatReservationRecord> todaysReservations) {
         Vector<ItemTypeListData> vdata = sortBootsList(v, logbook, todaysReservations);
         if (other != null) {
@@ -110,7 +134,6 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
 	 * Also if at least one group with a valid color exists, the icon size is set for the boatlist, other wise it is zero.
 	 * 
 	 * @returns a map with group id as key and the color for the group as value. If no groups exist, an empty map is returned.
-	 * 
 	 */
     private HashMap<UUID, Color> getGroupColors(long now){
     	HashMap<UUID, Color> result = new HashMap<UUID, Color>();
@@ -128,8 +151,8 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
 	                }
 	            }
 	        }
-	        this.iconWidth = (result.size() > 0 ? Daten.efaConfig.getValueEfaDirekt_BthsFontSize() : 0);
-	        this.iconHeight = this.iconWidth;
+	        int iconSize = (result.size() > 0 ? Daten.efaConfig.getValueEfaDirekt_BthsFontSize() : 0);
+	        setIconSize(iconSize, iconSize);
 	    } catch(Exception e) {
 	        Logger.logdebug(e);
 	    }
@@ -137,6 +160,14 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
     }   
     
  // build map of next reservation per boat (first occurrence in sorted todaysReservations)
+    /**
+	 * Returns a map of the next reservation for each boat from the provided list of today's reservations.
+	 * The map contains the boat ID as the key and the corresponding BoatReservationRecord as the value.
+	 * If there are no reservations, an empty map is returned.
+	 *
+	 * @param todaysReservations Vector of BoatReservationRecord objects representing today's reservations.
+	 * @return HashMap with boat ID as key and the next BoatReservationRecord as value.
+	 */
     private HashMap<UUID, BoatReservationRecord> getNextSingleReservationForBoats(Vector <BoatReservationRecord> todaysReservations){
        if (todaysReservations != null && !todaysReservations.isEmpty()) {
 			HashMap<UUID, BoatReservationRecord> result = new HashMap<UUID, BoatReservationRecord>(Math.min(todaysReservations.size(), 256));
@@ -405,7 +436,14 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
     }
     
     
-
+    /**
+	 * Creates a cache for the most common seat numbers (1-6 and 8) to speed up the retrieval of the seat number string 
+	 * for these boats, as this is a very common operation when sorting by seats. 
+	 * For other seat numbers, the string is retrieved directly from efaTypes without caching, 
+	 * as these are less common and caching them would not significantly improve performance.
+	 * 
+	 * @return HashMap with seat number as key and corresponding string representation as value.
+	 */
     private HashMap<Integer, String> createSeatsKeyCache() {
     	
     	HashMap<Integer, String> result = new HashMap<Integer, String>();
@@ -463,6 +501,18 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
     	}
     }
     
+    /**
+	 * Returns some additional information on the current Boatstring / Personrecord.
+	 * which Boatrecord may point to a boat, but also to a person record.
+	 * 
+	 * @param bs Boat String with already some determined strings
+	 * @param bi the BoatListItem where we can get the boatRecord and personRecord from.
+	 * @param personListField1 the first field to retrieve from the PersonRecord
+	 * @param personListField2 the second field to retrieve from the PersonRecord
+	 * @param personListField1Caption the caption for the first field
+	 * @param personListField2Caption the caption for the second field
+	 * @return a NameExtension object containing the values of the specified fields from the PersonRecord, or null if the BoatListItem does not contain a PersonRecord.
+	 */
     private NameExtension getPersonNameExtension(BoatString bs, String personListField1, String personListField2, String personListField1Caption, String personListField2Caption) {
     	try {
 
@@ -488,38 +538,45 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
     	}
     }  
     
-/*
- * Creates a tooltip for either
- * - boatlist
- * - boats on water list
- * 
- * Where are the attributes obtained from?
- * 
- * Boat list
- * ---------
- * Boat name    - BoatString->BoatStatus->BoatName  or BoatString.name if boat is not in the boat list
- * Boat variant - BoatString->Boat->getDetailedBoatType
- * Boat groups  - BoatString->Boat->getAllowedGroupsAsNameString
- * 
- * 
- * Boats on water list/Trip
- * ---------
- * Boat name    - If boat on the water, split BoatString->Name into Boat name and destination using the unique delimiter
- * Destination  - If boat on the water, split BoatString->Name into Boat name and destination using the unique delimiter
- * 				  (works flawlessly)
- * lastmodified - BoatString->BoatStatus->getLastModified
- * Start time,
- * Cox & Crew	- BoatString->BoatStatus->Comment
- * 					- remove from comment: boat name, boat destination,  boat status text.
- * 					- replace all ; by , with a line break, so that the crew/cox are shown one per line
- * 				  works flawlessly with any international representation of Boatstatus.comment (built by BoatStatusRecord.createStatusString).
- * 				  works even after changing EFA language from de to en to any other language and starting new trips in each language.
- * 
- * The creation of tooltip text is somewhat prone to nullpointer exceptions, as it is not guaranteed that all of the attributes
- * are set with a content. To avoid those nullpointers to pop up and create an empty boat on water list, a general try-catch statement
- * gets these exceptions, logs them as warning and returns an empty tooltip string.
- * 
- */
+	/**
+	 * Creates a tooltip for either
+	 * - boatlist
+	 * - boats on water list
+	 * 
+	 * Where are the attributes obtained from?
+	 * 
+	 * Boat list
+	 * ---------
+	 * Boat name    - BoatString->BoatStatus->BoatName  or BoatString.name if boat is not in the boat list
+	 * Boat variant - BoatString->Boat->getDetailedBoatType
+	 * Boat groups  - BoatString->Boat->getAllowedGroupsAsNameString
+	 * 
+	 * 
+	 * Boats on water list/Trip
+	 * ---------
+	 * Boat name    - If boat on the water, split BoatString->Name into Boat name and destination using the unique delimiter
+	 * Destination  - If boat on the water, split BoatString->Name into Boat name and destination using the unique delimiter
+	 * 				  (works flawlessly)
+	 * lastmodified - BoatString->BoatStatus->getLastModified
+	 * Start time,
+	 * Cox & Crew	- BoatString->BoatStatus->Comment
+	 * 					- remove from comment: boat name, boat destination,  boat status text.
+	 * 					- replace all ; by , with a line break, so that the crew/cox are shown one per line
+	 * 				  works flawlessly with any international representation of Boatstatus.comment (built by BoatStatusRecord.createStatusString).
+	 * 				  works even after changing EFA language from de to en to any other language and starting new trips in each language.
+	 * 
+	 * The creation of tooltip text is somewhat prone to nullpointer exceptions, as it is not guaranteed that all of the attributes
+	 * are set with a content. To avoid those nullpointers to pop up and create an empty boat on water list, a general try-catch statement
+	 * gets these exceptions, logs them as warning and returns an empty tooltip string.
+	 * 
+	 * @param bs BoatString with already some determined strings
+	 * @param nextSingleReservationForBoats map of next reservations for boats, to be able to show reservation information in the tooltip
+	 * @param showReservation boolean to determine whether or not to show reservation information in the tooltip
+	 * @param extension NameExtension object containing additional information to be shown in the tooltip
+	 * 
+	 * @return String containing the tooltip text for the boat, or an empty string if an exception occurs.
+	 * 
+	 */
     private String getBoatToolTip(BoatString bs, HashMap<UUID, BoatReservationRecord> nextSingleReservationForBoats, boolean showReservation, NameExtension extension) {
 
    		try {
@@ -688,25 +745,49 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
 		}    
 
     }
-    // is the current comment beginning with "Bootsschaden" in the corresponding locale? 
+    
+    /**
+	 * Checks if the given string starts with the localized "Bootsschaden" prefix.
+	 *
+	 * @param s the string to check
+	 * @return true if the string starts with "Bootsschaden: ", false otherwise
+	 */
     private boolean isCommentBoatDamage(String s) {
         return (s != null && s.startsWith(STR_BOOTSSCHADEN + ": "));
     }
 
-    // is the current comment beginning with "Reserviert für" in the corresponding locale? 
+    /** 
+     * Checks if the given string starts with the localized "Reserviert für" prefix.
+     * 
+     * @param s the string to check
+     * @return true if the string starts with "Reserviert für", false otherwise
+     */
     private boolean isCommentBoardReservation(String s) {
     	return (s != null && s.toLowerCase().startsWith(STR_RESERVIERT_FUER));	
     }
     
-    /*
-     * Bestimmt die nächste mögliche Reservierung für das genannte Boot.
-     * Dabei wird eine gerade aktive Reservierung ebenfalls gewählt, so dass die ermittelte Reservierung nicht zwingend   
-     * in der Zukunft liegen muss.
-     */
+    /**
+	 * Retrieves the current or next upcoming reservation for the specified boat ID from the provided map of reservations.
+	 * If the map is null or does not contain a reservation for the given boat ID, it returns null.
+	 *
+	 * @param boatID the UUID of the boat for which to retrieve the reservation
+	 * @param nextSingleResForBoats a HashMap containing the next single reservations for boats, keyed by boat UUID
+	 * @return the BoatReservationRecord for the specified boat ID, or null if no reservation is found
+	 */
     private BoatReservationRecord getCurrentOrNextUpcomingReservation(UUID boatID, HashMap<UUID, BoatReservationRecord> nextSingleResForBoats) {
     	return (nextSingleResForBoats == null ? null : nextSingleResForBoats.get(boatID));
     }
     
+    /**
+	 * Builds a string representation of the boat reservation information for the specified boat ID.
+	 * It retrieves the current or next upcoming reservation from the provided map and formats it based on the look-ahead time and tooltip flag.
+	 *
+	 * @param boatID the UUID of the boat for which to build the reservation string
+	 * @param nextSingleResForBoats a HashMap containing the next single reservations for boats, keyed by boat UUID
+	 * @param lookAheadMinutes the number of minutes to look ahead for upcoming reservations
+	 * @param buildForTooltip a boolean indicating whether to build the string for a tooltip (true) or for a secondary item in a list (false)
+	 * @return a formatted string representing the reservation information, or null if no reservation is found
+	 */
     private String getBoatReservationString(UUID boatID, HashMap<UUID, BoatReservationRecord> nextSingleResForBoats, long lookAheadMinutes, boolean buildForTooltip) {
 
     	//ab hier bauen wir die Reservierungsinfo auf.
@@ -755,7 +836,17 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
 
         }
         
-    }        
+    }  
+    
+    /**
+	 * Determines the secondary item to display for a boat based on its status and the provided flags
+	 * @param bs the BoatStatusRecord for the boat
+	 * @param nextSingleReservationForBoats a map of the next single reservations for boats
+	 * @param showDestination whether to show the destination for boats on the water
+	 * @param showReservation whether to show reservation information for available boats
+	 * 
+	 * @return a string representing the secondary item to display, or null if none is applicable
+	 */
     private String getSecondaryItem(BoatStatusRecord bs, HashMap<UUID, BoatReservationRecord> nextSingleReservationForBoats, boolean showDestination, boolean showReservation) {
     	String showInList = bs.getShowInList();
 
@@ -794,6 +885,14 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
     	return null;
     }
 
+    /**
+	 * Sorts a list of PersonRecords and returns a Vector of ItemTypeListData for display in the UI.
+	 * The sorting is done based on the qualified name of the PersonRecords.
+	 * Additional information can be included in the tooltip and extra info fields based on configuration.
+	 *
+	 * @param v Vector of PersonRecord objects to be sorted
+	 * @return Vector of ItemTypeListData containing sorted person information
+	 */
     Vector <ItemTypeListData>sortMemberList(Vector<PersonRecord> v) {
         if (v == null || v.size() == 0) {
         	return new Vector<ItemTypeListData>(0);
@@ -861,6 +960,15 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
         return vv;
     }
 
+    /**
+	 * Generates a tooltip for a person based on their name and additional information.
+	 * 
+	 * @param name The name of the person.
+	 * @param bs The BoatString associated with the person.
+	 * @param nameExtension Additional information to be displayed in the tooltip.
+	 * 
+	 * @return A string containing the HTML-formatted tooltip for the person.
+	 */
     private String getPersonToolTip(String name, BoatString bs, NameExtension nameExtension) {
     	
     	if (bs == null) {
@@ -907,11 +1015,21 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
     	}
 
     }
-    
+    /**
+	 * Checks if either the list or the filter has focus.
+	 * Used for efaBoathouseFrame to determine if the list or filter is currently active.
+	 * It is used to detect if the GUI needs to be reset to standard mode (where the available boat list gets the focus)
+	 * 
+	 * @return true if either the list or the filter has focus, false otherwise
+	 */
     public boolean hasListOrFilterFocus() {
     	return this.hasFocus() || list.hasFocus(); 
     }
     
+    /**
+	 * Retrieves the currently selected BoatListItem from the list.
+	 * @return the selected BoatListItem, or null if no item is selected or the list is empty
+	 * */
     public BoatListItem getSelectedBoatListItem() {
         if (list == null || list.isSelectionEmpty()) {
             return null;
@@ -924,13 +1042,25 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
         }
     }
     
+    /**
+	 * Creates a new BoatListItem with the specified mode.
+	 * 
+	 * @param mode the mode to set for the new BoatListItem
+	 * 
+	 * @return a new BoatListItem instance with the specified mode
+	 */
     public static BoatListItem createBoatListItem(int mode) {
         BoatListItem b = new BoatListItem();
         b.mode = mode;
         return b;
     }
 
-  //set text color of label above boathouse lists
+    /**
+	 * Sets the text color of the label above the boathouse lists.
+	 * If the label is not null, it updates the foreground color and repaints the label.
+	 *
+	 * @param c the Color to set for the label's text
+	 */
     public void setColor(Color c) {
         this.color = c;
         if (label!=null) {
@@ -939,8 +1069,10 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
         }
     }
 
-    // set background color of label above boathouse lists, 
-    // set transparent if background is set to null
+    /**
+	 * Sets the background color of the label above the boathouse lists.
+	 * If the label is not null, it updates the background color and opacity based on the provided color.
+	 */
     public void setBackgroundColor(Color c) {
         this.backgroundColor = c;
 
@@ -955,6 +1087,9 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
         }
     }    
     
+    /**
+	 * Inner class representing an item in the boat list.
+	 */
     public static class BoatListItem {
         public int mode;
         public ItemTypeBoatstatusList list;
@@ -965,6 +1100,9 @@ public class ItemTypeBoatstatusList extends ItemTypeList {
         public PersonRecord person;
     }
     
+    /**
+	 * Inner class representing additional name information for boats or persons.
+	 */
     public static class NameExtension{
     	public String field1Value;
     	public String field2Value;

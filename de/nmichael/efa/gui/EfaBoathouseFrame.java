@@ -2776,6 +2776,16 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
      * @param r LogbookRecord of the newly created record. May be null.
      */
     void showEfaBoathouseFrame(ItemTypeBoatstatusList.BoatListItem efaBoathouseAction, LogbookRecord r) {
+        // Swing components must only be accessed on the Event Dispatch Thread.
+        // Re-dispatch the call if it has been invoked from a different thread.
+    	
+    	// this also helps with runWidgetWarnings() which is called from this method.
+    	// runWidgetWarnings() may show a dialog, which must be done on the EDT.
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(() -> showEfaBoathouseFrame(efaBoathouseAction, r));
+            return;
+        }
+
         
     	bringFrameToFront(false);
         updateBoatLists(true,false); // must be explicitly called here! only efaBoathouseBackgroundTask.interrupt() is NOT sufficient.
@@ -2793,14 +2803,13 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
                 final String txt = Daten.efaConfig.getValueEfaBoathouseShowLastFromWaterNotificationText();
                 final String standardText = International.getString("Alle Boote sind zurück.") + "<br>" +
                         International.getString("Bitte schließe die Hallentore.");
-                SwingUtilities.invokeLater(()->{
-                    NotificationDialog dlg = new NotificationDialog(this,
-                    		//if configured text is empty, use standard text
-                            ((txt == null || txt.length() == 0) ? standardText : txt),
-                            BaseDialog.BIGIMAGE_CLOSEDOORS,
-                            "ffffff", "ff0000", Daten.efaConfig.getValueNotificationWindowTimeout());
-                    dlg.showDialog();                	
-                });
+                
+                NotificationDialog dlg = new NotificationDialog(this,
+                		//if configured text is empty, use standard text
+                        ((txt == null || txt.length() == 0) ? standardText : txt),
+                        BaseDialog.BIGIMAGE_CLOSEDOORS,
+                        "ffffff", "ff0000", Daten.efaConfig.getValueNotificationWindowTimeout());
+                dlg.showDialog();
 
             }
         }
