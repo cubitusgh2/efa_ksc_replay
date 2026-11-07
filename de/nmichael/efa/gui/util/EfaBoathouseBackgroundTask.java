@@ -112,9 +112,10 @@ public class EfaBoathouseBackgroundTask extends Thread {
             if (Daten.efaLogfile == null || Daten.efaConfig == null) {return;}
             
             // Why count and cap: an efa.log can be about 10 MBytes. Keeping every warning in a list and
-            // concatenating them with += is memory-hungry and slow. We count all warnings, but keep only the first ones.
-            final int maxWarningsInMail = 500;
+            // concatenating them is slow. We count all warnings, but keep only the first ones.
+            final int maxWarningsInMail = 50;
             int warningCount = 0;
+            
             StringBuilder warningText = new StringBuilder();
             try (BufferedReader f = new BufferedReader(new FileReader(Daten.efaLogfile))){
 	            String s;
@@ -251,6 +252,7 @@ public class EfaBoathouseBackgroundTask extends Thread {
                 Logger.log(eglobal);
             }
         } // end: while(true)
+        EfaUtil.foo();
     } // end: run
 
     /**
