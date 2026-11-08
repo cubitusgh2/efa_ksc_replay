@@ -105,7 +105,7 @@ section="Other"
 			<ChangeItem section="Boathouse">Neu: Fahrtenbuchwechsel: Wenn beim automatischen Fahrtenbuchwechsel ein Fehler auftritt, so wird der Fahrtenbuchwechsel nur alle 10 min statt jede Minute neu versucht. Es wird auch nur einmal am Tag eine Mail über einen fehlerhaften Fahrtenbuchwechsel versendet (um den Admin nicht vollzuspammen)</ChangeItem>
 			<ChangeItem section="Stability">Neu: Der im Hintergrund arbeitende efaBoathouseBackgroundTask wurde gehärtet und Bugs beseitigt.</ChangeItem>
 			<ChangeItem section="Stability">Neu: Der efaBoathouseBackgroundTask beendet sich, wenn eine Anforderung zum Herunterfahren/Neustart von EFA angefordert wurde.</ChangeItem>
-			<ChangeItem section="Boathouse">Bugfix: Der Wechsel zwischen der Liste der verfügbaren Boote und der Personenliste funktioniert schneller.</ChangeItem>
+			<ChangeItem section="Boathouse">Bugfix: Der Wechsel zwischen der Liste der verfügbaren Boote und der Personenliste funktioniert schneller. Die Listen werden nur noch neu geladen, wenn es eine Änderung in ihnen gab.</ChangeItem>
 		</Changes>
 		<Changes lang="en">
 			<ChangeItem section="Session Entry">New: The AutoPopup lists highlight the search text in yellow in the hit (only when searching for a partial term).</ChangeItem>
@@ -114,7 +114,7 @@ section="Other"
  			<ChangeItem section="Boathouse">New: Logbook change: If an error occurs during the automatic logbook change, the logbook change will only be retried every 10 minutes instead of every minute. Also, only one email about a failed logbook change will be sent per day (to avoid spamming the admin).</ChangeItem>
  			<ChangeItem section="Stability">New: The efaBoathouseBackgroundTask running in the background has been hardened and bugs have been fixed.</ChangeItem>
  			<ChangeItem section="Stability">New: The efaBoathouseBackgroundTask stops if a shutdown-request has been detected.</ChangeItem>
-			<ChangeItem section="Boathouse">Bugfix: The switch between the list of available boats and the list of persons works faster.</ChangeItem>
+			<ChangeItem section="Boathouse">Bugfix: The switch between the list of available boats and the list of persons works faster. The lists get only reloaded if there was a recent change.</ChangeItem>
  		</Changes>
 	</Version>
 	<Version>

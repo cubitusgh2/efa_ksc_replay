@@ -35,6 +35,7 @@ import de.nmichael.efa.data.Logbook;
 import de.nmichael.efa.data.LogbookRecord;
 import de.nmichael.efa.data.MessageRecord;
 import de.nmichael.efa.data.Messages;
+import de.nmichael.efa.data.Persons;
 import de.nmichael.efa.data.storage.DataKey;
 import de.nmichael.efa.data.storage.DataKeyIterator;
 import de.nmichael.efa.data.storage.IDataAccess;
@@ -66,6 +67,8 @@ public class EfaBoathouseBackgroundTask extends Thread {
     private long newBoatStatusScn = -1;
     private long lastReservationStatusScn = -1;
     private long newReservationStatusScn =-1;
+    private long lastPersonsScn = -1;
+    private long newPersonsScn = -1;
 
     private long lastListUpdate = -1;
 	private volatile long nonListFocusSince = -1; // time when the current non-list focus started, replaces the loop counter
@@ -392,6 +395,12 @@ public class EfaBoathouseBackgroundTask extends Thread {
                 Logger.logdebug(e);
             }
             
+            Persons persons=null;
+            try {
+            	persons = (Daten.project != null ? Daten.project.getPersons(false) : null);
+            } catch(Exception e) {
+                Logger.logdebug(e);
+            }
             
             for (int i=0; i<cnt; i++) {
                 if (Logger.isTraceOn(Logger.TT_BACKGROUND, 9)) {
@@ -436,7 +445,22 @@ public class EfaBoathouseBackgroundTask extends Thread {
                     }
                 } catch(Exception e) {
                     Logger.logdebug(e);
-                }                
+                }            
+                
+                try {
+                    newPersonsScn = (persons!= null ? persons.data().getSCN() : -1);
+                    if (Logger.isTraceOn(Logger.TT_BACKGROUND, 9)) {
+                        Logger.log(Logger.DEBUG, Logger.MSG_DEBUG_EFABACKGROUNDTASK,
+                                "EfaBoathouseBackgroundTask: Persons scn is " + newPersonsScn + " (previously " + lastPersonsScn +")");
+                    }
+                    if (newPersonsScn != -1 && newPersonsScn != lastPersonsScn) {
+                        // do NOT set lastPersonsScn = scn here! This will be done when person status is
+                        // updated.
+                        break;
+                    }
+                } catch(Exception e) {
+                    Logger.logdebug(e);
+                }     
             }
         }
     }
@@ -479,6 +503,7 @@ public class EfaBoathouseBackgroundTask extends Thread {
     private void markScnsProcessed() {
         lastBoatStatusScn = newBoatStatusScn;
         lastReservationStatusScn = newReservationStatusScn;
+        lastPersonsScn = newPersonsScn;
     }
 
     /**
@@ -494,8 +519,12 @@ public class EfaBoathouseBackgroundTask extends Thread {
         // Some changes in boat status or reservations? Then the lists in efaBoatHouseFrame need update.
         // The SCNs are NOT consumed here: they are marked as processed only once the change
         // was actually handled (see markScnsProcessed), otherwise a change could be lost.
+        
+        //we also check for changes in the Persons SCN, as this can also affect the boat lists 
+        // (e.g. if a person is inserted, updated, deleted). we do not need a separate persons check here.
         boolean listChanged = (newBoatStatusScn != -1 && newBoatStatusScn != lastBoatStatusScn)
-                || (newReservationStatusScn != -1 && newReservationStatusScn != lastReservationStatusScn);
+                || (newReservationStatusScn != -1 && newReservationStatusScn != lastReservationStatusScn)
+                || (newPersonsScn != -1 && newPersonsScn != lastPersonsScn);
         
         if (isProjectOpen && !isLocalProject) {
             markScnsProcessed(); // remote project: lists are updated from the observed SCNs
@@ -704,9 +733,13 @@ public class EfaBoathouseBackgroundTask extends Thread {
             	// is added, updated, deleted, the regular update of the boatlists is neccesary at 0:00 am,  
             	// when a new day has begun. 
             	// however, we update every 10 minutes to be sure.
-            	if (Daten.efaConfig.getValueEfaBoathouseBoatListReservationInfo()) {
-            		listChanged=true;
-            		}
+            	
+            	boolean showReservationInfo = Daten.efaConfig != null
+            	        && Daten.efaConfig.getValueEfaBoathouseBoatListReservationInfo();
+            	if (showReservationInfo && now - lastListUpdate > 10 * 60 * 1000) {
+            	    listChanged = true;
+            	}
+
             }
             if (listChanged) {
             	lastListUpdate=now;
@@ -1181,7 +1214,7 @@ public class EfaBoathouseBackgroundTask extends Thread {
                 for (DataKey k = it.getFirst(); k != null; k = it.getNext()) {
                 	
                 	if (isAdminModeOrShutdownRequested("checkUnfixedBoatDamages")) {
-						break;
+                		return; // do not proceed if we need to shutdown or are in admin mode
 					}
                     
                 	BoatDamageRecord damage = (BoatDamageRecord) boatDamages.data().get(k);
@@ -1195,7 +1228,7 @@ public class EfaBoathouseBackgroundTask extends Thread {
                             if (damage.getReportDate() != null && damage.getReportTime() != null
                                     && damage.getReportDate().isSet() && damage.getReportTime().isSet()
                                     && damage.getReportDate().getTimestamp(damage.getReportTime()) < now - BOAT_DAMAGE_REMINDER_INTERVAL) {
-                                damagesOlderThanAWeek = true;
+                            	damagesOlderThanAWeek = true;
                             }
                         }
                     }

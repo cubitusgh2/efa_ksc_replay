@@ -255,8 +255,11 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
     volatile boolean inUpdateBoatList = false;
     byte[] largeChunkOfMemory = new byte[1024*1024];
     boolean isLocked = false;
-
-
+	private long lastBoatlistUpdateRefreshtime=-1;
+	private long lastBoatlistUpdateRequesttime=-1;
+	private long lastPersonlistUpdateRefreshtime=-1;
+	private long lastPersonlistUpdateRequesttime=-1;
+	
     public EfaBoathouseFrame() {
         super(null, Daten.EFA_LONGNAME);
         //set the static variable of class efaBoatHouseFrame to the current instance
@@ -1998,7 +2001,8 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             if (Logger.isTraceOn(Logger.TT_GUI, 8)) {
                 Logger.log(Logger.DEBUG, Logger.MSG_GUI_DEBUGGUI, "updateBoatLists(" + listChanged + ")");
             }
-
+            EfaGuiUtils.setWaitCursor(this, true);
+            
             if (Daten.project == null || boatStatus == null) {
                 boatsAvailableList.setItems(null);
                 personsAvailableList.setItems(null);
@@ -2013,11 +2017,15 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
                 boatsOnTheWaterList.showValue();
                 boatsNotAvailableList.showValue();
             } else {
+            	
                 if (boatsAvailableList.size() == 0) {
                     listChanged = true;
                 }
 
                 if (listChanged) {
+                	
+                	lastBoatlistUpdateRequesttime = System.currentTimeMillis();
+                	lastPersonlistUpdateRequesttime = lastBoatlistUpdateRequesttime;
                 	
                 	String strDebugTimes="";
                 	long start = System.currentTimeMillis();
@@ -2034,28 +2042,31 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
                 	strDebugTimes=strDebugTimes+(System.currentTimeMillis()-start);
                 	
                     if (!Daten.efaConfig.getValueEfaDirekt_listAllowToggleBoatsPersons() || toggleAvailableBoatsToBoats.isSelected()) {
-                        if (Logger.isTraceOn(Logger.TT_GUI, 9)) {
+                        if (Logger.isTraceOn(Logger.TT_GUI, 8)) {
                             Logger.log(Logger.DEBUG, Logger.MSG_GUI_DEBUGGUI, "updateBoatLists(" + listChanged + ") - setting boatsAvailableList ...");
                         }
                         start= System.currentTimeMillis();
                         boatsAvailableList.setBoatStatusData(boatStatus.getBoats(BoatStatusRecord.STATUS_AVAILABLE, true), logbook, "<" + International.getString("anderes Boot") + ">", todaysReservations);
                         strDebugTimes=strDebugTimes+";"+(System.currentTimeMillis()-start);
                         
-                        if (Logger.isTraceOn(Logger.TT_GUI, 9)) {
+                        lastBoatlistUpdateRefreshtime = System.currentTimeMillis();
+                        
+                        if (Logger.isTraceOn(Logger.TT_GUI, 8)) {
                             Logger.log(Logger.DEBUG, Logger.MSG_GUI_DEBUGGUI, "updateBoatLists(" + listChanged + ") - setting boatsAvailableList - done");
                         }
                     } else {
-                        if (Logger.isTraceOn(Logger.TT_GUI, 9)) {
+                        if (Logger.isTraceOn(Logger.TT_GUI, 8)) {
                             Logger.log(Logger.DEBUG, Logger.MSG_GUI_DEBUGGUI, "updateBoatLists(" + listChanged + ") - setting personsAvailableList ...");
                         }
                         Persons persons = boatStatus.getProject().getPersons(false);
                         personsAvailableList.setPersonStatusData(persons.getAllPersons(System.currentTimeMillis(), false, false), "<" + International.getString("andere Person") + ">");
-                        if (Logger.isTraceOn(Logger.TT_GUI, 9)) {
+                        lastPersonlistUpdateRefreshtime = System.currentTimeMillis();
+                        if (Logger.isTraceOn(Logger.TT_GUI, 8)) {
                             Logger.log(Logger.DEBUG, Logger.MSG_GUI_DEBUGGUI, "updateBoatLists(" + listChanged + ") - setting personsAvailableList - done");
                         }
                     }
 
-                    if (Logger.isTraceOn(Logger.TT_GUI, 9)) {
+                    if (Logger.isTraceOn(Logger.TT_GUI, 8)) {
                         Logger.log(Logger.DEBUG, Logger.MSG_GUI_DEBUGGUI, "updateBoatLists(" + listChanged + ") - setting boatsOnTheWaterList and boatsNotAvailableList ...");
                     }
                     if (!onlyAvailableBoatsOrPersons) {
@@ -2066,7 +2077,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
 	                    boatsNotAvailableList.setBoatStatusData(boatStatus.getBoats(BoatStatusRecord.STATUS_NOTAVAILABLE, true), logbook, null, todaysReservations);
 	                    strDebugTimes=strDebugTimes+";"+(System.currentTimeMillis()-start);
                     }
-                    if (Logger.isTraceOn(Logger.TT_GUI, 9)) {
+                    if (Logger.isTraceOn(Logger.TT_GUI, 8)) {
                         Logger.log(Logger.DEBUG, Logger.MSG_GUI_DEBUGGUI, "updateBoatLists(" + listChanged + ") - setting boatsOnTheWaterList and boatsNotAvailableList - done");
                     }
                     Logger.log(Logger.DEBUG, Logger.MSG_GUI_DEBUGGUI, "Aufrufzeiten: "+ strDebugTimes);
@@ -2116,6 +2127,7 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             Logger.logdebug(e);
         } finally {
             inUpdateBoatList = false;
+            EfaGuiUtils.setWaitCursor(this, false);
         }
     }
 
@@ -2526,7 +2538,17 @@ public class EfaBoathouseFrame extends BaseFrame implements IItemListener {
             this.revalidate();
             this.repaint(); // ist erforderlich, damit auch mnemonics richtig geschrieben werden.
             
-            updateBoatLists(true,true);
+            // do not rebuild the whole list, as it is not necessary 
+            // and can be performance intensive on low-power devices like Raspberry Pi 3.
+            // new person records get recognized automatically in efaBoathouseBackgroundTask 
+            boolean needsRefresh = (toggleAvailableBoatsToBoats.isSelected() && (lastBoatlistUpdateRefreshtime<lastBoatlistUpdateRequesttime) ||
+								   (!toggleAvailableBoatsToBoats.isSelected() && (lastPersonlistUpdateRefreshtime<lastPersonlistUpdateRequesttime)));
+            updateBoatLists(needsRefresh,true);
+         // Temporary diagnostic: the count should stay at 1 after each toggle.
+         // If it grows by one per toggle, stale JLists are still attached to the model.
+         //   Logger.log(Logger.DEBUG, Logger.MSG_GUI_DEBUGGUI, "listeners on boats model: " + boatsAvailableList.data.getListDataListeners().length);
+         //   Logger.log(Logger.DEBUG, Logger.MSG_GUI_DEBUGGUI, "listeners on person model: " + personsAvailableList.data.getListDataListeners().length);
+            
         } catch (Exception ee) {
         }
         if (Logger.isTraceOn(Logger.TT_GUI, 8)) {
