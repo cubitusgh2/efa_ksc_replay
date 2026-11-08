@@ -18,6 +18,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
@@ -26,6 +27,7 @@ import java.awt.event.FocusEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Vector;
 
 import javax.swing.BorderFactory;
@@ -38,6 +40,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.JViewport;
 import javax.swing.ListCellRenderer;
+import javax.swing.ListModel;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -74,6 +77,10 @@ import de.nmichael.efa.util.Logger;
  *   ESC clears the text field. So clearing the field normally requires
  *   pressing ESC twice if the popup was open.
  * - typing: updates the popup/filter from the text field
+ * - TAB: accept selected item and move focus (Shift+TAB = backward)
+ * 
+ * The popup has a fixed height of POPUP_FIXED_ROWS rows, independent of the number of matches.
+ * The popup is visible once the search term is not empty.
  *
  * The popup is "remote-controlled" from the text field; focus remains in the text field.
  */
@@ -102,6 +109,13 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
     private JPopupMenu popup;
     private JList<String> popupList;
     private JScrollPane popupScrollPane;
+
+    /**
+     * Number of rows the popup is sized for. Fixed so that the popup size does not depend
+     * on the number of matches and therefore does not change while typing.
+     */
+    private static final int POPUP_FIXED_ROWS = 6;
+
 
     /**
      * Some platforms/input methods occasionally deliver a KeyEvent with this
@@ -596,6 +610,10 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
                     && (complete.equals(field.getText()))) {
                 matching = true;
             }
+            if (withPopup && useAutocompleteList) {
+                showPopupForField(field);
+                updatePopupSelection(complete != null ? complete : field.getText(), prefix);
+            }
         }
 
         String ignoredString = null;
@@ -748,6 +766,13 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         }
     }
 
+    /**
+	 * Adds all elements from the source vector to the target vector, but avoids adding duplicates.
+	 * If an element from the source is already present in the target, it will not be added again.
+	 *
+	 * @param target The vector to which elements will be added.
+	 * @param source The vector from which elements will be taken.
+	 */
     private void addButAvoidDuplicates(Vector<String> target, Vector<String> source) {
         String value;
         for (int i = 0; i < source.size(); i++) {
@@ -758,6 +783,15 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         }
     }
 
+    /**
+	 * Handles the filtered list for auto-completion based on the key event.
+	 * This method updates the auto-complete list and manages the popup display.
+	 * 
+	 * It is used only if the auto-complete list is in "contains" mode, 
+	 * where the filter matches any part of the string.
+	 *
+	 * @param e The KeyEvent that triggered this method, or null if called programmatically.
+	 */
     private void handleFilteredList(KeyEvent e) {
         if (field == null) {
             return;
@@ -1097,16 +1131,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         popup = new JPopupMenu();
         popup.setFocusable(false);
         popup.add(popupScrollPane);
-        //popup.setBorder(BorderFactory.createEmptyBorder(2,2,2,2));
-
-        /*
-        popupList.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent e) {
-                if (SwingUtilities.isLeftMouseButton(e)) {
-                    acceptPopupSelection();
-                }
-            }
-        });*/
+        
         popupList.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mousePressed(java.awt.event.MouseEvent e) {
@@ -1146,48 +1171,84 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         }
 
         Vector<String> data = autoCompleteList.getDataVisibleFiltered();
-        if (data == null || data.isEmpty()) {
+        if (data == null) {
+            data = new Vector<String>();
+        }
+
+        // Only close the popup when there is nothing to filter on (empty text).
+        // For a non-empty search term without matches we keep the popup open with an
+        // empty list. Closing and reopening it on every keystroke causes the flicker,
+        // because the native popup window is recreated each time.
+        if (data.isEmpty() && textField.getText().trim().isEmpty()) {
             closePopup();
             return;
         }
-        popupList.setListData(data);
-
-
+        // performance, less flicker: only update the list model if the content actually changed
+        
+        // Replace the list model only if the visible content actually changed. Replacing it
+        // on every keystroke clears the selection and re-lays out all cells, which makes the
+        // popup look restless even when the result set stays the same.
+        if (!isSameListContent(popupList.getModel(), data)) {
+            popupList.setListData(data);
+        }
 
         int width = Math.max(textField.getWidth(), 240);
-        int rowCount = Math.min(Math.max(data.size(), 1), 6);
         int rowHeight = Math.max(
                 18,
                 popupList.getFixedCellHeight() > 0
                         ? popupList.getFixedCellHeight()
                         : popupList.getFontMetrics(popupList.getFont()).getHeight() + 6
         );
-        // Ensure the Dropdown height is at least 150 pix, so that the user recognizes
-        // for search terms with no result, that the result is empty.
-        // also, the screen does not flicker so much when the resulting popup gets smaller
-        // after consecutively adding new characters to the search term as the result set gets smaller
-        int height = Math.max(150, rowCount * rowHeight + 8);
+        
+        // The popup always has the height of POPUP_FIXED_ROWS rows, independent of the number
+        // of matches. A constant size means the native popup window never has to be resized
+        // while the user types. this avoids a flickering popup list while typing.
+        // Also, it keeps the popup visible for search terms without any result.
+        int height = Math.max(150, POPUP_FIXED_ROWS * rowHeight + 8);
 
-        popupScrollPane.setPreferredSize(new Dimension(width, height));
-
+        // Size is only applied when the popup is opened; it does not change while typing.
         if (!isPopupVisible()) {
+            popupScrollPane.setPreferredSize(new Dimension(width, height));
             try {
                 popup.show(textField, 0, textField.getHeight());
             } catch (Exception ex) {
                 Logger.logdebug(ex);
                 return;
             }
-        } else {
-            popup.setPopupSize(width, height);
         }
 
         updatePopupSelection(textField.getText(), filterText);
     }
 
+    /**
+     * Compares the current model of the popup list with the new data element by element.
+     * Used to avoid replacing the model when nothing has changed.
+     * 
+     * @param model The current ListModel of the popup list.
+     * @param data The new data to compare against the model.
+     * 
+     * @return true if the model and data have the same content, false otherwise.
+     */
+    private boolean isSameListContent(ListModel<String> model, Vector<String> data) {
+        if (model.getSize() != data.size()) {
+            return false;
+        }
+        for (int i = 0; i < data.size(); i++) {
+            // Objects.equals() is null-safe, so null entries cannot cause an exception
+            if (!Objects.equals(data.get(i), model.getElementAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     /* 
 	 * Updates the selection in the popup list based on the given value to select and filter text.
-	 * If the value to select is found in the data, it will be selected. Otherwise, it will try to find
-	 * a match based on the filter text, either by contains or starts with, depending on the configuration.
+	 * If the value to select is found in the data, it will be selected. 
+	 * 
+	 * Otherwise, it will try to find a match based on the filter text, 
+	 * either by contains or starts with, depending on the configuration.
+	 * 
 	 * If no match is found, the first item in the list will be selected.
 	 */
     private void updatePopupSelection(String valueToSelect, String filterText) {
@@ -1229,105 +1290,124 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
         }
 
         if (idx < 0) {
+            // No match: select the first entry, so the user can accept the top suggestion
+            // with ENTER without first having to navigate, and the selection stays predictable.
             idx = 0;
         }
 
         popupList.setSelectedIndex(idx);
-        popupList.ensureIndexIsVisible(idx);
+        if (filterText != null && filterText.trim().length() > 0) {
+            // With a search term, keep the matching entry in the second row, so the selection bar
+            // stays at a fixed position while the user types further characters.
+        	
+        	// Putting the matching entry in the second row helps the user to understand 
+        	// that the list is filtered and that there are more matches above it.
+            scrollSelectionToSecondRow(idx);
+        } else {
+            popupList.ensureIndexIsVisible(idx);
+        }
         popupList.repaint();
     }
 
     /*
-	 * Handles navigation keys (up, down, page up, page down, escape) for the popup list.
-	 * Returns true if the key event was handled and consumed, false otherwise.
-	 */
+     * Scrolls the popup so that the given (matching) item is shown in the second row. The first row
+     * shows the entry above it, so the selection bar keeps the same screen position while the user
+     * types more characters. Near the start or end of the list the scroll position is clamped.
+     */
+    private void scrollSelectionToSecondRow(int idx) {
+        if (popupList == null || popupScrollPane == null) {
+            return;
+        }
+        Rectangle cell = popupList.getCellBounds(idx, idx);
+        JViewport viewport = popupScrollPane.getViewport();
+        // Without a laid-out viewport the target position cannot be computed reliably
+        if (cell == null || viewport.getExtentSize().height <= 0) {
+            popupList.ensureIndexIsVisible(idx);
+            return;
+        }
+        /* Note: popupList.getHeight() is intentionally NOT used here. 
+           After setListData() (e.g. triggered by Backspace, which usually widens the result set) 
+           Swing only schedules a revalidate(); the component's real bounds/height are only updated
+           during the next, asynchronous layout pass. 
+           
+           At this point getHeight() would still return the OLD (possibly much smaller) height, 
+           clamping targetY far too low and scrolling the correct selection out of view.
+        
+           listHeight is derived directly from the current model size and the (uniform) cell
+           height instead of calling getPreferredSize(), which keeps this independent of
+           Swing's layout timing. 
+           
+           This ignores the list's 2px top/bottom EmptyBorder, so the clamp can be off by a few pixels 
+           in edge cases - accepted as a minor inaccuracy.
+         */
+        int listHeight = popupList.getModel().getSize() * cell.height;
+        // All rows have the same height, so one row above the selection is cell.y - cell.height
+        int maxY = Math.max(0, listHeight - viewport.getExtentSize().height);
+        int targetY = Math.max(0, Math.min(cell.y - cell.height, maxY));
+        viewport.setViewPosition(new Point(viewport.getViewPosition().x, targetY));
+
+        // Ensure that the selected item is fully visible after scrolling, in case the clamped position
+        // This fixes the problem that when deleting chars from the search term, 
+        // the selection can be scrolled out of view as the list grows and the clamped position is used.
+        Rectangle visibleAfterScroll = viewport.getViewRect();
+        if (!visibleAfterScroll.contains(cell)) {
+            popupList.ensureIndexIsVisible(idx);
+        }
+    }
+
+    /*
+     * Handles the keys that operate on a visible popup (ESC, UP, DOWN, PAGE_UP, PAGE_DOWN).
+     * Returns true if the key was consumed here, so keyPressed() must not process it further.
+     * ENTER and TAB are not handled here, keyPressed() accepts the selection for them.
+     */
     private boolean handlePopupNavigationKey(KeyEvent e) {
-        if (!isPopupVisible() || popupList == null || e == null) {
+        if (!isPopupVisible()) {
             return false;
         }
-
         switch (e.getKeyCode()) {
             case KeyEvent.VK_ESCAPE:
-                // 1st ESC while popup is visible: only close the popup, do NOT clear the
-                // textfield (two-stage ESC, see class/keyPressed javadoc).
+                // First ESC only closes the popup, so the typed text is kept.
+                // A second ESC (handled in keyPressed) clears the text field.
                 closePopup();
                 return true;
-                
-            // we don't want to handle VK_ENTER or VK_TAB here as it is handled in the calling method.
-
-            case KeyEvent.VK_DOWN:
-                movePopupSelection(1, false);
-                return true;
-
             case KeyEvent.VK_UP:
-                movePopupSelection(-1, false);
+                movePopupSelection(-1);
                 return true;
-
-            case KeyEvent.VK_PAGE_DOWN:
-                movePopupSelection(Math.max(1, popupList.getVisibleRowCount()), false);
+            case KeyEvent.VK_DOWN:
+                movePopupSelection(1);
                 return true;
-
             case KeyEvent.VK_PAGE_UP:
-                movePopupSelection(-Math.max(1, popupList.getVisibleRowCount()), false);
+                movePopupSelection(-POPUP_FIXED_ROWS);
                 return true;
-
+            case KeyEvent.VK_PAGE_DOWN:
+                movePopupSelection(POPUP_FIXED_ROWS);
+                return true;
             default:
                 return false;
         }
     }
 
-    /* 
-     * Moves the selection in the popup list by the specified delta. 
-     * If wrap is true, the selection will wrap around when reaching the beginning or end of the list.
-     * Also, it mimics the standard selection behavior of JList (move the selection bar and only scroll the
-     * visible items when necessary).
+    /*
+     * Moves the selection in the popup list by the given number of entries and keeps it visible.
+     * The index is clamped to the list bounds, so the cursor does not jump from the end back to the start.
      */
-    private void movePopupSelection(int delta, boolean wrap) {
+    private void movePopupSelection(int delta) {
         if (popupList == null) {
             return;
         }
-
         int size = popupList.getModel().getSize();
-        if (size <= 0) {
+        if (size == 0) {
             return;
         }
-
         int current = popupList.getSelectedIndex();
-        int idx;
-
-        if (current < 0) {
-            idx = (delta >= 0 ? 0 : size - 1);
-        } else {
-            idx = current + delta;
-        }
-
-        if (wrap) {
-            while (idx < 0) {
-                idx += size;
-            }
-            while (idx >= size) {
-                idx -= size;
-            }
-        } else {
-            if (idx < 0) {
-                idx = 0;
-            } else if (idx >= size) {
-                idx = size - 1;
-            }
-        }
-
-        if (idx == current) {
-            return;
-        }
-
+        int idx = (current < 0 ? 0 : current + delta);
+        idx = Math.max(0, Math.min(size - 1, idx));
         popupList.setSelectedIndex(idx);
         ensureSelectionVisibleNaturally(idx);
-        popupList.repaint();
     }
 
-
-    /* 
-     * Only scroll the list if the selected item is not fully visible, mimicking the standard JList behavior. 
+    /*
+     * Only scroll the list if the selected item is not fully visible, mimicking the standard JList behavior.
      */
     private void ensureSelectionVisibleNaturally(int idx) {
         if (popupList == null) {
@@ -1404,6 +1484,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
     
     /*
      * Callback method for the auto-complete functionality. 
+     * apcw=auto-complete popup window
      * This method is called when the text in the associated JTextField changes, and it triggers the auto-complete logic.
      * It is also called from outside (efaBaseFrame, efaBaseFrameMultisession) 
      * to ensure that the value of the text field is checked against the auto-complete list and updated accordingly.
@@ -1420,7 +1501,8 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
     private class PaintHighlightRenderer extends JComponent implements ListCellRenderer<String> {
 
         private static final long TEN_SECONDS_IN_MILLIS = 1000*10;
-        private static final int SELECTION_ARC = 14;
+        private static final int SELECTION_ARC = 12;
+        private static final int HIGHLIGHT_ARC = 6;
 		private String fullText;
         private String search;
         private boolean selectedFlag;
@@ -1510,7 +1592,7 @@ public class ItemTypeStringAutoComplete extends ItemTypeString {
                 if (isContainsMode()) {
 	                // Draw highlight background for match only if containsmode is active.
 	                g2.setColor(highlightColor);
-	                g2.fillRect(x+1, y - fm.getAscent() + 2, w, fm.getHeight() );
+	                g2.fillRoundRect(x, y - fm.getAscent() + 2, w, fm.getHeight(), HIGHLIGHT_ARC, HIGHLIGHT_ARC);
 	                // Draw match text (in black for contrast)
 	                g2.setColor(matchForeground);
                 }
