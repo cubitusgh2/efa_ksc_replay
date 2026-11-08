@@ -73,7 +73,7 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     EfaMouseListener popupListener; 
     JPopupMenu popup;
     Long lastFilterChange=0L;
-    DefaultListModel<ItemTypeListData> data; // no longer Vector as we need a DefaultListModel for filtering
+    public DefaultListModel<ItemTypeListData> data; // no longer Vector as we need a DefaultListModel for filtering
     String[] actions;
     String incrementalSearch = "";
     private int iconWidth = 0;
@@ -426,6 +426,12 @@ public class ItemTypeList extends ItemType implements ActionListener, DocumentLi
     private JPanel setupPanel(Window dlg) {
         this.dlg = dlg;
 
+        // Detach the previous list from the shared model before it is replaced. Otherwise the
+        // old JList stays registered as a ListDataListener on the model and receives every
+        // change event (one per added item), so the cost grows with each display switch.
+        if (list != null) {
+            list.setModel(new DefaultListModel<ItemTypeListData>());
+        }
         list = createNewListWithTooltippSupport();
         
         if (this.showFilterField) {
