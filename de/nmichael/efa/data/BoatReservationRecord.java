@@ -21,6 +21,7 @@ import de.nmichael.efa.core.config.AdminRecord;
 import de.nmichael.efa.core.config.EfaTypes;
 import de.nmichael.efa.core.items.IItemType;
 import de.nmichael.efa.core.items.ItemTypeDate;
+import de.nmichael.efa.core.items.ItemTypeLabel;
 import de.nmichael.efa.core.items.ItemTypeLabelHeader;
 import de.nmichael.efa.core.items.ItemTypeRadioButtons;
 import de.nmichael.efa.core.items.ItemTypeString;
@@ -33,6 +34,7 @@ import de.nmichael.efa.data.storage.IDataAccess;
 import de.nmichael.efa.data.storage.MetaData;
 import de.nmichael.efa.data.types.DataTypeDate;
 import de.nmichael.efa.data.types.DataTypeTime;
+import de.nmichael.efa.gui.EfaGuiUtils;
 import de.nmichael.efa.gui.util.TableItem;
 import de.nmichael.efa.gui.util.TableItemHeader;
 import de.nmichael.efa.util.EfaUtil;
@@ -43,7 +45,8 @@ import de.nmichael.efa.util.Logger;
 
 public class BoatReservationRecord extends DataRecord {
 
-    // =========================================================================
+    public static final String HINT_YEARCHANGED = "HINT_YEARCHANGED";
+	// =========================================================================
     // Value Constants
     // =========================================================================
     public static final String TYPE_ONETIME        = "ONETIME";
@@ -809,19 +812,27 @@ public class BoatReservationRecord extends DataRecord {
         item.setPadding(-1, -1, -1, 15); // 15 pix distance from next gui item
         
         
+
+        ItemTypeLabel myhint;
+        v.add(myhint = EfaGuiUtils.createHintWordWrap(HINT_YEARCHANGED, IItemType.TYPE_PUBLIC, 
+        		CAT_BASEDATA, "", 4, 10, 10, 300));
+        	myhint.setIndent(true);
+        	myhint.setVisible(true);//will be set to false in BoatReservationRecordEditDialog
+        
         // new order of elements:
         // date from        date to
         // Weekday
         // time from	    time to
         // so that the weekdray dropdownlists separates the dates from the times,
         // but corresponding date & time are on the same column
-        
+        	
         v.add(item = new ItemTypeDate(BoatReservationRecord.DATEFROM, getDateFrom(),
                 IItemType.TYPE_PUBLIC, CAT_BASEDATA, International.getString("Von") + " (" +
                 International.getString("Tag") + ")"));
         item.setNotNull(true);
         dateFrom = (ItemTypeDate)item;
         dateFrom.setFieldSize(DATETIME_FIELDLENGTH, 0);
+        dateFrom.setYearAutocompletionForFuture(true);
         
         v.add(item = new ItemTypeDate(BoatReservationRecord.DATETO, getDateTo(),
                 IItemType.TYPE_PUBLIC, CAT_BASEDATA, International.getString("Bis") + " (" +
@@ -832,7 +843,8 @@ public class BoatReservationRecord extends DataRecord {
         dateTo.setIsItemOnSameRowAsPreviousItem(true);
         dateTo.setFieldSize(DATETIME_FIELDLENGTH, 0);
         dateTo.setLabelGrid(-1, GridBagConstraints.EAST, -1); // right-handed label looks better.
-
+        dateTo.setYearAutocompletionForFuture(true);
+        
         v.add(item = new ItemTypeStringList(BoatReservationRecord.DAYOFWEEK, getDayOfWeek(),
                 EfaTypes.makeDayOfWeekArray(EfaTypes.ARRAY_STRINGLIST_VALUES), EfaTypes.makeDayOfWeekArray(EfaTypes.ARRAY_STRINGLIST_DISPLAY),
                 IItemType.TYPE_PUBLIC, CAT_BASEDATA,
@@ -859,6 +871,9 @@ public class BoatReservationRecord extends DataRecord {
         item.setFieldSize(DATETIME_FIELDLENGTH,0);
         ((ItemTypeTime)item).setLabelGrid(-1, GridBagConstraints.EAST, -1); // right-handed label looks better.
 
+
+        
+        
         
         v.add(item = getGuiItemTypeStringAutoComplete(BoatReservationRecord.PERSONID, null,
                     IItemType.TYPE_PUBLIC, CAT_BASEDATA,
